@@ -4,6 +4,7 @@ import { AIAssistant } from "@/components/AIAssistant";
 import { ProjectManager } from "@/components/ProjectManager";
 import { APIKeyManager } from "@/components/APIKeyManager";
 import { FileUpload } from "@/components/FileUpload";
+import { TextToSpeech } from "@/components/TextToSpeech";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -44,6 +45,9 @@ const Index = () => {
               <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
                 Automation
               </Badge>
+              <Badge variant="secondary" className="bg-purple-500/10 text-purple-500 border-purple-500/20">
+                Voice Synthesis
+              </Badge>
             </div>
           </div>
         </div>
@@ -63,7 +67,7 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* API Key Manager */}
           <div className="lg:col-span-1">
             <APIKeyManager />
@@ -72,6 +76,13 @@ const Index = () => {
           {/* File Upload */}
           <div className="lg:col-span-1">
             <FileUpload />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Text-to-Speech */}
+          <div className="lg:col-span-2">
+            <TextToSpeech />
           </div>
         </div>
 
