@@ -15,12 +15,11 @@ export function Header() {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-cyber-blue to-tech-accent rounded-lg flex items-center justify-center">
-              <span className="text-xs font-bold text-background">OS</span>
-            </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-cyber-blue to-tech-accent bg-clip-text text-transparent">
-              CriderOS
-            </h1>
+            <img 
+              src="/lovable-uploads/1b1242ff-1483-4ec4-ba1d-41b6c2478a76.png" 
+              alt="CriderOS Logo" 
+              className="h-12 w-auto"
+            />
           </div>
           <Badge variant="secondary" className="bg-cyber-blue/10 text-cyber-blue border-cyber-blue/20">
             AI Assistant
