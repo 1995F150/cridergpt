@@ -1,5 +1,6 @@
 import heroImage from "@/assets/crider-os-hero.jpg";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { AIAssistant } from "@/components/AIAssistant";
 import { ProjectManager } from "@/components/ProjectManager";
 import { APIKeyManager } from "@/components/APIKeyManager";
@@ -10,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
       {/* Hero Section */}
@@ -54,7 +55,7 @@ const Index = () => {
       </div>
 
       {/* Main Dashboard */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* AI Assistant */}
           <div className="lg:col-span-1">
@@ -111,6 +112,8 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <Footer />
     </div>
   );
 };
