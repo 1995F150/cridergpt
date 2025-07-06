@@ -1,12 +1,7 @@
 import heroImage from "@/assets/crider-os-hero.jpg";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { AIAssistant } from "@/components/AIAssistant";
-import { ProjectManager } from "@/components/ProjectManager";
-import { APIKeyManager } from "@/components/APIKeyManager";
-import { FileUpload } from "@/components/FileUpload";
-import { TextToSpeech } from "@/components/TextToSpeech";
-import { Card, CardContent } from "@/components/ui/card";
+import { Sidebar } from "@/components/Sidebar";
 import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
@@ -54,63 +49,19 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Main Dashboard */}
-      <div className="container mx-auto px-4 py-8 flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* AI Assistant */}
-          <div className="lg:col-span-1">
-            <AIAssistant />
-          </div>
-          
-          {/* Project Manager */}
-          <div className="lg:col-span-1">
-            <ProjectManager />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* API Key Manager */}
-          <div className="lg:col-span-1">
-            <APIKeyManager />
-          </div>
-          
-          {/* File Upload */}
-          <div className="lg:col-span-1">
-            <FileUpload />
+      {/* Main Content with Sidebar */}
+      <div className="flex flex-1">
+        <Sidebar />
+        <div className="flex-1 p-8">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold text-cyber-blue mb-4">
+              Use the tabs on the left to navigate through different sections
+            </h2>
+            <p className="text-muted-foreground">
+              Click on the icons in the sidebar to access AI Assistant, Project Manager, API Keys, File Upload, Text-to-Speech, and System Status.
+            </p>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Text-to-Speech */}
-          <div className="lg:col-span-2">
-            <TextToSpeech />
-          </div>
-        </div>
-
-        {/* Status Overview */}
-        <Card className="mt-8 bg-card/50 backdrop-blur-sm border-border">
-          <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-cyber-blue mb-4">System Status</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-cyber-blue">3</div>
-                <div className="text-sm text-muted-foreground">Active Projects</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-tech-accent">2</div>
-                <div className="text-sm text-muted-foreground">API Keys</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-500">5</div>
-                <div className="text-sm text-muted-foreground">Files Uploaded</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-500">12</div>
-                <div className="text-sm text-muted-foreground">Automations</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
       
       <Footer />
