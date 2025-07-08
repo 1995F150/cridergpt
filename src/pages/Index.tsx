@@ -47,7 +47,7 @@ const Index = () => {
             </div>
             <div className="flex gap-4">
               <a
-                href="https://buy.stripe.com/6oU9AVd3G0HabOOcWsdZ606"
+                href="https://buy.stripe.com/3cI8wRbZCblO4mmg8EdZ608"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-cyber-blue to-tech-accent text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
