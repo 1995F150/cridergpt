@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen w-screen flex flex-col overflow-hidden">
       <Header />
       
       {/* Hero Section */}
@@ -60,8 +60,8 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Main Content with Sidebar */}
-      <div className="flex flex-1">
+      {/* Main Application Layout */}
+      <div className="flex flex-1 h-full overflow-hidden">
         <Sidebar />
       </div>
       

@@ -10,8 +10,8 @@ import Pricing from "@/components/Pricing";
 
 export function Sidebar() {
   return (
-    <div className="w-full h-full bg-card/50 backdrop-blur-sm">
-      <Tabs defaultValue="ai" orientation="vertical" className="h-full flex">
+    <div className="w-[300px] min-w-[200px] h-full bg-card border-r-2 border-border flex flex-col">
+      <Tabs defaultValue="ai" orientation="vertical" className="h-full flex w-full">
         <TabsList className="flex flex-col h-full w-16 bg-transparent p-2 gap-2">
           <TabsTrigger 
             value="ai" 
@@ -57,32 +57,32 @@ export function Sidebar() {
           </TabsTrigger>
         </TabsList>
 
-        <div className="flex-1 overflow-auto">
-          <TabsContent value="ai" className="p-4 m-0 h-full">
+        <div className="flex-1 w-full h-full overflow-hidden bg-background">
+          <TabsContent value="ai" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <AIAssistant />
           </TabsContent>
           
-          <TabsContent value="projects" className="p-4 m-0 h-full">
+          <TabsContent value="projects" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <ProjectManager />
           </TabsContent>
           
-          <TabsContent value="api" className="p-4 m-0 h-full">
+          <TabsContent value="api" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <APIKeyManager />
           </TabsContent>
           
-          <TabsContent value="files" className="p-4 m-0 h-full">
+          <TabsContent value="files" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <FileUpload />
           </TabsContent>
           
-          <TabsContent value="tts" className="p-4 m-0 h-full">
+          <TabsContent value="tts" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <TextToSpeech />
           </TabsContent>
           
-          <TabsContent value="pricing" className="p-0 m-0 h-full overflow-auto">
+          <TabsContent value="pricing" className="w-full h-full flex flex-col overflow-y-auto p-0 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <Pricing />
           </TabsContent>
           
-          <TabsContent value="status" className="p-4 m-0 h-full">
+          <TabsContent value="status" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <Card className="bg-card/50 backdrop-blur-sm border-border">
               <CardContent className="p-6">
                 <h2 className="text-xl font-semibold text-cyber-blue mb-4">System Status</h2>
