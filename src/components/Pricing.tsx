@@ -6,7 +6,7 @@ const Pricing = () => {
   const plans = [
     {
       name: "Plus",
-      price: "$49",
+      price: "$9.99",
       period: "/month",
       features: [
         "AI Assistant Access",
@@ -20,7 +20,7 @@ const Pricing = () => {
     },
     {
       name: "Pro",
-      price: "$99",
+      price: "$20.99",
       period: "/month",
       features: [
         "Everything in Plus",
