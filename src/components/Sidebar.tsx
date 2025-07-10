@@ -10,7 +10,7 @@ import Pricing from "@/components/Pricing";
 
 export function Sidebar() {
   return (
-    <div className="w-80 h-full border-r border-border bg-card/50 backdrop-blur-sm">
+    <div className="w-full h-full bg-card/50 backdrop-blur-sm">
       <Tabs defaultValue="ai" orientation="vertical" className="h-full flex">
         <TabsList className="flex flex-col h-full w-16 bg-transparent p-2 gap-2">
           <TabsTrigger 

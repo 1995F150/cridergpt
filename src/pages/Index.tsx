@@ -63,16 +63,6 @@ const Index = () => {
       {/* Main Content with Sidebar */}
       <div className="flex flex-1">
         <Sidebar />
-        <div className="flex-1 p-8">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-cyber-blue mb-4">
-              Use the tabs on the left to navigate through different sections
-            </h2>
-            <p className="text-muted-foreground">
-              Click on the icons in the sidebar to access AI Assistant, Project Manager, API Keys, File Upload, Text-to-Speech, and System Status.
-            </p>
-          </div>
-        </div>
       </div>
       
       <Footer />
