@@ -5,7 +5,8 @@ import { APIKeyManager } from "@/components/APIKeyManager";
 import { FileUpload } from "@/components/FileUpload";
 import { TextToSpeech } from "@/components/TextToSpeech";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bot, FolderOpen, Key, Upload, Volume2, BarChart3 } from "lucide-react";
+import { Bot, FolderOpen, Key, Upload, Volume2, BarChart3, CreditCard } from "lucide-react";
+import Pricing from "@/components/Pricing";
 
 export function Sidebar() {
   return (
@@ -43,6 +44,12 @@ export function Sidebar() {
             <Volume2 className="h-5 w-5" />
           </TabsTrigger>
           <TabsTrigger 
+            value="pricing" 
+            className="w-12 h-12 p-0 flex items-center justify-center data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+          >
+            <CreditCard className="h-5 w-5" />
+          </TabsTrigger>
+          <TabsTrigger 
             value="status" 
             className="w-12 h-12 p-0 flex items-center justify-center data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
@@ -69,6 +76,10 @@ export function Sidebar() {
           
           <TabsContent value="tts" className="p-4 m-0 h-full">
             <TextToSpeech />
+          </TabsContent>
+          
+          <TabsContent value="pricing" className="p-0 m-0 h-full overflow-auto">
+            <Pricing />
           </TabsContent>
           
           <TabsContent value="status" className="p-4 m-0 h-full">
