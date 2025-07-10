@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
 import { Badge } from "@/components/ui/badge";
+import Pricing from "@/components/Pricing";
 
 const Index = () => {
   return (
@@ -58,6 +59,9 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* Pricing Section */}
+      <Pricing />
 
       {/* Main Content with Sidebar */}
       <div className="flex flex-1">
