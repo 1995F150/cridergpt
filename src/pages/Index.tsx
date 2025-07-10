@@ -3,21 +3,14 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
 import { Badge } from "@/components/ui/badge";
-
-
 const Index = () => {
-  return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
+  return <div className="h-screen w-screen flex flex-col overflow-hidden">
       <Header />
       
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img 
-            src={heroImage} 
-            alt="CriderOS Dashboard" 
-            className="w-full h-full object-cover opacity-20"
-          />
+          <img src={heroImage} alt="CriderOS Dashboard" className="w-full h-full object-cover opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
         </div>
         
@@ -47,12 +40,7 @@ const Index = () => {
               </Badge>
             </div>
             <div className="flex gap-4">
-              <a
-                href="https://buy.stripe.com/3cI8wRbZCblO4mmg8EdZ608"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-cyber-blue to-tech-accent text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
-              >
+              <a href="https://buy.stripe.com/3cI8wRbZCblO4mmg8EdZ608" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-cyber-blue to-tech-accent text-background font-semibold rounded-lg hover:opacity-90 transition-opacity">
                 Invest in CriderOS
               </a>
             </div>
@@ -61,13 +49,11 @@ const Index = () => {
       </div>
 
       {/* Main Application Layout */}
-      <div className="flex flex-1 h-full overflow-hidden">
+      <div className="flex flex-1 h-full overflow-hidden bg-zinc-950 rounded-sm">
         <Sidebar />
       </div>
       
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
