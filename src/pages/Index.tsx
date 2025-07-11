@@ -1,10 +1,43 @@
+import { useState } from "react";
 import heroImage from "@/assets/crider-os-hero.jpg";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Sidebar } from "@/components/Sidebar";
+import { NavigationSidebar } from "@/components/NavigationSidebar";
 import { Badge } from "@/components/ui/badge";
+import { AssistantPanel } from "@/components/panels/AssistantPanel";
+import { ProjectPanel } from "@/components/panels/ProjectPanel";
+import { APIPanel } from "@/components/panels/APIPanel";
+import { FilesPanel } from "@/components/panels/FilesPanel";
+import { TTSPanel } from "@/components/panels/TTSPanel";
+import { PricingPanel } from "@/components/panels/PricingPanel";
+import { StatusPanel } from "@/components/panels/StatusPanel";
+
 const Index = () => {
-  return <div className="h-screen w-screen flex flex-col overflow-hidden">
+  const [activeTab, setActiveTab] = useState('assistant');
+
+  const renderActivePanel = () => {
+    switch (activeTab) {
+      case 'assistant':
+        return <AssistantPanel />;
+      case 'projects':
+        return <ProjectPanel />;
+      case 'api':
+        return <APIPanel />;
+      case 'files':
+        return <FilesPanel />;
+      case 'tts':
+        return <TTSPanel />;
+      case 'pricing':
+        return <PricingPanel />;
+      case 'status':
+        return <StatusPanel />;
+      default:
+        return <AssistantPanel />;
+    }
+  };
+
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden">
       <Header />
       
       {/* Hero Section */}
@@ -49,11 +82,16 @@ const Index = () => {
       </div>
 
       {/* Main Application Layout */}
-      <div className="flex flex-1 h-full overflow-hidden bg-zinc-950 rounded-sm">
-        <Sidebar />
+      <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
+        <NavigationSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="main-content">
+          {renderActivePanel()}
+        </div>
       </div>
       
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
