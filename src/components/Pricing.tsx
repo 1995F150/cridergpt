@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 
 const Pricing = () => {
-  const plans = [
+const plans = [
     {
       name: "Plus",
       price: "$9.99",
@@ -16,7 +16,8 @@ const Pricing = () => {
         "Text-to-Speech (100 requests/month)",
         "Email Support"
       ],
-      highlighted: false
+      highlighted: false,
+      stripeLink: "https://buy.stripe.com/bJe28t1kY89C3iiaOkdZ605"
     },
     {
       name: "Pro",
@@ -33,7 +34,8 @@ const Pricing = () => {
         "Priority Support",
         "Custom Automation Scripts"
       ],
-      highlighted: true
+      highlighted: true,
+      stripeLink: "https://buy.stripe.com/8x2dRbfbO4Xq2ee6y4dZ600"
     }
   ];
 
@@ -98,6 +100,7 @@ const Pricing = () => {
                     : "bg-cyber-blue hover:bg-cyber-blue/90"
                 }`}
                 size="lg"
+                onClick={() => window.open(plan.stripeLink, '_blank')}
               >
                 Get Started
               </Button>
