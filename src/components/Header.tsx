@@ -1,14 +1,25 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User, Key, Upload, LogOut, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleAuthAction = () => {
+    if (user) {
+      signOut();
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -41,7 +52,7 @@ export function Header() {
             <span className="sr-only">Toggle theme</span>
           </Button>
           
-          {isLoggedIn ? (
+          {user ? (
             <>
               <Button variant="ghost" size="sm">
                 <Key className="h-4 w-4 mr-2" />
@@ -56,12 +67,12 @@ export function Header() {
                   <User className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <Button variant="ghost" size="sm" onClick={() => setIsLoggedIn(false)}>
+              <Button variant="ghost" size="sm" onClick={handleAuthAction}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsLoggedIn(true)} className="bg-cyber-blue hover:bg-cyber-blue-dark">
+            <Button onClick={handleAuthAction} className="bg-cyber-blue hover:bg-cyber-blue/90">
               Login
             </Button>
           )}
