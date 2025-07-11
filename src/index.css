@@ -121,3 +121,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Full-screen layout styles */
+.tab-content, .main-content, .panel, .ai-assistant-panel, .project-manager-panel, .api-keys-panel {
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: auto !important;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--background));
+}

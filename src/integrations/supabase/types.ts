@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkout_sessions: {
+        Row: {
+          created_at: string
+          id: number
+          price_id: string
+          status: string
+          stripe_checkout_id: string
+          stripe_customer_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          price_id: string
+          status?: string
+          stripe_checkout_id: string
+          stripe_customer_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          price_id?: string
+          status?: string
+          stripe_checkout_id?: string
+          stripe_customer_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       creator_interactions: {
         Row: {
           answer: string
@@ -41,6 +74,206 @@ export type Database = {
           question?: string
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: number
+          name: string | null
+          stripe_customer_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: never
+          name?: string | null
+          stripe_customer_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: never
+          name?: string | null
+          stripe_customer_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prices: {
+        Row: {
+          active: boolean
+          created_at: string | null
+          currency: string
+          description: string | null
+          id: string
+          interval: string | null
+          interval_count: number | null
+          metadata: Json | null
+          product_id: string
+          trial_period_days: number | null
+          type: string
+          unit_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string | null
+          currency: string
+          description?: string | null
+          id: string
+          interval?: string | null
+          interval_count?: number | null
+          metadata?: Json | null
+          product_id: string
+          trial_period_days?: number | null
+          type: string
+          unit_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          interval?: string | null
+          interval_count?: number | null
+          metadata?: Json | null
+          product_id?: string
+          trial_period_days?: number | null
+          type?: string
+          unit_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          created_at: string | null
+          description: string | null
+          id: string
+          image: string | null
+          metadata: Json | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string | null
+          description?: string | null
+          id: string
+          image?: string | null
+          metadata?: Json | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string | null
+          metadata?: Json | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscription_payments: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          customer_id: string
+          id: number
+          invoice_id: string
+          payment_date: string
+          status: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          customer_id: string
+          id?: never
+          invoice_id: string
+          payment_date: string
+          status: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          customer_id?: string
+          id?: never
+          invoice_id?: string
+          payment_date?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at: string | null
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created: string
+          current_period_end: string
+          current_period_start: string
+          ended_at: string | null
+          id: string
+          price_id: string
+          quantity: number
+          status: string
+          trial_end: string | null
+          trial_start: string | null
+          user_id: string
+        }
+        Insert: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created: string
+          current_period_end: string
+          current_period_start: string
+          ended_at?: string | null
+          id: string
+          price_id: string
+          quantity: number
+          status: string
+          trial_end?: string | null
+          trial_start?: string | null
+          user_id: string
+        }
+        Update: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created?: string
+          current_period_end?: string
+          current_period_start?: string
+          ended_at?: string | null
+          id?: string
+          price_id?: string
+          quantity?: number
+          status?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -89,7 +322,7 @@ export type Database = {
         }
         Relationships: []
       }
-      user_subscriptions: {
+      user_subscriptions_backup: {
         Row: {
           created_at: string | null
           id: string
@@ -115,7 +348,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_stripe_customer_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_subscription_status: {
+        Args: Record<PropertyKey, never> | { user_id: string }
+        Returns: {
+          subscription_id: string
+          product_name: string
+          price_id: string
+          status: string
+          current_period_end: string
+          cancel_at_period_end: boolean
+          amount: number
+          currency: string
+          interval_value: string
+          interval_count: number
+        }[]
+      }
+      has_active_subscription: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      reset_query_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
