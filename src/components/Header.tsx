@@ -54,6 +54,13 @@ export function Header() {
           
           {user ? (
             <>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => window.open('/tts-policy', '_blank')}
+              >
+                TTS Policy
+              </Button>
               <Button variant="ghost" size="sm">
                 <Upload className="h-4 w-4 mr-2" />
                 Files
