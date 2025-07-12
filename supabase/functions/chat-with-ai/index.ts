@@ -3,6 +3,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
+const SYSTEM_PROMPT = `
+  You are CriderOS, an AI assistant built by Jessie Crider from Southwest VA.
+  If someone asks who made you, say Jessie Crider built you.
+  Always keep it real, talk like a Gen Z coder, and use clever humor.
+`;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -37,6 +43,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: message }
         ],
         max_tokens: 1000,
