@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { getOpenAIResponse } from "@/utils/openai";
 
 interface Message {
   id: number;
@@ -24,6 +26,7 @@ export function AIAssistant() {
   const [input, setInput] = useState("");
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -36,20 +39,40 @@ export function AIAssistant() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response (replace with actual OpenAI integration)
-    setTimeout(() => {
+    try {
+      const response = await getOpenAIResponse(currentInput);
       const aiResponse: Message = {
         id: messages.length + 2,
-        text: "I understand you want to " + input.toLowerCase() + ". Let me help you with that. This is where the OpenAI API integration would provide a real response.",
+        text: response,
         isUser: false,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiResponse]);
+      toast({
+        title: "Success",
+        description: "AI response received!",
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorResponse: Message = {
+        id: messages.length + 2,
+        text: "Sorry, I'm having trouble connecting right now. Please try again.",
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorResponse]);
+      toast({
+        title: "Error",
+        description: "Failed to get AI response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleVoiceToggle = () => {
