@@ -49,10 +49,11 @@ export function PlanPanel() {
       const tokensUsed = usageData?.tokens_used || 0;
       const ttsRequests = ttsData?.count || 0;
 
-      // Define limits based on plan
+      // Define limits based on plan (handle both 'plu' and 'plus' for backward compatibility)
       const limits = {
         free: { tokens: 1000, tts: 10 },
-        plu: { tokens: 50000, tts: 500 },
+        plu: { tokens: 50000, tts: 500 },   // Legacy format
+        plus: { tokens: 50000, tts: 500 },  // New format
         pro: { tokens: 200000, tts: 2000 }
       };
 
@@ -103,9 +104,9 @@ export function PlanPanel() {
     );
   }
 
-  const planName = isPlan('pro') ? 'Pro' : isPlan('plu') ? 'Plus' : 'Free';
-  const planIcon = isPlan('pro') ? Crown : isPlan('plu') ? Star : Zap;
-  const planColor = isPlan('pro') ? 'text-yellow-500' : isPlan('plu') ? 'text-blue-500' : 'text-gray-500';
+  const planName = (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plus' : 'Free');
+  const planIcon = isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap;
+  const planColor = isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500';
   const PlanIcon = planIcon;
 
   const features = [
@@ -131,7 +132,7 @@ export function PlanPanel() {
             <PlanIcon className={`h-8 w-8 ${planColor}`} />
             <CardTitle className="text-3xl">Current Plan: {planName}</CardTitle>
           </div>
-          <Badge variant={isPlan('pro') ? 'default' : isPlan('plu') ? 'secondary' : 'outline'} className="w-fit mx-auto">
+          <Badge variant={isPlan('pro') ? 'default' : (isPlan('plu') || isPlan('plus')) ? 'secondary' : 'outline'} className="w-fit mx-auto">
             {planName} Subscription
           </Badge>
         </CardHeader>

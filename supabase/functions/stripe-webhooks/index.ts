@@ -23,7 +23,7 @@ const supabase = createClient(
 // Plan mapping based on Stripe price amounts
 function getPlanFromAmount(amount: number): string {
   if (amount <= 999) return 'free';
-  if (amount <= 1999) return 'plu';
+  if (amount <= 1999) return 'plus';
   return 'pro';
 }
 

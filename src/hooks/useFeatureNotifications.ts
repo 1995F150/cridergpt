@@ -28,7 +28,8 @@ export function useFeatureNotifications() {
     switch (plan) {
       case 'free':
         return ['basic_chat', 'limited_tts'];
-      case 'plu':
+      case 'plu':  // Legacy format
+      case 'plus': // New format
         return ['basic_chat', 'unlimited_tts', 'premium_chat', 'file_upload'];
       case 'pro':
         return ['basic_chat', 'unlimited_tts', 'premium_chat', 'file_upload', 'advanced_ai', 'priority_support'];
@@ -48,7 +49,7 @@ export function useFeatureNotifications() {
     });
 
     // Show toast notification
-    const planName = new_plan === 'plu' ? 'Plus' : new_plan === 'pro' ? 'Pro' : 'Free';
+    const planName = (new_plan === 'plu' || new_plan === 'plus') ? 'Plus' : new_plan === 'pro' ? 'Pro' : 'Free';
     toast({
       title: "Subscription Updated!",
       description: `Your plan has been updated to ${planName}. New features are now available!`,
