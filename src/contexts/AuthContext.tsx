@@ -45,7 +45,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Clear any local storage items if needed
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Force page reload to ensure clean state
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Force redirect even if sign out fails
+      window.location.href = '/auth';
+    }
   };
 
   const value = {
