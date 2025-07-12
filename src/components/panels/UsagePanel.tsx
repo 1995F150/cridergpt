@@ -28,6 +28,47 @@ export function UsagePanel() {
   useEffect(() => {
     if (user) {
       fetchUsageData();
+      
+      // Set up real-time subscriptions
+      const tokenChannel = supabase
+        .channel('token-usage-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'openai_requests',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            const newRecord = payload.new as TokenUsage;
+            setTokenUsage(prev => [newRecord, ...prev.slice(0, 9)]);
+          }
+        )
+        .subscribe();
+
+      const ttsChannel = supabase
+        .channel('tts-requests-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'text_to_speech_requests',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            const newRecord = payload.new as TTSRequest;
+            setTTSRequests(prev => [newRecord, ...prev.slice(0, 9)]);
+          }
+        )
+        .subscribe();
+
+      // Cleanup function
+      return () => {
+        supabase.removeChannel(tokenChannel);
+        supabase.removeChannel(ttsChannel);
+      };
     }
   }, [user]);
 
