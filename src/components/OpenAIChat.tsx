@@ -32,11 +32,21 @@ function OpenAIChat() {
       });
     } catch (error) {
       console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to get AI response. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Check if it's a token limit error
+      if (error.message && error.message.includes('(Used:')) {
+        toast({
+          title: "Monthly Token Limit Reached",
+          description: "You've used all your tokens for this month. Upgrade your plan or wait until next month to continue using AI chat.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to get AI response. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
