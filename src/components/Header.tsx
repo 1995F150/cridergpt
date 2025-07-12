@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Key, Upload, LogOut, Sun, Moon } from "lucide-react";
+import { User, Upload, LogOut, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -54,10 +54,6 @@ export function Header() {
           
           {user ? (
             <>
-              <Button variant="ghost" size="sm">
-                <Key className="h-4 w-4 mr-2" />
-                API Keys
-              </Button>
               <Button variant="ghost" size="sm">
                 <Upload className="h-4 w-4 mr-2" />
                 Files

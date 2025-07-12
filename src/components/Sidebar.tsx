@@ -1,11 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIAssistant } from "@/components/AIAssistant";
 import { ProjectManager } from "@/components/ProjectManager";
-import { APIKeyManager } from "@/components/APIKeyManager";
 import { FileUpload } from "@/components/FileUpload";
 import { TextToSpeech } from "@/components/TextToSpeech";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bot, FolderOpen, Key, Upload, Volume2, BarChart3, CreditCard } from "lucide-react";
+import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard } from "lucide-react";
 import Pricing from "@/components/Pricing";
 
 export function Sidebar() {
@@ -24,12 +23,6 @@ export function Sidebar() {
             className="w-12 h-12 p-0 flex items-center justify-center data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
             <FolderOpen className="h-5 w-5" />
-          </TabsTrigger>
-          <TabsTrigger 
-            value="api" 
-            className="w-12 h-12 p-0 flex items-center justify-center data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-          >
-            <Key className="h-5 w-5" />
           </TabsTrigger>
           <TabsTrigger 
             value="files" 
@@ -66,9 +59,6 @@ export function Sidebar() {
             <ProjectManager />
           </TabsContent>
           
-          <TabsContent value="api" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
-            <APIKeyManager />
-          </TabsContent>
           
           <TabsContent value="files" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <FileUpload />
@@ -90,10 +80,6 @@ export function Sidebar() {
                   <div className="text-center">
                     <div className="text-2xl font-bold text-cyber-blue">3</div>
                     <div className="text-sm text-muted-foreground">Active Projects</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-tech-accent">2</div>
-                    <div className="text-sm text-muted-foreground">API Keys</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-500">5</div>
