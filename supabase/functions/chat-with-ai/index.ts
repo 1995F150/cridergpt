@@ -22,6 +22,11 @@ serve(async (req) => {
     }
 
     console.log('Received message:', message);
+    console.log('OpenAI API Key available:', !!openAIApiKey);
+
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured in Supabase secrets');
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
