@@ -158,6 +158,30 @@ export type Database = {
         }
         Relationships: []
       }
+      memories: {
+        Row: {
+          created_at: string
+          id: number
+          image_url: string
+          label: string
+          user_email: string
+        }
+        Insert: {
+          created_at: string
+          id?: number
+          image_url: string
+          label: string
+          user_email: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          image_url?: string
+          label?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
       openai_requests: {
         Row: {
           created_at: string
@@ -283,6 +307,24 @@ export type Database = {
           metadata?: Json | null
           name?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          id: number
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
