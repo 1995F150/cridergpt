@@ -1,0 +1,150 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
+
+interface TokenUsage {
+  id: number;
+  query: string;
+  model: string;
+  tokens_used: number;
+  created_at: string;
+}
+
+interface TTSRequest {
+  id: number;
+  text: string;
+  created_at: string;
+}
+
+export function UsagePanel() {
+  const { user } = useAuth();
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage[]>([]);
+  const [ttsRequests, setTTSRequests] = useState<TTSRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchUsageData();
+    }
+  }, [user]);
+
+  const fetchUsageData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch token usage from openai_requests
+      const { data: tokenData } = await supabase
+        .from('openai_requests')
+        .select('id, query, model, tokens_used, created_at')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Fetch TTS requests
+      const { data: ttsData } = await supabase
+        .from('text_to_speech_requests')
+        .select('id, text, created_at')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      setTokenUsage(tokenData || []);
+      setTTSRequests(ttsData || []);
+    } catch (error) {
+      console.error('Error fetching usage data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalTokens = tokenUsage.reduce((sum, usage) => sum + (usage.tokens_used || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="panel h-full w-full p-8 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel h-full w-full p-8 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg text-primary">Total Tokens Used</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{totalTokens.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg text-primary">TTS Requests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{ttsRequests.length}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
+          <CardHeader>
+            <CardTitle className="text-xl text-primary">Recent Token Usage</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {tokenUsage.length === 0 ? (
+              <p className="text-muted-foreground">No token usage found</p>
+            ) : (
+              tokenUsage.map((usage) => (
+                <div key={usage.id} className="border-b border-border pb-3 last:border-b-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {usage.model}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {usage.tokens_used} tokens
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground truncate" title={usage.query}>
+                    {usage.query}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(usage.created_at).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
+          <CardHeader>
+            <CardTitle className="text-xl text-primary">Recent TTS Requests</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {ttsRequests.length === 0 ? (
+              <p className="text-muted-foreground">No TTS requests found</p>
+            ) : (
+              ttsRequests.map((request) => (
+                <div key={request.id} className="border-b border-border pb-3 last:border-b-0">
+                  <p className="text-sm text-foreground truncate" title={request.text}>
+                    {request.text}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(request.created_at).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
