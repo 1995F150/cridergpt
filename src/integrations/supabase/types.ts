@@ -38,6 +38,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          last_reset: string | null
+          tokens_used: number
+          updated_at: string | null
+          user_id: string | null
+          user_plan: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_reset?: string | null
+          tokens_used?: number
+          updated_at?: string | null
+          user_id?: string | null
+          user_plan?: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_reset?: string | null
+          tokens_used?: number
+          updated_at?: string | null
+          user_id?: string | null
+          user_plan?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -608,6 +641,10 @@ export type Database = {
       has_active_subscription: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      reset_monthly_usage: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       reset_query_statistics: {
         Args: Record<PropertyKey, never>
