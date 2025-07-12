@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_requests: {
+        Row: {
+          created_at: string
+          id: number
+          prompt: string
+          response: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          prompt: string
+          response: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          prompt?: string
+          response?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: number
+          key: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: never
+          key: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: never
+          key?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       checkout_sessions: {
         Row: {
           created_at: string
@@ -104,6 +155,45 @@ export type Database = {
           stripe_customer_id?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      openai_requests: {
+        Row: {
+          created_at: string
+          free_tier_tokens: number
+          id: number
+          model: string
+          plus_tier_tokens: number
+          query: string
+          response: string | null
+          response_time_ms: number | null
+          tokens_used: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          free_tier_tokens?: number
+          id?: never
+          model: string
+          plus_tier_tokens?: number
+          query: string
+          response?: string | null
+          response_time_ms?: number | null
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          free_tier_tokens?: number
+          id?: never
+          model?: string
+          plus_tier_tokens?: number
+          query?: string
+          response?: string | null
+          response_time_ms?: number | null
+          tokens_used?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -277,6 +367,39 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          created_at: string
+          description: string
+          id: number
+          response_history: string[] | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: never
+          response_history?: string[] | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: never
+          response_history?: string[] | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       system_info: {
         Row: {
           created_at: string | null
@@ -298,6 +421,75 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      text_to_speech_requests: {
+        Row: {
+          audio_file_path: string
+          created_at: string
+          id: number
+          text: string
+          user_id: string
+        }
+        Insert: {
+          audio_file_path: string
+          created_at?: string
+          id?: never
+          text: string
+          user_id: string
+        }
+        Update: {
+          audio_file_path?: string
+          created_at?: string
+          id?: never
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tts_requests: {
+        Row: {
+          count: number | null
+          month: string
+          user_id: string
+        }
+        Insert: {
+          count?: number | null
+          month: string
+          user_id: string
+        }
+        Update: {
+          count?: number | null
+          month?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      uploaded_files: {
+        Row: {
+          file_name: string
+          file_path: string
+          file_size: number
+          id: number
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: never
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: never
+          uploaded_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -348,6 +540,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_user_request_tts: {
+        Args: { uid: string }
+        Returns: boolean
+      }
       get_stripe_customer_id: {
         Args: Record<PropertyKey, never>
         Returns: string

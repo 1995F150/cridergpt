@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Volume2, VolumeX, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function TextToSpeech() {
   const [text, setText] = useState("");
@@ -12,6 +13,13 @@ export function TextToSpeech() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  const canRequestTTS = async (userId: string) => {
+    const { data, error } = await supabase.rpc('can_user_request_tts', { uid: userId });
+    if (error) throw error;
+    return data; // true if allowed, false if capped out
+  };
 
   const generateSpeech = async () => {
     if (!text.trim()) {
@@ -23,8 +31,28 @@ export function TextToSpeech() {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Please sign in to use text-to-speech",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Check TTS request limit
+      const canRequest = await canRequestTTS(user.id);
+      if (!canRequest) {
+        toast({
+          title: "Monthly Limit Reached",
+          description: "You've hit your monthly TTS limit for your plan. Upgrade for more!",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { text: text.trim() }
       });
