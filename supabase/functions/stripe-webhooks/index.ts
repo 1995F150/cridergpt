@@ -61,6 +61,15 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
     return;
   }
   
+  // Get user_id from email
+  const { data: userData, error: userError } = await supabase
+    .from('ai_usage')
+    .select('user_id')
+    .eq('email', email)
+    .single();
+  
+  const userId = userData?.user_id;
+  
   // Update or create usage record
   const { error } = await supabase
     .from('ai_usage')
@@ -77,8 +86,33 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
   
   if (error) {
     console.error('Failed to update user plan:', error);
-  } else {
-    console.log(`Successfully updated plan for ${email} to ${plan}`);
+    return;
+  }
+  
+  console.log(`Successfully updated plan for ${email} to ${plan}`);
+  
+  // Send real-time notification to frontend if we have a user_id
+  if (userId) {
+    const notificationData = {
+      user_id: userId,
+      notification_type: 'subscription_updated',
+      data: {
+        new_plan: plan,
+        subscription_id: subscriptionId,
+        customer_id: customerId,
+        timestamp: new Date().toISOString()
+      }
+    };
+    
+    const { error: notificationError } = await supabase
+      .from('feature_notifications')
+      .insert(notificationData);
+    
+    if (notificationError) {
+      console.error('Failed to send notification:', notificationError);
+    } else {
+      console.log(`Sent real-time notification to user ${userId} for plan change to ${plan}`);
+    }
   }
 }
 
