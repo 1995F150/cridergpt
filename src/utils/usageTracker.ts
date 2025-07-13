@@ -6,10 +6,10 @@ export interface UsageLimits {
 }
 
 export const PLAN_LIMITS: Record<string, UsageLimits> = {
-  free: { tokens: 100, tts: 5 },
-  plus: { tokens: 10000, tts: 100 },
-  plu: { tokens: 10000, tts: 100 }, // Legacy format
-  pro: { tokens: 100000, tts: 9999999 } // Unlimited for Pro
+  free: { tokens: 13, tts: 5 },
+  plus: { tokens: 200, tts: 100 },
+  plu: { tokens: 200, tts: 100 }, // Legacy format
+  pro: { tokens: 500, tts: 9999999 } // Unlimited for Pro
 };
 
 export interface UserUsage {
