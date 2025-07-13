@@ -27,7 +27,7 @@ serve(async (req) => {
     const endpointSecret = Deno.env.get("STRIPE_CHECKOUT_SESSION_COMPLETED_WEBHOOK_SECRET");
     const event = stripe.webhooks.constructEvent(body, signature, endpointSecret || "");
 
-    console.log(`Processing webhook event: ${event.type}`);
+    console.log(`Processing webhook event: ${event.type} for ${event.data.object.customer_email}`);
 
     // Initialize Supabase with service role key for database updates
     const supabase = createClient(
@@ -39,18 +39,35 @@ serve(async (req) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      if (session.mode === "subscription" && session.customer_email) {
-        // Get subscription details to determine plan
-        const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-        const priceId = subscription.items.data[0].price.id;
-        
-        // Map price ID to plan name (update these with your actual price IDs)
+      // Handle both subscription and one-time payments from payment links
+      if (session.customer_email) {
         let planName = 'free';
-        if (priceId === 'price_1QWi0fIJp5CmkQf3fE8NSFZE') { // Plus plan
-          planName = 'plus';
-        } else if (priceId === 'price_1QWi1AIJp5CmkQf3Y8wQEP2V') { // Pro plan
-          planName = 'pro';
+        
+        if (session.mode === "subscription" && session.subscription) {
+          // Get subscription details to determine plan
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          const priceId = subscription.items.data[0].price.id;
+          
+          // Map price ID to plan name (update these with your actual price IDs)
+          if (priceId === 'price_1QWi0fIJp5CmkQf3fE8NSFZE') { // Plus plan
+            planName = 'plus';
+          } else if (priceId === 'price_1QWi1AIJp5CmkQf3Y8wQEP2V') { // Pro plan
+            planName = 'pro';
+          }
+        } else if (session.mode === "payment") {
+          // Handle one-time payment links - determine plan by amount or line items
+          const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+          const amount = lineItems.data[0]?.amount_total || 0;
+          
+          // Map amount to plan (adjust these amounts to match your pricing)
+          if (amount >= 2099) { // $20.99 or higher = Pro
+            planName = 'pro';
+          } else if (amount >= 999) { // $9.99 or higher = Plus
+            planName = 'plus';
+          }
         }
+
+        console.log(`Updating plan to: ${planName} for ${session.customer_email}`);
 
         // Update ai_usage table with subscription info
         const { data: aiUsageData, error: aiUsageError } = await supabase
@@ -65,7 +82,7 @@ serve(async (req) => {
         if (aiUsageError) {
           console.error('Error updating ai_usage:', aiUsageError);
         } else {
-          console.log('Updated ai_usage for:', session.customer_email);
+          console.log('Successfully updated ai_usage for:', session.customer_email);
         }
 
         // Update or insert customer record
