@@ -67,6 +67,40 @@ const UpdatesTab = () => {
 
   useEffect(() => {
     fetchUpdates();
+
+    // Set up real-time subscription for new system updates
+    const channel = supabase
+      .channel('system_updates_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'system_updates'
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            // Add new update to the beginning of the list
+            setUpdates(prev => [payload.new as SystemUpdate, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            // Update existing update
+            setUpdates(prev => prev.map(update => 
+              update.id === payload.new.id ? payload.new as SystemUpdate : update
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            // Remove deleted update
+            setUpdates(prev => prev.filter(update => update.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchUpdates = async () => {
