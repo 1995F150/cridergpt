@@ -215,24 +215,23 @@ export function FileUpload() {
             id="file-upload"
             disabled={uploading}
           />
-          <label htmlFor="file-upload">
-            <Button 
-              className="bg-primary hover:bg-primary/90 cursor-pointer"
-              disabled={uploading}
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Select Files
-                </>
-              )}
-            </Button>
-          </label>
+          <Button 
+            className="bg-primary hover:bg-primary/90 cursor-pointer"
+            disabled={uploading}
+            onClick={() => document.getElementById('file-upload')?.click()}
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Select Files
+              </>
+            )}
+          </Button>
         </div>
 
         {loading ? (
