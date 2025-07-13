@@ -71,13 +71,16 @@ const UpdatesTab = () => {
 
   const fetchUpdates = async () => {
     try {
+      console.log('Fetching system updates...');
       const { data, error } = await supabase
         .from('system_updates')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('System updates response:', { data, error });
       if (error) throw error;
       setUpdates((data || []) as SystemUpdate[]);
+      console.log('System updates set:', data);
     } catch (error) {
       console.error('Error fetching system updates:', error);
     } finally {
