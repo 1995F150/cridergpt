@@ -5,15 +5,34 @@ import { Check } from "lucide-react";
 const Pricing = () => {
 const plans = [
     {
+      name: "Free",
+      price: "$0",
+      period: "/month",
+      features: [
+        "Basic AI Assistant (100 tokens/month)",
+        "1 Project",
+        "2 API Key Slots", 
+        "Basic File Upload (10MB)",
+        "Text-to-Speech (5 requests/month)",
+        "System Updates Access",
+        "Community Support"
+      ],
+      highlighted: false,
+      stripeLink: null // Free plan doesn't need Stripe
+    },
+    {
       name: "Plus",
       price: "$9.99",
       period: "/month",
       features: [
-        "AI Assistant Access",
-        "Basic Project Management",
+        "AI Assistant Access (10,000 tokens/month)",
+        "Backend Code Generator",
+        "Basic Project Management (5 projects)",
         "5 API Key Slots",
         "Standard File Upload (100MB)",
         "Text-to-Speech (100 requests/month)",
+        "Activity Updates Tracking",
+        "System Updates Access",
         "Email Support"
       ],
       highlighted: false,
@@ -25,14 +44,18 @@ const plans = [
       period: "/month",
       features: [
         "Everything in Plus",
-        "Advanced AI Features",
+        "Advanced AI Features (100,000 tokens/month)",
+        "Advanced Backend Code Generator",
         "Unlimited Projects",
         "Unlimited API Keys",
         "Premium File Upload (1GB)",
         "Text-to-Speech (Unlimited)",
+        "Advanced Activity Analytics",
+        "Real-time Updates & Notifications",
         "FS22/FS25 Mod Deployment",
         "Priority Support",
-        "Custom Automation Scripts"
+        "Custom Automation Scripts",
+        "Advanced Security Features"
       ],
       highlighted: true,
       stripeLink: "https://buy.stripe.com/8x2dRbfbO4Xq2ee6y4dZ600"
@@ -51,7 +74,7 @@ const plans = [
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.name}
@@ -100,9 +123,16 @@ const plans = [
                     : "bg-cyber-blue hover:bg-cyber-blue/90"
                 }`}
                 size="lg"
-                onClick={() => window.open(plan.stripeLink, '_blank')}
+                onClick={() => {
+                  if (plan.stripeLink) {
+                    window.open(plan.stripeLink, '_blank');
+                  } else {
+                    // For free plan, could redirect to sign up
+                    window.location.href = '/auth';
+                  }
+                }}
               >
-                Get Started
+                {plan.name === "Free" ? "Get Started Free" : "Get Started"}
               </Button>
             </div>
           ))}
