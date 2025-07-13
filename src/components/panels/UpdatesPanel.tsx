@@ -77,7 +77,11 @@ export function UpdatesPanel() {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          setUpdates(prev => [payload.new as UserUpdate, ...prev]);
+          // Double-check the user_id matches before adding to state
+          const newUpdate = payload.new as UserUpdate;
+          if (newUpdate.user_id === user.id) {
+            setUpdates(prev => [newUpdate, ...prev]);
+          }
         }
       )
       .subscribe();
