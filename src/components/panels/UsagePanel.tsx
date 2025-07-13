@@ -38,7 +38,7 @@ export function UsagePanel() {
     if (user) {
       fetchUsageData();
       
-      // Set up real-time subscriptions
+      // Set up real-time subscriptions for live counting
       const tokenChannel = supabase
         .channel('token-usage-changes')
         .on(
@@ -50,8 +50,25 @@ export function UsagePanel() {
             filter: `user_id=eq.${user.id}`
           },
           (payload) => {
+            console.log('New token usage:', payload.new);
             const newRecord = payload.new as TokenUsage;
             setTokenUsage(prev => [newRecord, ...prev.slice(0, 9)]);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'openai_requests',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Updated token usage:', payload.new);
+            const updatedRecord = payload.new as TokenUsage;
+            setTokenUsage(prev => prev.map(item => 
+              item.id === updatedRecord.id ? updatedRecord : item
+            ));
           }
         )
         .subscribe();
@@ -67,8 +84,45 @@ export function UsagePanel() {
             filter: `user_id=eq.${user.id}`
           },
           (payload) => {
+            console.log('New TTS request:', payload.new);
             const newRecord = payload.new as TTSRequest;
             setTTSRequests(prev => [newRecord, ...prev.slice(0, 9)]);
+          }
+        )
+        .subscribe();
+
+      // Listen to all token usage changes for live total calculation
+      const allTokenChannel = supabase
+        .channel('all-token-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'openai_requests'
+          },
+          () => {
+            // Refetch data when any token usage changes globally
+            console.log('Global token usage changed, refetching...');
+            fetchUsageData();
+          }
+        )
+        .subscribe();
+
+      // Listen to all TTS changes for live total calculation  
+      const allTtsChannel = supabase
+        .channel('all-tts-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'text_to_speech_requests'
+          },
+          () => {
+            // Refetch data when any TTS request changes globally
+            console.log('Global TTS usage changed, refetching...');
+            fetchUsageData();
           }
         )
         .subscribe();
@@ -77,6 +131,8 @@ export function UsagePanel() {
       return () => {
         supabase.removeChannel(tokenChannel);
         supabase.removeChannel(ttsChannel);
+        supabase.removeChannel(allTokenChannel);
+        supabase.removeChannel(allTtsChannel);
       };
     }
   }, [user]);
