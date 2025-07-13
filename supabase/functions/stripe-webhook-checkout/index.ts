@@ -48,10 +48,10 @@ serve(async (req) => {
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
           const priceId = subscription.items.data[0].price.id;
           
-          // Map price ID to plan name (update these with your actual price IDs)
-          if (priceId === 'price_1QWi0fIJp5CmkQf3fE8NSFZE') { // Plus plan
+          // Map price ID to plan name
+          if (priceId === 'price_1Rell1P90uC07RqG5S4mEjHC') { // Plus plan
             planName = 'plus';
-          } else if (priceId === 'price_1QWi1AIJp5CmkQf3Y8wQEP2V') { // Pro plan
+          } else if (priceId === 'price_1QWi1AIJp5CmkQf3Y8wQEP2V') { // Pro plan (update with actual Pro price ID)
             planName = 'pro';
           }
         } else if (session.mode === "payment") {
