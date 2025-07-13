@@ -45,6 +45,7 @@ export type Database = {
           id: string
           last_reset: string | null
           tokens_used: number
+          tts_requests: number | null
           updated_at: string | null
           user_id: string | null
           user_plan: string
@@ -55,6 +56,7 @@ export type Database = {
           id?: string
           last_reset?: string | null
           tokens_used?: number
+          tts_requests?: number | null
           updated_at?: string | null
           user_id?: string | null
           user_plan?: string
@@ -65,6 +67,7 @@ export type Database = {
           id?: string
           last_reset?: string | null
           tokens_used?: number
+          tts_requests?: number | null
           updated_at?: string | null
           user_id?: string | null
           user_plan?: string
