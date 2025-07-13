@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Upload, LogOut, Sun, Moon } from "lucide-react";
+import { Upload, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { ProfileDropdown } from "@/components/ProfileDropdown";
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -65,14 +65,7 @@ export function Header() {
                 <Upload className="h-4 w-4 mr-2" />
                 Files
               </Button>
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-cyber-blue text-background">
-                  <User className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <Button variant="ghost" size="sm" onClick={handleAuthAction}>
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <ProfileDropdown />
             </>
           ) : (
             <Button onClick={handleAuthAction} className="bg-cyber-blue hover:bg-cyber-blue/90">
