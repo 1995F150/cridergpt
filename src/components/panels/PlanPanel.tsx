@@ -49,12 +49,12 @@ export function PlanPanel() {
       const tokensUsed = usageData?.tokens_used || 0;
       const ttsRequests = ttsData?.count || 0;
 
-      // Define limits based on plan (handle both 'plu' and 'plus' for backward compatibility)
+      // Define limits based on plan - matching the new pricing structure
       const limits = {
-        free: { tokens: 1000, tts: 10 },
-        plu: { tokens: 50000, tts: 500 },   // Legacy format
-        plus: { tokens: 50000, tts: 500 },  // New format
-        pro: { tokens: 200000, tts: 2000 }
+        free: { tokens: 100, tts: 5 },
+        plu: { tokens: 10000, tts: 100 },   // Legacy format
+        plus: { tokens: 10000, tts: 100 },  // New format  
+        pro: { tokens: 100000, tts: 9999999 } // Unlimited for Pro (large number)
       };
 
       const currentLimits = limits[plan as keyof typeof limits] || limits.free;
@@ -110,14 +110,18 @@ export function PlanPanel() {
   const PlanIcon = planIcon;
 
   const features = [
-    { name: 'AI Chat Access', free: true, plus: true, pro: true },
-    { name: 'Basic TTS (10/month)', free: true, plus: false, pro: false },
-    { name: 'Unlimited TTS', free: false, plus: true, pro: true },
-    { name: 'Premium Chat Models', free: false, plus: true, pro: true },
+    { name: 'AI Chat (100 tokens/month)', free: true, plus: false, pro: false },
+    { name: 'AI Chat (10,000 tokens/month)', free: false, plus: true, pro: false },
+    { name: 'AI Chat (100,000 tokens/month)', free: false, plus: false, pro: true },
+    { name: 'TTS (5 requests/month)', free: true, plus: false, pro: false },
+    { name: 'TTS (100 requests/month)', free: false, plus: true, pro: false },
+    { name: 'TTS (Unlimited)', free: false, plus: false, pro: true },
+    { name: 'Backend Code Generator', free: false, plus: true, pro: true },
+    { name: 'Project Management', free: false, plus: true, pro: true },
+    { name: 'Activity Updates', free: false, plus: true, pro: true },
     { name: 'File Upload', free: false, plus: true, pro: true },
     { name: 'Advanced AI Features', free: false, plus: false, pro: true },
     { name: 'Priority Support', free: false, plus: false, pro: true },
-    { name: 'Higher Token Limits', free: false, plus: true, pro: true },
   ];
 
   const tokenUsagePercent = subscriptionData ? (subscriptionData.tokensUsed / subscriptionData.tokenLimit) * 100 : 0;
