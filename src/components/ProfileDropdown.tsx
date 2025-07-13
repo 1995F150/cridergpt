@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { User, Settings, LogOut, UserCircle } from "lucide-react";
+import { User, Settings, LogOut, UserCircle, File, MessageCircle, Folder, Cpu, Activity, Moon, Sun } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
@@ -20,6 +22,7 @@ interface Profile {
 
 export function ProfileDropdown() {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
@@ -146,7 +149,7 @@ export function ProfileDropdown() {
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 bg-card/95 backdrop-blur-sm border-border" align="end">
+      <DropdownMenuContent className="w-56 p-2 bg-card/95 backdrop-blur-sm border-border" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{getDisplayName()}</p>
@@ -156,21 +159,68 @@ export function ProfileDropdown() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        
         <DropdownMenuItem className="cursor-pointer">
-          <UserCircle className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+          <User className="mr-2 h-4 w-4" />
+          <span>My Account</span>
         </DropdownMenuItem>
+        
         <DropdownMenuItem className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
+        
+        <DropdownMenuItem className="cursor-pointer">
+          <Folder className="mr-2 h-4 w-4" />
+          <span>My Files</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem className="cursor-pointer">
+          <Cpu className="mr-2 h-4 w-4" />
+          <span>AI Settings</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem className="cursor-pointer">
+          <Activity className="mr-2 h-4 w-4" />
+          <span>Usage Stats</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem className="cursor-pointer">
+          <File className="mr-2 h-4 w-4" />
+          <span>Tokens & Credits</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem className="cursor-pointer">
+          <MessageCircle className="mr-2 h-4 w-4" />
+          <span>Feedback / Help</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.preventDefault(); toggleTheme(); }}>
+          <span className="flex items-center w-full">
+            {theme === 'dark' ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+            <span>Dark Mode</span>
+            <Switch className="ml-auto" checked={theme === 'dark'} onCheckedChange={toggleTheme} />
+          </span>
+        </DropdownMenuItem>
+        
         <DropdownMenuSeparator />
+        
+        <DropdownMenuItem disabled>
+          <span className="text-xs text-muted-foreground">CriderRank: Level 3</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem disabled>
+          <span className="text-xs text-muted-foreground">Built by Jessie Crider</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
         <DropdownMenuItem 
           className="cursor-pointer text-destructive focus:text-destructive"
           onClick={signOut}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
