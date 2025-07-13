@@ -16,6 +16,7 @@ import { PricingPanel } from "@/components/panels/PricingPanel";
 import { StatusPanel } from "@/components/panels/StatusPanel";
 import { PlanPanel } from "@/components/panels/PlanPanel";
 import { MediaPanel } from "@/components/panels/MediaPanel";
+import UpdatesTab from "@/components/UpdatesTab";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
@@ -37,7 +38,7 @@ const Index = () => {
       case 'media':
         return <MediaPanel />;
       case 'updates':
-        return <UpdatesPanel />;
+        return <UpdatesTab />;
       case 'plan':
         return <PlanPanel />;
       case 'usage':

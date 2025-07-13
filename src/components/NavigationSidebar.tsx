@@ -1,4 +1,4 @@
-import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Clock } from "lucide-react";
+import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Megaphone } from "lucide-react";
 
 interface NavigationSidebarProps {
   activeTab: string;
@@ -11,7 +11,7 @@ const tabs = [
   { id: 'files', icon: Upload, label: 'Files' },
   { id: 'tts', icon: Volume2, label: 'Text to Speech' },
   { id: 'media', icon: Palette, label: 'Media Generator' },
-  { id: 'updates', icon: Clock, label: 'Updates' },
+  { id: 'updates', icon: Megaphone, label: 'System Updates' },
   { id: 'plan', icon: Crown, label: 'Current Plan' },
   { id: 'usage', icon: Activity, label: 'Usage' },
   { id: 'pricing', icon: CreditCard, label: 'Pricing' },
