@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { User, Settings, LogOut, UserCircle, File, MessageCircle, Folder, Cpu, Activity, Moon, Sun } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
+import { FeedbackModal } from "./FeedbackModal";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +25,15 @@ interface Profile {
 export function ProfileDropdown() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
+
+  const handleComingSoon = (feature: string) => {
+    toast({
+      title: "Coming Soon!",
+      description: `${feature} feature is in development and will be available soon.`,
+    });
+  };
 
   useEffect(() => {
     if (user) {
@@ -160,40 +170,44 @@ export function ProfileDropdown() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer" onClick={() => handleComingSoon("My Account")}>
           <User className="mr-2 h-4 w-4" />
           <span>My Account</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer" onClick={() => handleComingSoon("Settings")}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer" onClick={() => handleComingSoon("My Files")}>
           <Folder className="mr-2 h-4 w-4" />
           <span>My Files</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer" onClick={() => handleComingSoon("AI Settings")}>
           <Cpu className="mr-2 h-4 w-4" />
           <span>AI Settings</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer" onClick={() => handleComingSoon("Usage Stats")}>
           <Activity className="mr-2 h-4 w-4" />
           <span>Usage Stats</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer" onClick={() => handleComingSoon("Tokens & Credits")}>
           <File className="mr-2 h-4 w-4" />
           <span>Tokens & Credits</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
-          <MessageCircle className="mr-2 h-4 w-4" />
-          <span>Feedback / Help</span>
-        </DropdownMenuItem>
+        <FeedbackModal
+          trigger={
+            <DropdownMenuItem className="cursor-pointer" onSelect={(e) => e.preventDefault()}>
+              <MessageCircle className="mr-2 h-4 w-4" />
+              <span>Feedback / Help</span>
+            </DropdownMenuItem>
+          }
+        />
         
         <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.preventDefault(); toggleTheme(); }}>
           <span className="flex items-center w-full">
