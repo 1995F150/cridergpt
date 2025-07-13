@@ -14,6 +14,7 @@ import { UsagePanel } from "@/components/panels/UsagePanel";
 import { PricingPanel } from "@/components/panels/PricingPanel";
 import { StatusPanel } from "@/components/panels/StatusPanel";
 import { PlanPanel } from "@/components/panels/PlanPanel";
+import { MediaPanel } from "@/components/panels/MediaPanel";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
@@ -32,6 +33,8 @@ const Index = () => {
         return <FilesPanel />;
       case 'tts':
         return <TTSPanel />;
+      case 'media':
+        return <MediaPanel />;
       case 'plan':
         return <PlanPanel />;
       case 'usage':
