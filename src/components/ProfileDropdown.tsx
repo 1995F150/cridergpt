@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { User, Settings, LogOut, UserCircle, File, MessageCircle, Folder, Cpu, Activity, Moon, Sun } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { FeedbackModal } from "./FeedbackModal";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -200,14 +199,17 @@ export function ProfileDropdown() {
           <span>Tokens & Credits</span>
         </DropdownMenuItem>
         
-        <FeedbackModal
-          trigger={
-            <DropdownMenuItem className="cursor-pointer" onSelect={(e) => e.preventDefault()}>
-              <MessageCircle className="mr-2 h-4 w-4" />
-              <span>Feedback / Help</span>
-            </DropdownMenuItem>
-          }
-        />
+        <DropdownMenuItem asChild>
+          <a
+            href={`mailto:jessiecrider3@gmail.com?subject=Feedback from CriderOS&body=Hey Jessie, here's my feedback:`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center cursor-pointer"
+          >
+            <MessageCircle className="mr-2 h-4 w-4" />
+            <span>Feedback / Help</span>
+          </a>
+        </DropdownMenuItem>
         
         <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.preventDefault(); toggleTheme(); }}>
           <span className="flex items-center w-full">
