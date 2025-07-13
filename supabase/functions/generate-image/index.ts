@@ -2,6 +2,13 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const TOKEN_LIMITS = {
+  free: 13,
+  plu: 200,
+  plus: 200,
+  pro: 500
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -12,28 +19,110 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Create Supabase client using service role key for database operations
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { persistSession: false } }
+  );
+
   try {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Initialize Supabase for user authentication
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
-
-    // Authenticate user
+    // Get user from auth header (optional for anonymous usage)
+    let userId = null;
+    let userEmail = null;
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header provided');
+    
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id;
+        userEmail = user?.email;
+        console.log('Authenticated user:', userId, userEmail);
+      } catch (error) {
+        console.log('Authentication failed, continuing as anonymous');
+      }
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) {
-      throw new Error('User not authenticated');
+    // For anonymous users, use IP-based tracking
+    const clientIp = req.headers.get('x-forwarded-for') || 'anonymous';
+    const trackingId = userId || userEmail || clientIp;
+
+    console.log('Tracking usage for:', trackingId);
+
+    // Check/create usage record
+    let { data: usage, error: usageError } = await supabase
+      .from('ai_usage')
+      .select('*')
+      .or(userId ? `user_id.eq.${userId}` : `email.eq.${trackingId}`)
+      .single();
+
+    if (usageError && usageError.code !== 'PGRST116') {
+      console.error('Database error:', usageError);
+      throw new Error('Failed to check usage limits');
+    }
+
+    // Create new usage record if doesn't exist
+    if (!usage) {
+      const { data: newUsage, error: insertError } = await supabase
+        .from('ai_usage')
+        .insert({
+          user_id: userId,
+          email: trackingId,
+          tokens_used: 0,
+          user_plan: 'free'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Failed to create usage record:', insertError);
+        throw new Error('Failed to initialize usage tracking');
+      }
+      usage = newUsage;
+    }
+
+    // Reset usage if it's a new month
+    const today = new Date().toISOString().split('T')[0];
+    const lastReset = usage.last_reset;
+    if (lastReset && lastReset < today) {
+      const { error: resetError } = await supabase
+        .from('ai_usage')
+        .update({ 
+          tokens_used: 0, 
+          last_reset: today,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', usage.id);
+      
+      if (!resetError) {
+        usage.tokens_used = 0;
+      }
+    }
+
+    // Check token limits based on user plan
+    const userPlan = usage.user_plan || 'free';
+    const tokenLimit = TOKEN_LIMITS[userPlan] || TOKEN_LIMITS.free;
+    
+    console.log(`User plan: ${userPlan}, Used: ${usage.tokens_used}, Limit: ${tokenLimit}`);
+
+    if (usage.tokens_used >= tokenLimit) {
+      return new Response(JSON.stringify({ 
+        error: "You've hit your plan's token limit! 🚫 Upgrade for more AI sauce.",
+        usage: {
+          used: usage.tokens_used,
+          limit: tokenLimit,
+          plan: userPlan
+        }
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const { prompt, size = '1024x1024', quality = 'standard', style = 'vivid' } = await req.json();
@@ -42,7 +131,7 @@ serve(async (req) => {
       throw new Error('Prompt is required');
     }
 
-    console.log(`Generating image for user ${userData.user.id} with prompt: ${prompt}`);
+    console.log(`Generating image for user ${userId || 'anonymous'} with prompt: ${prompt}`);
 
     // Call OpenAI Image Generation API
     const response = await fetch('https://api.openai.com/v1/images/generations', {
@@ -75,25 +164,39 @@ serve(async (req) => {
       throw new Error('No image data received from OpenAI');
     }
 
-    // Log the generation for analytics
-    const supabaseService = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
-    );
+    // Increment usage count after successful response (same as chat function)
+    const { error: updateError } = await supabase
+      .from('ai_usage')
+      .update({ 
+        tokens_used: usage.tokens_used + 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', usage.id);
 
-    // Store the image generation record
-    await supabaseService.from('ai_requests').insert({
-      user_id: userData.user.id,
+    if (updateError) {
+      console.error('Failed to update usage count:', updateError);
+    }
+
+    // Log the generation for analytics (same as chat function)
+    await supabase.from('ai_requests').insert({
+      user_id: userId,
       prompt: prompt,
       response: 'Image generated successfully'
     });
+
+    console.log('Image generated successfully, usage updated');
 
     return new Response(
       JSON.stringify({
         success: true,
         imageData: imageData.b64_image,
-        revisedPrompt: imageData.revised_prompt
+        revisedPrompt: imageData.revised_prompt,
+        usage: {
+          used: usage.tokens_used + 1,
+          limit: tokenLimit,
+          plan: userPlan,
+          remaining: tokenLimit - (usage.tokens_used + 1)
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
