@@ -3,20 +3,49 @@ import { useSearchParams, Link } from "react-router-dom";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Success = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate a brief loading state to show confirmation
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    const verifyPayment = async () => {
+      if (!sessionId) {
+        setLoading(false);
+        return;
+      }
 
-    return () => clearTimeout(timer);
-  }, []);
+      try {
+        const { data, error } = await supabase.functions.invoke('verify-subscription', {
+          body: { sessionId }
+        });
+
+        if (error) throw error;
+
+        if (data?.success) {
+          toast({
+            title: "Subscription Activated!",
+            description: `Your ${data.plan} plan is now active.`,
+          });
+        }
+      } catch (error: any) {
+        console.error('Payment verification error:', error);
+        toast({
+          title: "Verification Error",
+          description: "Payment successful, but verification failed. Please contact support.",
+          variant: "destructive",
+        });
+      } finally {
+        setTimeout(() => setLoading(false), 1000);
+      }
+    };
+
+    verifyPayment();
+  }, [sessionId, toast]);
 
   if (loading) {
     return (
