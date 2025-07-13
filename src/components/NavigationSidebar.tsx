@@ -13,7 +13,6 @@ const tabs = [
   { id: 'media', icon: Palette, label: 'Media Generator' },
   { id: 'updates', icon: Megaphone, label: 'System Updates' },
   { id: 'plan', icon: Crown, label: 'Current Plan' },
-  { id: 'usage', icon: Activity, label: 'Usage' },
   { id: 'pricing', icon: CreditCard, label: 'Pricing' },
   { id: 'status', icon: BarChart3, label: 'Status' },
 ];
