@@ -11,7 +11,7 @@ import { APIPanel } from "@/components/panels/APIPanel";
 import { FilesPanel } from "@/components/panels/FilesPanel";
 import { CodePanel } from "@/components/panels/CodePanel";
 import { TTSPanel } from "@/components/panels/TTSPanel";
-
+import { ReviewsPanel } from "@/components/panels/ReviewsPanel";
 import { UpdatesPanel } from "@/components/panels/UpdatesPanel";
 import { PricingPanel } from "@/components/panels/PricingPanel";
 import { StatusPanel } from "@/components/panels/StatusPanel";
@@ -40,6 +40,8 @@ const Index = () => {
         return <TTSPanel />;
       case 'media':
         return <MediaPanel />;
+      case 'reviews':
+        return <ReviewsPanel />;
       case 'updates':
         return <UpdatesTab />;
       case 'plan':
