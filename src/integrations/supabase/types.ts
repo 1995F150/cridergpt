@@ -529,6 +529,42 @@ export type Database = {
         }
         Relationships: []
       }
+      system_updates: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          message: string
+          priority: string
+          title: string
+          type: string
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          message: string
+          priority?: string
+          title: string
+          type?: string
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          message?: string
+          priority?: string
+          title?: string
+          type?: string
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       text_to_speech_requests: {
         Row: {
           audio_file_path: string
