@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Success from "./pages/Success";
 import TTSPolicyPage from "./pages/TTSPolicyPage";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/success" element={<Success />} />
               <Route path="/tts-policy" element={<TTSPolicyPage />} />
               <Route path="/" element={
                 <ProtectedRoute>

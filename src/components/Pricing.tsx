@@ -1,9 +1,15 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const Pricing = () => {
-const plans = [
+  const { toast } = useToast();
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const plans = [
     {
       name: "Free",
       price: "$0",
@@ -18,7 +24,7 @@ const plans = [
         "Community Support"
       ],
       highlighted: false,
-      stripeLink: null // Free plan doesn't need Stripe
+      priceId: null // Free plan doesn't need Stripe
     },
     {
       name: "Plus",
@@ -36,7 +42,7 @@ const plans = [
         "Email Support"
       ],
       highlighted: false,
-      stripeLink: "https://buy.stripe.com/bJe28t1kY89C3iiaOkdZ605"
+      priceId: "price_1QWi0fIJp5CmkQf3fE8NSFZE" // Replace with your actual price ID
     },
     {
       name: "Pro",
@@ -57,9 +63,51 @@ const plans = [
         "Advanced Security Features"
       ],
       highlighted: true,
-      stripeLink: "https://buy.stripe.com/8x2dRbfbO4Xq2ee6y4dZ600"
+      priceId: "price_1QWi1AIJp5CmkQf3Y8wQEP2V" // Replace with your actual price ID
     }
   ];
+
+  const handlePlanSelect = async (plan: typeof plans[0]) => {
+    if (!plan.priceId) {
+      // Free plan - redirect to auth
+      window.location.href = '/auth';
+      return;
+    }
+
+    setLoading(plan.name);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to subscribe to a plan.",
+          variant: "destructive",
+        });
+        window.location.href = '/auth';
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId: plan.priceId }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create checkout session",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <section className="py-16 px-4">
@@ -122,16 +170,13 @@ const plans = [
                     : "bg-cyber-blue hover:bg-cyber-blue/90"
                 }`}
                 size="lg"
-                onClick={() => {
-                  if (plan.stripeLink) {
-                    window.open(plan.stripeLink, '_blank');
-                  } else {
-                    // For free plan, could redirect to sign up
-                    window.location.href = '/auth';
-                  }
-                }}
+                disabled={loading === plan.name}
+                onClick={() => handlePlanSelect(plan)}
               >
-                {plan.name === "Free" ? "Get Started Free" : "Get Started"}
+                {loading === plan.name 
+                  ? "Processing..." 
+                  : plan.name === "Free" ? "Get Started Free" : "Get Started"
+                }
               </Button>
             </div>
           ))}
