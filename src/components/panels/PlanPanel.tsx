@@ -49,12 +49,12 @@ export function PlanPanel() {
       const tokensUsed = usageData?.tokens_used || 0;
       const ttsRequests = ttsData?.count || 0;
 
-      // Define limits based on plan - matching the new pricing structure
+      // Define limits based on plan - matching usageTracker.ts
       const limits = {
-        free: { tokens: 100, tts: 5 },
-        plu: { tokens: 10000, tts: 100 },   // Legacy format
-        plus: { tokens: 10000, tts: 100 },  // New format  
-        pro: { tokens: 100000, tts: 9999999 } // Unlimited for Pro (large number)
+        free: { tokens: 13, tts: 5 },
+        plu: { tokens: 200, tts: 100 },   // Legacy format
+        plus: { tokens: 200, tts: 100 },  // New format  
+        pro: { tokens: 500, tts: 9999999 } // Unlimited for Pro (large number)
       };
 
       const currentLimits = limits[plan as keyof typeof limits] || limits.free;
@@ -110,9 +110,9 @@ export function PlanPanel() {
   const PlanIcon = planIcon;
 
   const features = [
-    { name: 'AI Chat (100 tokens/month)', free: true, plus: false, pro: false },
-    { name: 'AI Chat (10,000 tokens/month)', free: false, plus: true, pro: false },
-    { name: 'AI Chat (100,000 tokens/month)', free: false, plus: false, pro: true },
+    { name: 'AI Chat (13 tokens/month)', free: true, plus: false, pro: false },
+    { name: 'AI Chat (200 tokens/month)', free: false, plus: true, pro: false },
+    { name: 'AI Chat (500 tokens/month)', free: false, plus: false, pro: true },
     { name: 'TTS (5 requests/month)', free: true, plus: false, pro: false },
     { name: 'TTS (100 requests/month)', free: false, plus: true, pro: false },
     { name: 'TTS (Unlimited)', free: false, plus: false, pro: true },
