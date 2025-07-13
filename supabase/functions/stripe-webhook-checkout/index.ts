@@ -51,7 +51,7 @@ serve(async (req) => {
           // Map price ID to plan name
           if (priceId === 'price_1Rell1P90uC07RqG5S4mEjHC') { // Plus plan
             planName = 'plus';
-          } else if (priceId === 'price_1QWi1AIJp5CmkQf3Y8wQEP2V') { // Pro plan (update with actual Pro price ID)
+          } else if (priceId === 'price_1RellmP90uC07RqGFSDHaCwu') { // Pro plan
             planName = 'pro';
           }
         } else if (session.mode === "payment") {
