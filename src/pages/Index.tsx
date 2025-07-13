@@ -9,6 +9,7 @@ import { AssistantPanel } from "@/components/panels/AssistantPanel";
 import { ProjectPanel } from "@/components/panels/ProjectPanel";
 import { APIPanel } from "@/components/panels/APIPanel";
 import { FilesPanel } from "@/components/panels/FilesPanel";
+import { CodePanel } from "@/components/panels/CodePanel";
 import { TTSPanel } from "@/components/panels/TTSPanel";
 
 import { UpdatesPanel } from "@/components/panels/UpdatesPanel";
@@ -33,6 +34,8 @@ const Index = () => {
         return <APIPanel />;
       case 'files':
         return <FilesPanel />;
+      case 'code':
+        return <CodePanel />;
       case 'tts':
         return <TTSPanel />;
       case 'media':
