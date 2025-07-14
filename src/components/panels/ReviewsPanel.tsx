@@ -1,29 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
+interface Review {
+  id: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
+  user_id: string;
+}
 
 export function ReviewsPanel() {
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
-  const [reviews, setReviews] = useState([
-    // Example reviews for demo
-    { stars: 5, text: "This AI is literally built different. CriderOS is 🔥.", user: "Jessie" },
-    { stars: 4, text: "Needs dark mode on my toaster, but solid.", user: "Anonymous" }
-  ]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (rating && review) {
-      setReviews([{ stars: rating, text: review, user: "You" }, ...reviews]);
-      setRating(0);
-      setReview('');
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const fetchReviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReviews(data || []);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      toast.error('Failed to load reviews');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const avg = (reviews.reduce((a, b) => a + b.stars, 0) / reviews.length).toFixed(1);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error('Please sign in to submit a review');
+      return;
+    }
+    
+    if (!rating || !review) {
+      toast.error('Please provide both a rating and review text');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          user_id: user.id,
+          rating,
+          review_text: review
+        });
+
+      if (error) throw error;
+      
+      toast.success('Review submitted successfully!');
+      setRating(0);
+      setReview('');
+      fetchReviews(); // Refresh reviews
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast.error('Failed to submit review');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const avg = reviews.length > 0 
+    ? (reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1)
+    : '0.0';
 
   return (
     <div className="flex-1 p-6 bg-background overflow-auto">
@@ -74,10 +134,10 @@ export function ReviewsPanel() {
             
             <Button
               type="submit"
-              disabled={!rating || !review}
+              disabled={!rating || !review || submitting}
               className="w-full sm:w-auto"
             >
-              Submit Review
+              {submitting ? 'Submitting...' : 'Submit Review'}
             </Button>
           </form>
 
@@ -85,24 +145,28 @@ export function ReviewsPanel() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Reviews ({reviews.length})</h3>
             
-            {reviews.length === 0 && (
+            {loading && (
+              <p className="text-muted-foreground">Loading reviews...</p>
+            )}
+            
+            {!loading && reviews.length === 0 && (
               <p className="text-muted-foreground">No reviews yet. Be the first to rate CriderOS!</p>
             )}
             
-            {reviews.map((r, idx) => (
-              <Card key={idx} className="bg-muted/20">
+            {reviews.map((r) => (
+              <Card key={r.id} className="bg-muted/20">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1">
-                      {[...Array(r.stars)].map((_, i) => (
+                      {[...Array(r.rating)].map((_, i) => (
                         <Star key={i} className="h-4 w-4 text-yellow-500 fill-current" />
                       ))}
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                      {r.user}
+                      {new Date(r.created_at).toLocaleDateString()}
                     </Badge>
                   </div>
-                  <p className="text-foreground">{r.text}</p>
+                  <p className="text-foreground">{r.review_text}</p>
                 </CardContent>
               </Card>
             ))}
