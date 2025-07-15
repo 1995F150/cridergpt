@@ -77,7 +77,10 @@ const Pricing = () => {
     setLoading(plan.name);
     
     try {
+      console.log("Starting plan selection for:", plan.name, "with priceId:", plan.priceId);
+      
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("Current session:", !!session, session?.user?.email);
       
       if (!session) {
         toast({
@@ -89,16 +92,29 @@ const Pricing = () => {
         return;
       }
 
+      console.log("Calling create-checkout function...");
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId: plan.priceId }
+        body: { priceId: plan.priceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
       });
 
-      if (error) throw error;
+      console.log("Function response:", { data, error });
+
+      if (error) {
+        console.error("Function error:", error);
+        throw error;
+      }
 
       if (data?.url) {
+        console.log("Redirecting to:", data.url);
         window.open(data.url, '_blank');
+      } else {
+        throw new Error("No checkout URL returned");
       }
     } catch (error: any) {
+      console.error("Checkout error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create checkout session",
