@@ -427,6 +427,7 @@ export type Database = {
           invoice_id: string
           payment_date: string
           status: string
+          user_id: string | null
         }
         Insert: {
           amount_paid: number
@@ -436,6 +437,7 @@ export type Database = {
           invoice_id: string
           payment_date: string
           status: string
+          user_id?: string | null
         }
         Update: {
           amount_paid?: number
@@ -445,6 +447,7 @@ export type Database = {
           invoice_id?: string
           payment_date?: string
           status?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -700,6 +703,30 @@ export type Database = {
           id?: string
           tier?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_tiers: {
+        Row: {
+          created_at: string | null
+          id: number
+          tier: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          tier: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          tier?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

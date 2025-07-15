@@ -62,7 +62,7 @@ serve(async (req) => {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/pricing`,
+      cancel_url: `${req.headers.get("origin")}/`,
       metadata: {
         userId: user.id,
       },
