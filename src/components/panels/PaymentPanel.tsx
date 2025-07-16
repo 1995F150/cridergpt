@@ -1,11 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check, CreditCard, Star, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-const Pricing = () => {
+export function PaymentPanel() {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -14,6 +15,7 @@ const Pricing = () => {
       name: "Free",
       price: "$0",
       period: "/month",
+      description: "Perfect for getting started with CriderOS",
       features: [
         "AI Chat (100 tokens/month)",
         "TTS (5 requests/month)",
@@ -24,12 +26,14 @@ const Pricing = () => {
         "Community Support"
       ],
       highlighted: false,
-      priceId: null // Free plan doesn't need Stripe
+      priceId: null,
+      icon: <CreditCard className="h-6 w-6" />
     },
     {
       name: "Plus",
       price: "$9.99",
       period: "/month",
+      description: "Enhanced features for power users",
       features: [
         "AI Chat (10,000 tokens/month)",
         "TTS (100 requests/month)",
@@ -42,12 +46,14 @@ const Pricing = () => {
         "Email Support"
       ],
       highlighted: false,
-      priceId: "price_1QWi0fIJp5CmkQf3fE8NSFZE" // Replace with your actual price ID
+      priceId: "price_1QWi0fIJp5CmkQf3fE8NSFZE",
+      icon: <Zap className="h-6 w-6" />
     },
     {
       name: "Pro",
       price: "$20.99",
       period: "/month",
+      description: "Complete solution for professionals",
       features: [
         "AI Chat (100,000 tokens/month)",
         "TTS (Unlimited)",
@@ -63,7 +69,8 @@ const Pricing = () => {
         "Advanced Security Features"
       ],
       highlighted: true,
-      priceId: "price_1QWi1AIJp5CmkQf3Y8wQEP2V" // Replace with your actual price ID
+      priceId: "price_1QWi1AIJp5CmkQf3Y8wQEP2V",
+      icon: <Star className="h-6 w-6" />
     }
   ];
 
@@ -118,25 +125,28 @@ const Pricing = () => {
   };
 
   return (
-    <section className="py-16 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-cyber-blue to-tech-accent bg-clip-text text-transparent">
-            Choose Your Plan
-          </h2>
+    <div className="panel h-full w-full p-6 overflow-y-auto">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <CreditCard className="h-8 w-8 text-primary" />
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyber-blue to-tech-accent bg-clip-text text-transparent">
+              Payment & Billing
+            </h2>
+          </div>
           <p className="text-muted-foreground text-lg">
-            Unlock the full potential of CriderOS with our flexible pricing options
+            Choose the perfect plan for your needs
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           {plans.map((plan) => (
-            <div
+            <Card
               key={plan.name}
-              className={`relative rounded-2xl p-8 border-2 transition-all duration-300 ${
+              className={`relative transition-all duration-300 ${
                 plan.highlighted
-                  ? "border-cyber-blue bg-cyber-blue/5 transform scale-105 shadow-lg shadow-cyber-blue/20"
-                  : "border-border bg-card hover:border-cyber-blue/50"
+                  ? "border-2 border-primary bg-primary/5 shadow-lg shadow-primary/20"
+                  : "border border-border hover:border-primary/50"
               }`}
             >
               {plan.highlighted && (
@@ -148,56 +158,63 @@ const Pricing = () => {
                 </Badge>
               )}
 
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-foreground mb-2">
-                  {plan.name}
-                </h3>
-                <div className="flex items-baseline justify-center">
-                  <span className="text-4xl font-bold text-cyber-blue">
+              <CardHeader className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  {plan.icon}
+                </div>
+                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+                <div className="flex items-baseline justify-center mt-4">
+                  <span className="text-4xl font-bold text-primary">
                     {plan.price}
                   </span>
                   <span className="text-muted-foreground ml-1">
                     {plan.period}
                   </span>
                 </div>
-              </div>
+              </CardHeader>
 
-              <ul className="space-y-4 mb-8">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-muted-foreground">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              <CardContent>
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
 
-              <Button
-                className={`w-full ${
-                  plan.highlighted
-                    ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
-                    : "bg-cyber-blue hover:bg-cyber-blue/90"
-                }`}
-                size="lg"
-                disabled={loading === plan.name}
-                onClick={() => handlePlanSelect(plan)}
-              >
-                {loading === plan.name 
-                  ? "Processing..." 
-                  : plan.name === "Free" ? "Get Started Free" : "Get Started"
-                }
-              </Button>
-            </div>
+                <Button
+                  className={`w-full ${
+                    plan.highlighted
+                      ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
+                      : "bg-primary hover:bg-primary/90"
+                  }`}
+                  size="lg"
+                  disabled={loading === plan.name}
+                  onClick={() => handlePlanSelect(plan)}
+                >
+                  {loading === plan.name 
+                    ? "Processing..." 
+                    : plan.name === "Free" ? "Get Started Free" : "Subscribe Now"
+                  }
+                </Button>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
-        <div className="text-center mt-8">
-          <p className="text-muted-foreground italic">
-            All plans include a 14-day free trial. Cancel anytime.
+        <div className="text-center">
+          <p className="text-muted-foreground italic mb-4">
+            All paid plans include a 14-day free trial. Cancel anytime.
           </p>
+          <div className="flex justify-center gap-4 text-sm text-muted-foreground">
+            <span>✓ Secure payments with Stripe</span>
+            <span>✓ No hidden fees</span>
+            <span>✓ Instant activation</span>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
   );
-};
-
-export default Pricing;
+}

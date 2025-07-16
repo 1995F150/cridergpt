@@ -15,7 +15,7 @@ const tabs = [
   { id: 'reviews', icon: Star, label: 'Reviews' },
   { id: 'updates', icon: Megaphone, label: 'System Updates' },
   { id: 'plan', icon: Crown, label: 'Current Plan' },
-  { id: 'pricing', icon: CreditCard, label: 'Pricing' },
+  { id: 'payments', icon: CreditCard, label: 'Payments' },
   { id: 'status', icon: BarChart3, label: 'Status' },
 ];
 

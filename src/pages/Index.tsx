@@ -14,6 +14,7 @@ import { TTSPanel } from "@/components/panels/TTSPanel";
 import { ReviewsPanel } from "@/components/panels/ReviewsPanel";
 import { UpdatesPanel } from "@/components/panels/UpdatesPanel";
 import { PricingPanel } from "@/components/panels/PricingPanel";
+import { PaymentPanel } from "@/components/panels/PaymentPanel";
 import { StatusPanel } from "@/components/panels/StatusPanel";
 import { PlanPanel } from "@/components/panels/PlanPanel";
 import { MediaPanel } from "@/components/panels/MediaPanel";
@@ -48,6 +49,8 @@ const Index = () => {
         return <PlanPanel />;
       case 'pricing':
         return <PricingPanel />;
+      case 'payments':
+        return <PaymentPanel />;
       case 'status':
         return <StatusPanel />;
       default:
