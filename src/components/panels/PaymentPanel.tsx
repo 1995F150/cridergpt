@@ -46,7 +46,7 @@ export function PaymentPanel() {
         "Email Support"
       ],
       highlighted: false,
-      priceId: "price_1QWi0fIJp5CmkQf3fE8NSFZE",
+      priceId: "price_1Rell1P90uC07RqG5S4mEjHC", // CriderOS Plus
       icon: <Zap className="h-6 w-6" />
     },
     {
@@ -69,7 +69,7 @@ export function PaymentPanel() {
         "Advanced Security Features"
       ],
       highlighted: true,
-      priceId: "price_1QWi1AIJp5CmkQf3Y8wQEP2V",
+      priceId: "price_1RellmP90uC07RqGFSDHaCwu", // CriderOS Pro
       icon: <Star className="h-6 w-6" />
     }
   ];
