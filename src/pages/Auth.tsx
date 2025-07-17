@@ -20,16 +20,24 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showAgreement, setShowAgreement] = useState(false);
-  const [agreementAccepted, setAgreementAccepted] = useState(false);
-  const [agreementText, setAgreementText] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Decode agreement text
-    const decodedText = atob(AGREEMENT_BASE64);
-    setAgreementText(decodedText);
+    // Check URL params for agreement acceptance
+    const urlParams = new URLSearchParams(window.location.search);
+    const agreementAccepted = urlParams.get('agreementAccepted');
+    const emailParam = urlParams.get('email');
+    
+    if (agreementAccepted === 'true' && emailParam) {
+      setEmail(emailParam);
+      toast({
+        title: "Agreement Accepted",
+        description: "You can now complete your signup.",
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', '/auth');
+    }
 
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -46,30 +54,32 @@ export default function Auth() {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSignUp && !agreementAccepted) {
-      setShowAgreement(true);
-      return;
+    // Check if this is a signup and we need agreement
+    if (isSignUp) {
+      // Check if agreement was already accepted for this email
+      const { data: existingAgreement } = await supabase
+        .from('user_agreements')
+        .select('*')
+        .eq('user_email', email)
+        .eq('agreement_version', AGREEMENT_VERSION)
+        .maybeSingle();
+
+      if (!existingAgreement) {
+        // Redirect to agreement page
+        navigate(`/agreement?email=${encodeURIComponent(email)}&returnTo=/auth`);
+        return;
+      }
     }
     
     setLoading(true);
 
     try {
       if (isSignUp) {
-        // First record agreement acceptance
-        const { error: agreementError } = await supabase
-          .from('user_agreements')
-          .insert({
-            agreement_version: AGREEMENT_VERSION,
-            user_email: email
-          });
-
-        if (agreementError) throw agreementError;
-
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -107,67 +117,6 @@ export default function Auth() {
       setLoading(false);
     }
   };
-
-  const handleAcceptAgreement = () => {
-    setAgreementAccepted(true);
-    setShowAgreement(false);
-  };
-
-  if (showAgreement) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
-        <Card className="w-full max-w-2xl border-border bg-card/95 backdrop-blur-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-cyber-blue to-tech-accent bg-clip-text text-transparent">
-              User Agreement
-            </CardTitle>
-            <CardDescription className="text-center text-muted-foreground">
-              Please read and accept the terms to continue
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="space-y-4">
-            <ScrollArea className="h-64 w-full rounded-md border border-border p-4">
-              <pre className="text-sm whitespace-pre-wrap text-foreground">
-                {agreementText}
-              </pre>
-            </ScrollArea>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="accept-agreement"
-                checked={agreementAccepted}
-                onCheckedChange={(checked) => setAgreementAccepted(checked === true)}
-              />
-              <Label
-                htmlFor="accept-agreement"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                I have read and accept the User Agreement
-              </Label>
-            </div>
-            
-            <div className="flex space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowAgreement(false)}
-                className="flex-1"
-              >
-                Back
-              </Button>
-              <Button
-                onClick={handleAcceptAgreement}
-                disabled={!agreementAccepted}
-                className="flex-1 bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
-              >
-                Accept & Continue
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
@@ -212,13 +161,6 @@ export default function Auth() {
               />
             </div>
             
-            {isSignUp && agreementAccepted && (
-              <div className="text-sm text-muted-foreground flex items-center space-x-2">
-                <span className="text-green-500">✓</span>
-                <span>User Agreement accepted</span>
-              </div>
-            )}
-            
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
@@ -244,8 +186,8 @@ export default function Auth() {
               variant="link"
               onClick={() => {
                 setIsSignUp(!isSignUp);
-                setAgreementAccepted(false);
-                setShowAgreement(false);
+                setEmail('');
+                setPassword('');
               }}
               className="text-cyber-blue hover:text-tech-accent"
             >
