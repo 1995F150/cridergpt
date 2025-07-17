@@ -375,17 +375,170 @@ export type Database = {
       }
       profiles: {
         Row: {
-          id: number
+          chat_tokens_limit: number | null
+          current_plan: string | null
+          file_upload_mb_limit: number | null
+          id: string
+          max_api_keys: number | null
+          max_projects: number | null
+          plus_access: boolean | null
+          plus_features: Json | null
+          plus_subscription_start_date: string | null
+          plus_subscription_status: string | null
+          plus_tier: string | null
+          pro_access: boolean | null
+          stripe_customer_id: string | null
+          stripe_plus_customer_id: string | null
+          stripe_plus_subscription_id: string | null
+          stripe_subscription_id: string | null
+          stripe_subscription_status: string | null
+          subscription_end_date: string | null
+          subscription_start_date: string | null
+          subscription_tier: string | null
+          tier: string | null
+          tier_features: string[] | null
+          tts_limit: number | null
           user_id: string
           username: string | null
         }
         Insert: {
-          id?: number
+          chat_tokens_limit?: number | null
+          current_plan?: string | null
+          file_upload_mb_limit?: number | null
+          id?: string
+          max_api_keys?: number | null
+          max_projects?: number | null
+          plus_access?: boolean | null
+          plus_features?: Json | null
+          plus_subscription_start_date?: string | null
+          plus_subscription_status?: string | null
+          plus_tier?: string | null
+          pro_access?: boolean | null
+          stripe_customer_id?: string | null
+          stripe_plus_customer_id?: string | null
+          stripe_plus_subscription_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_tier?: string | null
+          tier?: string | null
+          tier_features?: string[] | null
+          tts_limit?: number | null
           user_id: string
           username?: string | null
         }
         Update: {
-          id?: number
+          chat_tokens_limit?: number | null
+          current_plan?: string | null
+          file_upload_mb_limit?: number | null
+          id?: string
+          max_api_keys?: number | null
+          max_projects?: number | null
+          plus_access?: boolean | null
+          plus_features?: Json | null
+          plus_subscription_start_date?: string | null
+          plus_subscription_status?: string | null
+          plus_tier?: string | null
+          pro_access?: boolean | null
+          stripe_customer_id?: string | null
+          stripe_plus_customer_id?: string | null
+          stripe_plus_subscription_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_tier?: string | null
+          tier?: string | null
+          tier_features?: string[] | null
+          tts_limit?: number | null
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      profiles_old: {
+        Row: {
+          chat_tokens_limit: number | null
+          current_plan: string | null
+          file_upload_mb_limit: number | null
+          id: string
+          max_api_keys: number | null
+          max_projects: number | null
+          old_id: number
+          plus_access: boolean | null
+          plus_features: Json | null
+          plus_subscription_start_date: string | null
+          plus_subscription_status: string | null
+          plus_tier: string | null
+          pro_access: boolean | null
+          stripe_customer_id: string | null
+          stripe_plus_customer_id: string | null
+          stripe_plus_subscription_id: string | null
+          stripe_subscription_id: string | null
+          stripe_subscription_status: string | null
+          subscription_end_date: string | null
+          subscription_start_date: string | null
+          subscription_tier: string | null
+          tier: string | null
+          tier_features: string[] | null
+          tts_limit: number | null
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          chat_tokens_limit?: number | null
+          current_plan?: string | null
+          file_upload_mb_limit?: number | null
+          id?: string
+          max_api_keys?: number | null
+          max_projects?: number | null
+          old_id?: number
+          plus_access?: boolean | null
+          plus_features?: Json | null
+          plus_subscription_start_date?: string | null
+          plus_subscription_status?: string | null
+          plus_tier?: string | null
+          pro_access?: boolean | null
+          stripe_customer_id?: string | null
+          stripe_plus_customer_id?: string | null
+          stripe_plus_subscription_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_tier?: string | null
+          tier?: string | null
+          tier_features?: string[] | null
+          tts_limit?: number | null
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          chat_tokens_limit?: number | null
+          current_plan?: string | null
+          file_upload_mb_limit?: number | null
+          id?: string
+          max_api_keys?: number | null
+          max_projects?: number | null
+          old_id?: number
+          plus_access?: boolean | null
+          plus_features?: Json | null
+          plus_subscription_start_date?: string | null
+          plus_subscription_status?: string | null
+          plus_tier?: string | null
+          pro_access?: boolean | null
+          stripe_customer_id?: string | null
+          stripe_plus_customer_id?: string | null
+          stripe_plus_subscription_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_tier?: string | null
+          tier?: string | null
+          tier_features?: string[] | null
+          tts_limit?: number | null
           user_id?: string
           username?: string | null
         }
@@ -619,6 +772,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tier_upgrade_logs: {
+        Row: {
+          created_at: string | null
+          id: number
+          new_tier: string
+          old_tier: string
+          stripe_event_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          new_tier: string
+          old_tier?: string
+          stripe_event_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          new_tier?: string
+          old_tier?: string
+          stripe_event_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tts_requests: {
         Row: {
           count: number | null
@@ -681,6 +861,54 @@ export type Database = {
           id?: string
           tokens_used?: number
           used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_agreements: {
+        Row: {
+          accepted_at: string | null
+          agreement_version: string
+          id: number
+          user_email: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          agreement_version: string
+          id?: never
+          user_email: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          agreement_version?: string
+          id?: never
+          user_email?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_chats: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          role?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -760,14 +988,61 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: number
+          stripe_customer_id: string | null
+          tier: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: never
+          stripe_customer_id?: string | null
+          tier?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: never
+          stripe_customer_id?: string | null
+          tier?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       can_user_request_tts: {
-        Args: { uid: string }
+        Args: Record<PropertyKey, never> | { uid: string }
         Returns: boolean
+      }
+      check_plus_access: {
+        Args: { feature?: string }
+        Returns: boolean
+      }
+      check_tier_limit: {
+        Args: { limit_type: string }
+        Returns: number
+      }
+      create_plus_only_rls: {
+        Args: { target_table_name: string; feature?: string }
+        Returns: undefined
+      }
+      create_tier_limit_policy: {
+        Args: {
+          target_table_name: string
+          limit_column: string
+          limit_type: string
+        }
+        Returns: undefined
       }
       get_stripe_customer_id: {
         Args: Record<PropertyKey, never>
@@ -791,6 +1066,26 @@ export type Database = {
       has_active_subscription: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      has_tier_feature: {
+        Args: { feature: string }
+        Returns: boolean
+      }
+      log_tier_upgrade: {
+        Args:
+          | {
+              p_user_id: number
+              p_old_tier: string
+              p_new_tier: string
+              p_stripe_event_id: string
+            }
+          | {
+              p_user_id: string
+              p_old_tier?: string
+              p_new_tier?: string
+              p_stripe_event_id?: string
+            }
+        Returns: undefined
       }
       reset_monthly_usage: {
         Args: Record<PropertyKey, never>
