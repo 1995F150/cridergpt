@@ -16,7 +16,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
-  id: number;
+  id: string;
   user_id: string;
   username: string | null;
 }

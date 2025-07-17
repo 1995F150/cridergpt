@@ -20,7 +20,7 @@ interface TTSRequest {
 }
 
 interface UserProfile {
-  id: number;
+  id: string;
   user_id: string;
   username: string;
   total_tokens: number;
