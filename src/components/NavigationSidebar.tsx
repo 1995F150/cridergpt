@@ -22,22 +22,22 @@ const tabs = [
 
 export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarProps) {
   return (
-    <div className="w-16 bg-card border-r-2 border-border flex flex-col">
-      <div className="flex flex-col gap-2 p-2">
+    <div className="w-64 bg-card border-r-2 border-border flex flex-col">
+      <div className="flex flex-col gap-2 p-4">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
                 activeTab === tab.id
                   ? 'bg-primary/10 text-primary'
                   : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
               }`}
-              title={tab.label}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              <span className="font-medium">{tab.label}</span>
             </button>
           );
         })}
