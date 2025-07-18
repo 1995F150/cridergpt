@@ -18,6 +18,7 @@ import { PaymentPanel } from "@/components/panels/PaymentPanel";
 import { StatusPanel } from "@/components/panels/StatusPanel";
 import { PlanPanel } from "@/components/panels/PlanPanel";
 import { MediaPanel } from "@/components/panels/MediaPanel";
+import { MemorialPanel } from "@/components/panels/MemorialPanel";
 import UpdatesTab from "@/components/UpdatesTab";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -41,6 +42,8 @@ const Index = () => {
         return <TTSPanel />;
       case 'media':
         return <MediaPanel />;
+      case 'memorial':
+        return <MemorialPanel />;
       case 'reviews':
         return <ReviewsPanel />;
       case 'updates':
