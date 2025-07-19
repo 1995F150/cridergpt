@@ -19,6 +19,7 @@ import { StatusPanel } from "@/components/panels/StatusPanel";
 import { PlanPanel } from "@/components/panels/PlanPanel";
 import { MediaPanel } from "@/components/panels/MediaPanel";
 import { MemorialPanel } from "@/components/panels/MemorialPanel";
+import { ChatPanel } from "@/components/panels/ChatPanel";
 import UpdatesTab from "@/components/UpdatesTab";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,6 +29,8 @@ const Index = () => {
 
   const renderActivePanel = () => {
     switch (activeTab) {
+      case 'chat':
+        return <ChatPanel />;
       case 'assistant':
         return <AssistantPanel />;
       case 'projects':

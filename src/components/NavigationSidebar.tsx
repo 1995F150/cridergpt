@@ -1,4 +1,4 @@
-import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Megaphone, Code, Star, Heart } from "lucide-react";
+import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Megaphone, Code, Star, Heart, MessageSquare } from "lucide-react";
 
 interface NavigationSidebarProps {
   activeTab: string;
@@ -6,6 +6,7 @@ interface NavigationSidebarProps {
 }
 
 const tabs = [
+  { id: 'chat', icon: MessageSquare, label: 'AI Chat' },
   { id: 'assistant', icon: Bot, label: 'AI Assistant' },
   { id: 'projects', icon: FolderOpen, label: 'Projects' },
   { id: 'files', icon: Upload, label: 'Files' },

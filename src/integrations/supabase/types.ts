@@ -101,6 +101,104 @@ export type Database = {
         }
         Relationships: []
       }
+      app_milestones: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          description: string | null
+          id: number
+          name: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: never
+          name: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: never
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      chat_conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_archived: boolean | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_archived?: boolean | null
+          title?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_archived?: boolean | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+          tokens_used: number | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+          tokens_used?: number | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+          tokens_used?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkout_sessions: {
         Row: {
           created_at: string
@@ -218,6 +316,30 @@ export type Database = {
           notification_type?: string
           read?: boolean | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      founders: {
+        Row: {
+          added_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          last_verified_at: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          last_verified_at?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          last_verified_at?: string | null
         }
         Relationships: []
       }
@@ -712,6 +834,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_owners: {
+        Row: {
+          added_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          is_active: boolean | null
+          last_login_at: string | null
+          permissions: Json | null
+          role: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          permissions?: Json | null
+          role?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          permissions?: Json | null
+          role?: string | null
+        }
+        Relationships: []
+      }
       system_updates: {
         Row: {
           created_at: string | null
@@ -990,28 +1145,16 @@ export type Database = {
       }
       users: {
         Row: {
-          created_at: string | null
-          email: string
-          id: number
-          stripe_customer_id: string | null
-          tier: string | null
-          user_id: string | null
+          id: string
+          username: string
         }
         Insert: {
-          created_at?: string | null
-          email: string
-          id?: never
-          stripe_customer_id?: string | null
-          tier?: string | null
-          user_id?: string | null
+          id?: string
+          username: string
         }
         Update: {
-          created_at?: string | null
-          email?: string
-          id?: never
-          stripe_customer_id?: string | null
-          tier?: string | null
-          user_id?: string | null
+          id?: string
+          username?: string
         }
         Relationships: []
       }
@@ -1025,11 +1168,11 @@ export type Database = {
         Returns: boolean
       }
       check_plus_access: {
-        Args: { feature?: string }
+        Args: Record<PropertyKey, never> | { feature?: string }
         Returns: boolean
       }
       check_tier_limit: {
-        Args: { limit_type: string }
+        Args: Record<PropertyKey, never> | { limit_type: string }
         Returns: number
       }
       create_plus_only_rls: {
@@ -1043,6 +1186,34 @@ export type Database = {
           limit_type: string
         }
         Returns: undefined
+      }
+      example_function: {
+        Args: { input_value: number }
+        Returns: number
+      }
+      get_crideros_milestone: {
+        Args: Record<PropertyKey, never> | { milestone_name: string }
+        Returns: string
+      }
+      get_crideros_start_date: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_crideros_timeline: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          milestone_name: string
+          milestone_date: string
+          milestone_description: string
+          milestone_status: string
+        }[]
+      }
+      get_owner_details: {
+        Args: Record<PropertyKey, never> | { check_email: string }
+        Returns: {
+          owner_name: string
+          contact_email: string
+        }[]
       }
       get_stripe_customer_id: {
         Args: Record<PropertyKey, never>
@@ -1071,6 +1242,10 @@ export type Database = {
         Args: { feature: string }
         Returns: boolean
       }
+      is_founder: {
+        Args: Record<PropertyKey, never> | { check_email: string }
+        Returns: boolean
+      }
       log_tier_upgrade: {
         Args:
           | {
@@ -1093,6 +1268,10 @@ export type Database = {
       }
       reset_query_statistics: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_pro_access: {
+        Args: { user_id: string; new_pro_status: boolean }
         Returns: undefined
       }
     }
