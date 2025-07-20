@@ -15,7 +15,8 @@ import {
   Trash2, 
   Edit,
   Clock,
-  Archive
+  Archive,
+  Mic
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +39,7 @@ export const ChatPanel: React.FC = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -76,6 +78,14 @@ export const ChatPanel: React.FC = () => {
       await updateConversationTitle(conversationId, title.trim());
     }
     setEditingTitle(null);
+  };
+
+  const handleVoiceToggle = () => {
+    setIsVoiceActive(!isVoiceActive);
+    toast({
+      title: isVoiceActive ? "Voice Mode Disabled" : "Voice Mode Enabled",
+      description: isVoiceActive ? "Switched to text mode" : "Voice recognition activated",
+    });
   };
 
   const formatTime = (timestamp: string) => {
@@ -227,6 +237,17 @@ export const ChatPanel: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Badge variant={isVoiceActive ? "default" : "secondary"} className={isVoiceActive ? "bg-primary" : ""}>
+                    {isVoiceActive ? "Voice Active" : "Text Mode"}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleVoiceToggle}
+                    className={`h-8 w-8 p-0 ${isVoiceActive ? 'bg-primary/10' : ''}`}
+                  >
+                    <Mic className="h-4 w-4" />
+                  </Button>
                   {isLoading && (
                     <Badge variant="secondary" className="animate-pulse">
                       AI is typing...
