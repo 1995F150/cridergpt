@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { NavigationSidebar } from "@/components/NavigationSidebar";
 import { FeatureNotifications } from "@/components/FeatureNotifications";
 import { Badge } from "@/components/ui/badge";
-import { AssistantPanel } from "@/components/panels/AssistantPanel";
+
 import { ProjectPanel } from "@/components/panels/ProjectPanel";
 import { APIPanel } from "@/components/panels/APIPanel";
 import { FilesPanel } from "@/components/panels/FilesPanel";
@@ -24,15 +24,13 @@ import UpdatesTab from "@/components/UpdatesTab";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('assistant');
+  const [activeTab, setActiveTab] = useState('chat');
   const { user } = useAuth();
 
   const renderActivePanel = () => {
     switch (activeTab) {
       case 'chat':
         return <ChatPanel />;
-      case 'assistant':
-        return <AssistantPanel />;
       case 'projects':
         return <ProjectPanel />;
       case 'api':
@@ -60,7 +58,7 @@ const Index = () => {
       case 'status':
         return <StatusPanel />;
       default:
-        return <AssistantPanel />;
+        return <ChatPanel />;
     }
   };
 

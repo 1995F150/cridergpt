@@ -164,6 +164,7 @@ export type Database = {
           conversation_id: string
           created_at: string | null
           id: string
+          image_url: string | null
           metadata: Json | null
           role: string
           tokens_used: number | null
@@ -174,6 +175,7 @@ export type Database = {
           conversation_id: string
           created_at?: string | null
           id?: string
+          image_url?: string | null
           metadata?: Json | null
           role: string
           tokens_used?: number | null
@@ -184,6 +186,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string | null
           id?: string
+          image_url?: string | null
           metadata?: Json | null
           role?: string
           tokens_used?: number | null

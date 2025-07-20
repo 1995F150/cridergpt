@@ -11,6 +11,7 @@ export interface ChatMessage {
   created_at: string;
   tokens_used?: number;
   metadata?: any;
+  image_url?: string;
 }
 
 export interface Conversation {
@@ -133,12 +134,43 @@ export const useChat = () => {
     }
   }, [user, toast, loadConversations]);
 
+  // Upload image to storage
+  const uploadImage = useCallback(async (file: File) => {
+    if (!user) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('chat-images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+      return null;
+    }
+  }, [user, toast]);
+
   // Send message
   const sendMessage = useCallback(async (
     conversationId: string,
     content: string,
     role: 'user' | 'assistant' = 'user',
-    tokensUsed?: number
+    tokensUsed?: number,
+    imageUrl?: string
   ) => {
     if (!user) return null;
 
@@ -156,6 +188,7 @@ export const useChat = () => {
             role,
             content,
             tokens_used: tokensUsed || 0,
+            image_url: imageUrl,
           }),
         }
       );
@@ -182,13 +215,13 @@ export const useChat = () => {
   }, [user, toast, currentConversation]);
 
   // Send message with AI response
-  const sendMessageWithAI = useCallback(async (conversationId: string, userMessage: string) => {
+  const sendMessageWithAI = useCallback(async (conversationId: string, userMessage: string, imageUrl?: string) => {
     if (!user || isLoading) return;
 
     setIsLoading(true);
     try {
       // Send user message
-      await sendMessage(conversationId, userMessage, 'user');
+      await sendMessage(conversationId, userMessage, 'user', undefined, imageUrl);
 
       // Get conversation history for context
       const conversationHistory = messages.map(m => ({
@@ -388,5 +421,6 @@ export const useChat = () => {
     deleteConversation,
     loadConversations,
     loadMessages,
+    uploadImage,
   };
 };

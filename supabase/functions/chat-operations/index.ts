@@ -11,6 +11,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   tokens_used?: number;
+  image_url?: string;
 }
 
 interface NewConversation {
@@ -122,11 +123,11 @@ serve(async (req) => {
         }
 
         if (action === 'send_message') {
-          const { conversation_id, role, content, tokens_used }: ChatMessage = body;
+          const { conversation_id, role, content, tokens_used, image_url }: ChatMessage = body;
           
-          if (!conversation_id || !role || !content) {
+          if (!conversation_id || !role || (!content && !image_url)) {
             return new Response(
-              JSON.stringify({ error: 'conversation_id, role, and content are required' }),
+              JSON.stringify({ error: 'conversation_id, role, and either content or image_url are required' }),
               { 
                 status: 400, 
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -160,7 +161,8 @@ serve(async (req) => {
               user_id: user.id,
               role,
               content,
-              tokens_used: tokens_used || 0
+              tokens_used: tokens_used || 0,
+              image_url: image_url || null
             })
             .select()
             .single();

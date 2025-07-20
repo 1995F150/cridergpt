@@ -16,7 +16,8 @@ import {
   Edit,
   Clock,
   Archive,
-  Mic
+  ImagePlus,
+  X
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useToast } from '@/hooks/use-toast';
@@ -34,13 +35,16 @@ export const ChatPanel: React.FC = () => {
     sendMessageWithAI,
     updateConversationTitle,
     deleteConversation,
+    uploadImage,
   } = useChat();
 
   const [inputMessage, setInputMessage] = useState('');
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -51,12 +55,64 @@ export const ChatPanel: React.FC = () => {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !currentConversation || isLoading) return;
+    if ((!inputMessage.trim() && !selectedImage) || !currentConversation || isLoading) return;
 
     const userMessage = inputMessage.trim();
+    let imageUrl: string | undefined;
+
+    // Upload image if selected
+    if (selectedImage) {
+      imageUrl = await uploadImage(selectedImage);
+      if (!imageUrl) return; // Upload failed
+    }
+
     setInputMessage('');
+    setSelectedImage(null);
+    setImagePreview(null);
     
-    await sendMessageWithAI(currentConversation, userMessage);
+    await sendMessageWithAI(currentConversation, userMessage || "Image", imageUrl);
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please select a valid image file (PNG, JPG, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image size must be less than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedImage(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleCreateNewChat = async () => {
@@ -78,14 +134,6 @@ export const ChatPanel: React.FC = () => {
       await updateConversationTitle(conversationId, title.trim());
     }
     setEditingTitle(null);
-  };
-
-  const handleVoiceToggle = () => {
-    setIsVoiceActive(!isVoiceActive);
-    toast({
-      title: isVoiceActive ? "Voice Mode Disabled" : "Voice Mode Enabled",
-      description: isVoiceActive ? "Switched to text mode" : "Voice recognition activated",
-    });
   };
 
   const formatTime = (timestamp: string) => {
@@ -236,24 +284,13 @@ export const ChatPanel: React.FC = () => {
                     {messages.length} message{messages.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={isVoiceActive ? "default" : "secondary"} className={isVoiceActive ? "bg-primary" : ""}>
-                    {isVoiceActive ? "Voice Active" : "Text Mode"}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleVoiceToggle}
-                    className={`h-8 w-8 p-0 ${isVoiceActive ? 'bg-primary/10' : ''}`}
-                  >
-                    <Mic className="h-4 w-4" />
-                  </Button>
-                  {isLoading && (
-                    <Badge variant="secondary" className="animate-pulse">
-                      AI is typing...
-                    </Badge>
-                  )}
-                </div>
+                 <div className="flex items-center gap-2">
+                   {isLoading && (
+                     <Badge variant="secondary" className="animate-pulse">
+                       AI is typing...
+                     </Badge>
+                   )}
+                 </div>
               </div>
             </div>
 
@@ -288,9 +325,21 @@ export const ChatPanel: React.FC = () => {
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted border'
                       }`}>
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                          {message.content}
-                        </p>
+                        {message.image_url && (
+                          <div className="mb-2">
+                            <img 
+                              src={message.image_url} 
+                              alt="Chat image" 
+                              className="max-w-sm max-h-64 rounded-lg object-cover cursor-pointer"
+                              onClick={() => window.open(message.image_url, '_blank')}
+                            />
+                          </div>
+                        )}
+                        {message.content && (
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                            {message.content}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-muted-foreground">
@@ -331,6 +380,31 @@ export const ChatPanel: React.FC = () => {
 
             {/* Input Area */}
             <div className="p-4 bg-card">
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <img 
+                      src={imagePreview} 
+                      alt="Selected image" 
+                      className="max-w-32 max-h-32 rounded-lg object-cover"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Image ready to send</p>
+                      <p className="text-xs text-muted-foreground">{selectedImage?.name}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={removeSelectedImage}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex gap-2">
                 <Input
                   value={inputMessage}
@@ -340,9 +414,25 @@ export const ChatPanel: React.FC = () => {
                   disabled={isLoading}
                   className="flex-1"
                 />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  className="px-3"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                </Button>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || isLoading}
+                  disabled={(!inputMessage.trim() && !selectedImage) || isLoading}
                   size="sm"
                   className="px-3"
                 >
