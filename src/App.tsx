@@ -12,6 +12,7 @@ import UserAgreement from "./pages/UserAgreement";
 import Success from "./pages/Success";
 import TTSPolicyPage from "./pages/TTSPolicyPage";
 import NotFound from "./pages/NotFound";
+import FixxyBotTrigger from "@/components/FixxyBotTrigger";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <FixxyBotTrigger />
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
