@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import "./user-fixes.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -124,17 +125,44 @@ async function runContinuousMonitoring(supabase: any, openAIApiKey: string) {
       // Monitor system health
       const healthCheck = await checkSystemHealth(supabase);
       
-      // Monitor user activity and errors
-      const errorCheck = await checkForErrors(supabase);
+      // Monitor user problems and errors
+      const userProblems = await checkUserProblems(supabase);
+      
+      // Monitor authentication issues
+      const authIssues = await checkAuthenticationIssues(supabase);
+      
+      // Monitor payment and subscription issues
+      const paymentIssues = await checkPaymentIssues(supabase);
+      
+      // Monitor user experience issues
+      const uxIssues = await checkUserExperience(supabase);
       
       // Monitor performance metrics
       const performanceCheck = await checkPerformance(supabase);
       
-      // If issues detected, auto-fix them
-      if (healthCheck.issues.length > 0 || errorCheck.errors.length > 0) {
+      // Auto-fix detected user problems
+      if (userProblems.issues.length > 0) {
+        console.log(`🔧 Fixing ${userProblems.issues.length} user problems...`);
+        await autoFixUserProblems(supabase, openAIApiKey, userProblems.issues);
+      }
+      
+      // Auto-fix authentication issues
+      if (authIssues.issues.length > 0) {
+        console.log(`🔐 Fixing ${authIssues.issues.length} auth issues...`);
+        await autoFixAuthIssues(supabase, openAIApiKey, authIssues.issues);
+      }
+      
+      // Auto-fix payment issues
+      if (paymentIssues.issues.length > 0) {
+        console.log(`💳 Fixing ${paymentIssues.issues.length} payment issues...`);
+        await autoFixPaymentIssues(supabase, openAIApiKey, paymentIssues.issues);
+      }
+      
+      // If system issues detected, auto-fix them
+      if (healthCheck.issues.length > 0 || uxIssues.issues.length > 0) {
         await autoFixDetectedIssues(supabase, openAIApiKey, {
           health: healthCheck,
-          errors: errorCheck,
+          ux: uxIssues,
           performance: performanceCheck
         });
       }
@@ -146,12 +174,15 @@ async function runContinuousMonitoring(supabase: any, openAIApiKey: string) {
       await logMonitoringCycle(supabase, {
         timestamp: new Date().toISOString(),
         health: healthCheck,
-        errors: errorCheck,
+        userProblems: userProblems,
+        authIssues: authIssues,
+        paymentIssues: paymentIssues,
+        uxIssues: uxIssues,
         performance: performanceCheck
       });
 
-      // Wait 5 minutes before next check
-      await new Promise(resolve => setTimeout(resolve, 300000));
+      // Wait 2 minutes before next check (more frequent for user issues)
+      await new Promise(resolve => setTimeout(resolve, 120000));
       
     } catch (error) {
       console.error('Error in continuous monitoring:', error);
@@ -591,9 +622,327 @@ async function logMonitoringCycle(supabase: any, data: any) {
     .from('monitoring_logs')
     .insert({
       timestamp: data.timestamp,
-      health_status: data.health.healthy,
-      issues_count: data.health.issues.length,
-      errors_count: data.errors.errors.length,
+      health_status: data.health?.healthy || false,
+      issues_count: (data.health?.issues?.length || 0) + (data.userProblems?.issues?.length || 0) + (data.authIssues?.issues?.length || 0) + (data.paymentIssues?.issues?.length || 0) + (data.uxIssues?.issues?.length || 0),
+      errors_count: data.userProblems?.issues?.length || 0,
       performance_metrics: data.performance
     });
+}
+
+// Import user-focused monitoring functions
+async function checkUserProblems(supabase: any) {
+  const issues = [];
+  
+  try {
+    // Check for recent support tickets
+    const { data: supportTickets } = await supabase
+      .from('support_tickets')
+      .select('*')
+      .eq('status', 'open')
+      .gte('created_at', new Date(Date.now() - 3600000).toISOString());
+
+    if (supportTickets && supportTickets.length > 0) {
+      issues.push({
+        type: 'support_tickets',
+        severity: 'high',
+        description: `${supportTickets.length} open support tickets need attention`,
+        tickets: supportTickets,
+        count: supportTickets.length
+      });
+    }
+
+    // Check for failed user operations
+    const { data: failedOperations } = await supabase
+      .from('user_updates')
+      .select('*')
+      .contains('metadata', { error: true })
+      .gte('created_at', new Date(Date.now() - 1800000).toISOString());
+
+    if (failedOperations && failedOperations.length > 3) {
+      issues.push({
+        type: 'failed_operations',
+        severity: 'medium',
+        description: `Multiple user operations failing: ${failedOperations.length} failures`,
+        operations: failedOperations
+      });
+    }
+
+  } catch (error) {
+    issues.push({
+      type: 'user_monitoring',
+      severity: 'critical',
+      description: 'Failed to monitor user problems',
+      error: error.message
+    });
+  }
+
+  return { issues };
+}
+
+async function checkAuthenticationIssues(supabase: any) {
+  const issues = [];
+  
+  try {
+    // Check for users with authentication problems
+    const { data: profilesWithoutAuth } = await supabase
+      .from('profiles')
+      .select('*')
+      .is('subscription_start_date', null)
+      .gte('user_id', new Date(Date.now() - 86400000).toISOString());
+
+    if (profilesWithoutAuth && profilesWithoutAuth.length > 10) {
+      issues.push({
+        type: 'auth_setup_issues',
+        severity: 'medium',
+        description: `Users with potential auth setup issues: ${profilesWithoutAuth.length} users`,
+        affected_users: profilesWithoutAuth.length
+      });
+    }
+
+  } catch (error) {
+    console.error('Auth monitoring error:', error);
+  }
+
+  return { issues };
+}
+
+async function checkPaymentIssues(supabase: any) {
+  const issues = [];
+  
+  try {
+    // Check for failed payments
+    const { data: failedPayments } = await supabase
+      .from('subscription_payments')
+      .select('*')
+      .eq('status', 'failed')
+      .gte('payment_date', new Date(Date.now() - 86400000).toISOString());
+
+    if (failedPayments && failedPayments.length > 0) {
+      issues.push({
+        type: 'payment_failures',
+        severity: 'high',
+        description: `Payment failures detected: ${failedPayments.length} failed payments`,
+        failures: failedPayments
+      });
+    }
+
+  } catch (error) {
+    console.error('Payment monitoring error:', error);
+  }
+
+  return { issues };
+}
+
+async function checkUserExperience(supabase: any) {
+  const issues = [];
+  
+  try {
+    // Check for slow response times affecting users
+    const { data: slowRequests } = await supabase
+      .from('openai_requests')
+      .select('*')
+      .gte('response_time_ms', 10000)
+      .gte('created_at', new Date(Date.now() - 1800000).toISOString());
+
+    if (slowRequests && slowRequests.length > 5) {
+      issues.push({
+        type: 'slow_responses',
+        severity: 'medium',
+        description: `Users experiencing slow responses: ${slowRequests.length} slow requests`,
+        slow_requests: slowRequests.length
+      });
+    }
+
+  } catch (error) {
+    console.error('UX monitoring error:', error);
+  }
+
+  return { issues };
+}
+
+async function autoFixUserProblems(supabase: any, openAIApiKey: string, issues: any[]) {
+  const fixes = [];
+  
+  for (const issue of issues) {
+    try {
+      let fix;
+      
+      switch (issue.type) {
+        case 'support_tickets':
+          fix = await autoResolveSupportTickets(supabase, openAIApiKey, issue);
+          break;
+        case 'failed_operations':
+          fix = await autoFixFailedOperations(supabase, issue);
+          break;
+        default:
+          fix = { type: issue.type, action: 'logged', result: { logged: true } };
+      }
+      
+      fixes.push(fix);
+      
+      // Log the user problem fix
+      await supabase
+        .from('autonomous_fixes')
+        .insert({
+          issue_type: `user_${issue.type}`,
+          issue_description: issue.description,
+          fix_applied: fix.action,
+          fix_result: fix.result,
+          timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+      console.error(`Failed to fix user problem ${issue.type}:`, error);
+    }
+  }
+  
+  return fixes;
+}
+
+async function autoFixAuthIssues(supabase: any, openAIApiKey: string, issues: any[]) {
+  const fixes = [];
+  
+  for (const issue of issues) {
+    try {
+      const fix = {
+        type: issue.type,
+        action: 'auth_issue_logged',
+        result: { logged: true, affected_users: issue.affected_users || 0 }
+      };
+      
+      fixes.push(fix);
+      
+    } catch (error) {
+      console.error(`Failed to fix auth issue ${issue.type}:`, error);
+    }
+  }
+  
+  return fixes;
+}
+
+async function autoFixPaymentIssues(supabase: any, openAIApiKey: string, issues: any[]) {
+  const fixes = [];
+  
+  for (const issue of issues) {
+    try {
+      // Create notifications for failed payments
+      if (issue.type === 'payment_failures') {
+        for (const payment of issue.failures) {
+          await supabase
+            .from('feature_notifications')
+            .insert({
+              user_id: payment.user_id,
+              notification_type: 'payment_failed',
+              data: {
+                payment_id: payment.id,
+                amount: payment.amount_paid,
+                message: 'Your payment failed. Please update your payment method.'
+              }
+            });
+        }
+        
+        fixes.push({
+          type: 'payment_failures',
+          action: 'user_notifications_sent',
+          result: { notified: issue.failures.length }
+        });
+      }
+      
+    } catch (error) {
+      console.error(`Failed to fix payment issue ${issue.type}:`, error);
+    }
+  }
+  
+  return fixes;
+}
+
+async function autoResolveSupportTickets(supabase: any, openAIApiKey: string, issue: any) {
+  const resolvedTickets = [];
+  
+  for (const ticket of issue.tickets) {
+    try {
+      // Use AI to analyze and respond to the ticket
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are Fixxy Bot, an autonomous support agent. Analyze this support ticket and provide a helpful solution. Be specific and actionable.'
+            },
+            {
+              role: 'user',
+              content: `Support Ticket: ${ticket.subject}\nDescription: ${ticket.description}`
+            }
+          ],
+          max_tokens: 500
+        }),
+      });
+
+      const data = await response.json();
+      const solution = data.choices[0].message.content;
+      
+      // Update the ticket with AI response
+      await supabase
+        .from('support_tickets')
+        .update({
+          response_history: [...(ticket.response_history || []), {
+            responder: 'Fixxy Bot',
+            response: solution,
+            timestamp: new Date().toISOString(),
+            type: 'automated'
+          }],
+          status: 'pending_user',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticket.id);
+        
+      resolvedTickets.push({ ticket_id: ticket.id, solution });
+      
+    } catch (error) {
+      console.error(`Failed to process ticket ${ticket.id}:`, error);
+    }
+  }
+  
+  return {
+    type: 'support_tickets',
+    action: 'ai_ticket_response',
+    result: { 
+      processed: resolvedTickets.length,
+      total: issue.tickets.length,
+      tickets: resolvedTickets
+    }
+  };
+}
+
+async function autoFixFailedOperations(supabase: any, issue: any) {
+  let fixedCount = 0;
+  
+  for (const operation of issue.operations) {
+    try {
+      // Attempt to retry the operation or fix the underlying issue
+      if (operation.update_type === 'api_request') {
+        // Reset user's rate limit or clear error state
+        await supabase
+          .from('ai_usage')
+          .update({ tokens_used: 0 })
+          .eq('user_id', operation.user_id);
+        fixedCount++;
+      }
+      
+    } catch (error) {
+      console.error(`Failed to fix operation for user ${operation.user_id}:`, error);
+    }
+  }
+  
+  return {
+    type: 'failed_operations',
+    action: 'operation_retry_fix',
+    result: { fixed: fixedCount, total: issue.operations.length }
+  };
 }
