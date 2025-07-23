@@ -98,30 +98,59 @@ const FixxyBot: React.FC<FixxyBotProps> = ({ isOpen, onClose }) => {
       let operationType = 'text';
       let result = '';
 
-      if (lowerInput.includes('sql') || lowerInput.includes('database') || lowerInput.includes('query')) {
+      if (lowerInput.includes('autonomous') || lowerInput.includes('monitor') || lowerInput.includes('start fixxy')) {
+        operationType = 'deployment';
+        // Start autonomous mode
+        const { data, error } = await supabase.functions.invoke('fixxy-autonomous', {
+          body: { action: 'start_autonomous_mode' }
+        });
+        
+        if (error) throw error;
+        result = `🤖 **Autonomous Mode Activated**\n\n${data.message}\n\n**Active Tasks:**\n${data.tasks.map(t => `• ${t.description}`).join('\n')}\n\nFixxy is now monitoring your system 24/7 and will automatically fix issues, push updates, and maintain optimal performance.`;
+      } else if (lowerInput.includes('status') || lowerInput.includes('what are you doing')) {
+        operationType = 'api';
+        const { data, error } = await supabase.functions.invoke('fixxy-autonomous', {
+          body: { action: 'get_status' }
+        });
+        
+        if (error) throw error;
+        result = `📊 **Fixxy Status Report**\n\n**Status:** ${data.status}\n**Last Check:** ${new Date(data.last_check).toLocaleString()}\n\n**Recent Activities:**\n${data.recent_fixes?.map(f => `• Fixed: ${f.issue_type}`).join('\n') || 'No recent fixes'}\n\n${data.recent_updates?.map(u => `• Updated: ${u.update_type}`).join('\n') || 'No recent updates'}`;
+      } else if (lowerInput.includes('sql') || lowerInput.includes('database') || lowerInput.includes('query')) {
         operationType = 'sql';
         // Extract SQL query if present
         const sqlMatch = userInput.match(/```sql\n([\s\S]*?)\n```/) || userInput.match(/`([^`]*)`/);
         if (sqlMatch) {
           const sqlQuery = sqlMatch[1];
-          const sqlResult = await executeSQLQuery(sqlQuery);
-          result = `**SQL Query Executed:**\n\`\`\`sql\n${sqlQuery}\n\`\`\`\n\n**Result:** ${JSON.stringify(sqlResult, null, 2)}`;
+          const { data, error } = await supabase.functions.invoke('execute-sql', {
+            body: { query: sqlQuery }
+          });
+          
+          if (error) throw error;
+          result = `**SQL Query Executed:**\n\`\`\`sql\n${sqlQuery}\n\`\`\`\n\n**Result:** ${JSON.stringify(data, null, 2)}`;
         } else {
           result = 'Please provide the SQL query you want me to execute. Use backticks or code blocks to format it.';
         }
       } else if (lowerInput.includes('code') || lowerInput.includes('function') || lowerInput.includes('component')) {
         operationType = 'code';
-        const codeResult = await executeCode(userInput);
-        result = `**Code Generated/Executed:**\n\n${codeResult}`;
-      } else if (lowerInput.includes('deploy') || lowerInput.includes('update') || lowerInput.includes('fix')) {
+        const { data, error } = await supabase.functions.invoke('generate-code', {
+          body: { prompt: userInput }
+        });
+        
+        if (error) throw error;
+        result = `**Code Generated:**\n\n${data.generatedText}`;
+      } else if (lowerInput.includes('deploy') || lowerInput.includes('update') || lowerInput.includes('fix') || lowerInput.includes('push')) {
         operationType = 'deployment';
-        const deployResult = await deployChanges(userInput);
-        result = `**Deployment Status:**\n\n${JSON.stringify(deployResult, null, 2)}`;
+        const { data, error } = await supabase.functions.invoke('deploy-changes', {
+          body: { changes: userInput }
+        });
+        
+        if (error) throw error;
+        result = `**Deployment Completed:**\n\n${JSON.stringify(data, null, 2)}`;
       } else {
         // General AI response for troubleshooting and support
         const { data, error } = await supabase.functions.invoke('chat-with-ai', {
           body: { 
-            message: `As Fixxy Bot, a developer support assistant with full system access, help with: ${userInput}` 
+            message: `As Fixxy Bot, an autonomous AI developer with full system access, help with: ${userInput}. I can monitor systems, fix issues automatically, execute SQL, generate code, and deploy changes. How can I solve this problem?` 
           }
         });
         

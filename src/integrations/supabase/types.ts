@@ -131,6 +131,90 @@ export type Database = {
         }
         Relationships: []
       }
+      autonomous_fixes: {
+        Row: {
+          fix_applied: string
+          fix_result: Json | null
+          id: string
+          issue_description: string
+          issue_type: string
+          timestamp: string | null
+        }
+        Insert: {
+          fix_applied: string
+          fix_result?: Json | null
+          id?: string
+          issue_description: string
+          issue_type: string
+          timestamp?: string | null
+        }
+        Update: {
+          fix_applied?: string
+          fix_result?: Json | null
+          id?: string
+          issue_description?: string
+          issue_type?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
+      autonomous_tasks: {
+        Row: {
+          action: string
+          description: string
+          id: string
+          priority: string
+          result: Json | null
+          status: string
+          timestamp: string | null
+          type: string
+        }
+        Insert: {
+          action: string
+          description: string
+          id: string
+          priority: string
+          result?: Json | null
+          status?: string
+          timestamp?: string | null
+          type: string
+        }
+        Update: {
+          action?: string
+          description?: string
+          id?: string
+          priority?: string
+          result?: Json | null
+          status?: string
+          timestamp?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      autonomous_updates: {
+        Row: {
+          description: string
+          id: string
+          result: Json | null
+          timestamp: string | null
+          update_type: string
+        }
+        Insert: {
+          description: string
+          id?: string
+          result?: Json | null
+          timestamp?: string | null
+          update_type: string
+        }
+        Update: {
+          description?: string
+          id?: string
+          result?: Json | null
+          timestamp?: string | null
+          update_type?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string | null
@@ -346,6 +430,30 @@ export type Database = {
         }
         Relationships: []
       }
+      function_error_analysis: {
+        Row: {
+          analysis_timestamp: string | null
+          auto_fix_attempted: boolean | null
+          error_count: number
+          error_details: Json | null
+          id: string
+        }
+        Insert: {
+          analysis_timestamp?: string | null
+          auto_fix_attempted?: boolean | null
+          error_count: number
+          error_details?: Json | null
+          id?: string
+        }
+        Update: {
+          analysis_timestamp?: string | null
+          auto_fix_attempted?: boolean | null
+          error_count?: number
+          error_details?: Json | null
+          id?: string
+        }
+        Relationships: []
+      }
       memories: {
         Row: {
           created_at: string
@@ -367,6 +475,33 @@ export type Database = {
           image_url?: string
           label?: string
           user_email?: string
+        }
+        Relationships: []
+      }
+      monitoring_logs: {
+        Row: {
+          errors_count: number | null
+          health_status: boolean | null
+          id: string
+          issues_count: number | null
+          performance_metrics: Json | null
+          timestamp: string | null
+        }
+        Insert: {
+          errors_count?: number | null
+          health_status?: boolean | null
+          id?: string
+          issues_count?: number | null
+          performance_metrics?: Json | null
+          timestamp?: string | null
+        }
+        Update: {
+          errors_count?: number | null
+          health_status?: boolean | null
+          id?: string
+          issues_count?: number | null
+          performance_metrics?: Json | null
+          timestamp?: string | null
         }
         Relationships: []
       }
