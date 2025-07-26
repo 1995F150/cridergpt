@@ -102,7 +102,7 @@ serve(async (req) => {
         const body = await req.json();
 
         if (action === 'create_conversation') {
-          const { title }: NewConversation = body;
+          const { title, participant_user_id }: NewConversation & { participant_user_id?: string } = body;
           
           // Create new conversation
           const { data: conversation, error } = await supabaseClient

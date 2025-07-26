@@ -96,7 +96,7 @@ export const useChat = () => {
   }, [user, toast]);
 
   // Create new conversation
-  const createConversation = useCallback(async (title: string = 'New Chat') => {
+  const createConversation = useCallback(async (title: string = 'New Chat', participantUserId?: string) => {
     if (!user) return null;
 
     try {
@@ -108,7 +108,7 @@ export const useChat = () => {
             'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ title }),
+          body: JSON.stringify({ title, participant_user_id: participantUserId }),
         }
       );
 
@@ -119,7 +119,7 @@ export const useChat = () => {
       
       toast({
         title: "Success",
-        description: "New conversation created",
+        description: participantUserId ? "DM conversation created" : "New conversation created",
       });
       
       return data.conversation;

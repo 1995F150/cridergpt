@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Send, 
   Bot, 
@@ -17,10 +18,12 @@ import {
   Clock,
   Archive,
   ImagePlus,
-  X
+  X,
+  Users
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useToast } from '@/hooks/use-toast';
+import { UserDirectory } from '@/components/UserDirectory';
 
 export const ChatPanel: React.FC = () => {
   const { toast } = useToast();
@@ -122,6 +125,18 @@ export const ChatPanel: React.FC = () => {
     }
   };
 
+  const handleStartDM = async (userId: string, username?: string) => {
+    const title = username ? `DM with ${username}` : `DM with User`;
+    const conversation = await createConversation(title, userId);
+    if (conversation) {
+      setCurrentConversation(conversation.id);
+      toast({
+        title: "DM Started",
+        description: `Started conversation with ${username || 'user'}`,
+      });
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -160,113 +175,134 @@ export const ChatPanel: React.FC = () => {
 
   return (
     <div className="flex h-full">
-      {/* Conversations Sidebar */}
+      {/* Sidebar with Tabs */}
       <div className="w-80 border-r border-border bg-card">
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Conversations</h2>
-            <Button
-              size="sm"
-              onClick={handleCreateNewChat}
-              className="h-8 w-8 p-0"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+        <Tabs defaultValue="conversations" className="h-full">
+          <div className="p-4 border-b border-border">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="conversations" className="text-xs">
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Chats
+              </TabsTrigger>
+              <TabsTrigger value="users" className="text-xs">
+                <Users className="h-4 w-4 mr-1" />
+                Users
+              </TabsTrigger>
+            </TabsList>
           </div>
-          <div className="text-sm text-muted-foreground">
-            {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
-          </div>
-        </div>
 
-        <ScrollArea className="h-[calc(100%-120px)]">
-          {isLoadingConversations ? (
-            <div className="p-4 text-center text-muted-foreground">
-              Loading conversations...
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground">
-              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No conversations yet</p>
-              <p className="text-xs mt-1">Create one to get started</p>
-            </div>
-          ) : (
-            <div className="p-2">
-              {conversations.map((conversation) => (
-                <Card
-                  key={conversation.id}
-                  className={`mb-2 cursor-pointer transition-all hover:shadow-md ${
-                    currentConversation === conversation.id
-                      ? 'ring-2 ring-primary shadow-md'
-                      : 'hover:bg-muted/50'
-                  }`}
-                  onClick={() => setCurrentConversation(conversation.id)}
+          <TabsContent value="conversations" className="mt-0 h-[calc(100%-80px)]">
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Conversations</h2>
+                <Button
+                  size="sm"
+                  onClick={handleCreateNewChat}
+                  className="h-8 w-8 p-0"
                 >
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        {editingTitle === conversation.id ? (
-                          <Input
-                            value={newTitle}
-                            onChange={(e) => setNewTitle(e.target.value)}
-                            onBlur={() => handleTitleEdit(conversation.id, newTitle)}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                handleTitleEdit(conversation.id, newTitle);
-                              }
-                            }}
-                            className="h-6 text-sm font-medium"
-                            autoFocus
-                          />
-                        ) : (
-                          <h3 className="font-medium text-sm truncate">
-                            {conversation.title}
-                          </h3>
-                        )}
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {formatDate(conversation.updated_at)}
-                          </Badge>
-                          {conversation.is_archived && (
-                            <Badge variant="outline" className="text-xs">
-                              <Archive className="h-3 w-3 mr-1" />
-                              Archived
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 ml-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingTitle(conversation.id);
-                            setNewTitle(conversation.title);
-                          }}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteConversation(conversation.id);
-                          }}
-                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+              </div>
             </div>
-          )}
-        </ScrollArea>
+
+            <ScrollArea className="h-[calc(100%-80px)]">
+              {isLoadingConversations ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  Loading conversations...
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No conversations yet</p>
+                  <p className="text-xs mt-1">Create one to get started</p>
+                </div>
+              ) : (
+                <div className="p-2">
+                  {conversations.map((conversation) => (
+                    <Card
+                      key={conversation.id}
+                      className={`mb-2 cursor-pointer transition-all hover:shadow-md ${
+                        currentConversation === conversation.id
+                          ? 'ring-2 ring-primary shadow-md'
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => setCurrentConversation(conversation.id)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            {editingTitle === conversation.id ? (
+                              <Input
+                                value={newTitle}
+                                onChange={(e) => setNewTitle(e.target.value)}
+                                onBlur={() => handleTitleEdit(conversation.id, newTitle)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleTitleEdit(conversation.id, newTitle);
+                                  }
+                                }}
+                                className="h-6 text-sm font-medium"
+                                autoFocus
+                              />
+                            ) : (
+                              <h3 className="font-medium text-sm truncate">
+                                {conversation.title}
+                              </h3>
+                            )}
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatDate(conversation.updated_at)}
+                              </Badge>
+                              {conversation.is_archived && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Archive className="h-3 w-3 mr-1" />
+                                  Archived
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 ml-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTitle(conversation.id);
+                                setNewTitle(conversation.title);
+                              }}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteConversation(conversation.id);
+                              }}
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="users" className="mt-0 h-[calc(100%-80px)]">
+            <UserDirectory onStartChat={handleStartDM} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Chat Area */}
