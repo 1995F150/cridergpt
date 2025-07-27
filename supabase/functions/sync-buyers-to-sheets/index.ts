@@ -6,16 +6,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface BuyerData {
+interface UserData {
   id: string;
   email: string;
   full_name: string;
-  phone: string;
-  stripe_customer_id: string;
-  subscription_status: string;
-  total_purchases: number;
-  last_purchase_date: string;
+  username: string;
   created_at: string;
+  last_sign_in_at: string;
+  tier: string;
+  tier_created_at: string;
+  tokens_used: number;
+  tts_requests: number;
+  user_plan: string;
+  pro_access: boolean;
+  plus_access: boolean;
+  subscription_status: string;
+  stripe_customer_id: string;
+  current_plan: string;
 }
 
 serve(async (req) => {
@@ -42,37 +49,42 @@ serve(async (req) => {
       throw new Error('Spreadsheet ID is required');
     }
 
-    // Fetch buyers data from database
-    const { data: buyers, error: buyersError } = await supabase
-      .from('buyers')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // Fetch comprehensive user data from database using the existing function
+    const { data: userData, error: userError } = await supabase.rpc('get_user_sync_data');
 
-    if (buyersError) {
-      console.error('Error fetching buyers:', buyersError);
-      throw new Error('Failed to fetch buyers data');
+    if (userError) {
+      console.error('Error fetching user data:', userError);
+      throw new Error('Failed to fetch user data');
     }
 
-    console.log(`Found ${buyers?.length || 0} buyers to sync`);
+    console.log(`Found ${userData?.length || 0} users to sync`);
 
     // Prepare data for Google Sheets
     const headers = [
-      'ID', 'Email', 'Full Name', 'Phone', 'Stripe Customer ID', 
-      'Subscription Status', 'Total Purchases', 'Last Purchase Date', 'Created At'
+      'User ID', 'Email', 'Full Name', 'Username', 'Created At', 'Last Sign In', 
+      'Tier', 'Tier Created', 'Tokens Used', 'TTS Requests', 'User Plan',
+      'Pro Access', 'Plus Access', 'Subscription Status', 'Stripe Customer ID', 'Current Plan'
     ];
 
     const values = [
       headers,
-      ...(buyers || []).map((buyer: BuyerData) => [
-        buyer.id,
-        buyer.email || '',
-        buyer.full_name || '',
-        buyer.phone || '',
-        buyer.stripe_customer_id || '',
-        buyer.subscription_status || '',
-        buyer.total_purchases || 0,
-        buyer.last_purchase_date || '',
-        buyer.created_at || ''
+      ...(userData || []).map((user: UserData) => [
+        user.id || '',
+        user.email || '',
+        user.full_name || '',
+        user.username || '',
+        user.created_at || '',
+        user.last_sign_in_at || '',
+        user.tier || 'free',
+        user.tier_created_at || '',
+        user.tokens_used || 0,
+        user.tts_requests || 0,
+        user.user_plan || 'free',
+        user.pro_access ? 'Yes' : 'No',
+        user.plus_access ? 'Yes' : 'No',
+        user.subscription_status || '',
+        user.stripe_customer_id || '',
+        user.current_plan || ''
       ])
     ];
 
@@ -119,7 +131,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully synced ${buyers?.length || 0} buyers to Google Sheets`,
+        message: `Successfully synced ${userData?.length || 0} users to Google Sheets`,
         updatedCells: result.updatedCells || 0
       }),
       { 

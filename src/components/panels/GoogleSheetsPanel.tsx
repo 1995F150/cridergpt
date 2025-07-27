@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ExternalLink, RefreshCw, Database, Sheet } from 'lucide-react';
 
 export function GoogleSheetsPanel() {
-  const [spreadsheetId, setSpreadsheetId] = useState('');
+  const [spreadsheetId, setSpreadsheetId] = useState('1PfbY0fm4cGUA8x6jFUBdu1TBP8ngWnLPJDY92h1vAM0');
   const [isLoading, setIsLoading] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const { toast } = useToast();
@@ -48,7 +48,7 @@ export function GoogleSheetsPanel() {
       setLastSyncTime(new Date().toLocaleString());
       toast({
         title: "Success!",
-        description: data.message || "Buyers data synced to Google Sheets successfully",
+        description: data.message || "User data synced to Google Sheets successfully",
       });
 
     } catch (error) {
@@ -80,7 +80,7 @@ export function GoogleSheetsPanel() {
         <Sheet className="h-8 w-8 text-primary" />
         <div>
           <h2 className="text-2xl font-bold text-foreground">Google Sheets Integration</h2>
-          <p className="text-muted-foreground">Sync your buyer data to Google Sheets for tracking and analysis</p>
+          <p className="text-muted-foreground">Sync your user data and tiers to Google Sheets for tracking and analysis</p>
         </div>
       </div>
 
@@ -125,7 +125,7 @@ export function GoogleSheetsPanel() {
           <CardHeader>
             <CardTitle>Sync Configuration</CardTitle>
             <CardDescription>
-              Enter your Google Sheet details to start syncing buyer data
+              Enter your Google Sheet details to start syncing user data and tiers
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -156,7 +156,7 @@ export function GoogleSheetsPanel() {
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Sync Buyers to Google Sheets
+                  Sync Users to Google Sheets
                 </>
               )}
             </Button>
@@ -173,22 +173,30 @@ export function GoogleSheetsPanel() {
           <CardHeader>
             <CardTitle>What Gets Synced</CardTitle>
             <CardDescription>
-              The following buyer information will be synced to your Google Sheet
+              The following user information and tier data will be synced to your Google Sheet
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="space-y-1">
+                <div className="font-medium">• User ID</div>
                 <div className="font-medium">• Email Address</div>
                 <div className="font-medium">• Full Name</div>
-                <div className="font-medium">• Phone Number</div>
-                <div className="font-medium">• Stripe Customer ID</div>
+                <div className="font-medium">• Username</div>
+                <div className="font-medium">• Created At</div>
+                <div className="font-medium">• Last Sign In</div>
+                <div className="font-medium">• User Tier</div>
+                <div className="font-medium">• Tier Created Date</div>
               </div>
               <div className="space-y-1">
+                <div className="font-medium">• Tokens Used</div>
+                <div className="font-medium">• TTS Requests</div>
+                <div className="font-medium">• User Plan</div>
+                <div className="font-medium">• Pro Access</div>
+                <div className="font-medium">• Plus Access</div>
                 <div className="font-medium">• Subscription Status</div>
-                <div className="font-medium">• Total Purchases</div>
-                <div className="font-medium">• Last Purchase Date</div>
-                <div className="font-medium">• Account Creation Date</div>
+                <div className="font-medium">• Stripe Customer ID</div>
+                <div className="font-medium">• Current Plan</div>
               </div>
             </div>
           </CardContent>
