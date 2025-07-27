@@ -20,6 +20,7 @@ import { PlanPanel } from "@/components/panels/PlanPanel";
 import { MediaPanel } from "@/components/panels/MediaPanel";
 import { MemorialPanel } from "@/components/panels/MemorialPanel";
 import { ChatPanel } from "@/components/panels/ChatPanel";
+import { GoogleSheetsPanel } from "@/components/panels/GoogleSheetsPanel";
 import UpdatesTab from "@/components/UpdatesTab";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -57,6 +58,8 @@ const Index = () => {
         return <PaymentPanel />;
       case 'status':
         return <StatusPanel />;
+      case 'sheets':
+        return <GoogleSheetsPanel />;
       default:
         return <ChatPanel />;
     }
