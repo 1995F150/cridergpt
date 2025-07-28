@@ -215,6 +215,45 @@ export type Database = {
         }
         Relationships: []
       }
+      buyers: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          last_purchase_date: string | null
+          phone: string | null
+          stripe_customer_id: string | null
+          subscription_status: string | null
+          total_purchases: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          last_purchase_date?: string | null
+          phone?: string | null
+          stripe_customer_id?: string | null
+          subscription_status?: string | null
+          total_purchases?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          last_purchase_date?: string | null
+          phone?: string | null
+          stripe_customer_id?: string | null
+          subscription_status?: string | null
+          total_purchases?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string | null
@@ -1370,6 +1409,22 @@ export type Database = {
           currency: string
           interval_value: string
           interval_count: number
+        }[]
+      }
+      get_user_sync_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          full_name: string
+          username: string
+          created_at: string
+          last_sign_in_at: string
+          tier: string
+          tier_created_at: string
+          tokens_used: number
+          tts_requests: number
+          user_plan: string
         }[]
       }
       has_active_subscription: {
