@@ -42,7 +42,7 @@ const Pricing = () => {
         "Email Support"
       ],
       highlighted: false,
-      priceId: "price_1Rell1P90uC07RqG5S4mEjHC" // CriderOS Plus
+      priceId: "price_1Rell1P90uC07RqG5S4mEjHC" // CriderGPT Plus
     },
     {
       name: "Pro",
@@ -63,7 +63,7 @@ const Pricing = () => {
         "Advanced Security Features"
       ],
       highlighted: true,
-      priceId: "price_1RellmP90uC07RqGFSDHaCwu" // CriderOS Pro
+      priceId: "price_1RellmP90uC07RqGFSDHaCwu" // CriderGPT Pro
     }
   ];
 
@@ -125,7 +125,7 @@ const Pricing = () => {
             Choose Your Plan
           </h2>
           <p className="text-muted-foreground text-lg">
-            Unlock the full potential of CriderOS with our flexible pricing options
+            Unlock the full potential of CriderGPT with our flexible pricing options
           </p>
         </div>
 

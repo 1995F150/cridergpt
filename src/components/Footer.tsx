@@ -10,7 +10,7 @@ export function Footer() {
               © 2025 Jessie Crider — All Rights Reserved.
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              This AI system (CriderOS) is original work. Do not copy, modify, or redistribute without permission.
+              This AI system (CriderGPT) is original work. Do not copy, modify, or redistribute without permission.
             </div>
           </div>
           

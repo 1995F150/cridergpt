@@ -6,7 +6,7 @@ interface NavigationSidebarProps {
 }
 
 const tabs = [
-  { id: 'chat', icon: Monitor, label: 'CriderOS' },
+  { id: 'chat', icon: Monitor, label: 'CriderGPT' },
   { id: 'projects', icon: FolderOpen, label: 'Projects' },
   { id: 'files', icon: Upload, label: 'Files' },
   { id: 'code', icon: Code, label: 'Code Generator' },

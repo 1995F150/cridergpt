@@ -488,7 +488,7 @@ export const ChatPanel: React.FC = () => {
             <div className="text-center max-w-md mx-auto p-8">
               <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
               <h3 className="text-lg font-semibold mb-2">
-                Welcome to CriderOS Chat
+                Welcome to CriderGPT Chat
               </h3>
               <p className="text-muted-foreground mb-4">
                 Select a conversation from the sidebar to continue chatting, or create a new one to get started.

@@ -91,7 +91,7 @@ export function ReviewsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="h-6 w-6 text-yellow-500" />
-            CriderOS Reviews
+            CriderGPT Reviews
           </CardTitle>
           <p className="text-lg text-muted-foreground">
             Average Rating: <span className="font-bold text-foreground">{avg} / 5</span>
@@ -150,7 +150,7 @@ export function ReviewsPanel() {
             )}
             
             {!loading && reviews.length === 0 && (
-              <p className="text-muted-foreground">No reviews yet. Be the first to rate CriderOS!</p>
+              <p className="text-muted-foreground">No reviews yet. Be the first to rate CriderGPT!</p>
             )}
             
             {reviews.map((r) => (

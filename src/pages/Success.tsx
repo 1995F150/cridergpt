@@ -74,7 +74,7 @@ const Success = () => {
             Payment Successful!
           </CardTitle>
           <CardDescription>
-            Thank you for subscribing to CriderOS. Your account has been upgraded.
+            Thank you for subscribing to CriderGPT. Your account has been upgraded.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

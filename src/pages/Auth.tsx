@@ -127,8 +127,8 @@ export default function Auth() {
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
             {isSignUp 
-              ? 'Sign up to get started with CriderOS' 
-              : 'Sign in to your CriderOS account'
+              ? 'Sign up to get started with CriderGPT' 
+              : 'Sign in to your CriderGPT account'
             }
           </CardDescription>
         </CardHeader>

@@ -93,7 +93,7 @@ export function MediaPanel() {
     if (!imageData) return;
     
     const link = document.createElement('a');
-    link.download = 'crideros_generated_image.png';
+    link.download = 'cridergpt_generated_image.png';
     link.href = `data:image/png;base64,${imageData}`;
     link.click();
   };
@@ -115,7 +115,7 @@ export function MediaPanel() {
 
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'crideros_generated_video.webm';
+        a.download = 'cridergpt_generated_video.webm';
         a.click();
       };
 
@@ -142,7 +142,7 @@ export function MediaPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-6 w-6 text-primary" />
-            CriderOS AI Media Generator
+            CriderGPT AI Media Generator
           </CardTitle>
           <p className="text-muted-foreground">
             Generate stunning images with AI and export them as PNG or video formats

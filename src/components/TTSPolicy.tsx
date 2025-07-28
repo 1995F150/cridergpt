@@ -3,7 +3,7 @@ import React from "react";
 const TTSPolicy = () => (
   <div className="bg-card/95 backdrop-blur-sm border border-border rounded-xl p-8 max-w-4xl mx-auto my-8 shadow-lg">
     <h2 className="text-3xl font-bold text-primary mb-4 flex items-center gap-2">
-      🗣️ CriderOS Text-to-Speech (TTS) Policy
+      🗣️ CriderGPT Text-to-Speech (TTS) Policy
     </h2>
 
     <p className="text-lg text-muted-foreground mb-6">
@@ -14,7 +14,7 @@ const TTSPolicy = () => (
       <li className="flex gap-3">
         <span className="font-bold text-primary">1.</span>
         <div>
-          <strong>TTS Overview:</strong> CriderOS uses advanced Text-to-Speech (TTS) to turn text into realistic voice audio. The default TTS voice is Jessie Crider. If the AI speaks, it's probably vibing in Jessie's digital voice.
+          <strong>TTS Overview:</strong> CriderGPT uses advanced Text-to-Speech (TTS) to turn text into realistic voice audio. The default TTS voice is Jessie Crider. If the AI speaks, it's probably vibing in Jessie's digital voice.
         </div>
       </li>
       
@@ -72,14 +72,14 @@ const TTSPolicy = () => (
       <h3 className="font-bold text-primary mb-2">🚀 Early Release Benefits</h3>
       <ul className="space-y-1 text-sm text-muted-foreground">
         <li>• Priority access to new voices and features</li>
-        <li>• Direct feedback channel to CriderOS team</li>
+        <li>• Direct feedback channel to CriderGPT team</li>
         <li>• Special early adopter pricing on Pro features</li>
         <li>• Beta tester recognition in the community</li>
       </ul>
     </div>
 
     <p className="text-sm text-muted-foreground mt-6 text-center">
-      By using CriderOS TTS features, you agree to this policy and our Terms of Service.
+      By using CriderGPT TTS features, you agree to this policy and our Terms of Service.
     </p>
   </div>
 );

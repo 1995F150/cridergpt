@@ -15,7 +15,7 @@ export function PaymentPanel() {
       name: "Free",
       price: "$0",
       period: "/month",
-      description: "Perfect for getting started with CriderOS",
+      description: "Perfect for getting started with CriderGPT",
       features: [
         "AI Chat (100 tokens/month)",
         "TTS (5 requests/month)",
@@ -46,7 +46,7 @@ export function PaymentPanel() {
         "Email Support"
       ],
       highlighted: false,
-      priceId: "price_1Rell1P90uC07RqG5S4mEjHC", // CriderOS Plus
+      priceId: "price_1Rell1P90uC07RqG5S4mEjHC", // CriderGPT Plus
       icon: <Zap className="h-6 w-6" />
     },
     {
@@ -69,7 +69,7 @@ export function PaymentPanel() {
         "Advanced Security Features"
       ],
       highlighted: true,
-      priceId: "price_1RellmP90uC07RqGFSDHaCwu", // CriderOS Pro
+      priceId: "price_1RellmP90uC07RqGFSDHaCwu", // CriderGPT Pro
       icon: <Star className="h-6 w-6" />
     }
   ];

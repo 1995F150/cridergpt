@@ -28,7 +28,7 @@ export function Header() {
           <div className="flex items-center space-x-2">
             <img 
               src="/lovable-uploads/1b1242ff-1483-4ec4-ba1d-41b6c2478a76.png" 
-              alt="CriderOS Logo" 
+              alt="CriderGPT Logo" 
               className="h-12 w-auto"
             />
           </div>

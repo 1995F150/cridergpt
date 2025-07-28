@@ -28,7 +28,7 @@ const FixxyBot: React.FC<FixxyBotProps> = ({ isOpen, onClose }) => {
     {
       id: '1',
       role: 'system',
-      content: '🔧 **Fixxy Bot Online** - I have full developer access and can:\n\n• Generate and deploy code\n• Execute SQL queries and database operations\n• Access all CriderOS APIs\n• Debug and fix system issues\n• Deploy changes in real-time\n\nWhat would you like me to help you with?',
+      content: '🔧 **Fixxy Bot Online** - I have full developer access and can:\n\n• Generate and deploy code\n• Execute SQL queries and database operations\n• Access all CriderGPT APIs\n• Debug and fix system issues\n• Deploy changes in real-time\n\nWhat would you like me to help you with?',
       timestamp: new Date(),
       type: 'text'
     }

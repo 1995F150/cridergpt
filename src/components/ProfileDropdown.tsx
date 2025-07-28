@@ -201,7 +201,7 @@ export function ProfileDropdown() {
         
         <DropdownMenuItem asChild>
           <a
-            href={`mailto:jessiecrider3@gmail.com?subject=Feedback from CriderOS&body=Hey Jessie, here's my feedback:`}
+            href={`mailto:jessiecrider3@gmail.com?subject=Feedback from CriderGPT&body=Hey Jessie, here's my feedback:`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center cursor-pointer"

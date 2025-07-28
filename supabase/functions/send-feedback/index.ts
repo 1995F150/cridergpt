@@ -27,12 +27,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send feedback email to Jessie
     const emailResponse = await resend.emails.send({
-      from: "CriderOS Feedback <onboarding@resend.dev>",
+      from: "CriderGPT Feedback <onboarding@resend.dev>",
       to: ["jessiecrider3@gmail.com"],
-      subject: `CriderOS Feedback: ${subject}`,
+      subject: `CriderGPT Feedback: ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">New Feedback from CriderOS</h2>
+          <h2 style="color: #333;">New Feedback from CriderGPT</h2>
           
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0; color: #555;">Subject: ${subject}</h3>
@@ -43,7 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           
           <p style="color: #666; font-size: 14px;">
-            This feedback was sent from CriderOS. You can reply directly to this email to respond to the user.
+            This feedback was sent from CriderGPT. You can reply directly to this email to respond to the user.
           </p>
         </div>
       `,

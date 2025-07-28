@@ -135,7 +135,7 @@ const UpdatesTab = () => {
       <div>
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Megaphone className="w-6 h-6" />
-          CriderOS Updates
+          CriderGPT Updates
         </h2>
         <p className="text-muted-foreground">
           Latest system updates, features, and announcements

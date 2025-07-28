@@ -18,7 +18,7 @@ export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello! I'm your CriderOS AI Assistant. I can help you manage projects, deploy FS22/FS25 mods, generate API keys, and automate text responses. How can I assist you today?",
+      text: "Hello! I'm your CriderGPT AI Assistant. I can help you manage projects, deploy FS22/FS25 mods, generate API keys, and automate text responses. How can I assist you today?",
       isUser: false,
       timestamp: new Date()
     }
