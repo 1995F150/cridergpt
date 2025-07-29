@@ -31,6 +31,11 @@ const Success = () => {
             title: "Subscription Activated!",
             description: `Your ${data.plan} plan is now active.`,
           });
+          
+          // Refresh the page after a short delay to update subscription status
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 2000);
         }
       } catch (error: any) {
         console.error('Payment verification error:', error);

@@ -42,7 +42,7 @@ const Pricing = () => {
         "Email Support"
       ],
       highlighted: false,
-      priceId: "price_1Rell1P90uC07RqG5S4mEjHC" // CriderGPT Plus
+      priceId: "price_1QWi0fIJp5CmkQf3fE8NSFZE" // CriderGPT Plus
     },
     {
       name: "Pro",
@@ -63,7 +63,7 @@ const Pricing = () => {
         "Advanced Security Features"
       ],
       highlighted: true,
-      priceId: "price_1RellmP90uC07RqGFSDHaCwu" // CriderGPT Pro
+      priceId: "price_1QWi1AIJp5CmkQf3Y8wQEP2V" // CriderGPT Pro
     }
   ];
 

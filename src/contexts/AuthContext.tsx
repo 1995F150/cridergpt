@@ -31,6 +31,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // If user just signed in, refresh their subscription status
+        if (event === 'SIGNED_IN' && session?.user) {
+          refreshUserSubscription(session.user.id);
+        }
       }
     );
 
@@ -39,10 +44,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Refresh subscription status on initial load
+      if (session?.user) {
+        refreshUserSubscription(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const refreshUserSubscription = async (userId: string) => {
+    try {
+      // Try to refresh subscription status from Stripe
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.access_token) {
+        await supabase.functions.invoke('check-subscription', {
+          headers: {
+            Authorization: `Bearer ${sessionData.session.access_token}`,
+          }
+        });
+      }
+    } catch (error) {
+      console.log('Subscription check failed (this is normal for free users):', error);
+    }
+  };
 
   const signOut = async () => {
     try {

@@ -228,22 +228,41 @@ export function PlanPanel() {
         </CardContent>
       </Card>
 
-      {/* Upgrade Section */}
-      {!isPlan('pro') && (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <h3 className="text-xl font-bold mb-2">Ready to upgrade?</h3>
-            <p className="text-muted-foreground mb-4">
-              Unlock more features and higher limits with a premium plan.
-            </p>
-            <Button asChild>
-              <a href="https://buy.stripe.com/3cI8wRbZCblO4mmg8EdZ608" target="_blank" rel="noopener noreferrer">
-                Upgrade Now <ExternalLink className="h-4 w-4 ml-2" />
-              </a>
+      {/* Subscription Management Section */}
+      <Card>
+        <CardContent className="p-6 text-center">
+          <h3 className="text-xl font-bold mb-2">Subscription Management</h3>
+          <p className="text-muted-foreground mb-4">
+            Check your latest subscription status or upgrade your plan.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                const { data: sessionData } = await supabase.auth.getSession();
+                if (sessionData.session?.access_token) {
+                  await supabase.functions.invoke('check-subscription', {
+                    headers: {
+                      Authorization: `Bearer ${sessionData.session.access_token}`,
+                    }
+                  });
+                  // Refresh the page to show updated data
+                  window.location.reload();
+                }
+              }}
+            >
+              Refresh Subscription Status
             </Button>
-          </CardContent>
-        </Card>
-      )}
+            {!isPlan('pro') && (
+              <Button asChild>
+                <a href="/pricing">
+                  Upgrade Plan <ExternalLink className="h-4 w-4 ml-2" />
+                </a>
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
