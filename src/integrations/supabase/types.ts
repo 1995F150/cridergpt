@@ -1340,6 +1340,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      batch_sync_user_tiers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          old_tier: string
+          new_tier: string
+          sync_result: Json
+        }[]
+      }
       can_user_request_tts: {
         Args: Record<PropertyKey, never> | { uid: string }
         Returns: boolean
@@ -1462,6 +1471,17 @@ export type Database = {
       reset_query_statistics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      safe_batch_sync_user_tiers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          status: string
+          message: string
+          user_id: string
+          previous_tier: string
+          new_tier: string
+          sync_timestamp: string
+        }[]
       }
       update_pro_access: {
         Args: { user_id: string; new_pro_status: boolean }
