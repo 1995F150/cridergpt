@@ -2,8 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Sparkles, Clock, Users } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { MapPin, Sparkles, Clock, Users, ExternalLink } from "lucide-react";
 
 interface MapBuilderPromoProps {
   variant?: 'default' | 'compact' | 'featured';
@@ -11,13 +10,8 @@ interface MapBuilderPromoProps {
 }
 
 export function MapBuilderPromo({ variant = 'default', className = '' }: MapBuilderPromoProps) {
-  const { toast } = useToast();
-
-  const handleGetEarlyAccess = () => {
-    toast({
-      title: "Early Access Request Sent!",
-      description: "We'll notify you as soon as CriderGPT Map Builder is available for testing.",
-    });
+  const handleLaunchMapBuilder = () => {
+    window.open('https://cridergpt-map-builder.lovable.app/', '_blank');
   };
 
   if (variant === 'compact') {
@@ -29,15 +23,16 @@ export function MapBuilderPromo({ variant = 'default', className = '' }: MapBuil
             <div>
               <h4 className="font-semibold text-green-800 dark:text-green-200">Map Builder</h4>
               <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-                Coming Soon
+                Available Now
               </Badge>
             </div>
           </div>
           <p className="text-sm text-green-700 dark:text-green-300 mb-3">
             Create interactive maps with AI-powered location intelligence
           </p>
-          <Button onClick={handleGetEarlyAccess} size="sm" className="w-full bg-green-600 hover:bg-green-700">
-            Get Early Access
+          <Button onClick={handleLaunchMapBuilder} size="sm" className="w-full bg-green-600 hover:bg-green-700">
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Launch Map Builder
           </Button>
         </CardContent>
       </Card>
@@ -56,7 +51,7 @@ export function MapBuilderPromo({ variant = 'default', className = '' }: MapBuil
           </CardTitle>
           <Badge variant="secondary" className="bg-green-100 text-green-700 mx-auto">
             <Sparkles className="h-3 w-3 mr-1" />
-            Coming Soon
+            Available Now
           </Badge>
         </CardHeader>
         <CardContent className="text-center">
@@ -79,13 +74,13 @@ export function MapBuilderPromo({ variant = 'default', className = '' }: MapBuil
             </div>
           </div>
 
-          <Button onClick={handleGetEarlyAccess} size="lg" className="bg-green-600 hover:bg-green-700 px-8">
-            <Sparkles className="h-4 w-4 mr-2" />
-            Get Early Access
+          <Button onClick={handleLaunchMapBuilder} size="lg" className="bg-green-600 hover:bg-green-700 px-8">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Launch Map Builder
           </Button>
           
           <p className="text-xs text-green-600 dark:text-green-400 mt-3">
-            Be among the first to experience the future of AI-powered mapping
+            Experience the future of AI-powered mapping today
           </p>
         </CardContent>
       </Card>
@@ -101,7 +96,7 @@ export function MapBuilderPromo({ variant = 'default', className = '' }: MapBuil
             <CardTitle className="text-green-800 dark:text-green-200">CriderGPT Map Builder</CardTitle>
             <Badge variant="secondary" className="bg-green-100 text-green-700 mt-1">
               <Sparkles className="h-3 w-3 mr-1" />
-              Coming Soon
+              Available Now
             </Badge>
           </div>
         </div>
@@ -118,9 +113,9 @@ export function MapBuilderPromo({ variant = 'default', className = '' }: MapBuil
           <Badge variant="outline" className="text-green-700 border-green-300">Collaborative</Badge>
         </div>
 
-        <Button onClick={handleGetEarlyAccess} className="w-full bg-green-600 hover:bg-green-700">
-          <Sparkles className="h-4 w-4 mr-2" />
-          Get Early Access
+        <Button onClick={handleLaunchMapBuilder} className="w-full bg-green-600 hover:bg-green-700">
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Launch Map Builder
         </Button>
       </CardContent>
     </Card>

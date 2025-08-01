@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Sparkles, MapPin, Zap, Users } from "lucide-react";
+import { X, Sparkles, MapPin, Zap, Users, ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFeatureNotifications } from "@/hooks/useFeatureNotifications";
 import { useToast } from "@/hooks/use-toast";
@@ -35,16 +34,13 @@ export function FeatureNotifications() {
       {
         id: 'map-builder-announcement',
         type: 'announcement',
-        title: 'CriderGPT Map Builder Coming Soon! 🗺️',
+        title: 'CriderGPT Map Builder Available Now! 🗺️',
         message: 'Revolutionary AI-powered mapping platform with smart location intelligence, real-time updates, and collaborative features.',
         icon: MapPin,
         gradient: 'bg-gradient-to-r from-green-500 to-emerald-600',
-        actionLabel: 'Get Early Access',
+        actionLabel: 'Launch Map Builder',
         onAction: () => {
-          toast({
-            title: "Early Access Request Sent!",
-            description: "We'll notify you as soon as CriderGPT Map Builder is available for testing.",
-          });
+          window.open('https://cridergpt-map-builder.lovable.app/', '_blank');
           setDismissedNotifications(prev => new Set(prev).add('map-builder-announcement'));
         },
         priority: 'high'
@@ -157,6 +153,7 @@ export function FeatureNotifications() {
                             onClick={notification.onAction}
                             className="h-8 px-3 text-xs"
                           >
+                            {notification.id === 'map-builder-announcement' && <ExternalLink className="h-3 w-3 mr-1" />}
                             {notification.actionLabel}
                           </Button>
                         )}
