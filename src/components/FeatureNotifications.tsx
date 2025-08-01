@@ -1,114 +1,184 @@
-import { useFeatureNotifications } from '@/hooks/useFeatureNotifications';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Bell, Star, Zap, Upload, MessageSquare, Headphones, Shield } from 'lucide-react';
 
-const featureIcons = {
-  basic_chat: MessageSquare,
-  limited_tts: Headphones,
-  unlimited_tts: Headphones,
-  premium_chat: MessageSquare,
-  file_upload: Upload,
-  advanced_ai: Zap,
-  priority_support: Shield
-};
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { X, Sparkles, MapPin, Zap, Users } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFeatureNotifications } from "@/hooks/useFeatureNotifications";
+import { useToast } from "@/hooks/use-toast";
 
-const featureLabels = {
-  basic_chat: 'Basic Chat',
-  limited_tts: 'Limited TTS',
-  unlimited_tts: 'Unlimited TTS',
-  premium_chat: 'Premium Chat',
-  file_upload: 'File Upload',
-  advanced_ai: 'Advanced AI',
-  priority_support: 'Priority Support'
-};
+interface Notification {
+  id: string;
+  type: 'announcement' | 'feature' | 'update' | 'promotion';
+  title: string;
+  message: string;
+  icon?: any;
+  gradient?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  priority?: 'low' | 'normal' | 'high';
+}
 
 export function FeatureNotifications() {
-  const { featureStatus, notifications, hasFeature, isPlan, refreshFeatureStatus } = useFeatureNotifications();
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
+  
+  // Subscribe to real-time notifications
+  useFeatureNotifications();
 
-  if (!featureStatus) {
-    return (
-      <Card className="w-full max-w-md">
-        <CardContent className="p-4 text-center">
-          <Bell className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading feature status...</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  useEffect(() => {
+    // Static notifications for all users
+    const staticNotifications: Notification[] = [
+      {
+        id: 'map-builder-announcement',
+        type: 'announcement',
+        title: 'CriderGPT Map Builder Coming Soon! 🗺️',
+        message: 'Revolutionary AI-powered mapping platform with smart location intelligence, real-time updates, and collaborative features.',
+        icon: MapPin,
+        gradient: 'bg-gradient-to-r from-green-500 to-emerald-600',
+        actionLabel: 'Get Early Access',
+        onAction: () => {
+          toast({
+            title: "Early Access Request Sent!",
+            description: "We'll notify you as soon as CriderGPT Map Builder is available for testing.",
+          });
+          setDismissedNotifications(prev => new Set(prev).add('map-builder-announcement'));
+        },
+        priority: 'high'
+      },
+      {
+        id: 'ai-improvements',
+        type: 'update',
+        title: 'AI Response Quality Enhanced 🚀',
+        message: 'Our latest AI model updates bring 40% faster responses and improved accuracy across all CriderGPT features.',
+        icon: Zap,
+        gradient: 'bg-gradient-to-r from-blue-500 to-purple-600',
+        actionLabel: 'Try It Now',
+        onAction: () => setDismissedNotifications(prev => new Set(prev).add('ai-improvements')),
+        priority: 'normal'
+      },
+      {
+        id: 'community-milestone',
+        type: 'announcement',
+        title: '10,000+ Users Strong! 🎉',
+        message: 'Thank you for being part of our growing CriderGPT community. Your feedback drives our innovation.',
+        icon: Users,
+        gradient: 'bg-gradient-to-r from-pink-500 to-rose-600',
+        actionLabel: 'Share Feedback',
+        onAction: () => {
+          window.open('mailto:jessiecrider3@gmail.com?subject=CriderGPT Feedback', '_blank');
+          setDismissedNotifications(prev => new Set(prev).add('community-milestone'));
+        },
+        priority: 'normal'
+      }
+    ];
 
-  const planBadgeColor = isPlan('pro') ? 'default' : isPlan('plu') ? 'secondary' : 'outline';
-  const planName = isPlan('pro') ? 'Pro' : isPlan('plu') ? 'Plus' : 'Free';
+    setNotifications(staticNotifications);
 
-  const unreadNotifications = notifications.filter(n => !n.read);
+    // Load dismissed notifications from localStorage
+    const dismissed = localStorage.getItem('dismissed-notifications');
+    if (dismissed) {
+      setDismissedNotifications(new Set(JSON.parse(dismissed)));
+    }
+  }, [toast]);
+
+  // Save dismissed notifications to localStorage
+  useEffect(() => {
+    localStorage.setItem('dismissed-notifications', JSON.stringify(Array.from(dismissedNotifications)));
+  }, [dismissedNotifications]);
+
+  const handleDismiss = (notificationId: string) => {
+    setDismissedNotifications(prev => new Set(prev).add(notificationId));
+  };
+
+  const getNotificationIcon = (notification: Notification) => {
+    const Icon = notification.icon || Sparkles;
+    return <Icon className="h-5 w-5 text-white" />;
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'border-red-200 dark:border-red-800';
+      case 'normal': return 'border-blue-200 dark:border-blue-800';
+      case 'low': return 'border-gray-200 dark:border-gray-800';
+      default: return 'border-blue-200 dark:border-blue-800';
+    }
+  };
+
+  // Filter out dismissed notifications and sort by priority
+  const activeNotifications = notifications
+    .filter(n => !dismissedNotifications.has(n.id))
+    .sort((a, b) => {
+      const priorityOrder = { high: 3, normal: 2, low: 1 };
+      return (priorityOrder[b.priority || 'normal'] || 2) - (priorityOrder[a.priority || 'normal'] || 2);
+    });
+
+  if (!user || activeNotifications.length === 0) return null;
 
   return (
-    <div className="space-y-4">
-      {/* Current Plan Status */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-primary" />
-              <span className="font-medium">Current Plan</span>
-            </div>
-            <Badge variant={planBadgeColor}>{planName}</Badge>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2">
-            {featureStatus.featuresUnlocked.map(feature => {
-              const Icon = featureIcons[feature as keyof typeof featureIcons];
-              return (
-                <div key={feature} className="flex items-center gap-2 text-sm">
-                  {Icon && <Icon className="h-4 w-4 text-green-500" />}
-                  <span className="text-muted-foreground">
-                    {featureLabels[feature as keyof typeof featureLabels]}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={refreshFeatureStatus}
-            className="mt-3 w-full"
+    <div className="fixed top-16 left-0 right-0 z-40 px-4">
+      <div className="max-w-4xl mx-auto space-y-2">
+        {activeNotifications.map((notification) => (
+          <Card 
+            key={notification.id} 
+            className={`border-2 ${getPriorityColor(notification.priority || 'normal')} shadow-lg animate-slide-down bg-card/95 backdrop-blur-sm`}
           >
-            Refresh Status
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Recent Notifications */}
-      {unreadNotifications.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Bell className="h-5 w-5 text-primary" />
-              <span className="font-medium">Recent Updates</span>
-              <Badge variant="destructive">{unreadNotifications.length}</Badge>
-            </div>
-            
-            <div className="space-y-2">
-              {unreadNotifications.slice(0, 3).map(notification => (
-                <div key={notification.id} className="text-sm p-2 bg-muted rounded">
-                  <div className="font-medium text-primary">
-                    {notification.notification_type === 'subscription_updated' && 'Subscription Updated'}
-                  </div>
-                  <div className="text-muted-foreground">
-                    Plan changed to {notification.data?.new_plan || 'unknown'}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {new Date(notification.created_at).toLocaleString()}
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                <div className={`p-2 rounded-full ${notification.gradient || 'bg-gradient-to-r from-blue-500 to-purple-600'} flex-shrink-0`}>
+                  {getNotificationIcon(notification)}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-foreground">{notification.title}</h4>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${
+                            notification.priority === 'high' ? 'border-red-300 text-red-700' :
+                            notification.priority === 'normal' ? 'border-blue-300 text-blue-700' :
+                            'border-gray-300 text-gray-700'
+                          }`}
+                        >
+                          {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">{notification.message}</p>
+                      
+                      <div className="flex items-center gap-2">
+                        {notification.actionLabel && notification.onAction && (
+                          <Button 
+                            size="sm" 
+                            onClick={notification.onAction}
+                            className="h-8 px-3 text-xs"
+                          >
+                            {notification.actionLabel}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDismiss(notification.id)}
+                      className="h-8 w-8 p-0 hover:bg-muted/50 flex-shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Dismiss notification</span>
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

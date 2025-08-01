@@ -1,4 +1,5 @@
-import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Megaphone, Code, Star, Heart, Monitor, Sheet } from "lucide-react";
+
+import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Megaphone, Code, Star, Heart, Monitor, Sheet, MapPin } from "lucide-react";
 
 interface NavigationSidebarProps {
   activeTab: string;
@@ -12,6 +13,7 @@ const tabs = [
   { id: 'code', icon: Code, label: 'Code Generator' },
   { id: 'tts', icon: Volume2, label: 'Text to Speech' },
   { id: 'media', icon: Palette, label: 'Media Generator' },
+  { id: 'maps', icon: MapPin, label: 'Map Builder', badge: 'Soon' },
   { id: 'memorial', icon: Heart, label: 'Memorial' },
   { id: 'reviews', icon: Star, label: 'Reviews' },
   { id: 'updates', icon: Megaphone, label: 'System Updates' },
@@ -31,7 +33,7 @@ export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarP
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left relative ${
                 activeTab === tab.id
                   ? 'bg-primary/10 text-primary'
                   : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
@@ -39,6 +41,11 @@ export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarP
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
               <span className="font-medium">{tab.label}</span>
+              {tab.badge && (
+                <span className="ml-auto bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
+                  {tab.badge}
+                </span>
+              )}
             </button>
           );
         })}
