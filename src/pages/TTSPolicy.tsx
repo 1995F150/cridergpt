@@ -1,0 +1,14 @@
+
+import TTSPolicy from "@/components/TTSPolicy";
+
+const TTSPolicyPage = () => {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <TTSPolicy />
+      </div>
+    </div>
+  );
+};
+
+export default TTSPolicyPage;

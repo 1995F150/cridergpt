@@ -1,21 +1,24 @@
+
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import { Auth } from "@/pages/Auth";
-import { Index } from "@/pages/Index";
-import { Success } from "@/pages/Success";
-import { NotFound } from "@/pages/NotFound";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import Auth from "@/pages/Auth";
+import Index from "@/pages/Index";
+import Success from "@/pages/Success";
+import NotFound from "@/pages/NotFound";
 import UserAgreement from "@/pages/UserAgreement";
 import TTSPolicyPage from "@/pages/TTSPolicy";
 import SystemDiagnosticsPage from "@/pages/SystemDiagnostics";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
           <BrowserRouter>
@@ -48,7 +51,7 @@ function App() {
           </BrowserRouter>
         </ThemeProvider>
       </AuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
