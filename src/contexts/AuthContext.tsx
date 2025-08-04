@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,37 +26,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider: Setting up auth state listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state change:', event, session ? 'Session exists' : 'No session');
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
         
         // If user just signed in, refresh their subscription status
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log('User signed in, refreshing subscription');
           refreshUserSubscription(session.user.id);
         }
       }
     );
 
     // Get initial session
+    console.log('AuthProvider: Getting initial session');
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session ? 'Session exists' : 'No session');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
       // Refresh subscription status on initial load
       if (session?.user) {
+        console.log('Initial session found, refreshing subscription');
         refreshUserSubscription(session.user.id);
       }
+    }).catch((error) => {
+      console.error('Error getting initial session:', error);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('AuthProvider: Cleaning up auth listener');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const refreshUserSubscription = async (userId: string) => {
     try {
+      console.log('Refreshing subscription for user:', userId);
       // Try to refresh subscription status from Stripe
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.access_token) {
@@ -64,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             Authorization: `Bearer ${sessionData.session.access_token}`,
           }
         });
+        console.log('Subscription refresh completed');
       }
     } catch (error) {
       console.log('Subscription check failed (this is normal for free users):', error);
@@ -72,6 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      console.log('Signing out user');
       // Clear any local storage items if needed
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
@@ -90,6 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.location.href = '/auth';
     }
   };
+
+  console.log('AuthProvider render - loading:', loading, 'user:', user ? 'exists' : 'null');
 
   const value = {
     user,
