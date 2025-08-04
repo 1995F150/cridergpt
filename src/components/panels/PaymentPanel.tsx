@@ -15,19 +15,19 @@ export function PaymentPanel() {
   const { plans, loading: plansLoading, error: plansError } = usePlanConfigurations();
 
   // Legacy price IDs for Stripe integration
-  const priceIdMap = {
+  const priceIdMap: Record<string, string> = {
     'plus': 'price_1Rell1P90uC07RqG5S4mEjHC',
     'pro': 'price_1RellmP90uC07RqGFSDHaCwu'
   };
 
-  const iconMap = {
+  const iconMap: Record<string, React.ReactNode> = {
     'free': <CreditCard className="h-6 w-6" />,
     'plus': <Zap className="h-6 w-6" />,
     'pro': <Star className="h-6 w-6" />
   };
 
-  const handlePlanSelect = async (plan: any) => {
-    const priceId = priceIdMap[plan.plan_name as keyof typeof priceIdMap];
+  const handlePlanSelect = async (planName: string) => {
+    const priceId = priceIdMap[planName];
     
     if (!priceId) {
       // Free plan - redirect to auth
@@ -35,7 +35,7 @@ export function PaymentPanel() {
       return;
     }
 
-    setLoading(plan.plan_name);
+    setLoading(planName);
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -68,6 +68,7 @@ export function PaymentPanel() {
         throw new Error("No checkout URL returned");
       }
     } catch (error: any) {
+      console.error('Payment error:', error);
       toast({
         title: "Payment Error",
         description: error.message || "Failed to create checkout session",
@@ -89,12 +90,22 @@ export function PaymentPanel() {
     );
   }
 
-  if (plansError || !plans.length) {
+  if (plansError) {
     return (
       <div className="panel h-full w-full p-6 overflow-y-auto">
         <div className="max-w-6xl mx-auto text-center">
-          <p className="text-destructive mb-4">Failed to load payment plans</p>
+          <p className="text-destructive mb-4">Error loading payment plans: {plansError}</p>
           <p className="text-muted-foreground">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!plans || plans.length === 0) {
+    return (
+      <div className="panel h-full w-full p-6 overflow-y-auto">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-muted-foreground">No payment plans available.</p>
         </div>
       </div>
     );
@@ -136,7 +147,7 @@ export function PaymentPanel() {
 
               <CardHeader className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  {iconMap[plan.plan_name as keyof typeof iconMap]}
+                  {iconMap[plan.plan_name] || <CreditCard className="h-6 w-6" />}
                 </div>
                 <CardTitle className="text-2xl">{plan.plan_display_name}</CardTitle>
                 <CardDescription>
@@ -174,7 +185,7 @@ export function PaymentPanel() {
                   }`}
                   size="lg"
                   disabled={loading === plan.plan_name}
-                  onClick={() => handlePlanSelect(plan)}
+                  onClick={() => handlePlanSelect(plan.plan_name)}
                 >
                   {loading === plan.plan_name 
                     ? "Processing..." 

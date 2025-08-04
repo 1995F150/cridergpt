@@ -14,13 +14,13 @@ const Pricing = () => {
   const { plans, loading: plansLoading, error: plansError } = usePlanConfigurations();
 
   // Legacy price IDs for Stripe integration
-  const priceIdMap = {
+  const priceIdMap: Record<string, string> = {
     'plus': 'price_1QWi0fIJp5CmkQf3fE8NSFZE',
     'pro': 'price_1QWi1AIJp5CmkQf3Y8wQEP2V'
   };
 
-  const handlePlanSelect = async (plan: any) => {
-    const priceId = priceIdMap[plan.plan_name as keyof typeof priceIdMap];
+  const handlePlanSelect = async (planName: string) => {
+    const priceId = priceIdMap[planName];
     
     if (!priceId) {
       // Free plan - redirect to auth
@@ -28,7 +28,7 @@ const Pricing = () => {
       return;
     }
 
-    setLoading(plan.plan_name);
+    setLoading(planName);
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -61,6 +61,7 @@ const Pricing = () => {
         throw new Error("No checkout URL returned");
       }
     } catch (error: any) {
+      console.error('Payment error:', error);
       toast({
         title: "Payment Error",
         description: error.message || "Failed to create checkout session",
@@ -82,12 +83,22 @@ const Pricing = () => {
     );
   }
 
-  if (plansError || !plans.length) {
+  if (plansError) {
     return (
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-destructive mb-4">Failed to load pricing plans</p>
+          <p className="text-destructive mb-4">Error loading pricing plans: {plansError}</p>
           <p className="text-muted-foreground">Please try refreshing the page</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!plans || plans.length === 0) {
+    return (
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-muted-foreground">No pricing plans available at the moment.</p>
         </div>
       </section>
     );
@@ -157,7 +168,7 @@ const Pricing = () => {
                 }`}
                 size="lg"
                 disabled={loading === plan.plan_name}
-                onClick={() => handlePlanSelect(plan)}
+                onClick={() => handlePlanSelect(plan.plan_name)}
               >
                 {loading === plan.plan_name 
                   ? "Processing..." 
