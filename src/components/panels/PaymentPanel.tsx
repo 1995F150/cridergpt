@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,83 +6,36 @@ import { Check, CreditCard, Star, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
+import { PromotionalMessages } from "@/components/PromotionalMessages";
 
 export function PaymentPanel() {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
+  const { plans, loading: plansLoading, error: plansError } = usePlanConfigurations();
 
-  const plans = [
-    {
-      name: "Free",
-      price: "$0",
-      period: "/month",
-      description: "Perfect for getting started with CriderGPT",
-      features: [
-        "AI Chat (100 tokens/month)",
-        "TTS (5 requests/month)",
-        "1 Project",
-        "2 API Key Slots", 
-        "Basic File Upload (10MB)",
-        "System Updates Access",
-        "Community Support"
-      ],
-      highlighted: false,
-      priceId: null,
-      icon: <CreditCard className="h-6 w-6" />
-    },
-    {
-      name: "Plus",
-      price: "$9.99",
-      period: "/month",
-      description: "Enhanced features for power users",
-      features: [
-        "AI Chat (10,000 tokens/month)",
-        "TTS (100 requests/month)",
-        "Backend Code Generator",
-        "Project Management (5 projects)",
-        "5 API Key Slots",
-        "Standard File Upload (100MB)",
-        "Activity Updates Tracking",
-        "System Updates Access",
-        "Email Support"
-      ],
-      highlighted: false,
-      priceId: "price_1Rell1P90uC07RqG5S4mEjHC", // CriderGPT Plus
-      icon: <Zap className="h-6 w-6" />
-    },
-    {
-      name: "Pro",
-      price: "$20.99",
-      period: "/month",
-      description: "Complete solution for professionals",
-      features: [
-        "AI Chat (100,000 tokens/month)",
-        "TTS (Unlimited)",
-        "Advanced Backend Code Generator",
-        "Unlimited Projects",
-        "Unlimited API Keys", 
-        "Premium File Upload (1GB)",
-        "Advanced Activity Analytics",
-        "Real-time Updates & Notifications",
-        "FS22/FS25 Mod Deployment",
-        "Priority Support",
-        "Custom Automation Scripts",
-        "Advanced Security Features"
-      ],
-      highlighted: true,
-      priceId: "price_1RellmP90uC07RqGFSDHaCwu", // CriderGPT Pro
-      icon: <Star className="h-6 w-6" />
-    }
-  ];
+  // Legacy price IDs for Stripe integration
+  const priceIdMap = {
+    'plus': 'price_1Rell1P90uC07RqG5S4mEjHC',
+    'pro': 'price_1RellmP90uC07RqGFSDHaCwu'
+  };
 
-  const handlePlanSelect = async (plan: typeof plans[0]) => {
-    if (!plan.priceId) {
+  const iconMap = {
+    'free': <CreditCard className="h-6 w-6" />,
+    'plus': <Zap className="h-6 w-6" />,
+    'pro': <Star className="h-6 w-6" />
+  };
+
+  const handlePlanSelect = async (plan: any) => {
+    const priceId = priceIdMap[plan.plan_name as keyof typeof priceIdMap];
+    
+    if (!priceId) {
       // Free plan - redirect to auth
       window.location.href = '/auth';
       return;
     }
 
-    setLoading(plan.name);
+    setLoading(plan.plan_name);
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -97,7 +51,7 @@ export function PaymentPanel() {
       }
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId: plan.priceId },
+        body: { priceId },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         }
@@ -124,6 +78,28 @@ export function PaymentPanel() {
     }
   };
 
+  if (plansLoading) {
+    return (
+      <div className="panel h-full w-full p-6 overflow-y-auto">
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading payment plans...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (plansError || !plans.length) {
+    return (
+      <div className="panel h-full w-full p-6 overflow-y-auto">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-destructive mb-4">Failed to load payment plans</p>
+          <p className="text-muted-foreground">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="panel h-full w-full p-6 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
@@ -142,14 +118,14 @@ export function PaymentPanel() {
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {plans.map((plan) => (
             <Card
-              key={plan.name}
+              key={plan.plan_name}
               className={`relative transition-all duration-300 ${
-                plan.highlighted
+                plan.plan_name === 'pro'
                   ? "border-2 border-primary bg-primary/5 shadow-lg shadow-primary/20"
                   : "border border-border hover:border-primary/50"
               }`}
             >
-              {plan.highlighted && (
+              {plan.plan_name === 'pro' && (
                 <Badge
                   variant="secondary"
                   className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cyber-blue to-tech-accent text-background border-0"
@@ -160,16 +136,20 @@ export function PaymentPanel() {
 
               <CardHeader className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  {plan.icon}
+                  {iconMap[plan.plan_name as keyof typeof iconMap]}
                 </div>
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
+                <CardTitle className="text-2xl">{plan.plan_display_name}</CardTitle>
+                <CardDescription>
+                  {plan.plan_name === 'free' && 'Perfect for getting started with CriderGPT'}
+                  {plan.plan_name === 'plus' && 'Enhanced features for power users'}
+                  {plan.plan_name === 'pro' && 'Complete solution for professionals'}
+                </CardDescription>
                 <div className="flex items-baseline justify-center mt-4">
                   <span className="text-4xl font-bold text-primary">
-                    {plan.price}
+                    ${plan.price_monthly}
                   </span>
                   <span className="text-muted-foreground ml-1">
-                    {plan.period}
+                    /month
                   </span>
                 </div>
               </CardHeader>
@@ -184,19 +164,21 @@ export function PaymentPanel() {
                   ))}
                 </ul>
 
+                <PromotionalMessages planName={plan.plan_name} />
+
                 <Button
                   className={`w-full ${
-                    plan.highlighted
+                    plan.plan_name === 'pro'
                       ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
                       : "bg-primary hover:bg-primary/90"
                   }`}
                   size="lg"
-                  disabled={loading === plan.name}
+                  disabled={loading === plan.plan_name}
                   onClick={() => handlePlanSelect(plan)}
                 >
-                  {loading === plan.name 
+                  {loading === plan.plan_name 
                     ? "Processing..." 
-                    : plan.name === "Free" ? "Get Started Free" : "Subscribe Now"
+                    : plan.plan_name === "free" ? "Get Started Free" : "Subscribe Now"
                   }
                 </Button>
               </CardContent>

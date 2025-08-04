@@ -8,6 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import { Crown, Star, Zap, Check, X, ExternalLink } from 'lucide-react';
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { PromotionalMessages } from '@/components/PromotionalMessages';
 
 interface SubscriptionData {
   plan: string;
@@ -20,6 +22,7 @@ interface SubscriptionData {
 export function PlanPanel() {
   const { user } = useAuth();
   const { featureStatus, hasFeature, isPlan } = useFeatureNotifications();
+  const { plans, loading: plansLoading } = usePlanConfigurations();
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -91,7 +94,7 @@ export function PlanPanel() {
     );
   }
 
-  if (loading) {
+  if (loading || plansLoading) {
     return (
       <div className="flex-1 p-8">
         <Card>
@@ -198,33 +201,49 @@ export function PlanPanel() {
         </div>
       </div>
 
-      {/* Feature Comparison */}
+      {/* Dynamic Feature Comparison */}
+      {plans.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Plan Features</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="font-medium text-muted-foreground">Features</div>
+              {plans.map(plan => (
+                <div key={plan.plan_name} className="text-center font-medium capitalize">
+                  {plan.plan_name}
+                </div>
+              ))}
+              
+              {/* Get all unique features across all plans */}
+              {plans.length > 0 && (() => {
+                const allFeatures = new Set<string>();
+                plans.forEach(plan => plan.features.forEach(feature => allFeatures.add(feature)));
+                
+                return Array.from(allFeatures).map((feature, index) => (
+                  <div key={index} className="contents">
+                    <div className="py-2">{feature}</div>
+                    {plans.map(plan => (
+                      <div key={plan.plan_name} className="text-center py-2">
+                        {plan.features.includes(feature) ? 
+                          <Check className="h-4 w-4 text-green-500 mx-auto" /> : 
+                          <X className="h-4 w-4 text-red-500 mx-auto" />
+                        }
+                      </div>
+                    ))}
+                  </div>
+                ));
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Promotional Messages */}
       <Card>
-        <CardHeader>
-          <CardTitle>Plan Features</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="font-medium text-muted-foreground">Features</div>
-            <div className="text-center font-medium">Free</div>
-            <div className="text-center font-medium">Plus</div>
-            <div className="text-center font-medium">Pro</div>
-            
-            {features.map((feature, index) => (
-              <div key={index} className="contents">
-                <div className="py-2">{feature.name}</div>
-                <div className="text-center py-2">
-                  {feature.free ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-red-500 mx-auto" />}
-                </div>
-                <div className="text-center py-2">
-                  {feature.plus ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-red-500 mx-auto" />}
-                </div>
-                <div className="text-center py-2">
-                  {feature.pro ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-red-500 mx-auto" />}
-                </div>
-              </div>
-            ))}
-          </div>
+        <CardContent className="p-6">
+          <PromotionalMessages planName={subscriptionData?.plan || 'free'} />
         </CardContent>
       </Card>
 

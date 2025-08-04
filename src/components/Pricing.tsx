@@ -1,80 +1,34 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
+import { PromotionalMessages } from "@/components/PromotionalMessages";
 
 const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
+  const { plans, loading: plansLoading, error: plansError } = usePlanConfigurations();
 
-  const plans = [
-    {
-      name: "Free",
-      price: "$0",
-      period: "/month",
-      features: [
-        "AI Chat (100 tokens/month)",
-        "TTS (5 requests/month)",
-        "1 Project",
-        "2 API Key Slots", 
-        "Basic File Upload (10MB)",
-        "System Updates Access",
-        "Community Support"
-      ],
-      highlighted: false,
-      priceId: null // Free plan doesn't need Stripe
-    },
-    {
-      name: "Plus",
-      price: "$9.99",
-      period: "/month",
-      features: [
-        "AI Chat (10,000 tokens/month)",
-        "TTS (100 requests/month)",
-        "Backend Code Generator",
-        "Project Management (5 projects)",
-        "5 API Key Slots",
-        "Standard File Upload (100MB)",
-        "Activity Updates Tracking",
-        "System Updates Access",
-        "Email Support"
-      ],
-      highlighted: false,
-      priceId: "price_1QWi0fIJp5CmkQf3fE8NSFZE" // CriderGPT Plus
-    },
-    {
-      name: "Pro",
-      price: "$20.99",
-      period: "/month",
-      features: [
-        "AI Chat (100,000 tokens/month)",
-        "TTS (Unlimited)",
-        "Advanced Backend Code Generator",
-        "Unlimited Projects",
-        "Unlimited API Keys", 
-        "Premium File Upload (1GB)",
-        "Advanced Activity Analytics",
-        "Real-time Updates & Notifications",
-        "FS22/FS25 Mod Deployment",
-        "Priority Support",
-        "Custom Automation Scripts",
-        "Advanced Security Features"
-      ],
-      highlighted: true,
-      priceId: "price_1QWi1AIJp5CmkQf3Y8wQEP2V" // CriderGPT Pro
-    }
-  ];
+  // Legacy price IDs for Stripe integration
+  const priceIdMap = {
+    'plus': 'price_1QWi0fIJp5CmkQf3fE8NSFZE',
+    'pro': 'price_1QWi1AIJp5CmkQf3Y8wQEP2V'
+  };
 
-  const handlePlanSelect = async (plan: typeof plans[0]) => {
-    if (!plan.priceId) {
+  const handlePlanSelect = async (plan: any) => {
+    const priceId = priceIdMap[plan.plan_name as keyof typeof priceIdMap];
+    
+    if (!priceId) {
       // Free plan - redirect to auth
       window.location.href = '/auth';
       return;
     }
 
-    setLoading(plan.name);
+    setLoading(plan.plan_name);
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -90,7 +44,7 @@ const Pricing = () => {
       }
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId: plan.priceId },
+        body: { priceId },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         }
@@ -117,6 +71,28 @@ const Pricing = () => {
     }
   };
 
+  if (plansLoading) {
+    return (
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading pricing plans...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (plansError || !plans.length) {
+    return (
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-destructive mb-4">Failed to load pricing plans</p>
+          <p className="text-muted-foreground">Please try refreshing the page</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 px-4">
       <div className="max-w-4xl mx-auto">
@@ -132,14 +108,14 @@ const Pricing = () => {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => (
             <div
-              key={plan.name}
+              key={plan.plan_name}
               className={`relative rounded-2xl p-8 border-2 transition-all duration-300 ${
-                plan.highlighted
+                plan.plan_name === 'pro'
                   ? "border-cyber-blue bg-cyber-blue/5 transform scale-105 shadow-lg shadow-cyber-blue/20"
                   : "border-border bg-card hover:border-cyber-blue/50"
               }`}
             >
-              {plan.highlighted && (
+              {plan.plan_name === 'pro' && (
                 <Badge
                   variant="secondary"
                   className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cyber-blue to-tech-accent text-background border-0"
@@ -150,19 +126,19 @@ const Pricing = () => {
 
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-foreground mb-2">
-                  {plan.name}
+                  {plan.plan_display_name}
                 </h3>
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-cyber-blue">
-                    {plan.price}
+                    ${plan.price_monthly}
                   </span>
                   <span className="text-muted-foreground ml-1">
-                    {plan.period}
+                    /month
                   </span>
                 </div>
               </div>
 
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-4 mb-6">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
@@ -171,19 +147,21 @@ const Pricing = () => {
                 ))}
               </ul>
 
+              <PromotionalMessages planName={plan.plan_name} />
+
               <Button
                 className={`w-full ${
-                  plan.highlighted
+                  plan.plan_name === 'pro'
                     ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
                     : "bg-cyber-blue hover:bg-cyber-blue/90"
                 }`}
                 size="lg"
-                disabled={loading === plan.name}
+                disabled={loading === plan.plan_name}
                 onClick={() => handlePlanSelect(plan)}
               >
-                {loading === plan.name 
+                {loading === plan.plan_name 
                   ? "Processing..." 
-                  : plan.name === "Free" ? "Get Started Free" : "Get Started"
+                  : plan.plan_name === "free" ? "Get Started Free" : "Get Started"
                 }
               </Button>
             </div>

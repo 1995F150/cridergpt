@@ -583,6 +583,45 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_configurations: {
+        Row: {
+          created_at: string
+          features: Json
+          id: string
+          is_active: boolean
+          limits: Json
+          plan_display_name: string
+          plan_name: string
+          price_monthly: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          features?: Json
+          id?: string
+          is_active?: boolean
+          limits?: Json
+          plan_display_name: string
+          plan_name: string
+          price_monthly?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          features?: Json
+          id?: string
+          is_active?: boolean
+          limits?: Json
+          plan_display_name?: string
+          plan_name?: string
+          price_monthly?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prices: {
         Row: {
           active: boolean
@@ -1377,6 +1416,17 @@ export type Database = {
         Args: { input_value: number }
         Returns: number
       }
+      get_all_active_plans: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          plan_name: string
+          plan_display_name: string
+          price_monthly: number
+          features: Json
+          limits: Json
+          sort_order: number
+        }[]
+      }
       get_crideros_milestone: {
         Args: Record<PropertyKey, never> | { milestone_name: string }
         Returns: string
@@ -1399,6 +1449,16 @@ export type Database = {
         Returns: {
           owner_name: string
           contact_email: string
+        }[]
+      }
+      get_plan_features: {
+        Args: { plan_name_input: string }
+        Returns: {
+          plan_name: string
+          plan_display_name: string
+          price_monthly: number
+          features: Json
+          limits: Json
         }[]
       }
       get_stripe_customer_id: {
@@ -1486,6 +1546,10 @@ export type Database = {
       update_pro_access: {
         Args: { user_id: string; new_pro_status: boolean }
         Returns: undefined
+      }
+      user_has_feature_access: {
+        Args: { feature_name: string }
+        Returns: boolean
       }
     }
     Enums: {
