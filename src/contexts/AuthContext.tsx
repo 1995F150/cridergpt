@@ -26,89 +26,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthProvider: Setting up auth state listener');
+    console.log('🔄 AuthProvider: Initializing auth state');
     
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        console.log('📡 Getting initial session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Error getting initial session:', error);
+        } else {
+          console.log('✅ Initial session result:', session ? 'Session found' : 'No session');
+        }
+
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('💥 Fatal error in auth initialization:', error);
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
     // Set up auth state listener
+    console.log('👂 Setting up auth listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state change:', event, session ? 'Session exists' : 'No session');
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        // If user just signed in, refresh their subscription status
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('User signed in, refreshing subscription');
-          refreshUserSubscription(session.user.id);
+        console.log('🔔 Auth state change:', event, session ? 'Session exists' : 'No session');
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          // Don't set loading to false here as it might interfere with initial load
         }
       }
     );
 
-    // Get initial session
-    console.log('AuthProvider: Getting initial session');
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session ? 'Session exists' : 'No session');
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Refresh subscription status on initial load
-      if (session?.user) {
-        console.log('Initial session found, refreshing subscription');
-        refreshUserSubscription(session.user.id);
-      }
-    }).catch((error) => {
-      console.error('Error getting initial session:', error);
-      setLoading(false);
-    });
+    // Initialize auth
+    initializeAuth();
 
     return () => {
-      console.log('AuthProvider: Cleaning up auth listener');
+      console.log('🧹 AuthProvider: Cleaning up');
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  const refreshUserSubscription = async (userId: string) => {
-    try {
-      console.log('Refreshing subscription for user:', userId);
-      // Try to refresh subscription status from Stripe
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session?.access_token) {
-        await supabase.functions.invoke('check-subscription', {
-          headers: {
-            Authorization: `Bearer ${sessionData.session.access_token}`,
-          }
-        });
-        console.log('Subscription refresh completed');
-      }
-    } catch (error) {
-      console.log('Subscription check failed (this is normal for free users):', error);
-    }
-  };
-
   const signOut = async () => {
     try {
-      console.log('Signing out user');
-      // Clear any local storage items if needed
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
-      // Sign out from Supabase
+      console.log('🚪 Signing out user');
       await supabase.auth.signOut({ scope: 'global' });
-      
-      // Force page reload to ensure clean state
       window.location.href = '/auth';
     } catch (error) {
-      console.error('Error signing out:', error);
-      // Force redirect even if sign out fails
+      console.error('❌ Error signing out:', error);
       window.location.href = '/auth';
     }
   };
 
-  console.log('AuthProvider render - loading:', loading, 'user:', user ? 'exists' : 'null');
+  console.log('🎨 AuthProvider render - loading:', loading, 'user:', user ? 'exists' : 'null');
 
   const value = {
     user,

@@ -17,6 +17,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 const queryClient = new QueryClient();
 
 function App() {
+  console.log('🚀 App component mounting');
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

@@ -21,9 +21,12 @@ import { FeatureNotifications } from "@/components/FeatureNotifications";
 import { MapBuilderPromo } from "@/components/MapBuilderPromo";
 
 const Index = () => {
+  console.log('📄 Index component rendering');
   const [activeTab, setActiveTab] = useState('chat');
 
   const renderActivePanel = () => {
+    console.log('🎯 Rendering active panel:', activeTab);
+    
     switch (activeTab) {
       case 'chat':
         return (
