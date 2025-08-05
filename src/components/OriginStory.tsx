@@ -3,13 +3,13 @@ import { Card } from "@/components/ui/card";
 
 export function OriginStory() {
   return (
-    <section className="py-12 px-6 md:px-20 text-foreground bg-background">
+    <section className="py-6 sm:py-12 px-4 sm:px-6 md:px-20 text-foreground bg-background">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 sm:mb-8 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
           From Cows to Code: How It All Started
         </h2>
 
-        <div className="space-y-6 text-lg leading-relaxed">
+        <div className="space-y-4 sm:space-y-6 text-base sm:text-lg leading-relaxed">
           <p>
             CriderGPT wasn't built in a tech office. It started in the milk barn. Jessie Crider, the one-man force behind CriderGPT, worked just two mornings a week milking cows on a small Virginia farm. Two hours, $10 an hour, enough to scrape together about $40 a week—and every bit of it went toward building this AI platform.
           </p>
@@ -22,13 +22,13 @@ export function OriginStory() {
             CriderGPT grew into more than just an AI assistant. It became a full FS22 modding system, automation engine, and one of the only platforms coded entirely off $40 weeks and pure Gen Z determination.
           </p>
 
-          <blockquote className="text-xl font-semibold italic text-center text-primary py-6 border-l-4 border-primary pl-6 my-8">
+          <blockquote className="text-lg sm:text-xl font-semibold italic text-center text-primary py-4 sm:py-6 border-l-4 border-primary pl-4 sm:pl-6 my-6 sm:my-8">
             CriderGPT wasn't built by a startup. It was built by a kid who milked cows, saved up, and refused to quit.
           </blockquote>
 
-          <Card className="mt-8 p-6 bg-muted border-border">
+          <Card className="mt-6 sm:mt-8 p-4 sm:p-6 bg-muted border-border">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground italic">
+              <p className="text-xs sm:text-sm text-muted-foreground italic">
                 📸 [Placeholder for photo: optional future image of the CriderGPT logo, workspace setup, or an inspirational quote box.]
               </p>
             </div>
