@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { NavigationSidebar } from "@/components/NavigationSidebar";
@@ -19,6 +18,7 @@ import { StatusPanel } from "@/components/panels/StatusPanel";
 import { MapBuilderPanel } from "@/components/panels/MapBuilderPanel";
 import { FeatureNotifications } from "@/components/FeatureNotifications";
 import { MapBuilderPromo } from "@/components/MapBuilderPromo";
+import { OriginStory } from "@/components/OriginStory";
 
 const Index = () => {
   console.log('📄 Index component rendering');
@@ -33,6 +33,7 @@ const Index = () => {
           <div className="space-y-6">
             <MapBuilderPromo variant="featured" className="mb-6" />
             <ChatPanel />
+            <OriginStory />
           </div>
         );
       case 'projects':
