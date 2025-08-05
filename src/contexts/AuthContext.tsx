@@ -28,8 +28,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('🔄 AuthProvider: Initializing auth state');
     
-    let mounted = true;
-
     const initializeAuth = async () => {
       try {
         console.log('📡 Getting initial session...');
@@ -41,18 +39,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('✅ Initial session result:', session ? 'Session found' : 'No session');
         }
 
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
+        setSession(session);
+        setUser(session?.user ?? null);
       } catch (error) {
         console.error('💥 Fatal error in auth initialization:', error);
-        if (mounted) {
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-        }
+        setSession(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -61,11 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('🔔 Auth state change:', event, session ? 'Session exists' : 'No session');
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          // Don't set loading to false here as it might interfere with initial load
-        }
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
@@ -74,7 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       console.log('🧹 AuthProvider: Cleaning up');
-      mounted = false;
       subscription.unsubscribe();
     };
   }, []);

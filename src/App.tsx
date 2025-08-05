@@ -2,7 +2,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Toaster } from "@/components/ui/toaster";
 import Auth from "@/pages/Auth";
 import Index from "@/pages/Index";
@@ -21,8 +21,8 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
+      <ThemeProvider>
+        <AuthProvider>
           <BrowserRouter>
             <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
               <Toaster />
@@ -51,8 +51,8 @@ function App() {
               </Routes>
             </div>
           </BrowserRouter>
-        </ThemeProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
