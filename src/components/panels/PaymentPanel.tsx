@@ -7,12 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
-import { PromotionalMessages } from "@/components/PromotionalMessages";
 
 export function PaymentPanel() {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
-  const { plans, loading: plansLoading, error: plansError } = usePlanConfigurations();
+  const { plans } = usePlanConfigurations(); // Using static fallback
 
   // Legacy price IDs for Stripe integration
   const priceIdMap: Record<string, string> = {
@@ -79,41 +78,16 @@ export function PaymentPanel() {
     }
   };
 
-  if (plansLoading) {
-    return (
-      <div className="panel h-full w-full p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading payment plans...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (plansError) {
-    return (
-      <div className="panel h-full w-full p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-destructive mb-4">Error loading payment plans: {plansError}</p>
-          <p className="text-muted-foreground">Please try refreshing the page</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!plans || plans.length === 0) {
-    return (
-      <div className="panel h-full w-full p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-muted-foreground">No payment plans available.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="panel h-full w-full p-6 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
+        {/* Safe Mode Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-green-600 mb-4">
+            ✅ Site Restored – CriderGPT Dashboard Safe Mode
+          </h1>
+        </div>
+
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <CreditCard className="h-8 w-8 text-primary" />
@@ -175,7 +149,12 @@ export function PaymentPanel() {
                   ))}
                 </ul>
 
-                <PromotionalMessages planName={plan.plan_name} />
+                {/* Static Upgrade Message */}
+                <div className="bg-gradient-to-r from-cyber-blue/10 to-tech-accent/10 p-4 rounded-lg border border-cyber-blue/20 mb-6">
+                  <p className="text-sm font-bold text-center leading-relaxed">
+                    🚀 Upgrade to CriderGPT+ or Pro for Exclusive Unlocking
+                  </p>
+                </div>
 
                 <Button
                   className={`w-full ${
