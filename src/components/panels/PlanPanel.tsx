@@ -1,7 +1,6 @@
 import { useFeatureNotifications } from '@/hooks/useFeatureNotifications';
 import { FeatureNotifications } from '@/components/FeatureNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
@@ -139,9 +138,6 @@ export function PlanPanel() {
             <PlanIcon className={`h-8 w-8 ${planColor}`} />
             <CardTitle className="text-3xl">Current Plan: {planName}</CardTitle>
           </div>
-          <Badge variant={isPlan('pro') ? 'default' : (isPlan('plu') || isPlan('plus')) ? 'secondary' : 'outline'} className="w-fit mx-auto">
-            {planName} Subscription
-          </Badge>
         </CardHeader>
       </Card>
 
