@@ -1,9 +1,13 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
-export async function getOpenAIResponse(userMessage: string): Promise<string> {
+export async function getOpenAIResponse(userMessage: string, model: string = 'gpt-3.5-turbo'): Promise<string> {
   try {
     const { data, error } = await supabase.functions.invoke('chat-with-ai', {
-      body: { message: userMessage }
+      body: { 
+        message: userMessage,
+        model: model
+      }
     });
 
     if (error) throw error;
@@ -21,4 +25,4 @@ export async function getOpenAIResponse(userMessage: string): Promise<string> {
 }
 
 // Example usage:
-// getOpenAIResponse("Hey, what's up?").then(console.log);
+// getOpenAIResponse("Hey, what's up?", "gpt-4o").then(console.log);

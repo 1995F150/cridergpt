@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,12 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, MessageSquare, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getOpenAIResponse } from "@/utils/openai";
+import ModelSelector from "./ModelSelector";
+import { useModelSelection } from "@/hooks/useModelSelection";
 
 function OpenAIChat() {
   const [input, setInput] = useState("");
   const [reply, setReply] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { selectedModel, setSelectedModel } = useModelSelection();
 
   async function sendMessage() {
     if (!input.trim()) {
@@ -24,7 +28,8 @@ function OpenAIChat() {
 
     setIsLoading(true);
     try {
-      const response = await getOpenAIResponse(input);
+      // Pass the selected model to the API call
+      const response = await getOpenAIResponse(input, selectedModel);
       setReply(response);
       toast({
         title: "Success",
@@ -61,10 +66,16 @@ function OpenAIChat() {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          AI Chat
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            AI Chat
+          </CardTitle>
+          <ModelSelector 
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+          />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex gap-2">
