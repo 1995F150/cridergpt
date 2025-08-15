@@ -7,6 +7,7 @@ import { ChatPanel } from "@/components/panels/ChatPanel";
 import { ProjectPanel } from "@/components/panels/ProjectPanel";
 import { FilesPanel } from "@/components/panels/FilesPanel";
 import { CodePanel } from "@/components/panels/CodePanel";
+import { CalculatorPanel } from "@/components/panels/CalculatorPanel";
 import { TTSPanel } from "@/components/panels/TTSPanel";
 import { MediaPanel } from "@/components/panels/MediaPanel";
 import { MemorialPanel } from "@/components/panels/MemorialPanel";
@@ -46,6 +47,8 @@ const Index = () => {
         return <FilesPanel />;
       case 'code':
         return <CodePanel />;
+      case 'calculator':
+        return <CalculatorPanel />;
       case 'tts':
         return <TTSPanel />;
       case 'media':
