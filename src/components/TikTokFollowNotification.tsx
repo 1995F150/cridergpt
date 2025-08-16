@@ -31,22 +31,26 @@ export function TikTokFollowNotification() {
         .maybeSingle();
 
       if (systemInfo?.value) {
-        const usernameData = systemInfo.value as TikTokUsernameData;
-        if (usernameData.username) {
-          setTiktokUsername(usernameData.username);
-          
-          // Check if user has already been notified recently
-          const { data: notifications } = await supabase
-            .from('feature_notifications')
-            .select('*')
-            .eq('user_id', user?.id)
-            .eq('notification_type', 'tiktok_follow')
-            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-            .order('created_at', { ascending: false })
-            .limit(1);
+        // Safely check if the value is an object and has username property
+        const value = systemInfo.value;
+        if (typeof value === 'object' && value !== null && !Array.isArray(value) && 'username' in value) {
+          const usernameData = value as unknown as TikTokUsernameData;
+          if (usernameData.username) {
+            setTiktokUsername(usernameData.username);
+            
+            // Check if user has already been notified recently
+            const { data: notifications } = await supabase
+              .from('feature_notifications')
+              .select('*')
+              .eq('user_id', user?.id)
+              .eq('notification_type', 'tiktok_follow')
+              .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+              .order('created_at', { ascending: false })
+              .limit(1);
 
-          if (!notifications || notifications.length === 0) {
-            setIsVisible(true);
+            if (!notifications || notifications.length === 0) {
+              setIsVisible(true);
+            }
           }
         }
       }
