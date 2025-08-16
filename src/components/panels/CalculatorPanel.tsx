@@ -1,22 +1,28 @@
 
 import { AdvancedCalculator } from '@/components/AdvancedCalculator';
 import { WeldingCalculator } from '@/components/WeldingCalculator';
+import { MechanicsCalculator } from '@/components/MechanicsCalculator';
+import { FarmingCalculator } from '@/components/FarmingCalculator';
+import { VoltageCalculator } from '@/components/VoltageCalculator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function CalculatorPanel() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">Calculator Suite</h1>
+        <h1 className="text-3xl font-bold mb-2">Professional Calculator Suite</h1>
         <p className="text-muted-foreground">
-          Advanced calculator with basic, scientific, and professional welding functions
+          Advanced calculators for mathematics, engineering, welding, mechanics, farming, and electrical work
         </p>
       </div>
       
       <Tabs defaultValue="advanced" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="advanced">Advanced Calculator</TabsTrigger>
-          <TabsTrigger value="welding">Welding Calculator</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          <TabsTrigger value="welding">Welding</TabsTrigger>
+          <TabsTrigger value="mechanics">Mechanics</TabsTrigger>
+          <TabsTrigger value="farming">Farming</TabsTrigger>
+          <TabsTrigger value="voltage">Electrical</TabsTrigger>
         </TabsList>
 
         <TabsContent value="advanced" className="mt-6">
@@ -25,6 +31,18 @@ export function CalculatorPanel() {
 
         <TabsContent value="welding" className="mt-6">
           <WeldingCalculator />
+        </TabsContent>
+
+        <TabsContent value="mechanics" className="mt-6">
+          <MechanicsCalculator />
+        </TabsContent>
+
+        <TabsContent value="farming" className="mt-6">
+          <FarmingCalculator />
+        </TabsContent>
+
+        <TabsContent value="voltage" className="mt-6">
+          <VoltageCalculator />
         </TabsContent>
       </Tabs>
     </div>
