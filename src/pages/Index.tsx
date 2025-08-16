@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from "react";
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { TikTokFollowNotification } from "@/components/TikTokFollowNotification";
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -16,9 +17,9 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/auth');
+      navigate('/auth');
     }
-  }, [user, loading, router]);
+  }, [user, loading, navigate]);
 
   if (!mounted) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;

@@ -6,6 +6,10 @@ import { ExternalLink, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface TikTokUsernameData {
+  username: string;
+}
+
 export function TikTokFollowNotification() {
   const [isVisible, setIsVisible] = useState(false);
   const [tiktokUsername, setTiktokUsername] = useState("");
@@ -24,23 +28,26 @@ export function TikTokFollowNotification() {
         .from('system_info')
         .select('value')
         .eq('key', 'tiktok_username')
-        .single();
+        .maybeSingle();
 
-      if (systemInfo?.value?.username) {
-        setTiktokUsername(systemInfo.value.username);
-        
-        // Check if user has already been notified recently
-        const { data: notifications } = await supabase
-          .from('feature_notifications')
-          .select('*')
-          .eq('user_id', user?.id)
-          .eq('notification_type', 'tiktok_follow')
-          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-          .order('created_at', { ascending: false })
-          .limit(1);
+      if (systemInfo?.value) {
+        const usernameData = systemInfo.value as TikTokUsernameData;
+        if (usernameData.username) {
+          setTiktokUsername(usernameData.username);
+          
+          // Check if user has already been notified recently
+          const { data: notifications } = await supabase
+            .from('feature_notifications')
+            .select('*')
+            .eq('user_id', user?.id)
+            .eq('notification_type', 'tiktok_follow')
+            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+            .order('created_at', { ascending: false })
+            .limit(1);
 
-        if (!notifications || notifications.length === 0) {
-          setIsVisible(true);
+          if (!notifications || notifications.length === 0) {
+            setIsVisible(true);
+          }
         }
       }
     } catch (error) {
