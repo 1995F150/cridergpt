@@ -1,60 +1,75 @@
 
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
-import Auth from "@/pages/Auth";
-import Index from "@/pages/Index";
-import Success from "@/pages/Success";
-import NotFound from "@/pages/NotFound";
-import UserAgreement from "@/pages/UserAgreement";
-import TTSPolicyPage from "@/pages/TTSPolicy";
-import SystemDiagnosticsPage from "@/pages/SystemDiagnostics";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+import Success from "./pages/Success";
+import SystemDiagnostics from "./pages/SystemDiagnostics";
+import TTSPolicyPage from "./pages/TTSPolicyPage";
+import UserAgreement from "./pages/UserAgreement";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
-function App() {
+const App = () => {
   console.log('🚀 App component mounting');
+
+  useEffect(() => {
+    console.log('🎯 Current URL:', window.location.href);
+    console.log('🎯 Current pathname:', window.location.pathname);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <BrowserRouter>
-            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
-              <Toaster />
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/success" element={<Success />} />
-                <Route path="/user-agreement" element={<UserAgreement />} />
-                <Route path="/tts-policy" element={<TTSPolicyPage />} />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/diagnostics"
-                  element={
-                    <ProtectedRoute>
-                      <SystemDiagnosticsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
+            <AuthProvider>
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/success" element={<Success />} />  
+                  <Route path="/system-diagnostics" element={<SystemDiagnostics />} />
+                  <Route path="/tts-policy" element={<TTSPolicyPage />} />
+                  <Route path="/user-agreement" element={<UserAgreement />} />
+                  
+                  {/* Protected routes */}
+                  <Route 
+                    path="/" 
+                    element={
+                      <ProtectedRoute>
+                        <Index />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  {/* Catch all route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </AuthProvider>
           </BrowserRouter>
-        </AuthProvider>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;
