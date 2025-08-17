@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,77 +7,56 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
-
-// User Agreement
-const AGREEMENT_BASE64 = "Q3JpZGVyT1MgVXNlciBBZ3JlZW1lbnQKCkVmZmVjdGl2ZSBEYXRlOiBKYW51YXJ5IDEsIDIwMjUKClRoaXMgVXNlciBBZ3JlZW1lbnQgKCJBZ3JlZW1lbnQiKSBpcyBlbnRlcmVkIGludG8gYnkgYW5kIGJldHdlZW4geW91ICgiVXNlciIpIGFuZCBDcmlkZXJPUyAoIkNvbXBhbnkiKS4gQnkgdXNpbmcgQ3JpZGVyT1MsIHlvdSBhZ3JlZSB0byBiZSBib3VuZCBieSB0aGUgdGVybXMgYW5kIGNvbmRpdGlvbnMgb2YgdGhpcyBBZ3JlZW1lbnQuCgoxLiBBY2NlcHRhbmNlIG9mIFRlcm1zCkJ5IGFjY2Vzc2luZyBvciB1c2luZyBDcmlkZXJPUywgeW91IGFncmVlIHRvIGNvbXBseSB3aXRoIGFuZCBiZSBib3VuZCBieSB0aGlzIEFncmVlbWVudC4KCjIuIERlc2NyaXB0aW9uIG9mIFNlcnZpY2UKQ3JpZGVyT1MgaXMgYSBjb21wdXRlciBvcGVyYXRpbmcgc3lzdGVtIGFuZCBzb2Z0d2FyZSBwbGF0Zm9ybSBkZXNpZ25lZCB0byBwcm92aWRlIHVzZXJzIHdpdGggYWR2YW5jZWQgY29tcHV0aW5nIGNhcGFiaWxpdGllcy4KCjMuIFVzZXIgUmVzcG9uc2liaWxpdGllcwpZb3UgYWdyZWUgdG86Ci0gVXNlIENyaWRlck9TIGluIGFjY29yZGFuY2Ugd2l0aCBhbGwgYXBwbGljYWJsZSBsYXdzIGFuZCByZWd1bGF0aW9ucwotIE5vdCBlbmdhZ2UgaW4gYW55IGlsbGVnYWwgb3IgaGFybWZ1bCBhY3Rpdml0aWVzCi0gTWFpbnRhaW4gdGhlIHNlY3VyaXR5IG9mIHlvdXIgYWNjb3VudCBhbmQgcGFzc3dvcmQKCjQuIERhdGEgUHJpdmFjeQpXZSByZXNwZWN0IHlvdXIgcHJpdmFjeSBhbmQgYXJlIGNvbW1pdHRlZCB0byBwcm90ZWN0aW5nIHlvdXIgcGVyc29uYWwgaW5mb3JtYXRpb24uCgo1LiBMaW1pdGF0aW9uIG9mIExpYWJpbGl0eQpDcmlkZXJPUyBzaGFsbCBub3QgYmUgbGlhYmxlIGZvciBhbnkgaW5kaXJlY3QsIGluY2lkZW50YWwsIHNwZWNpYWwsIG9yIGNvbnNlcXVlbnRpYWwgZGFtYWdlcy4KCjYuIFRlcm1pbmF0aW9uCkVpdGhlciBwYXJ0eSBtYXkgdGVybWluYXRlIHRoaXMgQWdyZWVtZW50IGF0IGFueSB0aW1lIHdpdGggb3Igd2l0aG91dCBub3RpY2UuCgo3LiBHb3Zlcm5pbmcgTGF3ClRoaXMgQWdyZWVtZW50IHNoYWxsIGJlIGdvdmVybmVkIGJ5IGFuZCBjb25zdHJ1ZWQgaW4gYWNjb3JkYW5jZSB3aXRoIHRoZSBsYXdzIG9mIFtZb3VyIEp1cmlzZGljdGlvbl0uCgo4LiBBbWVuZG1lbnRzCkNyaWRlck9TIHJlc2VydmVzIHRoZSByaWdodCB0byBtb2RpZnkgdGhpcyBBZ3JlZW1lbnQgYXQgYW55IHRpbWUuCgpCeSBjbGlja2luZyAiSSBBY2NlcHQiLCB5b3UgYWNrbm93bGVkZ2UgdGhhdCB5b3UgaGF2ZSByZWFkLCB1bmRlcnN0b29kLCBhbmQgYWdyZWUgdG8gYmUgYm91bmQgYnkgdGhpcyBBZ3JlZW1lbnQu";
-const AGREEMENT_VERSION = "1.0.0";
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check URL params for agreement acceptance
-    const urlParams = new URLSearchParams(window.location.search);
-    const agreementAccepted = urlParams.get('agreementAccepted');
-    const emailParam = urlParams.get('email');
-    
-    if (agreementAccepted === 'true' && emailParam) {
-      setEmail(emailParam);
-      toast({
-        title: "Agreement Accepted",
-        description: "You can now complete your signup.",
-      });
-      // Clean up URL
-      window.history.replaceState({}, '', '/auth');
-    }
-
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate('/');
+    // Test Supabase connection
+    const testConnection = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Connection error:', error);
+          setConnectionError(`Connection failed: ${error.message}`);
+        } else if (data.session) {
+          console.log('Already authenticated, redirecting...');
+          navigate('/', { replace: true });
+        } else {
+          console.log('Connection successful, no active session');
+          setConnectionError(null);
+        }
+      } catch (error) {
+        console.error('Failed to connect to Supabase:', error);
+        setConnectionError('Unable to connect to authentication service. Please check your internet connection and try again.');
       }
-    });
+    };
+
+    testConnection();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event, session ? 'Session exists' : 'No session');
       if (session) {
-        navigate('/');
+        navigate('/', { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, toast]);
+  }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check if this is a signup and we need agreement
-    if (isSignUp) {
-      // Check if agreement was already accepted for this email
-      const { data: existingAgreement } = await supabase
-        .from('user_agreements')
-        .select('*')
-        .eq('user_email', email)
-        .eq('agreement_version', AGREEMENT_VERSION)
-        .maybeSingle();
-
-      if (!existingAgreement) {
-        // Redirect to agreement page
-        navigate(`/agreement?email=${encodeURIComponent(email)}&returnTo=/auth`);
-        return;
-      }
-    }
-    
     setLoading(true);
+    setConnectionError(null);
 
     try {
       if (isSignUp) {
@@ -108,15 +88,56 @@ export default function Auth() {
         });
       }
     } catch (error: any) {
-      toast({
-        title: "Authentication Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Auth error:', error);
+      const errorMessage = error.message || 'An authentication error occurred';
+      
+      // Handle specific connection errors
+      if (errorMessage.includes('fetch')) {
+        setConnectionError('Unable to connect to authentication service. Please check your internet connection.');
+      } else {
+        toast({
+          title: "Authentication Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const retryConnection = () => {
+    setConnectionError(null);
+    window.location.reload();
+  };
+
+  if (connectionError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
+        <Card className="w-full max-w-md border-border bg-card/95 backdrop-blur-sm">
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-2xl font-bold text-destructive">Connection Error</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Unable to connect to CriderGPT services
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm text-destructive">{connectionError}</p>
+            </div>
+            <div className="space-y-2">
+              <Button onClick={retryConnection} className="w-full">
+                Retry Connection
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                If the problem persists, please check your internet connection or try again later.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
@@ -166,7 +187,7 @@ export default function Auth() {
               className="w-full bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
               disabled={loading}
             >
-              {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+              {loading ? 'Connecting...' : (isSignUp ? 'Sign Up' : 'Sign In')}
             </Button>
           </form>
           
