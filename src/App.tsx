@@ -1,61 +1,75 @@
 
-import { Auth } from '@supabase/auth-ui-react';
-import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react';
-import { useEffect, useState } from 'react';
-import { Account } from './components/Account';
-import { ThemeProvider } from './components/theme-provider';
-import { Toaster } from "@/components/ui/toaster"
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { MemorialPanel } from './components/panels/MemorialPanel';
-import { OriginStory } from './components/OriginStory';
-import { Dedication } from "@/components/Dedication";
-import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { Suspense, useEffect } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+import Success from "./pages/Success";
+import SystemDiagnostics from "./pages/SystemDiagnostics";
+import TTSPolicyPage from "./pages/TTSPolicyPage";
+import UserAgreement from "./pages/UserAgreement";
 
-function App() {
-  const [isAuthReady, setIsAuthReady] = useState(false);
-  const session = useSession();
-  const supabase = useSupabaseClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
+
+const App = () => {
+  console.log('🚀 App component mounting');
 
   useEffect(() => {
-    // artificial delay to allow Auth UI to load before showing app content
-    setTimeout(() => {
-      setIsAuthReady(true);
-    }, 50);
+    console.log('🎯 Current URL:', window.location.href);
+    console.log('🎯 Current pathname:', window.location.pathname);
   }, []);
-
-  const queryClient = new QueryClient();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <div className="min-h-screen bg-background">
+      <ThemeProvider>
+        <TooltipProvider>
           <Toaster />
+          <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={
-                !session ? (
-                  <div className="min-h-screen flex items-center justify-center">
-                    <Auth
-                      supabaseClient={supabase}
-                      appearance={{ theme: ThemeSupa }}
-                      providers={['github', 'google']}
-                      redirectTo={`${window.location.origin}/`}
-                    />
-                  </div>
-                ) : (
-                  <Account session={session} />
-                )
-              } />
-              <Route path="/memorial" element={<MemorialPanel />} />
-              <Route path="/story" element={<OriginStory />} />
-              <Route path="/dedication" element={<Dedication />} />
-            </Routes>
+            <AuthProvider>
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/success" element={<Success />} />  
+                  <Route path="/system-diagnostics" element={<SystemDiagnostics />} />
+                  <Route path="/tts-policy" element={<TTSPolicyPage />} />
+                  <Route path="/user-agreement" element={<UserAgreement />} />
+                  
+                  {/* Protected routes */}
+                  <Route 
+                    path="/" 
+                    element={
+                      <ProtectedRoute>
+                        <Index />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  {/* Catch all route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </AuthProvider>
           </BrowserRouter>
-        </div>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;
