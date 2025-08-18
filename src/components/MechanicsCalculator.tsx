@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface MechanicsResult {
@@ -20,21 +19,21 @@ export function MechanicsCalculator() {
   const [time, setTime] = useState<string>('');
   const [mass, setMass] = useState<string>('');
   const [acceleration, setAcceleration] = useState<string>('');
-  const [velocity, setVelocity] = useState<string>('');
   const [radius, setRadius] = useState<string>('');
   const [result, setResult] = useState<MechanicsResult | null>(null);
 
-  const calculateTorque = (): MechanicsResult => {
+  const calculateTorque = () => {
     const f = parseFloat(force);
     const r = parseFloat(radius);
     
     if (isNaN(f) || isNaN(r)) {
-      return { recommendations: ['Please enter valid force and radius values'] };
+      setResult({ recommendations: ['Please enter valid force and radius values'] });
+      return;
     }
 
     const torque = f * r;
     
-    return {
+    setResult({
       result: torque,
       unit: 'N⋅m',
       calculations: {
@@ -48,22 +47,23 @@ export function MechanicsCalculator() {
         `Lever arm: ${r} m`,
         torque > 100 ? 'High torque - ensure proper safety measures' : 'Standard torque range'
       ]
-    };
+    });
   };
 
-  const calculatePower = (): MechanicsResult => {
+  const calculatePower = () => {
     const f = parseFloat(force);
     const d = parseFloat(distance);
     const t = parseFloat(time);
     
     if (isNaN(f) || isNaN(d) || isNaN(t)) {
-      return { recommendations: ['Please enter valid force, distance, and time values'] };
+      setResult({ recommendations: ['Please enter valid force, distance, and time values'] });
+      return;
     }
 
     const work = f * d;
     const power = work / t;
     
-    return {
+    setResult({
       result: power,
       unit: 'W',
       calculations: {
@@ -79,20 +79,21 @@ export function MechanicsCalculator() {
         `Time taken: ${t} s`,
         power > 1000 ? 'High power output - consider cooling' : 'Standard power range'
       ]
-    };
+    });
   };
 
-  const calculateForce = (): MechanicsResult => {
+  const calculateForce = () => {
     const m = parseFloat(mass);
     const a = parseFloat(acceleration);
     
     if (isNaN(m) || isNaN(a)) {
-      return { recommendations: ['Please enter valid mass and acceleration values'] };
+      setResult({ recommendations: ['Please enter valid mass and acceleration values'] });
+      return;
     }
 
     const f = m * a;
     
-    return {
+    setResult({
       result: f,
       unit: 'N',
       calculations: {
@@ -106,15 +107,16 @@ export function MechanicsCalculator() {
         `Acceleration: ${a} m/s²`,
         f > 1000 ? 'High force - ensure structural integrity' : 'Standard force range'
       ]
-    };
+    });
   };
 
-  const calculateVelocity = (): MechanicsResult => {
+  const calculateVelocity = () => {
     const d = parseFloat(distance);
     const t = parseFloat(time);
     
     if (isNaN(d) || isNaN(t)) {
-      return { recommendations: ['Please enter valid distance and time values'] };
+      setResult({ recommendations: ['Please enter valid distance and time values'] });
+      return;
     }
 
     const v = d / t;
@@ -125,7 +127,7 @@ export function MechanicsCalculator() {
       finalVelocity = v + (a * t);
     }
     
-    return {
+    setResult({
       result: finalVelocity,
       unit: 'm/s',
       calculations: {
@@ -140,7 +142,7 @@ export function MechanicsCalculator() {
         `Average speed: ${v.toFixed(2)} m/s`,
         finalVelocity > 50 ? 'High velocity - consider safety factors' : 'Standard velocity range'
       ].filter(Boolean)
-    };
+    });
   };
 
   const resetCalculator = () => {
@@ -149,7 +151,6 @@ export function MechanicsCalculator() {
     setTime('');
     setMass('');
     setAcceleration('');
-    setVelocity('');
     setRadius('');
     setResult(null);
   };
