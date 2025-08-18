@@ -1,3 +1,4 @@
+
 import { useFeatureNotifications } from '@/hooks/useFeatureNotifications';
 import { FeatureNotifications } from '@/components/FeatureNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,8 @@ import { useState, useEffect } from 'react';
 import { Crown, Star, Zap, Check, X, ExternalLink } from 'lucide-react';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { PromotionalMessages } from '@/components/PromotionalMessages';
+import { ManageSubscription } from '@/components/ManageSubscription';
+import { DedicationMessage } from '@/components/DedicationMessage';
 
 interface SubscriptionData {
   plan: string;
@@ -111,26 +114,13 @@ export function PlanPanel() {
   const planColor = isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500';
   const PlanIcon = planIcon;
 
-  const features = [
-    { name: 'AI Chat (13 tokens/month)', free: true, plus: false, pro: false },
-    { name: 'AI Chat (200 tokens/month)', free: false, plus: true, pro: false },
-    { name: 'AI Chat (500 tokens/month)', free: false, plus: false, pro: true },
-    { name: 'TTS (5 requests/month)', free: true, plus: false, pro: false },
-    { name: 'TTS (100 requests/month)', free: false, plus: true, pro: false },
-    { name: 'TTS (Unlimited)', free: false, plus: false, pro: true },
-    { name: 'Backend Code Generator', free: false, plus: true, pro: true },
-    { name: 'Project Management', free: false, plus: true, pro: true },
-    { name: 'Activity Updates', free: false, plus: true, pro: true },
-    { name: 'File Upload', free: false, plus: true, pro: true },
-    { name: 'Advanced AI Features', free: false, plus: false, pro: true },
-    { name: 'Priority Support', free: false, plus: false, pro: true },
-  ];
-
   const tokenUsagePercent = subscriptionData ? (subscriptionData.tokensUsed / subscriptionData.tokenLimit) * 100 : 0;
   const ttsUsagePercent = subscriptionData ? (subscriptionData.ttsRequests / subscriptionData.ttsLimit) * 100 : 0;
 
   return (
     <div className="flex-1 p-8 space-y-6">
+      <DedicationMessage />
+      
       {/* Current Plan Header */}
       <Card>
         <CardHeader className="text-center">
@@ -244,9 +234,11 @@ export function PlanPanel() {
       </Card>
 
       {/* Subscription Management Section */}
+      <ManageSubscription />
+
       <Card>
         <CardContent className="p-6 text-center">
-          <h3 className="text-xl font-bold mb-2">Subscription Management</h3>
+          <h3 className="text-xl font-bold mb-2">Subscription Status</h3>
           <p className="text-muted-foreground mb-4">
             Check your latest subscription status or upgrade your plan.
           </p>

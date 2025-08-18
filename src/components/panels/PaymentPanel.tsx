@@ -7,11 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
+import { ManageSubscription } from "@/components/ManageSubscription";
+import { DedicationMessage } from "@/components/DedicationMessage";
 
 export function PaymentPanel() {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
-  const { plans } = usePlanConfigurations(); // Using static fallback
+  const { plans } = usePlanConfigurations();
 
   // Legacy price IDs for Stripe integration
   const priceIdMap: Record<string, string> = {
@@ -80,13 +82,15 @@ export function PaymentPanel() {
 
   return (
     <div className="panel h-full w-full p-6 overflow-y-auto">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Safe Mode Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-green-600 mb-4">
             ✅ Site Restored – CriderGPT Dashboard Safe Mode
           </h1>
         </div>
+
+        <DedicationMessage />
 
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -99,6 +103,9 @@ export function PaymentPanel() {
             Choose the perfect plan for your needs
           </p>
         </div>
+
+        {/* Subscription Management */}
+        <ManageSubscription />
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {plans.map((plan) => (
