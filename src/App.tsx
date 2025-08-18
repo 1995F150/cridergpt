@@ -1,4 +1,5 @@
-import { Auth } from '@supabase/ui';
+
+import { Auth } from '@supabase/auth-ui-react';
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useEffect, useState } from 'react';
 import { Account } from './components/Account';
@@ -9,6 +10,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { MemorialPanel } from './components/panels/MemorialPanel';
 import { OriginStory } from './components/OriginStory';
 import { Dedication } from "@/components/Dedication";
+import { ThemeSupa } from '@supabase/auth-ui-shared';
 
 function App() {
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -36,7 +38,7 @@ function App() {
                   <div className="min-h-screen flex items-center justify-center">
                     <Auth
                       supabaseClient={supabase}
-                      appearance={{ theme: ThemeProvider.theme }}
+                      appearance={{ theme: ThemeSupa }}
                       providers={['github', 'google']}
                       redirectTo={`${window.location.origin}/`}
                     />
