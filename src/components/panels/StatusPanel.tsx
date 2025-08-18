@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, Users, FileText, Zap, TrendingUp, Clock } from "lucide-react";
 import { MapBuilderPromo } from "@/components/MapBuilderPromo";
+import { DedicationMessage } from "@/components/DedicationMessage";
 
 export function StatusPanel() {
   const stats = [
@@ -38,6 +39,8 @@ export function StatusPanel() {
 
   return (
     <div className="space-y-6">
+      <DedicationMessage />
+      
       <div>
         <h1 className="text-3xl font-bold mb-2">System Status</h1>
         <p className="text-muted-foreground">

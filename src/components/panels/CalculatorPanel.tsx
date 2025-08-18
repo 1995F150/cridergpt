@@ -5,10 +5,13 @@ import { MechanicsCalculator } from '@/components/MechanicsCalculator';
 import { FarmingCalculator } from '@/components/FarmingCalculator';
 import { VoltageCalculator } from '@/components/VoltageCalculator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DedicationMessage } from '@/components/DedicationMessage';
 
 export function CalculatorPanel() {
   return (
     <div className="space-y-6">
+      <DedicationMessage />
+      
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">Professional Calculator Suite</h1>
         <p className="text-muted-foreground">
