@@ -9,125 +9,83 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
-import { AlertCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isConnecting, setIsConnecting] = useState(true);
+  const [initializing, setInitializing] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     console.log('🔐 Auth page loaded');
-    console.log('📍 Current URL:', window.location.href);
     
-    // Monitor online/offline status
-    const handleOnline = () => {
-      console.log('📡 Connection restored');
-      setIsOnline(true);
-      setConnectionError(null);
-      // Retry connection test when back online
-      testConnection();
-    };
-    
-    const handleOffline = () => {
-      console.log('📵 Connection lost');
-      setIsOnline(false);
-      setConnectionError('No internet connection detected');
-      setIsConnecting(false);
-    };
+    let mounted = true;
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Test Supabase connection with timeout
-    const testConnection = async () => {
-      if (!isOnline) {
-        setConnectionError('No internet connection detected');
-        setIsConnecting(false);
-        return;
-      }
-
+    const initializeAuth = async () => {
       try {
-        console.log('🧪 Testing Supabase connection...');
-        setIsConnecting(true);
+        // Simple session check without complex connection testing
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // Add a timeout to the connection test
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Connection timeout')), 10000)
-        );
-        
-        const connectionPromise = supabase.auth.getSession();
-        
-        const { data, error } = await Promise.race([connectionPromise, timeoutPromise]) as any;
+        if (!mounted) return;
         
         if (error) {
-          console.error('❌ Connection error:', error);
-          setConnectionError(`Authentication service error: ${error.message}`);
-        } else if (data.session) {
-          console.log('✅ Already authenticated, redirecting...');
+          console.error('❌ Session error:', error);
+          setAuthError('Unable to connect to authentication service');
+        } else if (session) {
+          console.log('✅ Session found, redirecting...');
           navigate('/', { replace: true });
+          return;
         } else {
-          console.log('✅ Connection successful, no active session');
-          setConnectionError(null);
+          console.log('✅ No session, showing auth form');
+          setAuthError(null);
         }
       } catch (error: any) {
-        console.error('💥 Failed to connect to Supabase:', error);
-        if (error.message === 'Connection timeout') {
-          setConnectionError('Connection timed out. The authentication service may be temporarily unavailable.');
-        } else {
-          setConnectionError('Unable to connect to authentication service. Please check your internet connection and try again.');
+        console.error('💥 Auth initialization error:', error);
+        if (mounted) {
+          setAuthError('Connection error. Please refresh the page.');
         }
       } finally {
-        setIsConnecting(false);
+        if (mounted) {
+          setInitializing(false);
+        }
       }
     };
 
-    // Initial connection test
-    testConnection();
-
-    // Listen for auth changes
+    // Set up auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔔 Auth event:', event, session ? 'Session exists' : 'No session');
-      if (session) {
+      console.log('🔔 Auth event:', event);
+      if (session && mounted) {
         navigate('/', { replace: true });
       }
     });
 
+    initializeAuth();
+
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, isOnline]);
+  }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isOnline) {
+    if (!email || !password) {
       toast({
-        title: "No Internet Connection",
-        description: "Please check your internet connection and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (connectionError) {
-      toast({
-        title: "Connection Error",
-        description: "Please resolve the connection issue before signing in.",
+        title: "Missing Information",
+        description: "Please enter both email and password.",
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+    setAuthError(null);
 
     try {
       if (isSignUp) {
@@ -160,46 +118,45 @@ export default function Auth() {
       }
     } catch (error: any) {
       console.error('❌ Auth error:', error);
-      const errorMessage = error.message || 'An authentication error occurred';
       
-      // Handle specific connection errors
-      if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch')) {
-        setConnectionError('Unable to connect to authentication service. Please check your internet connection.');
-      } else {
-        toast({
-          title: "Authentication Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+      let errorMessage = error.message || 'An authentication error occurred';
+      
+      // Handle specific error cases
+      if (errorMessage.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please check your credentials.';
+      } else if (errorMessage.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and click the confirmation link.';
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        setAuthError('Network connection error. Please check your internet connection.');
+        return;
       }
+      
+      toast({
+        title: "Authentication Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const retryConnection = () => {
-    console.log('🔄 Retrying connection...');
-    setConnectionError(null);
-    setIsConnecting(true);
-    
-    // Force a page reload to reset everything
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+  const handleRetry = () => {
+    window.location.reload();
   };
 
-  // Show loading state while testing connection
-  if (isConnecting) {
+  // Show loading state during initialization
+  if (initializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
         <Card className="w-full max-w-md border-border bg-card/95 backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center">
             <RefreshCw className="h-12 w-12 mx-auto mb-2 animate-spin text-primary" />
             <CardTitle className="text-2xl font-bold">
-              Connecting to CriderGPT
+              Loading CriderGPT
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Please wait while we establish a secure connection...
+              Please wait while we initialize the application...
             </CardDescription>
           </CardHeader>
         </Card>
@@ -207,44 +164,28 @@ export default function Auth() {
     );
   }
 
-  // Show connection status
-  if (!isOnline || connectionError) {
+  // Show error state if there's a connection issue
+  if (authError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
         <Card className="w-full max-w-md border-border bg-card/95 backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center">
-            <div className="mx-auto mb-2">
-              {isOnline ? (
-                <AlertCircle className="h-12 w-12 text-destructive" />
-              ) : (
-                <WifiOff className="h-12 w-12 text-destructive" />
-              )}
-            </div>
+            <AlertCircle className="h-12 w-12 mx-auto mb-2 text-destructive" />
             <CardTitle className="text-2xl font-bold text-destructive">
-              {isOnline ? 'Connection Error' : 'No Internet Connection'}
+              Connection Error
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              {isOnline 
-                ? 'Unable to connect to CriderGPT services' 
-                : 'Please check your internet connection'
-              }
+              Unable to connect to CriderGPT services
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-              <p className="text-sm text-destructive">
-                {connectionError || 'No internet connection detected'}
-              </p>
+              <p className="text-sm text-destructive">{authError}</p>
             </div>
-            <div className="space-y-2">
-              <Button onClick={retryConnection} className="w-full">
-                <Wifi className="w-4 h-4 mr-2" />
-                Retry Connection
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                If the problem persists, please check your internet connection or try again later.
-              </p>
-            </div>
+            <Button onClick={handleRetry} className="w-full">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry Connection
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -297,7 +238,7 @@ export default function Auth() {
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
-              disabled={loading || !isOnline || !!connectionError}
+              disabled={loading}
             >
               {loading ? 'Connecting...' : (isSignUp ? 'Sign Up' : 'Sign In')}
             </Button>
@@ -321,6 +262,7 @@ export default function Auth() {
                 setIsSignUp(!isSignUp);
                 setEmail('');
                 setPassword('');
+                setAuthError(null);
               }}
               className="text-cyber-blue hover:text-tech-accent"
             >
