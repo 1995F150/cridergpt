@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1382,10 +1382,10 @@ export type Database = {
       batch_sync_user_tiers: {
         Args: Record<PropertyKey, never>
         Returns: {
-          user_id: string
-          old_tier: string
           new_tier: string
+          old_tier: string
           sync_result: Json
+          user_id: string
         }[]
       }
       can_user_request_tts: {
@@ -1401,14 +1401,14 @@ export type Database = {
         Returns: number
       }
       create_plus_only_rls: {
-        Args: { target_table_name: string; feature?: string }
+        Args: { feature?: string; target_table_name: string }
         Returns: undefined
       }
       create_tier_limit_policy: {
         Args: {
-          target_table_name: string
           limit_column: string
           limit_type: string
+          target_table_name: string
         }
         Returns: undefined
       }
@@ -1419,11 +1419,11 @@ export type Database = {
       get_all_active_plans: {
         Args: Record<PropertyKey, never>
         Returns: {
-          plan_name: string
-          plan_display_name: string
-          price_monthly: number
           features: Json
           limits: Json
+          plan_display_name: string
+          plan_name: string
+          price_monthly: number
           sort_order: number
         }[]
       }
@@ -1438,27 +1438,27 @@ export type Database = {
       get_crideros_timeline: {
         Args: Record<PropertyKey, never>
         Returns: {
-          milestone_name: string
           milestone_date: string
           milestone_description: string
+          milestone_name: string
           milestone_status: string
         }[]
       }
       get_owner_details: {
         Args: Record<PropertyKey, never> | { check_email: string }
         Returns: {
-          owner_name: string
           contact_email: string
+          owner_name: string
         }[]
       }
       get_plan_features: {
         Args: { plan_name_input: string }
         Returns: {
-          plan_name: string
-          plan_display_name: string
-          price_monthly: number
           features: Json
           limits: Json
+          plan_display_name: string
+          plan_name: string
+          price_monthly: number
         }[]
       }
       get_stripe_customer_id: {
@@ -1468,32 +1468,32 @@ export type Database = {
       get_subscription_status: {
         Args: Record<PropertyKey, never> | { user_id: string }
         Returns: {
-          subscription_id: string
-          product_name: string
-          price_id: string
-          status: string
-          current_period_end: string
-          cancel_at_period_end: boolean
           amount: number
+          cancel_at_period_end: boolean
           currency: string
-          interval_value: string
+          current_period_end: string
           interval_count: number
+          interval_value: string
+          price_id: string
+          product_name: string
+          status: string
+          subscription_id: string
         }[]
       }
       get_user_sync_data: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
+          created_at: string
           email: string
           full_name: string
-          username: string
-          created_at: string
+          id: string
           last_sign_in_at: string
           tier: string
           tier_created_at: string
           tokens_used: number
           tts_requests: number
           user_plan: string
+          username: string
         }[]
       }
       has_active_subscription: {
@@ -1511,16 +1511,16 @@ export type Database = {
       log_tier_upgrade: {
         Args:
           | {
-              p_user_id: number
-              p_old_tier: string
               p_new_tier: string
+              p_old_tier: string
               p_stripe_event_id: string
+              p_user_id: number
             }
           | {
-              p_user_id: string
-              p_old_tier?: string
               p_new_tier?: string
+              p_old_tier?: string
               p_stripe_event_id?: string
+              p_user_id: string
             }
         Returns: undefined
       }
@@ -1535,16 +1535,16 @@ export type Database = {
       safe_batch_sync_user_tiers: {
         Args: Record<PropertyKey, never>
         Returns: {
-          status: string
           message: string
-          user_id: string
-          previous_tier: string
           new_tier: string
+          previous_tier: string
+          status: string
           sync_timestamp: string
+          user_id: string
         }[]
       }
       update_pro_access: {
-        Args: { user_id: string; new_pro_status: boolean }
+        Args: { new_pro_status: boolean; user_id: string }
         Returns: undefined
       }
       user_has_feature_access: {
