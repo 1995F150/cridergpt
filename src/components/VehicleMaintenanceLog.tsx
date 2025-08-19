@@ -20,7 +20,10 @@ interface MaintenanceRecord {
 }
 
 export function VehicleMaintenanceLog() {
-  const [records, setRecords] = useState<MaintenanceRecord[]>([]);
+  const [records, setRecords] = useState<MaintenanceRecord[]>(() => {
+    const saved = localStorage.getItem('vehicleMaintenanceRecords');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [formData, setFormData] = useState({
     date: '',
     mileage: '',
@@ -40,6 +43,7 @@ export function VehicleMaintenanceLog() {
     'Coolant Flush',
     'Spark Plugs',
     'Battery Replacement',
+    'Cleaning and Detailing',
     'Inspection',
     'Other'
   ];
@@ -61,7 +65,9 @@ export function VehicleMaintenanceLog() {
       nextServiceMileage: formData.nextServiceMileage ? parseInt(formData.nextServiceMileage) : undefined
     };
 
-    setRecords([newRecord, ...records]);
+    const updatedRecords = [newRecord, ...records];
+    setRecords(updatedRecords);
+    localStorage.setItem('vehicleMaintenanceRecords', JSON.stringify(updatedRecords));
     
     // Reset form
     setFormData({
@@ -76,7 +82,9 @@ export function VehicleMaintenanceLog() {
   };
 
   const deleteRecord = (id: string) => {
-    setRecords(records.filter(record => record.id !== id));
+    const updatedRecords = records.filter(record => record.id !== id);
+    setRecords(updatedRecords);
+    localStorage.setItem('vehicleMaintenanceRecords', JSON.stringify(updatedRecords));
   };
 
   const totalCost = records.reduce((sum, record) => sum + record.cost, 0);
