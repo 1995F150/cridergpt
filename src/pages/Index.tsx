@@ -19,6 +19,7 @@ import { UpdatesPanel } from "@/components/panels/UpdatesPanel";
 import { PlanPanel } from "@/components/panels/PlanPanel";
 import { PaymentPanel } from "@/components/panels/PaymentPanel";
 import { GoogleSheetsPanel } from "@/components/panels/GoogleSheetsPanel";
+import { ContactPanel } from "@/components/panels/ContactPanel";
 
 export default function Index() {
   const { user } = useAuth();
@@ -50,6 +51,8 @@ export default function Index() {
         return <MediaPanel />;
       case 'maps':
         return <MapBuilderPanel />;
+      case 'contact':
+        return <ContactPanel />;
       case 'memorial':
         return <MemorialPanel />;
       case 'reviews':
