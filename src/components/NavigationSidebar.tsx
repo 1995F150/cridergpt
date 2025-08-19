@@ -1,5 +1,5 @@
 
-import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Megaphone, Code, Star, Heart, Monitor, Sheet, MapPin, Calculator, Mail, Clock } from "lucide-react";
+import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Megaphone, Code, Star, Heart, Monitor, Sheet, MapPin, Calculator, Mail, Clock, User } from "lucide-react";
 
 interface NavigationSidebarProps {
   activeTab: string;
@@ -24,6 +24,7 @@ const tabs = [
   { id: 'payments', icon: CreditCard, label: 'Payments' },
   { id: 'sheets', icon: Sheet, label: 'Google Sheets' },
   { id: 'status', icon: BarChart3, label: 'Status' },
+  { id: 'profile', icon: User, label: 'Profile & Settings' },
 ];
 
 export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarProps) {

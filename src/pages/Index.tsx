@@ -21,6 +21,7 @@ import { PaymentPanel } from "@/components/panels/PaymentPanel";
 import { GoogleSheetsPanel } from "@/components/panels/GoogleSheetsPanel";
 import { ContactPanel } from "@/components/panels/ContactPanel";
 import { TimelinePanel } from "@/components/panels/TimelinePanel";
+import { ProfilePanel } from "@/components/panels/ProfilePanel";
 
 export default function Index() {
   const { user } = useAuth();
@@ -70,6 +71,8 @@ export default function Index() {
         return <GoogleSheetsPanel />;
       case 'status':
         return <StatusPanel />;
+      case 'profile':
+        return <ProfilePanel />;
       default:
         return <CalculatorPanel />;
     }
