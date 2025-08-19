@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { FinancialCalculator } from './FinancialCalculator';
 
 export function AdvancedCalculator() {
   const [display, setDisplay] = useState('0');
@@ -116,23 +116,18 @@ export function AdvancedCalculator() {
         result = -value;
         break;
       case 'tax':
-        // Tax calculation: value * tax rate (assuming 8.25% default)
         result = value * 0.0825;
         break;
       case 'discount':
-        // 10% discount
         result = value * 0.10;
         break;
       case 'tip15':
-        // 15% tip
         result = value * 0.15;
         break;
       case 'tip20':
-        // 20% tip
         result = value * 0.20;
         break;
       case 'compound':
-        // Simple compound interest for 1 year at 5%
         result = value * Math.pow(1.05, 1);
         break;
       default:
@@ -187,12 +182,13 @@ export function AdvancedCalculator() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="scientific">
                 Scientific {!hasProAccess && <span className="ml-1">🔒</span>}
               </TabsTrigger>
               <TabsTrigger value="money">Money & Finance</TabsTrigger>
+              <TabsTrigger value="advanced-financial">Advanced Financial</TabsTrigger>
             </TabsList>
 
             {/* Display */}
@@ -204,31 +200,26 @@ export function AdvancedCalculator() {
 
             <TabsContent value="basic" className="space-y-2">
               <div className="grid grid-cols-4 gap-2">
-                {/* Row 1 */}
                 <Button variant="outline" onClick={clear} className="h-12">C</Button>
                 <Button variant="outline" onClick={() => performOperation('%')} className="h-12">%</Button>
                 <Button variant="outline" onClick={() => performFunction('±')} className="h-12">±</Button>
                 <Button variant="destructive" onClick={() => performOperation('÷')} className="h-12">÷</Button>
 
-                {/* Row 2 */}
                 <Button onClick={() => inputNumber('7')} className="h-12">7</Button>
                 <Button onClick={() => inputNumber('8')} className="h-12">8</Button>
                 <Button onClick={() => inputNumber('9')} className="h-12">9</Button>
                 <Button variant="destructive" onClick={() => performOperation('×')} className="h-12">×</Button>
 
-                {/* Row 3 */}
                 <Button onClick={() => inputNumber('4')} className="h-12">4</Button>
                 <Button onClick={() => inputNumber('5')} className="h-12">5</Button>
                 <Button onClick={() => inputNumber('6')} className="h-12">6</Button>
                 <Button variant="destructive" onClick={() => performOperation('-')} className="h-12">-</Button>
 
-                {/* Row 4 */}
                 <Button onClick={() => inputNumber('1')} className="h-12">1</Button>
                 <Button onClick={() => inputNumber('2')} className="h-12">2</Button>
                 <Button onClick={() => inputNumber('3')} className="h-12">3</Button>
                 <Button variant="destructive" onClick={() => performOperation('+')} className="h-12">+</Button>
 
-                {/* Row 5 */}
                 <Button onClick={() => inputNumber('0')} className="h-12 col-span-2">0</Button>
                 <Button onClick={inputDecimal} className="h-12">.</Button>
                 <Button variant="default" onClick={performEquals} className="h-12 bg-primary">=</Button>
@@ -247,7 +238,6 @@ export function AdvancedCalculator() {
                 </div>
               )}
 
-              {/* Memory buttons */}
               <div className="grid grid-cols-4 gap-2 mb-2">
                 <Button variant="secondary" onClick={memoryClear} className="h-10 text-xs">MC</Button>
                 <Button variant="secondary" onClick={memoryRecall} className="h-10 text-xs">MR</Button>
@@ -256,7 +246,6 @@ export function AdvancedCalculator() {
               </div>
 
               <div className="grid grid-cols-5 gap-2">
-                {/* Row 1 */}
                 <Button 
                   variant="outline" 
                   onClick={() => performFunction('sin')} 
@@ -284,7 +273,6 @@ export function AdvancedCalculator() {
                 <Button variant="outline" onClick={clear} className="h-10">C</Button>
                 <Button variant="destructive" onClick={() => performOperation('÷')} className="h-10">÷</Button>
 
-                {/* Row 2 */}
                 <Button 
                   variant="outline" 
                   onClick={() => performFunction('log')} 
@@ -312,7 +300,6 @@ export function AdvancedCalculator() {
                 <Button onClick={() => inputNumber('7')} className="h-10">7</Button>
                 <Button onClick={() => inputNumber('8')} className="h-10">8</Button>
 
-                {/* Row 3 */}
                 <Button 
                   variant="outline" 
                   onClick={() => performFunction('sqrt')} 
@@ -326,21 +313,18 @@ export function AdvancedCalculator() {
                 <Button onClick={() => inputNumber('9')} className="h-10">9</Button>
                 <Button variant="destructive" onClick={() => performOperation('×')} className="h-10">×</Button>
 
-                {/* Row 4 */}
                 <Button variant="outline" onClick={() => inputNumber('(')} className="h-10">(</Button>
                 <Button variant="outline" onClick={() => inputNumber(')')} className="h-10">)</Button>
                 <Button variant="outline" onClick={() => performOperation('%')} className="h-10">%</Button>
                 <Button onClick={() => inputNumber('4')} className="h-10">4</Button>
                 <Button onClick={() => inputNumber('5')} className="h-10">5</Button>
 
-                {/* Row 5 */}
                 <Button onClick={() => inputNumber('6')} className="h-10">6</Button>
                 <Button variant="destructive" onClick={() => performOperation('-')} className="h-10">-</Button>
                 <Button onClick={() => inputNumber('1')} className="h-10">1</Button>
                 <Button onClick={() => inputNumber('2')} className="h-10">2</Button>
                 <Button onClick={() => inputNumber('3')} className="h-10">3</Button>
 
-                {/* Row 6 */}
                 <Button variant="destructive" onClick={() => performOperation('+')} className="h-10">+</Button>
                 <Button variant="outline" onClick={() => performFunction('±')} className="h-10">±</Button>
                 <Button onClick={() => inputNumber('0')} className="h-10">0</Button>
@@ -356,7 +340,6 @@ export function AdvancedCalculator() {
                 </p>
               </div>
 
-              {/* Financial Functions */}
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <Button variant="outline" onClick={() => performFunction('tax')} className="h-10 text-xs">
                   Tax (8.25%)
@@ -378,43 +361,40 @@ export function AdvancedCalculator() {
                 </Button>
               </div>
 
-              {/* Currency Display */}
               <div className="bg-muted p-2 rounded text-center mb-2">
                 <span className="text-sm text-muted-foreground">Currency: </span>
                 <span className="font-semibold">{formatCurrency(parseFloat(display) || 0)}</span>
               </div>
 
-              {/* Standard Calculator Grid */}
               <div className="grid grid-cols-4 gap-2">
-                {/* Row 1 */}
                 <Button variant="outline" onClick={clear} className="h-12">C</Button>
                 <Button variant="outline" onClick={() => performOperation('%')} className="h-12">%</Button>
                 <Button variant="outline" onClick={() => performFunction('±')} className="h-12">±</Button>
                 <Button variant="destructive" onClick={() => performOperation('÷')} className="h-12">÷</Button>
 
-                {/* Row 2 */}
                 <Button onClick={() => inputNumber('7')} className="h-12">7</Button>
                 <Button onClick={() => inputNumber('8')} className="h-12">8</Button>
                 <Button onClick={() => inputNumber('9')} className="h-12">9</Button>
                 <Button variant="destructive" onClick={() => performOperation('×')} className="h-12">×</Button>
 
-                {/* Row 3 */}
                 <Button onClick={() => inputNumber('4')} className="h-12">4</Button>
                 <Button onClick={() => inputNumber('5')} className="h-12">5</Button>
                 <Button onClick={() => inputNumber('6')} className="h-12">6</Button>
                 <Button variant="destructive" onClick={() => performOperation('-')} className="h-12">-</Button>
 
-                {/* Row 4 */}
                 <Button onClick={() => inputNumber('1')} className="h-12">1</Button>
                 <Button onClick={() => inputNumber('2')} className="h-12">2</Button>
                 <Button onClick={() => inputNumber('3')} className="h-12">3</Button>
                 <Button variant="destructive" onClick={() => performOperation('+')} className="h-12">+</Button>
 
-                {/* Row 5 */}
                 <Button onClick={() => inputNumber('0')} className="h-12 col-span-2">0</Button>
                 <Button onClick={inputDecimal} className="h-12">.</Button>
                 <Button variant="default" onClick={performEquals} className="h-12 bg-primary">=</Button>
               </div>
+            </TabsContent>
+
+            <TabsContent value="advanced-financial" className="mt-6">
+              <FinancialCalculator />
             </TabsContent>
           </Tabs>
         </CardContent>
