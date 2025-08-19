@@ -1,153 +1,142 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-interface ConnectionHealth {
+export interface ConnectionStatus {
   isOnline: boolean;
   supabaseConnected: boolean;
-  latency: number;
   lastChecked: Date;
+  error?: string;
 }
 
-class ConnectionHealthChecker {
-  private static instance: ConnectionHealthChecker;
-  private healthStatus: ConnectionHealth = {
+export class ConnectionHealthMonitor {
+  private static instance: ConnectionHealthMonitor;
+  private status: ConnectionStatus = {
     isOnline: navigator.onLine,
-    supabaseConnected: false,
-    latency: 0,
+    supabaseConnected: true,
     lastChecked: new Date()
   };
-  private listeners: ((health: ConnectionHealth) => void)[] = [];
+  private listeners: Array<(status: ConnectionStatus) => void> = [];
+  private checkInterval?: NodeJS.Timeout;
 
-  static getInstance(): ConnectionHealthChecker {
-    if (!ConnectionHealthChecker.instance) {
-      ConnectionHealthChecker.instance = new ConnectionHealthChecker();
+  static getInstance(): ConnectionHealthMonitor {
+    if (!ConnectionHealthMonitor.instance) {
+      ConnectionHealthMonitor.instance = new ConnectionHealthMonitor();
     }
-    return ConnectionHealthChecker.instance;
+    return ConnectionHealthMonitor.instance;
   }
 
-  constructor() {
+  private constructor() {
     this.setupEventListeners();
-    this.performHealthCheck();
-    
-    // Check health every 30 seconds
-    setInterval(() => {
-      this.performHealthCheck();
-    }, 30000);
+    this.startPeriodicCheck();
   }
 
   private setupEventListeners() {
     window.addEventListener('online', () => {
-      console.log('🌐 Connection restored');
-      this.updateHealthStatus({ isOnline: true });
-      this.performHealthCheck();
+      this.updateStatus({ isOnline: true });
+      this.checkSupabaseConnection();
     });
 
     window.addEventListener('offline', () => {
-      console.log('🚫 Connection lost');
-      this.updateHealthStatus({ 
-        isOnline: false, 
-        supabaseConnected: false 
-      });
+      this.updateStatus({ isOnline: false });
     });
   }
 
-  private async performHealthCheck() {
-    const startTime = Date.now();
-    
-    try {
-      // Test basic internet connectivity
-      if (!navigator.onLine) {
-        this.updateHealthStatus({
-          isOnline: false,
-          supabaseConnected: false,
-          latency: 0
-        });
-        return;
-      }
+  private startPeriodicCheck() {
+    // Check connection every 30 seconds
+    this.checkInterval = setInterval(() => {
+      this.checkSupabaseConnection();
+    }, 30000);
+  }
 
-      // Test Supabase connectivity with a lightweight query
+  private async checkSupabaseConnection(): Promise<boolean> {
+    try {
       const { error } = await supabase
         .from('system_info')
         .select('id')
-        .limit(1)
-        .single();
+        .limit(1);
 
-      const latency = Date.now() - startTime;
-
-      this.updateHealthStatus({
-        isOnline: true,
-        supabaseConnected: !error,
-        latency
+      const connected = !error;
+      this.updateStatus({ 
+        supabaseConnected: connected,
+        error: error?.message 
       });
 
-      if (error) {
-        console.warn('⚠️ Supabase connection issue:', error.message);
-      }
-
-    } catch (error: any) {
-      console.error('❌ Connection health check failed:', error);
-      this.updateHealthStatus({
-        isOnline: navigator.onLine,
+      return connected;
+    } catch (error) {
+      console.error('Supabase connection check failed:', error);
+      this.updateStatus({ 
         supabaseConnected: false,
-        latency: Date.now() - startTime
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
+      return false;
     }
   }
 
-  private updateHealthStatus(updates: Partial<ConnectionHealth>) {
-    this.healthStatus = {
-      ...this.healthStatus,
+  private updateStatus(updates: Partial<ConnectionStatus>) {
+    this.status = {
+      ...this.status,
       ...updates,
       lastChecked: new Date()
     };
 
     // Notify all listeners
-    this.listeners.forEach(listener => listener(this.healthStatus));
+    this.listeners.forEach(listener => listener(this.status));
   }
 
-  public getHealthStatus(): ConnectionHealth {
-    return { ...this.healthStatus };
+  public getStatus(): ConnectionStatus {
+    return { ...this.status };
   }
 
-  public addListener(callback: (health: ConnectionHealth) => void) {
-    this.listeners.push(callback);
+  public addListener(listener: (status: ConnectionStatus) => void): () => void {
+    this.listeners.push(listener);
+    
+    // Return unsubscribe function
+    return () => {
+      const index = this.listeners.indexOf(listener);
+      if (index > -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
   }
 
-  public removeListener(callback: (health: ConnectionHealth) => void) {
-    const index = this.listeners.indexOf(callback);
-    if (index > -1) {
-      this.listeners.splice(index, 1);
+  public async forceCheck(): Promise<ConnectionStatus> {
+    this.updateStatus({ isOnline: navigator.onLine });
+    await this.checkSupabaseConnection();
+    return this.getStatus();
+  }
+
+  public cleanup() {
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
     }
   }
+}
 
-  public async forceHealthCheck(): Promise<ConnectionHealth> {
-    await this.performHealthCheck();
-    return this.getHealthStatus();
+// Export convenience functions
+export const getConnectionHealth = () => ConnectionHealthMonitor.getInstance().getStatus();
+export const checkConnection = () => ConnectionHealthMonitor.getInstance().forceCheck();
+export const onConnectionChange = (listener: (status: ConnectionStatus) => void) => 
+  ConnectionHealthMonitor.getInstance().addListener(listener);
+
+// Health check utilities
+export const isHealthy = (status: ConnectionStatus): boolean => {
+  return status.isOnline && status.supabaseConnected;
+};
+
+export const getHealthMessage = (status: ConnectionStatus): string => {
+  if (!status.isOnline) {
+    return "No internet connection detected";
   }
-}
+  
+  if (!status.supabaseConnected) {
+    return status.error || "Database connection issues";
+  }
+  
+  return "All systems operational";
+};
 
-export const connectionHealthChecker = ConnectionHealthChecker.getInstance();
-
-// React hook for using connection health in components
-export function useConnectionHealth() {
-  const [health, setHealth] = useState<ConnectionHealth>(
-    connectionHealthChecker.getHealthStatus()
-  );
-
-  useEffect(() => {
-    const handleHealthUpdate = (newHealth: ConnectionHealth) => {
-      setHealth(newHealth);
-    };
-
-    connectionHealthChecker.addListener(handleHealthUpdate);
-
-    return () => {
-      connectionHealthChecker.removeListener(handleHealthUpdate);
-    };
-  }, []);
-
-  return {
-    ...health,
-    forceCheck: () => connectionHealthChecker.forceHealthCheck()
-  };
-}
+export const getHealthColor = (status: ConnectionStatus): string => {
+  if (isHealthy(status)) return "green";
+  if (status.isOnline) return "yellow";
+  return "red";
+};

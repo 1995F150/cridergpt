@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Clock, CheckCircle, AlertCircle, Info, Zap } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, Info, Zap, Megaphone, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,8 +13,9 @@ interface TimelineEvent {
   title: string;
   description: string;
   timestamp: string;
-  type: 'success' | 'info' | 'warning' | 'error';
+  type: 'success' | 'info' | 'warning' | 'error' | 'system';
   category: string;
+  source: 'user' | 'system';
 }
 
 export function TimelinePanel() {
@@ -25,9 +26,7 @@ export function TimelinePanel() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      loadTimelineEvents();
-    }
+    loadTimelineEvents();
   }, [user]);
 
   const loadTimelineEvents = async () => {
@@ -35,36 +34,18 @@ export function TimelinePanel() {
       setLoading(true);
       setConnectionError(null);
 
-      // Try to load real events from usage log or create sample data
-      const { data, error } = await supabase
-        .from('usage_log')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      // Load user activity and system updates in parallel
+      const [userActivityResult, systemUpdatesResult] = await Promise.all([
+        loadUserActivity(),
+        loadSystemUpdates()
+      ]);
 
-      if (error) {
-        console.error('Error loading timeline:', error);
-        // Show sample timeline if database fails
-        setEvents(getSampleTimelineEvents());
-      } else {
-        // Convert usage log to timeline events
-        const timelineEvents = data?.map((log, index) => ({
-          id: log.id || index.toString(),
-          title: getEventTitle(log.action || 'Unknown Action'),
-          description: log.details || 'Activity logged',
-          timestamp: log.created_at,
-          type: getEventType(log.action || 'info') as 'success' | 'info' | 'warning' | 'error',
-          category: log.category || 'General'
-        })) || [];
-
-        // Add some sample events if empty
-        if (timelineEvents.length === 0) {
-          setEvents(getSampleTimelineEvents());
-        } else {
-          setEvents(timelineEvents);
-        }
-      }
+      const allEvents = [...userActivityResult, ...systemUpdatesResult];
+      
+      // Sort by timestamp descending
+      allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      setEvents(allEvents);
     } catch (error: any) {
       console.error('Timeline loading error:', error);
       setConnectionError(error.message);
@@ -80,59 +61,97 @@ export function TimelinePanel() {
     }
   };
 
+  const loadUserActivity = async (): Promise<TimelineEvent[]> => {
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('usage_log')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('used_at', { ascending: false })
+      .limit(10);
+
+    if (error) throw error;
+
+    return (data || []).map((log, index) => ({
+      id: log.id || index.toString(),
+      title: `Used ${log.tokens_used} tokens`,
+      description: 'AI interaction completed',
+      timestamp: log.used_at,
+      type: 'info' as const,
+      category: 'Usage',
+      source: 'user' as const
+    }));
+  };
+
+  const loadSystemUpdates = async (): Promise<TimelineEvent[]> => {
+    const { data, error } = await supabase
+      .from('system_updates')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    return (data || []).map(update => ({
+      id: update.id,
+      title: update.title,
+      description: update.message,
+      timestamp: update.created_at,
+      type: getSystemUpdateType(update.type, update.priority),
+      category: `${update.type.charAt(0).toUpperCase() + update.type.slice(1)} Update`,
+      source: 'system' as const
+    }));
+  };
+
+  const getSystemUpdateType = (type: string, priority: string): 'success' | 'info' | 'warning' | 'error' | 'system' => {
+    if (priority === 'critical') return 'error';
+    if (priority === 'high') return 'warning';
+    if (type === 'feature') return 'success';
+    if (type === 'security') return 'warning';
+    return 'system';
+  };
+
   const getSampleTimelineEvents = (): TimelineEvent[] => [
     {
       id: '1',
-      title: 'Account Created',
-      description: 'Welcome to CriderGPT! Your account has been successfully created.',
+      title: 'Welcome to CriderGPT',
+      description: 'Your account has been created and you have access to all features.',
       timestamp: new Date().toISOString(),
       type: 'success',
-      category: 'Account'
+      category: 'Account',
+      source: 'system'
     },
     {
       id: '2', 
-      title: 'First Login',
-      description: 'You logged in for the first time and accessed the dashboard.',
+      title: 'System Update v2.1.0',
+      description: 'Added Timeline feature and improved connection monitoring.',
       timestamp: new Date(Date.now() - 3600000).toISOString(),
-      type: 'info',
-      category: 'Authentication'
+      type: 'system',
+      category: 'Feature Update',
+      source: 'system'
     },
     {
       id: '3',
-      title: 'Calculator Used',
-      description: 'Accessed the advanced calculator for the first time.',
+      title: 'First Activity',
+      description: 'Started exploring CriderGPT features.',
       timestamp: new Date(Date.now() - 7200000).toISOString(),
       type: 'info',
-      category: 'Features'
+      category: 'Usage',
+      source: 'user'
     }
   ];
 
-  const getEventTitle = (action: string): string => {
-    const titleMap: Record<string, string> = {
-      'login': 'Logged In',
-      'logout': 'Logged Out',
-      'chat': 'AI Chat Used',
-      'tts': 'Text-to-Speech Generated',
-      'calculator': 'Calculator Used',
-      'project_created': 'Project Created',
-      'file_uploaded': 'File Uploaded',
-      'subscription': 'Subscription Updated'
-    };
-    return titleMap[action] || action.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const getEventType = (action: string): string => {
-    if (action.includes('error') || action.includes('fail')) return 'error';
-    if (action.includes('warning') || action.includes('limit')) return 'warning';
-    if (action.includes('success') || action.includes('complete')) return 'success';
-    return 'info';
-  };
-
-  const getEventIcon = (type: string) => {
+  const getEventIcon = (type: string, source: string) => {
+    if (source === 'system') {
+      return <Megaphone className="h-4 w-4 text-purple-500" />;
+    }
+    
     switch (type) {
       case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'error': return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'warning': return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'system': return <Megaphone className="h-4 w-4 text-purple-500" />;
       default: return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
@@ -168,8 +187,8 @@ export function TimelinePanel() {
       <div className="flex items-center gap-3">
         <Clock className="h-6 w-6 text-primary" />
         <div>
-          <h2 className="text-2xl font-bold">Activity Timeline</h2>
-          <p className="text-muted-foreground">Track your CriderGPT usage and activities</p>
+          <h2 className="text-2xl font-bold">CriderGPT Timeline</h2>
+          <p className="text-muted-foreground">System updates and your activity history</p>
         </div>
       </div>
 
@@ -191,19 +210,19 @@ export function TimelinePanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            Recent Activity
+            Recent Activity & Updates
           </CardTitle>
           <CardDescription>
-            Your latest interactions and system events
+            CriderGPT system changes and your personal activity
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px]">
             <div className="space-y-4">
-              {events.map((event, index) => (
+              {events.map((event) => (
                 <div key={event.id} className="flex gap-4 pb-4 border-b last:border-b-0">
                   <div className="flex-shrink-0 mt-1">
-                    {getEventIcon(event.type)}
+                    {getEventIcon(event.type, event.source)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
@@ -213,6 +232,16 @@ export function TimelinePanel() {
                         <div className="flex items-center gap-2 mt-2">
                           <Badge variant="outline" className="text-xs">
                             {event.category}
+                          </Badge>
+                          <Badge 
+                            variant={event.source === 'system' ? 'default' : 'secondary'} 
+                            className="text-xs"
+                          >
+                            {event.source === 'system' ? (
+                              <><Megaphone className="h-3 w-3 mr-1" />System</>
+                            ) : (
+                              <><User className="h-3 w-3 mr-1" />Personal</>
+                            )}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {formatTimestamp(event.timestamp)}
