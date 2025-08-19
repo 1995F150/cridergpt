@@ -20,6 +20,7 @@ import { PlanPanel } from "@/components/panels/PlanPanel";
 import { PaymentPanel } from "@/components/panels/PaymentPanel";
 import { GoogleSheetsPanel } from "@/components/panels/GoogleSheetsPanel";
 import { ContactPanel } from "@/components/panels/ContactPanel";
+import { TimelinePanel } from "@/components/panels/TimelinePanel";
 
 export default function Index() {
   const { user } = useAuth();
@@ -45,6 +46,8 @@ export default function Index() {
         return <CodePanel />;
       case 'calculator':
         return <CalculatorPanel />;
+      case 'timeline':
+        return <TimelinePanel />;
       case 'tts':
         return <TTSPanel />;
       case 'media':
