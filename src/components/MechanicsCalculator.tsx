@@ -26,8 +26,8 @@ export function MechanicsCalculator() {
     const f = parseFloat(force);
     const r = parseFloat(radius);
     
-    if (isNaN(f) || isNaN(r)) {
-      setResult({ recommendations: ['Please enter valid force and radius values'] });
+    if (isNaN(f) || isNaN(r) || f <= 0 || r <= 0) {
+      setResult({ recommendations: ['Please enter valid positive force and radius values'] });
       return;
     }
 
@@ -37,15 +37,15 @@ export function MechanicsCalculator() {
       result: torque,
       unit: 'N⋅m',
       calculations: {
-        'Force': f,
-        'Radius': r,
-        'Torque': torque
+        'Force (N)': f,
+        'Radius (m)': r,
+        'Torque (N⋅m)': torque
       },
       recommendations: [
         'Torque = Force × Radius',
-        `Applied force: ${f} N`,
-        `Lever arm: ${r} m`,
-        torque > 100 ? 'High torque - ensure proper safety measures' : 'Standard torque range'
+        `Applied force: ${f} N at distance ${r} m`,
+        torque > 100 ? 'High torque - ensure proper safety measures' : 'Standard torque range',
+        'Always use proper torque wrench for precision work'
       ]
     });
   };
@@ -55,8 +55,8 @@ export function MechanicsCalculator() {
     const d = parseFloat(distance);
     const t = parseFloat(time);
     
-    if (isNaN(f) || isNaN(d) || isNaN(t)) {
-      setResult({ recommendations: ['Please enter valid force, distance, and time values'] });
+    if (isNaN(f) || isNaN(d) || isNaN(t) || f <= 0 || d <= 0 || t <= 0) {
+      setResult({ recommendations: ['Please enter valid positive values for force, distance, and time'] });
       return;
     }
 
@@ -67,18 +67,18 @@ export function MechanicsCalculator() {
       result: power,
       unit: 'W',
       calculations: {
-        'Force': f,
-        'Distance': d,
-        'Time': t,
-        'Work': work,
-        'Power': power
+        'Force (N)': f,
+        'Distance (m)': d,
+        'Time (s)': t,
+        'Work (J)': work,
+        'Power (W)': power
       },
       recommendations: [
         'Power = Work ÷ Time = (Force × Distance) ÷ Time',
-        `Work done: ${work.toFixed(2)} J`,
-        `Time taken: ${t} s`,
-        power > 1000 ? 'High power output - consider cooling' : 'Standard power range'
-      ]
+        `Work done: ${work.toFixed(2)} J over ${t} seconds`,
+        power > 1000 ? 'High power output - consider cooling requirements' : 'Standard power range',
+        power < 100 ? 'Low power - suitable for precision work' : ''
+      ].filter(Boolean)
     });
   };
 
@@ -86,8 +86,8 @@ export function MechanicsCalculator() {
     const m = parseFloat(mass);
     const a = parseFloat(acceleration);
     
-    if (isNaN(m) || isNaN(a)) {
-      setResult({ recommendations: ['Please enter valid mass and acceleration values'] });
+    if (isNaN(m) || isNaN(a) || m <= 0) {
+      setResult({ recommendations: ['Please enter valid positive mass and acceleration values'] });
       return;
     }
 
@@ -97,16 +97,16 @@ export function MechanicsCalculator() {
       result: f,
       unit: 'N',
       calculations: {
-        'Mass': m,
-        'Acceleration': a,
-        'Force': f
+        'Mass (kg)': m,
+        'Acceleration (m/s²)': a,
+        'Force (N)': f
       },
       recommendations: [
         'Force = Mass × Acceleration (Newton\'s Second Law)',
-        `Object mass: ${m} kg`,
-        `Acceleration: ${a} m/s²`,
-        f > 1000 ? 'High force - ensure structural integrity' : 'Standard force range'
-      ]
+        `Object mass: ${m} kg with acceleration: ${a} m/s²`,
+        f > 1000 ? 'High force - ensure structural integrity' : 'Standard force range',
+        a === 9.81 ? 'Standard gravity acceleration detected' : ''
+      ].filter(Boolean)
     });
   };
 
@@ -114,33 +114,39 @@ export function MechanicsCalculator() {
     const d = parseFloat(distance);
     const t = parseFloat(time);
     
-    if (isNaN(d) || isNaN(t)) {
-      setResult({ recommendations: ['Please enter valid distance and time values'] });
+    if (isNaN(d) || isNaN(t) || t <= 0) {
+      setResult({ recommendations: ['Please enter valid distance and positive time values'] });
       return;
     }
 
     const v = d / t;
     const a = parseFloat(acceleration);
     let finalVelocity = v;
+    let calculations: { [key: string]: number } = {
+      'Distance (m)': d,
+      'Time (s)': t,
+      'Average Velocity (m/s)': v
+    };
     
     if (!isNaN(a)) {
       finalVelocity = v + (a * t);
+      calculations = {
+        ...calculations,
+        'Acceleration (m/s²)': a,
+        'Final Velocity (m/s)': finalVelocity
+      };
     }
     
     setResult({
       result: finalVelocity,
       unit: 'm/s',
-      calculations: {
-        'Distance': d,
-        'Time': t,
-        'Average Velocity': v,
-        ...(a && { 'Acceleration': a, 'Final Velocity': finalVelocity })
-      },
+      calculations,
       recommendations: [
         'Velocity = Distance ÷ Time',
-        a ? 'Final Velocity = Initial Velocity + (Acceleration × Time)' : '',
+        !isNaN(a) ? 'Final Velocity = Initial Velocity + (Acceleration × Time)' : 'Constant velocity calculation',
         `Average speed: ${v.toFixed(2)} m/s`,
-        finalVelocity > 50 ? 'High velocity - consider safety factors' : 'Standard velocity range'
+        finalVelocity > 50 ? 'High velocity - consider safety factors' : 'Safe velocity range',
+        Math.abs(finalVelocity - v) > 10 ? 'Significant acceleration effect detected' : ''
       ].filter(Boolean)
     });
   };
@@ -172,11 +178,12 @@ export function MechanicsCalculator() {
           <TabsContent value="torque" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="force">Force (N)</Label>
+                <Label htmlFor="force-torque">Force (N)</Label>
                 <Input
-                  id="force"
+                  id="force-torque"
                   type="number"
                   step="0.1"
+                  min="0"
                   value={force}
                   onChange={(e) => setForce(e.target.value)}
                   placeholder="Enter force in Newtons"
@@ -188,6 +195,7 @@ export function MechanicsCalculator() {
                   id="radius"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={radius}
                   onChange={(e) => setRadius(e.target.value)}
                   placeholder="Enter radius in meters"
@@ -200,20 +208,21 @@ export function MechanicsCalculator() {
           <TabsContent value="power" className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="force">Force (N)</Label>
+                <Label htmlFor="force-power">Force (N)</Label>
                 <Input
-                  id="force"
+                  id="force-power"
                   type="number"
                   step="0.1"
+                  min="0"
                   value={force}
                   onChange={(e) => setForce(e.target.value)}
                   placeholder="Enter force"
                 />
               </div>
               <div>
-                <Label htmlFor="distance">Distance (m)</Label>
+                <Label htmlFor="distance-power">Distance (m)</Label>
                 <Input
-                  id="distance"
+                  id="distance-power"
                   type="number"
                   step="0.1"
                   value={distance}
@@ -222,11 +231,12 @@ export function MechanicsCalculator() {
                 />
               </div>
               <div>
-                <Label htmlFor="time">Time (s)</Label>
+                <Label htmlFor="time-power">Time (s)</Label>
                 <Input
-                  id="time"
+                  id="time-power"
                   type="number"
                   step="0.1"
+                  min="0.01"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                   placeholder="Enter time"
@@ -244,20 +254,21 @@ export function MechanicsCalculator() {
                   id="mass"
                   type="number"
                   step="0.1"
+                  min="0"
                   value={mass}
                   onChange={(e) => setMass(e.target.value)}
                   placeholder="Enter mass in kg"
                 />
               </div>
               <div>
-                <Label htmlFor="acceleration">Acceleration (m/s²)</Label>
+                <Label htmlFor="acceleration-force">Acceleration (m/s²)</Label>
                 <Input
-                  id="acceleration"
+                  id="acceleration-force"
                   type="number"
                   step="0.1"
                   value={acceleration}
                   onChange={(e) => setAcceleration(e.target.value)}
-                  placeholder="Enter acceleration"
+                  placeholder="Enter acceleration (use 9.81 for gravity)"
                 />
               </div>
             </div>
@@ -267,9 +278,9 @@ export function MechanicsCalculator() {
           <TabsContent value="velocity" className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="distance">Distance (m)</Label>
+                <Label htmlFor="distance-velocity">Distance (m)</Label>
                 <Input
-                  id="distance"
+                  id="distance-velocity"
                   type="number"
                   step="0.1"
                   value={distance}
@@ -278,20 +289,21 @@ export function MechanicsCalculator() {
                 />
               </div>
               <div>
-                <Label htmlFor="time">Time (s)</Label>
+                <Label htmlFor="time-velocity">Time (s)</Label>
                 <Input
-                  id="time"
+                  id="time-velocity"
                   type="number"
                   step="0.1"
+                  min="0.01"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                   placeholder="Enter time"
                 />
               </div>
               <div>
-                <Label htmlFor="acceleration">Acceleration (m/s²)</Label>
+                <Label htmlFor="acceleration-velocity">Acceleration (m/s²)</Label>
                 <Input
-                  id="acceleration"
+                  id="acceleration-velocity"
                   type="number"
                   step="0.1"
                   value={acceleration}
@@ -315,10 +327,10 @@ export function MechanicsCalculator() {
                 <CardTitle className="text-lg">Calculation Results</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {result.result && (
+                {result.result !== undefined && (
                   <div className="text-center p-4 bg-background rounded-lg">
                     <div className="text-3xl font-bold text-primary">
-                      {result.result.toFixed(2)} {result.unit}
+                      {result.result.toFixed(3)} {result.unit}
                     </div>
                   </div>
                 )}
@@ -327,8 +339,8 @@ export function MechanicsCalculator() {
                   <div className="grid grid-cols-2 gap-4">
                     {Object.entries(result.calculations).map(([key, value]) => (
                       <div key={key} className="text-center p-2 bg-background rounded">
-                        <div className="font-semibold">{key}</div>
-                        <div className="text-muted-foreground">{value.toFixed(2)}</div>
+                        <div className="font-semibold text-sm">{key}</div>
+                        <div className="text-muted-foreground">{value.toFixed(3)}</div>
                       </div>
                     ))}
                   </div>
@@ -336,7 +348,7 @@ export function MechanicsCalculator() {
 
                 {result.recommendations && (
                   <div>
-                    <h4 className="font-semibold mb-2">Formula & Notes:</h4>
+                    <h4 className="font-semibold mb-2">Formula & Analysis:</h4>
                     <ul className="space-y-1">
                       {result.recommendations.map((rec, index) => (
                         <li key={index} className="text-sm text-muted-foreground flex items-start">
