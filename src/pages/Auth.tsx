@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
-import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -18,6 +18,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isConnecting, setIsConnecting] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,22 +31,40 @@ export default function Auth() {
       console.log('📡 Connection restored');
       setIsOnline(true);
       setConnectionError(null);
+      // Retry connection test when back online
+      testConnection();
     };
     
     const handleOffline = () => {
       console.log('📵 Connection lost');
       setIsOnline(false);
       setConnectionError('No internet connection detected');
+      setIsConnecting(false);
     };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Test Supabase connection
+    // Test Supabase connection with timeout
     const testConnection = async () => {
+      if (!isOnline) {
+        setConnectionError('No internet connection detected');
+        setIsConnecting(false);
+        return;
+      }
+
       try {
         console.log('🧪 Testing Supabase connection...');
-        const { data, error } = await supabase.auth.getSession();
+        setIsConnecting(true);
+        
+        // Add a timeout to the connection test
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 10000)
+        );
+        
+        const connectionPromise = supabase.auth.getSession();
+        
+        const { data, error } = await Promise.race([connectionPromise, timeoutPromise]) as any;
         
         if (error) {
           console.error('❌ Connection error:', error);
@@ -57,16 +76,20 @@ export default function Auth() {
           console.log('✅ Connection successful, no active session');
           setConnectionError(null);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('💥 Failed to connect to Supabase:', error);
-        setConnectionError('Unable to connect to authentication service. Please check your internet connection and try again.');
+        if (error.message === 'Connection timeout') {
+          setConnectionError('Connection timed out. The authentication service may be temporarily unavailable.');
+        } else {
+          setConnectionError('Unable to connect to authentication service. Please check your internet connection and try again.');
+        }
+      } finally {
+        setIsConnecting(false);
       }
     };
 
-    // Only test connection if online
-    if (isOnline) {
-      testConnection();
-    }
+    // Initial connection test
+    testConnection();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -95,8 +118,16 @@ export default function Auth() {
       return;
     }
 
+    if (connectionError) {
+      toast({
+        title: "Connection Error",
+        description: "Please resolve the connection issue before signing in.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
-    setConnectionError(null);
 
     try {
       if (isSignUp) {
@@ -132,7 +163,7 @@ export default function Auth() {
       const errorMessage = error.message || 'An authentication error occurred';
       
       // Handle specific connection errors
-      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+      if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch')) {
         setConnectionError('Unable to connect to authentication service. Please check your internet connection.');
       } else {
         toast({
@@ -149,8 +180,32 @@ export default function Auth() {
   const retryConnection = () => {
     console.log('🔄 Retrying connection...');
     setConnectionError(null);
-    window.location.reload();
+    setIsConnecting(true);
+    
+    // Force a page reload to reset everything
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
   };
+
+  // Show loading state while testing connection
+  if (isConnecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
+        <Card className="w-full max-w-md border-border bg-card/95 backdrop-blur-sm">
+          <CardHeader className="space-y-1 text-center">
+            <RefreshCw className="h-12 w-12 mx-auto mb-2 animate-spin text-primary" />
+            <CardTitle className="text-2xl font-bold">
+              Connecting to CriderGPT
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Please wait while we establish a secure connection...
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   // Show connection status
   if (!isOnline || connectionError) {
@@ -242,7 +297,7 @@ export default function Auth() {
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
-              disabled={loading}
+              disabled={loading || !isOnline || !!connectionError}
             >
               {loading ? 'Connecting...' : (isSignUp ? 'Sign Up' : 'Sign In')}
             </Button>
