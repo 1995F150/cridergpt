@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -187,7 +186,7 @@ export function WeldingCalculator() {
     };
   };
 
-  const calculateVoltageAmperage = (): WoltageResult => {
+  const calculateVoltageAmperage = (): WeldingResult => {
     const inputVoltage = parseFloat(voltage);
     const inputAmperage = parseFloat(amperage);
     
