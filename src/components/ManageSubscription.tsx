@@ -25,27 +25,41 @@ export function ManageSubscription() {
         return;
       }
 
+      console.log('Attempting to access customer portal...');
+      
       const { data, error } = await supabase.functions.invoke('customer-portal', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         }
       });
 
+      console.log('Customer portal response:', { data, error });
+
       if (error) {
-        throw error;
+        console.error('Customer portal error:', error);
+        throw new Error(error.message || 'Failed to access customer portal');
       }
 
       if (data?.url) {
         // Open Stripe Customer Portal in the same tab
         window.location.href = data.url;
       } else {
-        throw new Error("No portal URL returned");
+        throw new Error("No portal URL returned from server");
       }
     } catch (error: any) {
-      console.error('Portal error:', error);
+      console.error('Portal access error:', error);
+      
+      let errorMessage = "Failed to open subscription management portal";
+      
+      if (error.message?.includes('No Stripe customer found')) {
+        errorMessage = "No active subscription found. Please subscribe to a plan first.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to open subscription management portal",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

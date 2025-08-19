@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, Download, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import jsPDF from 'jspdf';
 
 interface HistoryEntry {
   id: string;
@@ -44,8 +44,43 @@ export function CalculationHistory() {
   };
 
   const exportToPDF = () => {
-    // In a real implementation, you would use a library like jsPDF
-    toast.info('PDF export would be implemented here');
+    try {
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.text('Financial Calculation History', 20, 30);
+      
+      // Add date
+      doc.setFontSize(12);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
+      
+      let yPosition = 60;
+      
+      // Add history entries
+      history.forEach((entry, index) => {
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 30;
+        }
+        
+        doc.setFontSize(14);
+        doc.text(`${index + 1}. ${entry.type.toUpperCase()} - ${entry.timestamp}`, 20, yPosition);
+        yPosition += 10;
+        
+        doc.setFontSize(10);
+        const resultText = JSON.stringify(entry.results, null, 2);
+        const lines = doc.splitTextToSize(resultText, 170);
+        doc.text(lines, 25, yPosition);
+        yPosition += lines.length * 4 + 10;
+      });
+      
+      doc.save('financial-calculations.pdf');
+      toast.success('PDF exported successfully');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to export PDF');
+    }
   };
 
   const formatCurrency = (value: number) => {
