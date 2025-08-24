@@ -22,6 +22,7 @@ import { GoogleSheetsPanel } from "@/components/panels/GoogleSheetsPanel";
 import { ContactPanel } from "@/components/panels/ContactPanel";
 import { TimelinePanel } from "@/components/panels/TimelinePanel";
 import { ProfilePanel } from "@/components/panels/ProfilePanel";
+import { GalleryPanel } from "@/components/panels/GalleryPanel";
 
 export default function Index() {
   const { user } = useAuth();
@@ -53,6 +54,8 @@ export default function Index() {
         return <TTSPanel />;
       case 'media':
         return <MediaPanel />;
+      case 'gallery':
+        return <GalleryPanel />;
       case 'maps':
         return <MapBuilderPanel />;
       case 'contact':
