@@ -1,4 +1,3 @@
-
 import { useFeatureNotifications } from '@/hooks/useFeatureNotifications';
 import { FeatureNotifications } from '@/components/FeatureNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +11,6 @@ import { Crown, Star, Zap, Check, X, ExternalLink, Lock, Unlock, Volume2 } from 
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { PromotionalMessages } from '@/components/PromotionalMessages';
 import { ManageSubscription } from '@/components/ManageSubscription';
-import { DedicationMessage } from '@/components/DedicationMessage';
 
 interface SubscriptionData {
   plan: string;
@@ -223,8 +221,6 @@ export function PlanPanel() {
 
   return (
     <div className="flex-1 p-8 space-y-6">
-      <DedicationMessage />
-      
       {/* Current Plan Header */}
       <Card>
         <CardHeader className="text-center">

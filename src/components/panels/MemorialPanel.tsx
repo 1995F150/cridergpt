@@ -1,6 +1,5 @@
 
 import React from "react";
-import { DedicationMessage } from "@/components/DedicationMessage";
 
 export function MemorialPanel() {
   React.useEffect(() => {
@@ -19,7 +18,6 @@ export function MemorialPanel() {
 
   return (
     <div className="p-8">
-      <DedicationMessage />
       <div className="flex items-center justify-center min-h-full">
         <div
           style={{
