@@ -4,10 +4,11 @@ import { FeatureNotifications } from '@/components/FeatureNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Crown, Star, Zap, Check, X, ExternalLink } from 'lucide-react';
+import { Crown, Star, Zap, Check, X, ExternalLink, Lock, Unlock } from 'lucide-react';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { PromotionalMessages } from '@/components/PromotionalMessages';
 import { ManageSubscription } from '@/components/ManageSubscription';
@@ -20,6 +21,96 @@ interface SubscriptionData {
   ttsRequests: number;
   ttsLimit: number;
 }
+
+interface FeatureRequirement {
+  feature: string;
+  description: string;
+  freeAccess: boolean;
+  plusAccess: boolean;
+  proAccess: boolean;
+  requirement?: string;
+}
+
+const featureRequirements: FeatureRequirement[] = [
+  {
+    feature: "Basic Chat",
+    description: "Standard AI conversations and assistance",
+    freeAccess: true,
+    plusAccess: true,
+    proAccess: true,
+    requirement: "13 tokens/month on Free plan"
+  },
+  {
+    feature: "Advanced Calculators", 
+    description: "Professional calculation tools with PDF export",
+    freeAccess: true,
+    plusAccess: true,
+    proAccess: true
+  },
+  {
+    feature: "Text-to-Speech",
+    description: "Convert text to natural-sounding speech",
+    freeAccess: true,
+    plusAccess: true,
+    proAccess: true,
+    requirement: "5 requests/month on Free, 100/month on Plus, Unlimited on Pro"
+  },
+  {
+    feature: "Invoice System",
+    description: "Professional invoice creation with PDF export",
+    freeAccess: true,
+    plusAccess: true,
+    proAccess: true
+  },
+  {
+    feature: "File Upload & Processing",
+    description: "Upload and analyze documents, images, and files",
+    freeAccess: false,
+    plusAccess: true,
+    proAccess: true,
+    requirement: "Upgrade to Plus or Pro required"
+  },
+  {
+    feature: "Code Generation",
+    description: "Advanced AI code generation and debugging",
+    freeAccess: false,
+    plusAccess: true,
+    proAccess: true,
+    requirement: "Upgrade to Plus or Pro required"
+  },
+  {
+    feature: "API Access",
+    description: "Direct API access to CriderGPT services",
+    freeAccess: false,
+    plusAccess: false,
+    proAccess: true,
+    requirement: "Pro plan required"
+  },
+  {
+    feature: "Priority Support",
+    description: "Faster response times and premium support",
+    freeAccess: false,
+    plusAccess: true,
+    proAccess: true,
+    requirement: "Plus or Pro plan required"
+  },
+  {
+    feature: "Advanced Analytics",
+    description: "Detailed usage statistics and insights",
+    freeAccess: false,
+    plusAccess: false,
+    proAccess: true,
+    requirement: "Pro plan required"
+  },
+  {
+    feature: "Unlimited Projects",
+    description: "Create and manage unlimited projects",
+    freeAccess: false,
+    plusAccess: false,
+    proAccess: true,
+    requirement: "Pro plan required"
+  }
+];
 
 export function PlanPanel() {
   const { user } = useAuth();
@@ -109,6 +200,7 @@ export function PlanPanel() {
     );
   }
 
+  const currentPlan = subscriptionData?.plan || 'free';
   const planName = (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plus' : 'Free');
   const planIcon = isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap;
   const planColor = isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500';
@@ -116,6 +208,18 @@ export function PlanPanel() {
 
   const tokenUsagePercent = subscriptionData ? (subscriptionData.tokensUsed / subscriptionData.tokenLimit) * 100 : 0;
   const ttsUsagePercent = subscriptionData ? (subscriptionData.ttsRequests / subscriptionData.ttsLimit) * 100 : 0;
+
+  const getUserAccess = (feature: FeatureRequirement) => {
+    switch (currentPlan) {
+      case 'pro':
+        return feature.proAccess;
+      case 'plus':
+      case 'plu':
+        return feature.plusAccess;
+      default:
+        return feature.freeAccess;
+    }
+  };
 
   return (
     <div className="flex-1 p-8 space-y-6">
@@ -127,7 +231,15 @@ export function PlanPanel() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <PlanIcon className={`h-8 w-8 ${planColor}`} />
             <CardTitle className="text-3xl">Current Plan: {planName}</CardTitle>
+            <Badge variant={currentPlan === 'free' ? 'secondary' : 'default'} className="ml-2">
+              {currentPlan.toUpperCase()}
+            </Badge>
           </div>
+          <p className="text-muted-foreground">
+            {currentPlan === 'free' && 'Basic features with limited usage'}
+            {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits'}
+            {currentPlan === 'pro' && 'All features with unlimited access'}
+          </p>
         </CardHeader>
       </Card>
 
@@ -160,7 +272,7 @@ export function PlanPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
+                <Volume2 className="h-5 w-5" />
                 TTS Requests
               </CardTitle>
             </CardHeader>
@@ -169,11 +281,11 @@ export function PlanPanel() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span>Used: {subscriptionData.ttsRequests}</span>
-                    <span>Limit: {subscriptionData.ttsLimit}</span>
+                    <span>Limit: {subscriptionData.ttsLimit === 9999999 ? 'Unlimited' : subscriptionData.ttsLimit}</span>
                   </div>
-                  <Progress value={ttsUsagePercent} className="h-2" />
+                  <Progress value={subscriptionData.ttsLimit === 9999999 ? 0 : ttsUsagePercent} className="h-2" />
                   <p className="text-xs text-muted-foreground">
-                    {Math.round(ttsUsagePercent)}% of monthly limit used
+                    {subscriptionData.ttsLimit === 9999999 ? 'Unlimited usage' : `${Math.round(ttsUsagePercent)}% of monthly limit used`}
                   </p>
                 </div>
               )}
@@ -187,18 +299,65 @@ export function PlanPanel() {
         </div>
       </div>
 
+      {/* Feature Access & Requirements */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Feature Access & Requirements</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Overview of what you can access with your current plan and what's available with upgrades
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {featureRequirements.map((feature, index) => {
+              const hasAccess = getUserAccess(feature);
+              return (
+                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {hasAccess ? (
+                      <Unlock className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <Lock className="h-5 w-5 text-red-500" />
+                    )}
+                    <div>
+                      <h4 className="font-medium">{feature.feature}</h4>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                      {feature.requirement && (
+                        <p className="text-xs text-blue-600 mt-1">{feature.requirement}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {hasAccess ? (
+                      <Badge variant="default" className="bg-green-100 text-green-700">
+                        Available
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-red-100 text-red-700">
+                        Upgrade Required
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Dynamic Feature Comparison */}
       {plans.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Plan Features</CardTitle>
+            <CardTitle>Plan Comparison</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="font-medium text-muted-foreground">Features</div>
               {plans.map(plan => (
                 <div key={plan.plan_name} className="text-center font-medium capitalize">
-                  {plan.plan_name}
+                  {plan.plan_display_name}
+                  <div className="text-2xl font-bold text-primary">${plan.price_monthly}/mo</div>
                 </div>
               ))}
               

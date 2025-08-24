@@ -1,59 +1,92 @@
 
-import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Activity, Crown, Palette, Megaphone, Code, Star, Heart, Monitor, Sheet, MapPin, Calculator, Mail, Clock, User } from "lucide-react";
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Activity, 
+  MessageSquare, 
+  Calculator, 
+  FileText, 
+  Folder,
+  Images,
+  Code, 
+  Volume2, 
+  Zap, 
+  Map, 
+  Sheet, 
+  Play, 
+  BarChart3, 
+  Mail, 
+  User, 
+  CreditCard, 
+  DollarSign, 
+  Star, 
+  Bell, 
+  Clock, 
+  Heart, 
+  Layers 
+} from 'lucide-react';
 
 interface NavigationSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const tabs = [
-  { id: 'chat', icon: Monitor, label: 'CriderGPT' },
-  { id: 'projects', icon: FolderOpen, label: 'Projects' },
-  { id: 'files', icon: Upload, label: 'Files' },
-  { id: 'code', icon: Code, label: 'Code Generator' },
-  { id: 'calculator', icon: Calculator, label: 'Calculator' },
-  { id: 'timeline', icon: Clock, label: 'Timeline' },
-  { id: 'tts', icon: Volume2, label: 'Text to Speech' },
-  { id: 'media', icon: Palette, label: 'Media Generator' },
-  { id: 'maps', icon: MapPin, label: 'Map Builder', badge: 'Soon' },
-  { id: 'contact', icon: Mail, label: 'Contact' },
-  { id: 'memorial', icon: Heart, label: 'Memorial' },
-  { id: 'reviews', icon: Star, label: 'Reviews' },
-  { id: 'updates', icon: Megaphone, label: 'System Updates' },
-  { id: 'plan', icon: Crown, label: 'Current Plan' },
-  { id: 'payments', icon: CreditCard, label: 'Payments' },
-  { id: 'sheets', icon: Sheet, label: 'Google Sheets' },
-  { id: 'status', icon: BarChart3, label: 'Status' },
-  { id: 'profile', icon: User, label: 'Profile & Settings' },
+const navigationItems = [
+  { id: 'status', label: 'Status', icon: Activity },
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'calculators', label: 'Calculators', icon: Calculator },
+  { id: 'invoices', label: 'Invoices', icon: FileText },
+  { id: 'files', label: 'Files', icon: Folder },
+  { id: 'gallery', label: 'Gallery', icon: Images },
+  { id: 'code', label: 'Code', icon: Code },
+  { id: 'tts', label: 'TTS', icon: Volume2 },
+  { id: 'api', label: 'API', icon: Zap },
+  { id: 'maps', label: 'Maps', icon: Map },
+  { id: 'sheets', label: 'Sheets', icon: Sheet },
+  { id: 'media', label: 'Media', icon: Play },
+  { id: 'usage', label: 'Usage', icon: BarChart3 },
+  { id: 'projects', label: 'Projects', icon: Folder },
+  { id: 'contact', label: 'Contact', icon: Mail },
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'pricing', label: 'Pricing', icon: CreditCard },
+  { id: 'payment', label: 'Payment', icon: DollarSign },
+  { id: 'plan', label: 'Plan', icon: Layers },
+  { id: 'reviews', label: 'Reviews', icon: Star },
+  { id: 'updates', label: 'Updates', icon: Bell },
+  { id: 'timeline', label: 'Timeline', icon: Clock },
+  { id: 'memorial', label: 'Memorial', icon: Heart }
 ];
 
 export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarProps) {
   return (
-    <div className="w-64 bg-card border-r-2 border-border flex flex-col">
-      <div className="flex flex-col gap-2 p-4">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left relative ${
-                activeTab === tab.id
-                  ? 'bg-primary/10 text-primary'
-                  : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              <span className="font-medium text-base truncate">{tab.label}</span>
-              {tab.badge && (
-                <span className="ml-auto bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex-shrink-0">
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
+    <div className="w-64 bg-card border-r border-border">
+      <div className="p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">CriderGPT Dashboard</h2>
       </div>
+      
+      <ScrollArea className="h-[calc(100vh-100px)]">
+        <div className="space-y-1 p-3">
+          {navigationItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                key={item.id}
+                variant={activeTab === item.id ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10",
+                  activeTab === item.id && "bg-primary/10 text-primary"
+                )}
+                onClick={() => onTabChange(item.id)}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Button>
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
