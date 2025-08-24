@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Crown, Star, Zap, Check, X, ExternalLink, Lock, Unlock } from 'lucide-react';
+import { Crown, Star, Zap, Check, X, ExternalLink, Lock, Unlock, Volume2 } from 'lucide-react';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { PromotionalMessages } from '@/components/PromotionalMessages';
 import { ManageSubscription } from '@/components/ManageSubscription';
