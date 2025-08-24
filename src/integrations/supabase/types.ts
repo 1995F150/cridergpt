@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_interactions: {
+        Row: {
+          ai_response: string
+          category: string | null
+          context_tags: string[] | null
+          created_at: string
+          id: string
+          topic: string | null
+          updated_at: string
+          user_id: string | null
+          user_input: string
+        }
+        Insert: {
+          ai_response: string
+          category?: string | null
+          context_tags?: string[] | null
+          created_at?: string
+          id?: string
+          topic?: string | null
+          updated_at?: string
+          user_id?: string | null
+          user_input: string
+        }
+        Update: {
+          ai_response?: string
+          category?: string | null
+          context_tags?: string[] | null
+          created_at?: string
+          id?: string
+          topic?: string | null
+          updated_at?: string
+          user_id?: string | null
+          user_input?: string
+        }
+        Relationships: []
+      }
       ai_requests: {
         Row: {
           created_at: string
