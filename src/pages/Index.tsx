@@ -10,7 +10,7 @@ import { StatusPanel } from "@/components/panels/StatusPanel";
 import { MemorialPanel } from "@/components/panels/MemorialPanel";
 import { PricingPanel } from "@/components/panels/PricingPanel";
 import { APIPanel } from "@/components/panels/APIPanel";
-import { ChatPanel } from "@/components/panels/ChatPanel";
+import ChatPanel from "@/components/panels/ChatPanel";
 import { CodePanel } from "@/components/panels/CodePanel";
 import { MediaPanel } from "@/components/panels/MediaPanel";
 import { MapBuilderPanel } from "@/components/panels/MapBuilderPanel";
