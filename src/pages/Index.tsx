@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationSidebar } from '@/components/NavigationSidebar';
 import { Header } from '@/components/Header';
 import { StatusPanel } from '@/components/panels/StatusPanel';
-import { ChatPanel } from '@/components/panels/ChatPanel';
+import ChatPanel from '@/components/panels/ChatPanel';
 import { CalculatorPanel } from '@/components/panels/CalculatorPanel';
 import { InvoicePanel } from '@/components/panels/InvoicePanel';
 import { FilesPanel } from '@/components/panels/FilesPanel';
@@ -25,30 +25,6 @@ import { UpdatesPanel } from '@/components/panels/UpdatesPanel';
 import { TimelinePanel } from '@/components/panels/TimelinePanel';
 import { MemorialPanel } from '@/components/panels/MemorialPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
-import { 
-  Activity, 
-  MessageSquare, 
-  Calculator, 
-  FileText, 
-  Images,
-  Code, 
-  Volume2, 
-  Zap, 
-  Map, 
-  Sheet, 
-  Play, 
-  BarChart3, 
-  Folder, 
-  Mail, 
-  User, 
-  CreditCard, 
-  DollarSign, 
-  Star, 
-  Bell, 
-  Clock, 
-  Heart, 
-  Layers 
-} from 'lucide-react';
 
 export type PanelType = 
   | 'status' 
@@ -85,41 +61,17 @@ export default function Index() {
     }
   }, []);
 
-  const handlePanelChange = (panel: PanelType) => {
-    setActivePanel(panel);
-    localStorage.setItem('activePanel', panel);
+  const handlePanelChange = (panel: string) => {
+    const panelType = panel as PanelType;
+    setActivePanel(panelType);
+    localStorage.setItem('activePanel', panelType);
   };
 
   return (
     <div className="flex h-screen bg-background">
       <NavigationSidebar
-        onPanelChange={handlePanelChange}
-        activePanel={activePanel}
-        panels={[
-          { id: 'status', label: 'Status', icon: Activity },
-          { id: 'chat', label: 'Chat', icon: MessageSquare },
-          { id: 'calculators', label: 'Calculators', icon: Calculator },
-          { id: 'invoices', label: 'Invoices', icon: FileText },
-          { id: 'files', label: 'Files', icon: FileText },
-          { id: 'gallery', label: 'Gallery', icon: Images },
-          { id: 'code', label: 'Code', icon: Code },
-          { id: 'tts', label: 'TTS', icon: Volume2 },
-          { id: 'api', label: 'API', icon: Zap },
-          { id: 'maps', label: 'Maps', icon: Map },
-          { id: 'sheets', label: 'Sheets', icon: Sheet },
-          { id: 'media', label: 'Media', icon: Play },
-          { id: 'usage', label: 'Usage', icon: BarChart3 },
-          { id: 'projects', label: 'Projects', icon: Folder },
-          { id: 'contact', label: 'Contact', icon: Mail },
-          { id: 'profile', label: 'Profile', icon: User },
-          { id: 'pricing', label: 'Pricing', icon: CreditCard },
-          { id: 'payment', label: 'Payment', icon: DollarSign },
-          { id: 'reviews', label: 'Reviews', icon: Star },
-          { id: 'updates', label: 'Updates', icon: Bell },
-          { id: 'timeline', label: 'Timeline', icon: Clock },
-          { id: 'memorial', label: 'Memorial', icon: Heart },
-          { id: 'plan', label: 'Plan', icon: Layers },
-        ]}
+        activeTab={activePanel}
+        onTabChange={handlePanelChange}
       />
 
       <div className="flex-1 flex flex-col min-h-0">
