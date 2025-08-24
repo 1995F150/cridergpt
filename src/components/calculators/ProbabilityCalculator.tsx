@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,7 +155,7 @@ export function ProbabilityCalculator() {
                 {Object.entries(results).map(([key, value]) => (
                   <div key={key} className="flex justify-between p-2 bg-background rounded">
                     <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                    <span className="text-muted-foreground">{value}</span>
+                    <span className="text-muted-foreground">{String(value)}</span>
                   </div>
                 ))}
               </CardContent>
