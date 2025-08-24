@@ -28,6 +28,11 @@ export default function Auth() {
 
     const initializeAuth = async () => {
       try {
+        // Check if environment variables are properly set
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
+          throw new Error('Supabase configuration is missing');
+        }
+
         // Simple session check without complex connection testing
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -47,7 +52,7 @@ export default function Auth() {
       } catch (error: any) {
         console.error('💥 Auth initialization error:', error);
         if (mounted) {
-          setAuthError('Connection error. Please refresh the page.');
+          setAuthError('Configuration error. Please check your setup.');
         }
       } finally {
         if (mounted) {
@@ -79,6 +84,26 @@ export default function Auth() {
       toast({
         title: "Missing Information",
         description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic email validation
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic password validation
+    if (password.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters long.",
         variant: "destructive",
       });
       return;
@@ -219,6 +244,7 @@ export default function Auth() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="border-border"
+                autoComplete="email"
               />
             </div>
             
@@ -232,6 +258,7 @@ export default function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="border-border"
+                autoComplete={isSignUp ? "new-password" : "current-password"}
               />
             </div>
             
