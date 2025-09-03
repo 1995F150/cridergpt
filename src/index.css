@@ -43,9 +43,20 @@
     --tech-gray-light: 214.3 31.8% 91.4%;
     --tech-accent: 280 100% 70%;
 
+    /* FFA Theme Colors */
+    --ffa-blue: 210 100% 35%;
+    --ffa-gold: 45 100% 50%;
+    --ffa-corn: 48 100% 67%;
+    --ffa-navy: 210 100% 25%;
+    --ffa-field: 120 25% 40%;
+    --ffa-harvest: 35 80% 45%;
+    --ffa-sky: 200 75% 85%;
+
     /* Gradients */
     --gradient-cyber: linear-gradient(135deg, hsl(195 100% 50%), hsl(280 100% 70%));
     --gradient-tech: linear-gradient(180deg, hsl(210 40% 96%), hsl(214.3 31.8% 91.4%));
+    --gradient-ffa: linear-gradient(135deg, hsl(210 100% 35%), hsl(45 100% 50%));
+    --gradient-farm: linear-gradient(180deg, hsl(200 75% 85%), hsl(120 25% 40%));
 
     --radius: 0.5rem;
 
@@ -97,9 +108,20 @@
     --tech-gray-light: 228 71% 12%;
     --tech-accent: 280 100% 70%;
 
+    /* FFA Theme Colors */
+    --ffa-blue: 210 100% 35%;
+    --ffa-gold: 45 100% 50%;
+    --ffa-corn: 48 100% 67%;
+    --ffa-navy: 210 100% 25%;
+    --ffa-field: 120 25% 30%;
+    --ffa-harvest: 35 80% 35%;
+    --ffa-sky: 200 75% 15%;
+
     /* Gradients */
     --gradient-cyber: linear-gradient(135deg, hsl(195 100% 50%), hsl(280 100% 70%));
     --gradient-tech: linear-gradient(180deg, hsl(228 71% 8%), hsl(228 71% 4%));
+    --gradient-ffa: linear-gradient(135deg, hsl(210 100% 35%), hsl(45 100% 50%));
+    --gradient-farm: linear-gradient(180deg, hsl(200 75% 15%), hsl(120 25% 20%));
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -132,4 +154,15 @@
   display: flex;
   flex-direction: column;
   background: hsl(var(--background));
+}
+
+/* FFA Theme Background */
+.ffa-background {
+  background: linear-gradient(135deg, hsl(var(--ffa-sky)) 0%, hsl(var(--ffa-field)) 50%, hsl(var(--ffa-harvest)) 100%);
+}
+
+.ffa-pattern {
+  background-image: 
+    radial-gradient(circle at 2px 2px, hsl(var(--ffa-gold) / 0.1) 1px, transparent 0);
+  background-size: 20px 20px;
 }

@@ -62,6 +62,15 @@ export default {
 					'gray-light': 'hsl(var(--tech-gray-light))',
 					accent: 'hsl(var(--tech-accent))'
 				},
+				ffa: {
+					blue: 'hsl(var(--ffa-blue))',
+					gold: 'hsl(var(--ffa-gold))',
+					corn: 'hsl(var(--ffa-corn))',
+					navy: 'hsl(var(--ffa-navy))',
+					field: 'hsl(var(--ffa-field))',
+					harvest: 'hsl(var(--ffa-harvest))',
+					sky: 'hsl(var(--ffa-sky))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
