@@ -26,7 +26,8 @@ import {
   Clock, 
   Heart, 
   Layers,
-  Wheat
+  Wheat,
+  Radio
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
@@ -58,7 +59,8 @@ const navigationItems = [
   { id: 'updates', label: 'Updates', icon: Bell },
   { id: 'timeline', label: 'Timeline', icon: Clock },
   { id: 'memorial', label: 'Memorial', icon: Heart },
-  { id: 'ffa', label: 'FFA Center', icon: Wheat }
+  { id: 'ffa', label: 'FFA Center', icon: Wheat },
+  { id: 'radio', label: 'Radio & CB Scanner', icon: Radio }
 ];
 
 export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarProps) {

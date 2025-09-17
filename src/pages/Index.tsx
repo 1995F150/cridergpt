@@ -25,6 +25,7 @@ import { UpdatesPanel } from '@/components/panels/UpdatesPanel';
 import { TimelinePanel } from '@/components/panels/TimelinePanel';
 import { MemorialPanel } from '@/components/panels/MemorialPanel';
 import { FFAPanel } from '@/components/panels/FFAPanel';
+import { RadioPanel } from '@/components/panels/RadioPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
 
 export type PanelType = 
@@ -51,6 +52,7 @@ export type PanelType =
   | 'timeline' 
   | 'memorial' 
   | 'ffa'
+  | 'radio'
   | 'plan';
 
 export default function Index() {
@@ -104,6 +106,7 @@ export default function Index() {
             {activePanel === 'timeline' && <TimelinePanel />}
             {activePanel === 'memorial' && <MemorialPanel />}
             {activePanel === 'ffa' && <FFAPanel />}
+            {activePanel === 'radio' && <RadioPanel />}
             {activePanel === 'plan' && <PlanPanel />}
           </div>
         </main>
