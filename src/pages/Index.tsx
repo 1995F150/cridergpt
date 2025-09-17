@@ -26,6 +26,8 @@ import { TimelinePanel } from '@/components/panels/TimelinePanel';
 import { MemorialPanel } from '@/components/panels/MemorialPanel';
 import { FFAPanel } from '@/components/panels/FFAPanel';
 import { RadioPanel } from '@/components/panels/RadioPanel';
+import { AIImagePanel } from '@/components/panels/AIImagePanel';
+import { DocumentAIPanel } from '@/components/panels/DocumentAIPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
 
 export type PanelType = 
@@ -53,6 +55,8 @@ export type PanelType =
   | 'memorial' 
   | 'ffa'
   | 'radio'
+  | 'ai-image'
+  | 'document-ai'
   | 'plan';
 
 export default function Index() {
@@ -107,6 +111,8 @@ export default function Index() {
             {activePanel === 'memorial' && <MemorialPanel />}
             {activePanel === 'ffa' && <FFAPanel />}
             {activePanel === 'radio' && <RadioPanel />}
+            {activePanel === 'ai-image' && <AIImagePanel />}
+            {activePanel === 'document-ai' && <DocumentAIPanel />}
             {activePanel === 'plan' && <PlanPanel />}
           </div>
         </main>
