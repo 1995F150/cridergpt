@@ -24,89 +24,88 @@ interface FeatureRequirement {
   feature: string;
   description: string;
   freeAccess: boolean;
-  plusAccess: boolean;
+  pluAccess: boolean;
   proAccess: boolean;
   requirement?: string;
 }
 
 const featureRequirements: FeatureRequirement[] = [
   {
-    feature: "Basic Chat",
-    description: "Standard AI conversations and assistance",
+    feature: "AI Chat",
+    description: "AI conversations and assistance",
     freeAccess: true,
-    plusAccess: true,
+    pluAccess: true,
     proAccess: true,
-    requirement: "13 tokens/month on Free plan"
+    requirement: "13 tokens/month on Free, 200 tokens/month on Plu, Unlimited on Pro"
   },
   {
-    feature: "Advanced Calculators", 
-    description: "Professional calculation tools with PDF export",
+    feature: "AI Voice Chat", 
+    description: "Voice-powered AI conversations",
+    freeAccess: false,
+    pluAccess: false,
+    proAccess: true,
+    requirement: "Pro plan required"
+  },
+  {
+    feature: "AI Image Generator",
+    description: "Generate custom images with AI",
+    freeAccess: false,
+    pluAccess: true,
+    proAccess: true,
+    requirement: "10 images/month on Plu, Unlimited on Pro"
+  },
+  {
+    feature: "Document Analyzer",
+    description: "AI-powered document analysis and insights",
+    freeAccess: false,
+    pluAccess: true,
+    proAccess: true,
+    requirement: "20 documents/month on Plu, Unlimited on Pro"
+  },
+  {
+    feature: "Invoicing System",
+    description: "Professional invoice creation and management",
+    freeAccess: false,
+    pluAccess: false,
+    proAccess: true,
+    requirement: "Pro plan required"
+  },
+  {
+    feature: "Agricultural Calculators",
+    description: "Specialized farming and agriculture tools",
     freeAccess: true,
-    plusAccess: true,
+    pluAccess: true,
     proAccess: true
   },
   {
-    feature: "Text-to-Speech",
-    description: "Convert text to natural-sounding speech",
-    freeAccess: true,
-    plusAccess: true,
+    feature: "Business Intelligence",
+    description: "Advanced analytics and reporting",
+    freeAccess: false,
+    pluAccess: false,
     proAccess: true,
-    requirement: "5 requests/month on Free, 100/month on Plus, Unlimited on Pro"
+    requirement: "Pro plan required"
   },
   {
-    feature: "Invoice System",
-    description: "Professional invoice creation with PDF export",
+    feature: "QuickBooks Integration",
+    description: "Seamless accounting system integration",
+    freeAccess: false,
+    pluAccess: false,
+    proAccess: true,
+    requirement: "Pro plan required"
+  },
+  {
+    feature: "FFA Dashboard + Theme",
+    description: "Future Farmers of America specialized interface",
     freeAccess: true,
-    plusAccess: true,
+    pluAccess: true,
     proAccess: true
   },
   {
-    feature: "File Upload & Processing",
-    description: "Upload and analyze documents, images, and files",
-    freeAccess: false,
-    plusAccess: true,
-    proAccess: true,
-    requirement: "Upgrade to Plus or Pro required"
-  },
-  {
-    feature: "Code Generation",
-    description: "Advanced AI code generation and debugging",
-    freeAccess: false,
-    plusAccess: true,
-    proAccess: true,
-    requirement: "Upgrade to Plus or Pro required"
-  },
-  {
-    feature: "API Access",
-    description: "Direct API access to CriderGPT services",
-    freeAccess: false,
-    plusAccess: false,
-    proAccess: true,
-    requirement: "Pro plan required"
-  },
-  {
-    feature: "Priority Support",
-    description: "Faster response times and premium support",
-    freeAccess: false,
-    plusAccess: true,
-    proAccess: true,
-    requirement: "Plus or Pro plan required"
-  },
-  {
-    feature: "Advanced Analytics",
-    description: "Detailed usage statistics and insights",
-    freeAccess: false,
-    plusAccess: false,
-    proAccess: true,
-    requirement: "Pro plan required"
-  },
-  {
-    feature: "Unlimited Projects",
-    description: "Create and manage unlimited projects",
-    freeAccess: false,
-    plusAccess: false,
-    proAccess: true,
-    requirement: "Pro plan required"
+    feature: "CB & Radio Tuner",
+    description: "CB radio scanner and FM tuner interface",
+    freeAccess: true,
+    pluAccess: true,
+    proAccess: true
   }
 ];
 
@@ -199,7 +198,7 @@ export function PlanPanel() {
   }
 
   const currentPlan = subscriptionData?.plan || 'free';
-  const planName = (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plus' : 'Free');
+  const planName = (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plu' : 'Free');
   const planIcon = isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap;
   const planColor = isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500';
   const PlanIcon = planIcon;
@@ -213,7 +212,7 @@ export function PlanPanel() {
         return feature.proAccess;
       case 'plus':
       case 'plu':
-        return feature.plusAccess;
+        return feature.pluAccess;
       default:
         return feature.freeAccess;
     }
@@ -233,8 +232,8 @@ export function PlanPanel() {
           </div>
           <p className="text-muted-foreground">
             {currentPlan === 'free' && 'Basic features with limited usage'}
-            {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits'}
-            {currentPlan === 'pro' && 'All features with unlimited access'}
+            {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits - CriderGPT Plu'}
+            {currentPlan === 'pro' && 'All features with unlimited access - CriderGPT Pro'}
           </p>
         </CardHeader>
       </Card>
@@ -299,44 +298,48 @@ export function PlanPanel() {
       <Card>
         <CardHeader>
           <CardTitle>Feature Access & Requirements</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Overview of what you can access with your current plan and what's available with upgrades
+          <p className="text-muted-foreground">
+            Overview of features available in your current plan and upgrade options
           </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {featureRequirements.map((feature, index) => {
-              const hasAccess = getUserAccess(feature);
-              return (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {hasAccess ? (
-                      <Unlock className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <Lock className="h-5 w-5 text-red-500" />
-                    )}
-                    <div>
-                      <h4 className="font-medium">{feature.feature}</h4>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
-                      {feature.requirement && (
-                        <p className="text-xs text-blue-600 mt-1">{feature.requirement}</p>
-                      )}
+              {featureRequirements.map((feature, index) => {
+                const hasAccess = getUserAccess(feature);
+                const badge = hasAccess ? '✅' : '🔒';
+                return (
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{badge}</span>
+                      <div>
+                        <h4 className="font-medium flex items-center gap-2">
+                          {feature.feature}
+                          {hasAccess ? (
+                            <Badge variant="default" className="bg-green-100 text-green-700 text-xs">
+                              Available
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">
+                              🔒 Locked
+                            </Badge>
+                          )}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{feature.description}</p>
+                        {feature.requirement && (
+                          <p className="text-xs text-blue-600 mt-1">{feature.requirement}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {hasAccess ? (
-                      <Badge variant="default" className="bg-green-100 text-green-700">
-                        Available
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="bg-red-100 text-red-700">
-                        Upgrade Required
-                      </Badge>
+                    {!hasAccess && (
+                      <Button size="sm" variant="outline" asChild>
+                        <a href="/pricing">
+                          Upgrade
+                        </a>
+                      </Button>
                     )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </CardContent>
       </Card>

@@ -918,6 +918,30 @@ export type Database = {
         }
         Relationships: []
       }
+      relationships: {
+        Row: {
+          created_at: string | null
+          id: string
+          partner_id: string | null
+          relationship_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          partner_id?: string | null
+          relationship_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          partner_id?: string | null
+          relationship_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           created_at: string
@@ -1483,8 +1507,9 @@ export type Database = {
       get_owner_details: {
         Args: Record<PropertyKey, never> | { check_email: string }
         Returns: {
-          contact_email: string
-          owner_name: string
+          is_owner: boolean
+          permissions: Json
+          role: string
         }[]
       }
       get_plan_features: {
@@ -1504,16 +1529,10 @@ export type Database = {
       get_subscription_status: {
         Args: Record<PropertyKey, never> | { user_id: string }
         Returns: {
-          amount: number
-          cancel_at_period_end: boolean
-          currency: string
           current_period_end: string
-          interval_count: number
-          interval_value: string
+          is_subscribed: boolean
           price_id: string
-          product_name: string
-          status: string
-          subscription_id: string
+          subscription_status: string
         }[]
       }
       get_user_sync_data: {
