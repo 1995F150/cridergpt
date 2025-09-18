@@ -70,10 +70,10 @@ const WYTHEVILLE_FM_STATIONS = [
     location: "Local Christian"
   },
   { 
-    name: "WBRF Classic Country", 
+    name: "WBRF Star Country", 
     freq: 94.9, 
-    format: "Classic Country",
-    url: "https://playerservices.streamtheworld.com/api/livestream-redirect/KCMOFM.mp3",
+    format: "Country",
+    url: "https://player.amperwave.net/1295",
     location: "Galax, VA"
   },
   { 
