@@ -11,7 +11,7 @@ export function OriginStory() {
 
         <div className="space-y-4 sm:space-y-6 text-base sm:text-lg leading-relaxed">
           <p>
-            CriderGPT wasn't built in a tech office. It started in the milk barn. Jessie Crider, the one-man force behind CriderGPT, worked just two mornings a week milking cows on a small Virginia farm. Two hours, $10 an hour, enough to scrape together about $40 a week—and every bit of it went toward building this AI platform.
+            CriderGPT wasn't built in a tech office. It started in the milk barn. Jessie Crider (he/him), the one-man force behind CriderGPT, worked just two mornings a week milking cows on a small Virginia farm. Two hours, $10 an hour, enough to scrape together about $40 a week—and every bit of it went toward building this AI platform.
           </p>
 
           <p>
