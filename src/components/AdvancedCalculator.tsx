@@ -231,7 +231,11 @@ export function AdvancedCalculator() {
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                   <p className="text-sm text-yellow-800">
                     🔒 Scientific functions require Plus or Pro plan. 
-                    <Button variant="link" className="p-0 h-auto text-yellow-800 underline" onClick={() => setShowUpgradeDialog(true)}>
+                    <Button variant="link" className="p-0 h-auto text-yellow-800 underline" onClick={() => {
+                      setShowUpgradeDialog(true);
+                      // Also navigate to payment panel
+                      setTimeout(() => window.location.hash = '#payment', 100);
+                    }}>
                       Upgrade now
                     </Button>
                   </p>
@@ -410,7 +414,11 @@ export function AdvancedCalculator() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowUpgradeDialog(false)}>
+            <AlertDialogAction onClick={() => {
+              setShowUpgradeDialog(false);
+              // Navigate to payment panel instead of external route
+              window.location.hash = '#payment';
+            }}>
               Upgrade Now
             </AlertDialogAction>
           </AlertDialogFooter>

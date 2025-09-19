@@ -46,6 +46,9 @@ const App = () => {
                   {/* Public routes */}
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/success" element={<Success />} />  
+                  <Route path="/upgrade" element={<Navigate to="/" replace />} />
+                  <Route path="/pricing" element={<Navigate to="/" replace />} />
+                  <Route path="/payment" element={<Navigate to="/" replace />} />
                   <Route path="/system-diagnostics" element={<SystemDiagnostics />} />
                   <Route path="/tts-policy" element={<TTSPolicyPage />} />
                   <Route path="/user-agreement" element={<UserAgreement />} />

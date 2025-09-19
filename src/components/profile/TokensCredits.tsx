@@ -51,7 +51,7 @@ export function TokensCredits() {
             <p>✓ 10GB storage</p>
           </div>
           
-          <Button onClick={handleUpgrade} className="w-full">
+          <Button onClick={() => window.location.hash = '#payment'} className="w-full">
             Upgrade Plan
           </Button>
         </CardContent>

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationSidebar } from '@/components/NavigationSidebar';
 import { Header } from '@/components/Header';
 import { StatusPanel } from '@/components/panels/StatusPanel';
+import { SystemChecker } from '@/components/SystemChecker';
 import ChatPanel from '@/components/panels/ChatPanel';
 import { CalculatorPanel } from '@/components/panels/CalculatorPanel';
 import { InvoicePanel } from '@/components/panels/InvoicePanel';
@@ -87,7 +88,12 @@ export default function Index() {
         
         <main className="flex-1 overflow-auto bg-background">
           <div className="h-full">
-            {activePanel === 'status' && <StatusPanel />}
+            {activePanel === 'status' && (
+              <div className="p-6 space-y-6">
+                <StatusPanel />
+                <SystemChecker />
+              </div>
+            )}
             {activePanel === 'chat' && <ChatPanel />}
             {activePanel === 'calculators' && <CalculatorPanel />}
             {activePanel === 'invoices' && <InvoicePanel />}
