@@ -15,8 +15,13 @@ import {
   MessageSquare,
   Check,
   X,
-  Search
+  Search,
+  Camera,
+  Filter,
+  Settings
 } from 'lucide-react';
+import { StoryManager } from './StoryManager';
+import { FriendshipManager } from './FriendshipManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +58,7 @@ interface DirectMessage {
   sender_id: string;
   receiver_id: string;
   content: string;
+  message_type: string;
   is_read: boolean;
   created_at: string;
 }
@@ -80,6 +86,7 @@ export const SocialChatInterface: React.FC = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [searchUsers, setSearchUsers] = useState('');
   const [activeTab, setActiveTab] = useState('friends');
+  const [messageFilter, setMessageFilter] = useState('all');
 
   // Load available users (potential friends)
   const loadUsers = async () => {
@@ -373,8 +380,8 @@ export const SocialChatInterface: React.FC = () => {
     }
   };
 
-  // Send message
-  const sendMessage = async () => {
+  // Send message with media filter support
+  const sendMessage = async (messageType = 'text') => {
     if (!inputMessage.trim() || !currentConversation || !user) return;
 
     const conversation = conversations.find(c => c.id === currentConversation);
@@ -389,7 +396,8 @@ export const SocialChatInterface: React.FC = () => {
           conversation_id: currentConversation,
           sender_id: user.id,
           receiver_id: receiverId,
-          content: inputMessage
+          content: inputMessage,
+          message_type: messageType
         })
         .select()
         .single();
@@ -446,6 +454,11 @@ export const SocialChatInterface: React.FC = () => {
     (u.display_name && u.display_name.toLowerCase().includes(searchUsers.toLowerCase()))
   );
 
+  const filteredMessages = messages.filter(message => {
+    if (messageFilter === 'all') return true;
+    return message.message_type === messageFilter;
+  });
+
   if (currentConversation) {
     const conversation = conversations.find(c => c.id === currentConversation);
     
@@ -483,21 +496,33 @@ export const SocialChatInterface: React.FC = () => {
             <Button size="sm" variant="outline">
               <Video className="h-4 w-4" />
             </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setMessageFilter(messageFilter === 'all' ? 'text' : 'all')}
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
         {/* Messages */}
         <ScrollArea className="flex-1 p-4">
-          {messages.map((message) => (
+          {messageFilter !== 'all' && (
+            <div className="mb-4 p-2 bg-muted rounded text-center text-sm">
+              Showing {messageFilter} messages only - <button onClick={() => setMessageFilter('all')} className="underline">Show all</button>
+            </div>
+          )}
+          {filteredMessages.map((message) => (
             <div 
               key={message.id}
               className={`mb-4 flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
             >
-              <div 
-                className={`max-w-[70%] p-3 rounded-lg ${
-                  message.sender_id === user?.id 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted'
+                <div 
+                  className={`max-w-[70%] p-3 rounded-lg ${
+                    message.sender_id === user?.id 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted'
                 }`}
               >
                 <div className="text-sm">{message.content}</div>
@@ -516,9 +541,18 @@ export const SocialChatInterface: React.FC = () => {
               placeholder="Type a message..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+              onKeyPress={(e) => e.key === 'Enter' && sendMessage('text')}
+              className="flex-1"
             />
-            <Button onClick={sendMessage}>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => sendMessage('image')}
+              disabled={!inputMessage.trim()}
+            >
+              <Camera className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => sendMessage('text')} disabled={!inputMessage.trim()}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
