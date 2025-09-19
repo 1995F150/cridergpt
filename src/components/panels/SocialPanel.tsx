@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, Phone, Video, MapPin, Globe, Settings, Users, Mic, MicOff, VideoOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FeatureGate } from "@/components/FeatureGate";
-import { ChatInterface } from "@/components/ChatInterface";
+import { SocialChatInterface } from "@/components/SocialChatInterface";
 import { supabase } from "@/integrations/supabase/client";
 
 export function SocialPanel() {
@@ -81,9 +81,9 @@ export function SocialPanel() {
         <CardContent className="flex items-center justify-center h-full">
           <div className="text-center">
             <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Crider Chat - Free Access!</h3>
-            <p className="text-muted-foreground mb-4">Social messaging platform with voice/video calls</p>
-            <p className="text-green-500 font-semibold">✅ This feature is now free for everyone!</p>
+            <h3 className="text-lg font-semibold mb-2">Crider Chat - Social Platform</h3>
+            <p className="text-muted-foreground mb-4">Connect with friends, send messages, and make video calls</p>
+            <p className="text-green-500 font-semibold">✅ Free social platform for everyone!</p>
           </div>
         </CardContent>
       </Card>
@@ -133,17 +133,17 @@ export function SocialPanel() {
             <TabsContent value="chat" className="flex-1 mt-4">
               <div className="h-full">
                 <div className="mb-4 p-3 bg-muted/30 rounded-lg">
-                  <h4 className="font-semibold text-sm mb-2">🌍 Global Features Active:</h4>
+                  <h4 className="font-semibold text-sm mb-2">🌍 Social Platform Features:</h4>
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <Badge variant="secondary">Auto-Translate</Badge>
+                    <Badge variant="secondary">Friend Requests</Badge>
+                    <Badge variant="secondary">Direct Messaging</Badge>
                     <Badge variant="secondary">Voice Calls</Badge>
                     <Badge variant="secondary">Video Calls</Badge>
-                    <Badge variant="secondary">Ephemeral Messages</Badge>
-                    <Badge variant="secondary">Map Integration</Badge>
-                    <Badge variant="secondary">Privacy Controls</Badge>
+                    <Badge variant="secondary">User Discovery</Badge>
+                    <Badge variant="secondary">Real-time Chat</Badge>
                   </div>
                 </div>
-                <ChatInterface />
+                <SocialChatInterface />
               </div>
             </TabsContent>
 
