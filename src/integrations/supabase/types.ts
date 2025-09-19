@@ -424,6 +424,81 @@ export type Database = {
         }
         Relationships: []
       }
+      crider_chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_ephemeral: boolean | null
+          message_type: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_ephemeral?: boolean | null
+          message_type?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_ephemeral?: boolean | null
+          message_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crider_chat_users: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string
+          email: string
+          id: string
+          is_synced: boolean | null
+          location: Json | null
+          status: string | null
+          sync_note: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name: string
+          email: string
+          id?: string
+          is_synced?: boolean | null
+          location?: Json | null
+          status?: string | null
+          sync_note?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string
+          email?: string
+          id?: string
+          is_synced?: boolean | null
+          location?: Json | null
+          status?: string | null
+          sync_note?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string | null

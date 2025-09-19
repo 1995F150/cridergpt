@@ -159,20 +159,30 @@ export function RadioPanel() {
         staticRef.current.pause();
       }
 
-      audioRef.current = new Audio(station.url);
+      audioRef.current = new Audio();
+      audioRef.current.src = station.url;
       audioRef.current.volume = volume[0] / 100;
       audioRef.current.crossOrigin = "anonymous";
       audioRef.current.loop = true;
       
-      await audioRef.current.play();
-      setIsPlaying(true);
-      
-      toast({
-        title: `📻 Tuned to ${station.freq} MHz`,
-        description: `${station.name} - ${station.format}`,
-      });
+      // Handle playback promise properly
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            toast({
+              title: `📻 Tuned to ${station.freq} MHz`,
+              description: `${station.name} - ${station.format}`,
+            });
+          })
+          .catch((error) => {
+            console.log("Audio playback failed:", error);
+            handleStatic();
+          });
+      }
     } catch (error) {
-      console.log("Stream not available, playing silence for:", station.name);
+      console.log("Stream not available, showing static for:", station.name);
       handleStatic();
     }
   };
@@ -198,17 +208,30 @@ export function RadioPanel() {
         audioRef.current.pause();
       }
 
-      audioRef.current = new Audio(stationUrl);
+      audioRef.current = new Audio();
+      audioRef.current.src = stationUrl;
       audioRef.current.volume = volume[0] / 100;
       audioRef.current.crossOrigin = "anonymous";
       
-      await audioRef.current.play();
-      setIsPlaying(true);
-      
-      toast({
-        title: "Now Playing",
-        description: `Tuned to ${stationName}`,
-      });
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            toast({
+              title: "Now Playing",
+              description: `Tuned to ${stationName}`,
+            });
+          })
+          .catch((error) => {
+            console.log("Audio playback failed:", error);
+            toast({
+              title: "Connection Error",
+              description: "Unable to connect to radio stream",
+              variant: "destructive"
+            });
+          });
+      }
     } catch (error) {
       toast({
         title: "Connection Error",
