@@ -22,8 +22,8 @@ const Pricing = () => {
     const priceId = priceIdMap[planName];
     
     if (!priceId) {
-      // Free plan - redirect to auth
-      window.location.href = '/auth';
+      // Free plan - redirect to main dashboard
+      window.location.href = '/';
       return;
     }
 
@@ -54,8 +54,8 @@ const Pricing = () => {
       }
 
       if (data?.url) {
-        // Open Stripe checkout in a new tab
-        window.open(data.url, '_blank');
+        // Redirect to Stripe checkout in same tab
+        window.location.href = data.url;
       } else {
         throw new Error("No checkout URL returned");
       }

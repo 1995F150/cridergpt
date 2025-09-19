@@ -54,7 +54,7 @@ const navigationItems = [
   { id: 'projects', label: 'Projects', icon: Folder },
   { id: 'contact', label: 'Contact', icon: Mail },
   { id: 'profile', label: 'Profile', icon: User },
-  { id: 'pricing', label: 'Pricing', icon: CreditCard },
+  { id: 'social', label: 'Crider Chat', icon: MessageSquare },
   { id: 'payment', label: 'Payment', icon: DollarSign },
   { id: 'plan', label: 'Plan', icon: Layers },
   { id: 'reviews', label: 'Reviews', icon: Star },

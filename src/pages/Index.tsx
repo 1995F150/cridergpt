@@ -18,7 +18,7 @@ import { UsagePanel } from '@/components/panels/UsagePanel';
 import { ProjectPanel } from '@/components/panels/ProjectPanel';
 import { ContactPanel } from '@/components/panels/ContactPanel';
 import { ProfilePanel } from '@/components/panels/ProfilePanel';
-import { PricingPanel } from '@/components/panels/PricingPanel';
+import { SocialPanel } from '@/components/panels/SocialPanel';
 import { PaymentPanel } from '@/components/panels/PaymentPanel';
 import { ReviewsPanel } from '@/components/panels/ReviewsPanel';
 import { UpdatesPanel } from '@/components/panels/UpdatesPanel';
@@ -47,7 +47,7 @@ export type PanelType =
   | 'projects' 
   | 'contact' 
   | 'profile' 
-  | 'pricing' 
+  | 'social' 
   | 'payment' 
   | 'reviews' 
   | 'updates' 
@@ -103,7 +103,7 @@ export default function Index() {
             {activePanel === 'projects' && <ProjectPanel />}
             {activePanel === 'contact' && <ContactPanel />}
             {activePanel === 'profile' && <ProfilePanel />}
-            {activePanel === 'pricing' && <PricingPanel />}
+            {activePanel === 'social' && <SocialPanel />}
             {activePanel === 'payment' && <PaymentPanel />}
             {activePanel === 'reviews' && <ReviewsPanel />}
             {activePanel === 'updates' && <UpdatesPanel />}
