@@ -1,22 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Send, Bot, User, Plus, MessageSquare, Trash2, Edit } from 'lucide-react';
+import { 
+  Plus, 
+  Send, 
+  Phone, 
+  Video, 
+  Users, 
+  MessageSquare,
+  Edit2,
+  Trash2
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatMessage {
   id: string;
-  conversation_id: string;
-  role: 'user' | 'assistant';
   content: string;
+  role: 'user' | 'assistant';
   created_at: string;
-  tokens_used?: number;
+  user_id: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  display_name?: string;
+  avatar_url?: string;
+  status?: string;
 }
 
 interface Conversation {
@@ -30,238 +45,179 @@ interface Conversation {
 export const ChatInterface: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [users, setUsers] = useState<User[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
+  const [searchUsers, setSearchUsers] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Load users from Supabase
+  const loadUsers = async () => {
+    try {
+      console.log('Loading users from crider_chat_users...');
+      const { data: chatUsers, error } = await supabase
+        .from('crider_chat_users')
+        .select('user_id, display_name, email, avatar_url, status')
+        .eq('is_synced', true)
+        .order('display_name', { ascending: true })
+        .limit(50);
+
+      if (error) {
+        console.error('Error loading users:', error);
+        throw error;
+      }
+
+      if (chatUsers) {
+        const formattedUsers = chatUsers.map(u => ({
+          id: u.user_id,
+          display_name: u.display_name,
+          email: u.email,
+          avatar_url: u.avatar_url,
+          status: u.status || 'offline'
+        }));
+        setUsers(formattedUsers);
+        console.log(`Loaded ${formattedUsers.length} users`);
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast({
+        title: "Loading Error",
+        description: "Could not load users from database",
+        variant: "destructive"
+      });
+    }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    if (user) {
-      loadConversations();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (currentConversation) {
-      loadMessages(currentConversation);
-    }
-  }, [currentConversation]);
-
-  // Set up real-time subscriptions
-  useEffect(() => {
-    if (!user) return;
-
-    const messagesChannel = supabase
-      .channel('chat_messages_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          const newMessage = payload.new as ChatMessage;
-          if (newMessage.conversation_id === currentConversation) {
-            setMessages(prev => [...prev, newMessage]);
-          }
-        }
-      )
-      .subscribe();
-
-    const conversationsChannel = supabase
-      .channel('chat_conversations_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_conversations',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          loadConversations();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(messagesChannel);
-      supabase.removeChannel(conversationsChannel);
-    };
-  }, [user, currentConversation]);
-
+  // Load conversations
   const loadConversations = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('chat-operations', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: new URLSearchParams({ action: 'conversations' })
-      });
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setConversations(data.conversations || []);
+      setConversations(data || []);
     } catch (error) {
       console.error('Error loading conversations:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load conversations",
-        variant: "destructive",
-      });
     }
   };
 
-  const loadMessages = async (conversationId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('chat-operations', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: new URLSearchParams({ 
-          action: 'messages',
-          conversation_id: conversationId 
-        })
-      });
+  // Create new conversation
+  const createNewConversation = async (participantUserId?: string) => {
+    if (!user) return;
 
-      if (error) throw error;
-      setMessages(data.messages || []);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load messages",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const createNewConversation = async () => {
+    setIsLoading(true);
     try {
+      console.log('Creating new conversation...', { participantUserId });
+      
       const { data, error } = await supabase.functions.invoke('chat-operations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
+        body: { 
           action: 'create_conversation',
-          title: 'New Chat'
-        })
+          title: participantUserId ? 'New Chat with User' : 'New Chat',
+          participant_user_id: participantUserId
+        }
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to create conversation');
+      }
       
-      const conversation = data.conversation;
-      setCurrentConversation(conversation.id);
-      loadConversations();
-      
-      toast({
-        title: "Success",
-        description: "New conversation created",
-      });
+      if (data?.conversation) {
+        setConversations(prev => [data.conversation, ...prev]);
+        setCurrentConversation(data.conversation.id);
+        toast({
+          title: "Success",
+          description: "New conversation created"
+        });
+      } else {
+        throw new Error('No conversation data returned');
+      }
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast({
         title: "Error",
-        description: "Failed to create conversation",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || !currentConversation || isLoading) return;
-
-    const userMessage = inputMessage.trim();
-    setInputMessage('');
-    setIsLoading(true);
-
-    try {
-      // Send user message
-      await supabase.functions.invoke('chat-operations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'send_message',
-          conversation_id: currentConversation,
-          role: 'user',
-          content: userMessage
-        })
-      });
-
-      // Get AI response
-      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chat-with-ai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          conversation_history: messages.map(m => ({
-            role: m.role,
-            content: m.content
-          }))
-        })
-      });
-
-      if (aiError) throw aiError;
-
-      // Send AI response
-      await supabase.functions.invoke('chat-operations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'send_message',
-          conversation_id: currentConversation,
-          role: 'assistant',
-          content: aiResponse.response,
-          tokens_used: aiResponse.tokens_used || 0
-        })
-      });
-
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive",
+        description: `Failed to create conversation: ${error.message}`,
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Send message
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || !currentConversation || !user) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-operations', {
+        body: {
+          action: 'send_message',
+          conversation_id: currentConversation,
+          role: 'user',
+          content: inputMessage
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.message) {
+        setMessages(prev => [...prev, data.message]);
+        setInputMessage('');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Load messages for selected conversation
+  const loadMessages = async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      // Type-safe mapping to ensure role is properly typed
+      const typedMessages = (data || []).map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        role: msg.role as 'user' | 'assistant',
+        created_at: msg.created_at,
+        user_id: msg.user_id
+      }));
+      
+      setMessages(typedMessages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  // Delete conversation
   const deleteConversation = async (conversationId: string) => {
     try {
-      const { error } = await supabase.functions.invoke('chat-operations', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: new URLSearchParams({ 
-          action: 'delete_conversation',
-          conversation_id: conversationId 
-        })
-      });
+      const { error } = await supabase
+        .from('chat_conversations')
+        .delete()
+        .eq('id', conversationId)
+        .eq('user_id', user?.id);
 
       if (error) throw error;
 
@@ -274,31 +230,31 @@ export const ChatInterface: React.FC = () => {
       
       toast({
         title: "Success",
-        description: "Conversation deleted",
+        description: "Conversation deleted"
       });
     } catch (error) {
       console.error('Error deleting conversation:', error);
       toast({
         title: "Error",
         description: "Failed to delete conversation",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
 
-  const updateConversationTitle = async (conversationId: string, title: string) => {
+  // Update conversation title
+  const updateConversationTitle = async (conversationId: string) => {
+    if (!newTitle.trim()) {
+      setEditingTitle(null);
+      return;
+    }
+
     try {
-      const { error } = await supabase.functions.invoke('chat-operations', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'update_conversation',
-          conversation_id: conversationId,
-          title
-        })
-      });
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update({ title: newTitle.trim() })
+        .eq('id', conversationId)
+        .eq('user_id', user?.id);
 
       if (error) throw error;
       
@@ -307,227 +263,249 @@ export const ChatInterface: React.FC = () => {
       
       toast({
         title: "Success",
-        description: "Conversation title updated",
+        description: "Conversation title updated"
       });
     } catch (error) {
       console.error('Error updating title:', error);
       toast({
         title: "Error",
         description: "Failed to update title",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+  useEffect(() => {
+    if (user) {
+      loadUsers();
+      loadConversations();
     }
-  };
+  }, [user]);
 
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
+  useEffect(() => {
+    if (currentConversation) {
+      loadMessages(currentConversation);
+    }
+  }, [currentConversation]);
 
-  return (
-    <div className="flex h-full max-h-[600px]">
-      {/* Conversations Sidebar */}
-      <Card className="w-80 mr-4">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Conversations</CardTitle>
-            <Button
-              size="sm"
-              onClick={createNewConversation}
-              className="p-2"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[500px]">
-            <div className="space-y-2 p-4">
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    currentConversation === conversation.id
-                      ? 'bg-primary/10 border border-primary'
-                      : 'bg-muted/50 hover:bg-muted'
-                  }`}
-                  onClick={() => setCurrentConversation(conversation.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                      {editingTitle === conversation.id ? (
-                        <Input
-                          value={newTitle}
-                          onChange={(e) => setNewTitle(e.target.value)}
-                          onBlur={() => {
-                            if (newTitle.trim()) {
-                              updateConversationTitle(conversation.id, newTitle.trim());
-                            } else {
-                              setEditingTitle(null);
-                            }
-                          }}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && newTitle.trim()) {
-                              updateConversationTitle(conversation.id, newTitle.trim());
-                            }
-                          }}
-                          className="h-6 text-sm"
-                          autoFocus
-                        />
-                      ) : (
-                        <span className="truncate text-sm font-medium">
-                          {conversation.title}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingTitle(conversation.id);
-                          setNewTitle(conversation.title);
-                        }}
-                        className="p-1 h-6 w-6"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteConversation(conversation.id);
-                        }}
-                        className="p-1 h-6 w-6 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {new Date(conversation.updated_at).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
+  const filteredUsers = users.filter(u => 
+    u.email.toLowerCase().includes(searchUsers.toLowerCase()) ||
+    (u.display_name && u.display_name.toLowerCase().includes(searchUsers.toLowerCase()))
+  );
+
+  if (!currentConversation) {
+    return (
+      <div className="h-full flex">
+        {/* Users List */}
+        <div className="w-1/2 border-r">
+          <div className="p-4 border-b">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Active Users ({users.length})</h3>
+              <Button 
+                size="sm" 
+                onClick={() => createNewConversation()}
+                disabled={isLoading}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                New Chat
+              </Button>
             </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
-      {/* Chat Area */}
-      <Card className="flex-1">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg">
-            {currentConversation 
-              ? conversations.find(c => c.id === currentConversation)?.title || 'Chat'
-              : 'Select a conversation'
-            }
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {currentConversation ? (
-            <div className="flex flex-col h-[500px]">
-              {/* Messages */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex items-start gap-3 ${
-                        message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                      }`}
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {message.role === 'user' ? (
-                            <User className="h-4 w-4" />
-                          ) : (
-                            <Bot className="h-4 w-4" />
-                          )}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className={`max-w-[80%] ${
-                        message.role === 'user' ? 'text-right' : 'text-left'
-                      }`}>
-                        <div className={`rounded-lg p-3 ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}>
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {formatTime(message.created_at)}
-                        </div>
+            <Input
+              placeholder="Search users..."
+              value={searchUsers}
+              onChange={(e) => setSearchUsers(e.target.value)}
+              className="mb-3"
+            />
+          </div>
+          
+          <ScrollArea className="h-full">
+            {filteredUsers.map((chatUser) => (
+              <div 
+                key={chatUser.id}
+                className="p-3 border-b hover:bg-muted/50 cursor-pointer"
+                onClick={() => createNewConversation(chatUser.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      {chatUser.display_name ? chatUser.display_name[0] : chatUser.email[0]}
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">
+                        {chatUser.display_name || chatUser.email}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {chatUser.email}
                       </div>
                     </div>
-                  ))}
-                  {isLoading && (
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          <Bot className="h-4 w-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="bg-muted rounded-lg p-3">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                          <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                          <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost">
+                      <MessageSquare className="h-3 w-3" />
+                    </Button>
+                    <Button size="sm" variant="ghost">
+                      <Phone className="h-3 w-3" />
+                    </Button>
+                    <Button size="sm" variant="ghost">
+                      <Video className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-              </ScrollArea>
+              </div>
+            ))}
+            {filteredUsers.length === 0 && (
+              <div className="p-8 text-center text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4" />
+                <p>No users found</p>
+                <p className="text-sm">Try adjusting your search</p>
+              </div>
+            )}
+          </ScrollArea>
+        </div>
 
-              <Separator />
-
-              {/* Input Area */}
-              <div className="p-4">
-                <div className="flex gap-2">
-                  <Input
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Type your message..."
-                    disabled={isLoading}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={!inputMessage.trim() || isLoading}
-                    size="sm"
-                  >
-                    <Send className="h-4 w-4" />
+        {/* Conversations List */}
+        <div className="w-1/2">
+          <div className="p-4 border-b">
+            <h3 className="font-semibold">Recent Conversations</h3>
+          </div>
+          
+          <ScrollArea className="h-full">
+            {conversations.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-center">
+                <div>
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h4 className="text-lg font-semibold mb-2">No conversations yet</h4>
+                  <p className="text-muted-foreground mb-4">
+                    Start a conversation with someone from the user list
+                  </p>
+                  <Button onClick={() => createNewConversation()} disabled={isLoading}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Start New Conversation
                   </Button>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-[500px] text-muted-foreground">
-              <div className="text-center">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Select a conversation to start chatting</p>
-                <p className="text-sm mt-2">or create a new one</p>
+            ) : (
+              conversations.map((conversation) => (
+                <div 
+                  key={conversation.id}
+                  className="p-3 border-b hover:bg-muted/50 cursor-pointer flex items-center justify-between"
+                  onClick={() => setCurrentConversation(conversation.id)}
+                >
+                  <div className="flex-1">
+                    {editingTitle === conversation.id ? (
+                      <Input
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                        onBlur={() => updateConversationTitle(conversation.id)}
+                        onKeyPress={(e) => e.key === 'Enter' && updateConversationTitle(conversation.id)}
+                        className="text-sm"
+                        autoFocus
+                      />
+                    ) : (
+                      <div>
+                        <div className="font-medium">{conversation.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(conversation.updated_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingTitle(conversation.id);
+                        setNewTitle(conversation.title);
+                      }}
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteConversation(conversation.id);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </ScrollArea>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Chat Header */}
+      <div className="p-4 border-b flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setCurrentConversation(null)}
+          >
+            ← Back
+          </Button>
+          <h3 className="font-semibold">
+            {conversations.find(c => c.id === currentConversation)?.title}
+          </h3>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline">
+            <Phone className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="outline">
+            <Video className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <ScrollArea className="flex-1 p-4">
+        {messages.map((message) => (
+          <div 
+            key={message.id}
+            className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div 
+              className={`max-w-[70%] p-3 rounded-lg ${
+                message.role === 'user' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted'
+              }`}
+            >
+              <div className="text-sm">{message.content}</div>
+              <div className="text-xs opacity-70 mt-1">
+                {new Date(message.created_at).toLocaleTimeString()}
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ))}
+      </ScrollArea>
+
+      {/* Message Input */}
+      <div className="p-4 border-t">
+        <div className="flex gap-2">
+          <Input
+            placeholder="Type a message..."
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            className="flex-1"
+          />
+          <Button onClick={sendMessage} disabled={!inputMessage.trim()}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

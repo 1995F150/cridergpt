@@ -68,6 +68,31 @@ serve(async (req) => {
           );
         }
 
+        if (action === 'get_users') {
+          // Get all users from crider_chat_users
+          const { data: users, error } = await supabaseClient
+            .from('crider_chat_users')
+            .select('user_id, display_name, email, avatar_url, status')
+            .eq('is_synced', true)
+            .order('display_name', { ascending: true })
+            .limit(50);
+
+          if (error) throw error;
+
+          const formattedUsers = users?.map(u => ({
+            id: u.user_id,
+            display_name: u.display_name,
+            email: u.email,
+            avatar_url: u.avatar_url,
+            status: u.status || 'offline'
+          })) || [];
+
+          return new Response(
+            JSON.stringify({ users: formattedUsers }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         if (action === 'messages') {
           const conversationId = url.searchParams.get('conversation_id');
           if (!conversationId) {
@@ -96,10 +121,36 @@ serve(async (req) => {
           );
         }
 
-        break;
+        // Default GET response - return conversations
+        const { data: conversations, error } = await supabaseClient
+          .from('chat_conversations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+
+        return new Response(
+          JSON.stringify({ conversations }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
 
       case 'POST':
-        const body = await req.json();
+        // Handle empty body gracefully
+        let body;
+        try {
+          const text = await req.text();
+          body = text ? JSON.parse(text) : {};
+        } catch (error) {
+          console.error('JSON parsing error:', error);
+          return new Response(
+            JSON.stringify({ error: 'Invalid JSON in request body' }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
 
         if (action === 'create_conversation') {
           const { title, participant_user_id }: NewConversation & { participant_user_id?: string } = body;
