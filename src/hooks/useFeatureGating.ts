@@ -113,6 +113,8 @@ export function useFeatureGating() {
         return true; // All plans
       case 'cb_radio_tuner':
         return true; // All plans
+      case 'crider_chat':
+        return true; // Make Crider Chat free for all users
       default:
         return false;
     }

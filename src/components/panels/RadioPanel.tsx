@@ -181,8 +181,14 @@ export function RadioPanel() {
         audioRef.current.pause();
       }
 
-      // Use a working radio stream URL
-      const workingUrl = "https://stream.live.vc.bbcmedia.co.uk/bbc_radio_one";
+      // Use working radio streams that support CORS
+      const workingStreams = [
+        "https://stream.zeno.fm/0r0xa792kwzuv", // Country music
+        "https://stream.zeno.fm/f3wvbbqmdg8uv", // Classic rock  
+        "https://stream.zeno.fm/99hqd7b8sg8uv", // Pop music
+        "https://icecast.walmartmedia.com/walmart_1048_64.mp3" // Walmart Radio (reliable)
+      ];
+      const workingUrl = workingStreams[Math.floor(Math.random() * workingStreams.length)];
       
       audioRef.current = new Audio();
       audioRef.current.src = workingUrl;
