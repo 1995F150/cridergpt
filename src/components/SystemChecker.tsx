@@ -44,21 +44,23 @@ export function SystemChecker() {
     }, 500);
 
     // Database Check
-    setTimeout(async () => {
-      try {
-        const { data, error } = await supabase.from('system_info').select('*').limit(1);
-        setChecks(prev => prev.map(check => 
-          check.id === 'database' 
-            ? { ...check, status: error ? 'fail' : 'pass', message: error ? `Database error: ${error.message}` : 'Database connection healthy' }
-            : check
-        ));
-      } catch (err) {
-        setChecks(prev => prev.map(check => 
-          check.id === 'database' 
-            ? { ...check, status: 'fail', message: 'Database connection failed' }
-            : check
-        ));
-      }
+    setTimeout(() => {
+      (async () => {
+        try {
+          const { data, error } = await supabase.from('system_info').select('*').limit(1);
+          setChecks(prev => prev.map(check => 
+            check.id === 'database' 
+              ? { ...check, status: error ? 'fail' : 'pass', message: error ? `Database error: ${error.message}` : 'Database connection healthy' }
+              : check
+          ));
+        } catch (err) {
+          setChecks(prev => prev.map(check => 
+            check.id === 'database' 
+              ? { ...check, status: 'fail', message: 'Database connection failed' }
+              : check
+          ));
+        }
+      })();
     }, 1000);
 
     // Features Check
@@ -71,23 +73,25 @@ export function SystemChecker() {
     }, 1500);
 
     // AI Check
-    setTimeout(async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('chat-with-ai', {
-          body: { message: 'system check' }
-        });
-        setChecks(prev => prev.map(check => 
-          check.id === 'ai' 
-            ? { ...check, status: error ? 'warning' : 'pass', message: error ? 'AI service limited' : 'AI services operational' }
-            : check
-        ));
-      } catch (err) {
-        setChecks(prev => prev.map(check => 
-          check.id === 'ai' 
-            ? { ...check, status: 'warning', message: 'AI services may be limited' }
-            : check
-        ));
-      }
+    setTimeout(() => {
+      (async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+            body: { message: 'system check' }
+          });
+          setChecks(prev => prev.map(check => 
+            check.id === 'ai' 
+              ? { ...check, status: error ? 'warning' : 'pass', message: error ? 'AI service limited' : 'AI services operational' }
+              : check
+          ));
+        } catch (err) {
+          setChecks(prev => prev.map(check => 
+            check.id === 'ai' 
+              ? { ...check, status: 'warning', message: 'AI services may be limited' }
+              : check
+          ));
+        }
+      })();
     }, 2000);
 
     // Audio Check
