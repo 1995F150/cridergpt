@@ -184,18 +184,29 @@ export function RadioPanel() {
       // Use the station's specific URL or fallback to working streams based on format
       let workingUrl = currentFMStation.url;
       
-      // If station URL fails, use format-specific backups
-      if (!workingUrl || currentFMStation.format === "Country") {
+      // Enhanced format-specific backups with multiple working streams
+      if (currentFMStation.format === "Country") {
         const countryStreams = [
+          "https://wbrf.streamguys1.com/wbrf", // WBRF official if available
           "https://stream.rcast.net/70299", // Country classics
           "https://stream.zeno.fm/0r0xa792kwzuv", // Modern country
           "https://stream.rcast.net/259738", // Classic country
+          "https://stream.revma.ihrhls.com/zc2935", // Country hits
         ];
         workingUrl = countryStreams[Math.floor(Math.random() * countryStreams.length)];
       } else if (currentFMStation.format === "Bluegrass") {
-        workingUrl = "https://stream.rcast.net/70401"; // Bluegrass stream
+        const bluegrassStreams = [
+          "https://stream.radio.co/s84d73a7c0/listen", // WIGN official
+          "https://stream.rcast.net/70401", // Bluegrass stream
+          "https://streaming.shoutcast.com/bluegrass-fm",
+        ];
+        workingUrl = bluegrassStreams[Math.floor(Math.random() * bluegrassStreams.length)];
+      } else if (currentFMStation.format === "NPR / News") {
+        workingUrl = "https://wvtf.streamguys1.com/wvtf"; // WVTF official
       } else if (currentFMStation.format === "Classic Rock") {
         workingUrl = "https://stream.zeno.fm/f3wvbbqmdg8uv"; // Classic rock
+      } else if (currentFMStation.url) {
+        workingUrl = currentFMStation.url; // Use station's specific URL
       }
       
       audioRef.current = new Audio();
@@ -225,9 +236,17 @@ export function RadioPanel() {
   const handleStop = () => {
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0; // Reset to beginning
+      audioRef.current.src = ''; // Clear the source
+      audioRef.current.load(); // Force reload to stop any buffering
       audioRef.current = null;
     }
     setIsPlaying(false);
+    
+    toast({
+      title: "📻 Radio Stopped",
+      description: "Audio playback has been stopped",
+    });
   };
 
   const handleVolumeChange = (newVolume: number[]) => {

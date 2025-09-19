@@ -15,6 +15,8 @@ interface FeatureGateProps {
 export function FeatureGate({ feature, children, showUpgrade = true, fallback }: FeatureGateProps) {
   const { hasFeatureAccess, canUseFeature, currentPlan, getPlanDisplayName } = useFeatureGating();
 
+  console.log(`🔍 FeatureGate check for '${feature}':`, { hasAccess: hasFeatureAccess(feature), canUse: canUseFeature(feature) });
+  
   const hasAccess = hasFeatureAccess(feature);
   const canUse = canUseFeature(feature);
 

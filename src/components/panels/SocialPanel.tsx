@@ -81,9 +81,9 @@ export function SocialPanel() {
         <CardContent className="flex items-center justify-center h-full">
           <div className="text-center">
             <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Crider Chat</h3>
+            <h3 className="text-lg font-semibold mb-2">Crider Chat - Free Access!</h3>
             <p className="text-muted-foreground mb-4">Social messaging platform with voice/video calls</p>
-            <Button>Upgrade to Access</Button>
+            <p className="text-green-500 font-semibold">✅ This feature is now free for everyone!</p>
           </div>
         </CardContent>
       </Card>

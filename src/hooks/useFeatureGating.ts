@@ -114,6 +114,7 @@ export function useFeatureGating() {
       case 'cb_radio_tuner':
         return true; // All plans
       case 'crider_chat':
+        console.log('🆓 Crider Chat: FREE access granted');
         return true; // Make Crider Chat free for all users
       default:
         return false;
