@@ -22,7 +22,8 @@ import {
   Wheat,
   Radio,
   ImageIcon,
-  Brain
+  Brain,
+  Smartphone
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
@@ -52,7 +53,8 @@ const navigationItems = [
   { id: 'ffa', label: 'FFA Center', icon: Wheat },
   { id: 'radio', label: 'Radio & CB Scanner', icon: Radio },
   { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
-  { id: 'document-ai', label: 'Document AI', icon: Brain }
+  { id: 'document-ai', label: 'Document AI', icon: Brain },
+  { id: 'app-converter', label: 'App Converter', icon: Smartphone }
 ];
 
 export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarProps) {

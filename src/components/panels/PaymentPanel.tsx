@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
 import { ManageSubscription } from "@/components/ManageSubscription";
-import { DedicationMessage } from "@/components/DedicationMessage";
+
 
 export function PaymentPanel() {
   const { toast } = useToast();
@@ -90,7 +90,7 @@ export function PaymentPanel() {
           </h1>
         </div>
 
-        <DedicationMessage />
+        
 
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">

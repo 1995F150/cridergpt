@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, Users, FileText, Zap, TrendingUp, Clock } from "lucide-react";
 import { MapBuilderPromo } from "@/components/MapBuilderPromo";
-import { DedicationMessage } from "@/components/DedicationMessage";
+
 
 export function StatusPanel() {
   const stats = [

@@ -25,6 +25,7 @@ import { RadioPanel } from '@/components/panels/RadioPanel';
 import { AIImagePanel } from '@/components/panels/AIImagePanel';
 import { DocumentAIPanel } from '@/components/panels/DocumentAIPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
+import { AppConverterPanel } from '@/components/panels/AppConverterPanel';
 
 export type PanelType = 
   | 'chat' 
@@ -48,7 +49,8 @@ export type PanelType =
   | 'radio'
   | 'ai-image'
   | 'document-ai'
-  | 'plan';
+  | 'plan'
+  | 'app-converter';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -100,6 +102,7 @@ export default function Index() {
             {activePanel === 'ai-image' && <AIImagePanel />}
             {activePanel === 'document-ai' && <DocumentAIPanel />}
             {activePanel === 'plan' && <PlanPanel />}
+            {activePanel === 'app-converter' && <AppConverterPanel />}
           </div>
         </main>
       </div>

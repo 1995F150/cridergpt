@@ -12,7 +12,7 @@ import { HealthCalculator } from '@/components/calculators/HealthCalculator';
 import { RandomMathCalculator } from '@/components/calculators/RandomMathCalculator';
 import { ConversionCalculator } from '@/components/calculators/ConversionCalculator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DedicationMessage } from '@/components/DedicationMessage';
+
 import { useEffect } from 'react';
 
 export function CalculatorPanel() {
@@ -22,7 +22,6 @@ export function CalculatorPanel() {
 
   return (
     <div className="space-y-6 p-6">
-      <DedicationMessage />
       
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">CriderGPT Calculator Suite</h1>
