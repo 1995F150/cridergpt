@@ -27,55 +27,21 @@ export function FFARecordBook() {
     category: "SAE"
   });
 
-  const activities = [
-    {
-      id: 1,
-      title: "Livestock Care - Morning Feeding",
-      date: "2025-01-15",
-      hours: 2,
-      category: "SAE",
-      description: "Fed cattle, checked water systems, monitored health"
-    },
-    {
-      id: 2,
-      title: "State FFA Convention",
-      date: "2024-12-10", 
-      hours: 16,
-      category: "FFA Activities",
-      description: "Attended workshops, competitions, and leadership sessions"
-    },
-    {
-      id: 3,
-      title: "Community Service - Food Bank",
-      date: "2024-11-20",
-      hours: 4,
-      category: "Community Service",
-      description: "Sorted donations and helped distribute food to families"
-    }
-  ];
+  const [activities, setActivities] = useState<any[]>([]);
 
-  const achievements = [
-    {
-      title: "Chapter Historian",
-      year: "2025-2026",
-      description: "Elected as chapter historian for documenting FFA activities"
-    },
-    {
-      title: "State Degree Candidate", 
-      year: "2025",
-      description: "Working toward Virginia FFA State Degree requirements"
-    },
-    {
-      title: "Livestock Judging Team",
-      year: "2024",
-      description: "Member of school livestock judging team"
-    }
-  ];
+  const [achievements, setAchievements] = useState<any[]>([]);
 
   const handleAddActivity = () => {
     if (newActivity.title && newActivity.date && newActivity.hours) {
-      // In a real app, this would save to database
-      console.log("Adding activity:", newActivity);
+      const activity = {
+        id: Date.now(),
+        title: newActivity.title,
+        date: newActivity.date,
+        hours: parseInt(newActivity.hours),
+        category: newActivity.category,
+        description: newActivity.description
+      };
+      setActivities(prev => [...prev, activity]);
       setNewActivity({
         title: "",
         date: "",
@@ -161,7 +127,14 @@ export function FFARecordBook() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {activities.slice(0, 3).map((activity) => (
+                    {activities.length === 0 ? (
+                      <div className="text-center py-6">
+                        <BookOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-muted-foreground">No activities recorded yet</p>
+                        <p className="text-sm text-muted-foreground">Add your first activity to start tracking!</p>
+                      </div>
+                    ) : (
+                      activities.slice(0, 3).map((activity) => (
                       <div key={activity.id} className="flex items-center justify-between p-3 bg-ffa-sky/5 rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -175,8 +148,9 @@ export function FFARecordBook() {
                         <div className="text-right">
                           <p className="font-bold text-ffa-navy">{activity.hours}h</p>
                         </div>
-                      </div>
-                    ))}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -266,8 +240,15 @@ export function FFARecordBook() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {activities.map((activity) => (
+                  {activities.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Activities Recorded</h3>
+                      <p className="text-muted-foreground">Start building your FFA record by adding activities above.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {activities.map((activity) => (
                       <div key={activity.id} className="p-4 border border-ffa-sky/20 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
@@ -282,9 +263,10 @@ export function FFARecordBook() {
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground">{activity.description}</p>
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -298,17 +280,25 @@ export function FFARecordBook() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {achievements.map((achievement, index) => (
+                  {achievements.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Achievements Yet</h3>
+                      <p className="text-muted-foreground">Your FFA achievements and recognitions will appear here.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {achievements.map((achievement, index) => (
                       <div key={index} className="p-4 bg-gradient-to-r from-ffa-blue/5 to-ffa-gold/5 border border-ffa-gold/20 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="font-semibold text-ffa-navy">{achievement.title}</h3>
                           <Badge className="bg-ffa-gold text-white">{achievement.year}</Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

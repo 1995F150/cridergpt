@@ -40,32 +40,7 @@ interface HealthRecord {
 }
 
 export function LivestockTracker() {
-  const [animals, setAnimals] = useState<Animal[]>([
-    {
-      id: "1",
-      name: "Bessie",
-      type: "Cattle",
-      breed: "Holstein",
-      birthDate: "2023-03-15",
-      weight: 1250,
-      healthStatus: "Healthy",
-      lastCheckup: "2025-01-10",
-      vaccinations: ["Rabies", "Blackleg", "IBR"],
-      notes: "Good milk producer, calm temperament"
-    },
-    {
-      id: "2", 
-      name: "Wilbur",
-      type: "Pig",
-      breed: "Yorkshire",
-      birthDate: "2024-08-20",
-      weight: 180,
-      healthStatus: "Healthy",
-      lastCheckup: "2025-01-08",
-      vaccinations: ["Mycoplasma", "Circovirus"],
-      notes: "Fast growing, good feed conversion"
-    }
-  ]);
+  const [animals, setAnimals] = useState<Animal[]>([]);
 
   const [newAnimal, setNewAnimal] = useState<Partial<Animal>>({
     name: "",
@@ -77,24 +52,7 @@ export function LivestockTracker() {
     notes: ""
   });
 
-  const [healthRecords] = useState<HealthRecord[]>([
-    {
-      id: "1",
-      animalId: "1", 
-      date: "2025-01-10",
-      type: "Checkup",
-      description: "Routine health examination - all vitals normal",
-      veterinarian: "Dr. Johnson"
-    },
-    {
-      id: "2",
-      animalId: "2",
-      date: "2025-01-08", 
-      type: "Vaccination",
-      description: "Administered Mycoplasma vaccine",
-      veterinarian: "Dr. Smith"
-    }
-  ]);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
 
   const calculateAge = (birthDate: string) => {
     const birth = new Date(birthDate);
@@ -169,8 +127,21 @@ export function LivestockTracker() {
             </TabsList>
 
             <TabsContent value="animals" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {animals.map((animal) => (
+              {animals.length === 0 ? (
+                <div className="text-center py-8">
+                  <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Animals Added Yet</h3>
+                  <p className="text-muted-foreground mb-4">Start tracking your livestock by adding your first animal.</p>
+                  <Button onClick={() => {
+                    const addTab = document.querySelector('[value="add"]') as HTMLElement;
+                    addTab?.click();
+                  }} className="bg-ffa-gold hover:bg-ffa-harvest text-white">
+                    Add Your First Animal
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {animals.map((animal) => (
                   <Card key={animal.id} className="border-ffa-field/20">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
@@ -224,8 +195,9 @@ export function LivestockTracker() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="add" className="space-y-4">
@@ -333,10 +305,17 @@ export function LivestockTracker() {
             </TabsContent>
 
             <TabsContent value="health" className="space-y-4">
-              <div className="space-y-3">
-                {healthRecords.map((record) => {
-                  const animal = animals.find(a => a.id === record.animalId);
-                  return (
+              {healthRecords.length === 0 ? (
+                <div className="text-center py-8">
+                  <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Health Records</h3>
+                  <p className="text-muted-foreground">Health records for your animals will appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {healthRecords.map((record) => {
+                    const animal = animals.find(a => a.id === record.animalId);
+                    return (
                     <Card key={record.id} className="border-ffa-blue/20">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-2">
@@ -353,9 +332,10 @@ export function LivestockTracker() {
                         <p className="text-xs text-muted-foreground">Veterinarian: {record.veterinarian}</p>
                       </CardContent>
                     </Card>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-4">
