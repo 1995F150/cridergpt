@@ -73,14 +73,14 @@ const WYTHEVILLE_FM_STATIONS = [
     name: "WBRF Star Country", 
     freq: 94.9, 
     format: "Country",
-    url: "https://player.amperwave.net/1295",
+    url: "https://stream.rcast.net/70299", // Real country music stream
     location: "Galax, VA"
   },
   { 
     name: "WIGN", 
     freq: 96.1, 
     format: "Bluegrass",
-    url: "https://streams.ilovemusic.de/iloveradio17.mp3", // Simulated bluegrass
+    url: "https://stream.rcast.net/70401", // Real bluegrass stream
     location: "Bristol, TN"
   },
   { 
@@ -181,14 +181,22 @@ export function RadioPanel() {
         audioRef.current.pause();
       }
 
-      // Use working radio streams that support CORS
-      const workingStreams = [
-        "https://stream.zeno.fm/0r0xa792kwzuv", // Country music
-        "https://stream.zeno.fm/f3wvbbqmdg8uv", // Classic rock  
-        "https://stream.zeno.fm/99hqd7b8sg8uv", // Pop music
-        "https://icecast.walmartmedia.com/walmart_1048_64.mp3" // Walmart Radio (reliable)
-      ];
-      const workingUrl = workingStreams[Math.floor(Math.random() * workingStreams.length)];
+      // Use the station's specific URL or fallback to working streams based on format
+      let workingUrl = currentFMStation.url;
+      
+      // If station URL fails, use format-specific backups
+      if (!workingUrl || currentFMStation.format === "Country") {
+        const countryStreams = [
+          "https://stream.rcast.net/70299", // Country classics
+          "https://stream.zeno.fm/0r0xa792kwzuv", // Modern country
+          "https://stream.rcast.net/259738", // Classic country
+        ];
+        workingUrl = countryStreams[Math.floor(Math.random() * countryStreams.length)];
+      } else if (currentFMStation.format === "Bluegrass") {
+        workingUrl = "https://stream.rcast.net/70401"; // Bluegrass stream
+      } else if (currentFMStation.format === "Classic Rock") {
+        workingUrl = "https://stream.zeno.fm/f3wvbbqmdg8uv"; // Classic rock
+      }
       
       audioRef.current = new Audio();
       audioRef.current.src = workingUrl;
