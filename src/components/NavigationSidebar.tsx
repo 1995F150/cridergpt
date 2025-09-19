@@ -1,25 +1,18 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
-  Activity, 
   MessageSquare, 
   Calculator, 
   FileText, 
   Folder,
   Images,
   Code, 
-  Volume2, 
-  Zap, 
   Map, 
-  Sheet, 
   Play, 
-  BarChart3, 
   Mail, 
   User, 
-  CreditCard, 
   DollarSign, 
   Star, 
   Bell, 
@@ -38,19 +31,14 @@ interface NavigationSidebarProps {
 }
 
 const navigationItems = [
-  { id: 'status', label: 'Status', icon: Activity },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'calculators', label: 'Calculators', icon: Calculator },
   { id: 'invoices', label: 'Invoices', icon: FileText },
   { id: 'files', label: 'Files', icon: Folder },
   { id: 'gallery', label: 'Gallery', icon: Images },
   { id: 'code', label: 'Code', icon: Code },
-  { id: 'tts', label: 'TTS', icon: Volume2 },
-  { id: 'api', label: 'API', icon: Zap },
   { id: 'maps', label: 'Maps', icon: Map },
-  { id: 'sheets', label: 'Sheets', icon: Sheet },
   { id: 'media', label: 'Media', icon: Play },
-  { id: 'usage', label: 'Usage', icon: BarChart3 },
   { id: 'projects', label: 'Projects', icon: Folder },
   { id: 'contact', label: 'Contact', icon: Mail },
   { id: 'profile', label: 'Profile', icon: User },

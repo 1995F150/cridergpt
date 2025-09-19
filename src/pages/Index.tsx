@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationSidebar } from '@/components/NavigationSidebar';
 import { Header } from '@/components/Header';
-import { StatusPanel } from '@/components/panels/StatusPanel';
 import { SystemChecker } from '@/components/SystemChecker';
 import ChatPanel from '@/components/panels/ChatPanel';
 import { CalculatorPanel } from '@/components/panels/CalculatorPanel';
@@ -10,12 +9,8 @@ import { InvoicePanel } from '@/components/panels/InvoicePanel';
 import { FilesPanel } from '@/components/panels/FilesPanel';
 import { GalleryPanel } from '@/components/panels/GalleryPanel';
 import { CodePanel } from '@/components/panels/CodePanel';
-import { TTSPanel } from '@/components/panels/TTSPanel';
-import { APIPanel } from '@/components/panels/APIPanel';
 import { MapBuilderPanel } from '@/components/panels/MapBuilderPanel';
-import { GoogleSheetsPanel } from '@/components/panels/GoogleSheetsPanel';
 import { MediaPanel } from '@/components/panels/MediaPanel';
-import { UsagePanel } from '@/components/panels/UsagePanel';
 import { ProjectPanel } from '@/components/panels/ProjectPanel';
 import { ContactPanel } from '@/components/panels/ContactPanel';
 import { ProfilePanel } from '@/components/panels/ProfilePanel';
@@ -32,19 +27,14 @@ import { DocumentAIPanel } from '@/components/panels/DocumentAIPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
 
 export type PanelType = 
-  | 'status' 
   | 'chat' 
   | 'calculators' 
   | 'invoices'
   | 'files' 
   | 'gallery'
   | 'code' 
-  | 'tts' 
-  | 'api' 
   | 'maps' 
-  | 'sheets' 
   | 'media' 
-  | 'usage' 
   | 'projects' 
   | 'contact' 
   | 'profile' 
@@ -61,7 +51,7 @@ export type PanelType =
   | 'plan';
 
 export default function Index() {
-  const [activePanel, setActivePanel] = useState<PanelType>('status');
+  const [activePanel, setActivePanel] = useState<PanelType>('chat');
 
   useEffect(() => {
     const savedPanel = localStorage.getItem('activePanel') as PanelType;
@@ -88,24 +78,14 @@ export default function Index() {
         
         <main className="flex-1 overflow-auto bg-background">
           <div className="h-full">
-            {activePanel === 'status' && (
-              <div className="p-6 space-y-6">
-                <StatusPanel />
-                <SystemChecker />
-              </div>
-            )}
             {activePanel === 'chat' && <ChatPanel />}
             {activePanel === 'calculators' && <CalculatorPanel />}
             {activePanel === 'invoices' && <InvoicePanel />}
             {activePanel === 'files' && <FilesPanel />}
             {activePanel === 'gallery' && <GalleryPanel />}
             {activePanel === 'code' && <CodePanel />}
-            {activePanel === 'tts' && <TTSPanel />}
-            {activePanel === 'api' && <APIPanel />}
             {activePanel === 'maps' && <MapBuilderPanel />}
-            {activePanel === 'sheets' && <GoogleSheetsPanel />}
             {activePanel === 'media' && <MediaPanel />}
-            {activePanel === 'usage' && <UsagePanel />}
             {activePanel === 'projects' && <ProjectPanel />}
             {activePanel === 'contact' && <ContactPanel />}
             {activePanel === 'profile' && <ProfilePanel />}
