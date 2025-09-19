@@ -1,18 +1,17 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
   Wheat, 
-  BookOpen, 
   Calculator, 
+  BookOpen, 
+  Tractor, 
+  Heart,
+  Users,
   Calendar,
   Trophy,
-  Users,
   FileText,
-  Award,
-  Tractor,
-  Heart
+  Award
 } from "lucide-react";
 import { FFADashboard } from "@/components/FFA/FFADashboard";
 import { AgricultureCalculator } from "@/components/FFA/AgricultureCalculator";
@@ -29,10 +28,10 @@ export function FFAPanel() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Wheat className="h-8 w-8" />
-              FFA Center
+              FFA Center - Smart Agriculture
             </h1>
             <p className="text-blue-100 mt-2">
-              Future Farmers of America - Agricultural Education Excellence
+              Complete agricultural management with location-based weather and auto-translation
             </p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary" className="bg-white/20 text-white">
@@ -43,7 +42,7 @@ export function FFAPanel() {
           </div>
           <div className="text-right">
             <p className="text-lg font-semibold">Southwest Virginia Chapter</p>
-            <p className="text-blue-200">Serving Agriculture Since 1928</p>
+            <p className="text-blue-200">Advanced Agricultural Technology</p>
           </div>
         </div>
       </div>
@@ -55,21 +54,21 @@ export function FFAPanel() {
               <Users className="h-4 w-4" />
               Dashboard
             </TabsTrigger>
+            <TabsTrigger value="crop-planner" className="flex items-center gap-1">
+              <Tractor className="h-4 w-4" />
+              Crop Planner
+            </TabsTrigger>
+            <TabsTrigger value="livestock" className="flex items-center gap-1">
+              <Heart className="h-4 w-4" />
+              Livestock
+            </TabsTrigger>
             <TabsTrigger value="calculator" className="flex items-center gap-1">
               <Calculator className="h-4 w-4" />
-              Ag Calculator
+              Calculators
             </TabsTrigger>
             <TabsTrigger value="records" className="flex items-center gap-1">
               <BookOpen className="h-4 w-4" />
               Record Book
-            </TabsTrigger>
-            <TabsTrigger value="events" className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              Events
-            </TabsTrigger>
-            <TabsTrigger value="competitions" className="flex items-center gap-1">
-              <Trophy className="h-4 w-4" />
-              Competitions
             </TabsTrigger>
             <TabsTrigger value="resources" className="flex items-center gap-1">
               <FileText className="h-4 w-4" />
@@ -81,82 +80,20 @@ export function FFAPanel() {
             <FFADashboard />
           </TabsContent>
 
+          <TabsContent value="crop-planner">
+            <CropPlanner />
+          </TabsContent>
+
+          <TabsContent value="livestock">
+            <LivestockTracker />
+          </TabsContent>
+
           <TabsContent value="calculator">
             <AgricultureCalculator />
           </TabsContent>
 
           <TabsContent value="records">
             <FFARecordBook />
-          </TabsContent>
-
-          <TabsContent value="events" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-ffa-navy">
-                  <Calendar className="h-5 w-5" />
-                  FFA Events & Calendar
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Track important FFA events, competitions, and deadlines
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Calendar className="h-12 w-12 mx-auto text-ffa-gold mb-4" />
-                  <h3 className="text-lg font-semibold text-ffa-navy mb-2">Event Calendar Coming Soon</h3>
-                  <p className="text-muted-foreground">
-                    Full event management and calendar integration will be available soon
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="competitions" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-ffa-navy">
-                  <Trophy className="h-5 w-5" />
-                  Career Development Events
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Track competition participation and results
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Card className="border-ffa-blue/20">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-ffa-blue mb-2">Livestock Judging</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Evaluate and rank different livestock breeds
-                      </p>
-                      <Badge className="mt-2 bg-ffa-gold text-white">Active</Badge>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-ffa-field/20">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-ffa-field mb-2">Agricultural Sales</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Sales presentation and communication skills
-                      </p>
-                      <Badge variant="outline">Available</Badge>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-ffa-harvest/20">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-ffa-harvest mb-2">Farm Business Management</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Agricultural business analysis and planning
-                      </p>
-                      <Badge variant="outline">Available</Badge>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="resources" className="space-y-4">

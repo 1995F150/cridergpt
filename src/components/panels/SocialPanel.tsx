@@ -9,6 +9,7 @@ import { MessageSquare, Phone, Video, MapPin, Globe, Settings, Users, Mic, MicOf
 import { useToast } from "@/hooks/use-toast";
 import { FeatureGate } from "@/components/FeatureGate";
 import { ChatInterface } from "@/components/ChatInterface";
+import { supabase } from "@/integrations/supabase/client";
 
 export function SocialPanel() {
   const [isInCall, setIsInCall] = useState(false);
@@ -25,19 +26,30 @@ export function SocialPanel() {
 
   const detectUserRegion = async () => {
     try {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (position) => {
-          try {
-            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`);
-            const data = await response.json();
-            setDetectedRegion(data.countryCode || "US");
-          } catch (error) {
-            console.log('Region detection fallback to US');
-          }
-        });
+      // Use IP geolocation API for auto-detection
+      const response = await fetch('https://ipapi.co/json/');
+      const data = await response.json();
+      setDetectedRegion(data.country_code || "US");
+      
+      // Store location in user's Crider Chat profile if authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('crider_chat_users')
+          .update({
+            location: {
+              country: data.country_code || "US",
+              city: data.city || "Unknown",
+              region: data.region || "Unknown",
+              detected: "auto",
+              timestamp: new Date().toISOString()
+            }
+          })
+          .eq('user_id', user.id);
       }
     } catch (error) {
-      console.log('Using default region settings');
+      console.log('Region detection fallback to US');
+      setDetectedRegion("US");
     }
   };
 
