@@ -10,19 +10,15 @@ import {
   Trophy,
   Users,
   FileText,
-  Award
+  Award,
+  Tractor,
+  Heart
 } from "lucide-react";
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FFADashboard } from "@/components/FFA/FFADashboard";
 import { AgricultureCalculator } from "@/components/FFA/AgricultureCalculator";
 import { FFARecordBook } from "@/components/FFA/FFARecordBook";
 import { CropPlanner } from "@/components/FFA/CropPlanner";
 import { LivestockTracker } from "@/components/FFA/LivestockTracker";
-import { Wheat, Calculator, BookOpen, Tractor, Heart } from "lucide-react";
-import { AgricultureCalculator } from "@/components/FFA/AgricultureCalculator";
-import { FFARecordBook } from "@/components/FFA/FFARecordBook";
 
 export function FFAPanel() {
   return (
