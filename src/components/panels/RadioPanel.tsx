@@ -73,7 +73,7 @@ const WYTHEVILLE_FM_STATIONS = [
     name: "WBRF Star Country", 
     freq: 94.9, 
     format: "Country",
-    url: "https://stream.rcast.net/70299", // Working country music stream
+    url: "https://usa9.fastcast4u.com/proxy/jamz?mp=/1", // Reliable country music stream
     location: "Galax, VA"
   },
   { 
@@ -216,30 +216,34 @@ export function RadioPanel() {
       
     } catch (error) {
       console.error("Audio playback failed:", error);
-      // Try alternative streams instead of falling back to simulation
+      // Automatically try alternative streams for country music
       const altStreams = getAlternativeStreams(currentFMStation.format);
-      if (altStreams.length > 0) {
+      let streamWorked = false;
+      
+      for (let i = 0; i < altStreams.length && !streamWorked; i++) {
         try {
           audioRef.current = new Audio();
-          audioRef.current.src = altStreams[0];
+          audioRef.current.src = altStreams[i];
           audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
+          audioRef.current.crossOrigin = "anonymous";
+          
           await audioRef.current.play();
           setIsPlaying(true);
+          streamWorked = true;
+          
           toast({
-            title: "🎵 Alternative Stream",
-            description: `Playing ${currentFMStation.format} from backup source`,
+            title: "🎵 Star Country Playing",
+            description: `Connected to backup stream - ${currentFMStation.format} music now playing`,
           });
         } catch (altError) {
-          toast({
-            title: "📻 Stream Unavailable", 
-            description: `${currentFMStation.name} stream is currently offline`,
-            variant: "destructive"
-          });
+          console.error(`Alternative stream ${i + 1} failed:`, altError);
         }
-      } else {
+      }
+      
+      if (!streamWorked) {
         toast({
-          title: "📻 Stream Unavailable",
-          description: `${currentFMStation.name} stream is currently offline`,
+          title: "📻 All Streams Offline",
+          description: `${currentFMStation.name} and backup streams are currently unavailable. Please try another station.`,
           variant: "destructive"
         });
       }
@@ -249,10 +253,11 @@ export function RadioPanel() {
   const getAlternativeStreams = (format: string) => {
     const alternatives: Record<string, string[]> = {
       "Country": [
-        "https://stream.rcast.net/70299", // Primary country stream
-        "https://stream.rcast.net/259738", // Backup country stream  
-        "https://usa9.fastcast4u.com/proxy/jamz?mp=/1", // Country music stream
-        "https://stream.zeno.fm/0r0xa792kwzuv" // Alternative country
+        "https://usa9.fastcast4u.com/proxy/jamz?mp=/1", // Primary country stream
+        "https://stream.streamgenial.stream/k5u6s0a6s0mvy", // Backup country stream
+        "https://stream.rcast.net/70299", // Alternative country
+        "https://stream.streamafrica.net/8000/stream", // Country backup
+        "https://stream.zeno.fm/0r0xa792kwzuv" // Final fallback
       ],
       "Bluegrass": [
         "https://stream.radio.co/s84d73a7c0/listen",
