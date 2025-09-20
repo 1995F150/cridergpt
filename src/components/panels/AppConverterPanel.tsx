@@ -7,17 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Smartphone, Code, Download, Zap, Lock, ArrowRight, Database, Settings, FileText } from 'lucide-react';
+import { Smartphone, Code, Download, Zap, Lock, ArrowRight, Database, Settings, FileText, Upload, X } from 'lucide-react';
 import { useFeatureGating } from '@/hooks/useFeatureGating';
 
 export function AppConverterPanel() {
-  const [sourceCode, setSourceCode] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [targetPlatform, setTargetPlatform] = useState('');
   const [convertedCode, setConvertedCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [backendAnalysis, setBackendAnalysis] = useState<any>(null);
   const [usageCount, setUsageCount] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { currentPlan, isPlan } = useFeatureGating();
@@ -78,6 +79,53 @@ export function AppConverterPanel() {
     analyzeBackendSetup();
   }, []);
 
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files) return;
+    
+    const validFiles = Array.from(files).filter(file => {
+      // Accept common web development files
+      const validExtensions = ['.tsx', '.ts', '.jsx', '.js', '.json', '.css', '.html', '.md'];
+      const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+      return validExtensions.includes(extension) && file.size < 10 * 1024 * 1024; // 10MB limit
+    });
+
+    if (validFiles.length === 0) {
+      toast({
+        title: "Invalid Files",
+        description: "Please upload valid web development files (.tsx, .ts, .jsx, .js, .json, .css, .html, .md)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+    toast({
+      title: "Files Uploaded",
+      description: `${validFiles.length} file(s) uploaded successfully.`
+    });
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    handleFileUpload(e.dataTransfer.files);
+  };
+
   const convertCode = async () => {
     if (!user) {
       toast({
@@ -97,10 +145,10 @@ export function AppConverterPanel() {
       return;
     }
 
-    if (!sourceCode.trim() || !targetPlatform) {
+    if (uploadedFiles.length === 0 || !targetPlatform) {
       toast({
         title: "Missing Information",
-        description: "Please provide source code and select a target platform.",
+        description: "Please upload your project files and select a target platform.",
         variant: "destructive"
       });
       return;
@@ -109,20 +157,36 @@ export function AppConverterPanel() {
     setLoading(true);
     
     try {
+      // Read all uploaded files
+      const fileContents = await Promise.all(
+        uploadedFiles.map(async (file) => {
+          const content = await file.text();
+          return {
+            name: file.name,
+            path: file.webkitRelativePath || file.name,
+            content: content
+          };
+        })
+      );
+
       const platformDetails = targetPlatform === 'android' ? 'Android (Kotlin/Java with Jetpack Compose)' : 'iOS (Swift with SwiftUI)';
       
-      const prompt = `You are an expert mobile app developer. Convert the following React/TypeScript web application code to a fully functional ${platformDetails} application while PRESERVING ALL BACKEND CONNECTIVITY.
+      const prompt = `You are an expert mobile app developer. Convert the following complete React/TypeScript web application to a fully functional ${platformDetails} application while PRESERVING ALL BACKEND CONNECTIVITY.
 
 CRITICAL REQUIREMENTS:
 1. PRESERVE ALL SUPABASE CONNECTIONS - The mobile app MUST connect to the same Supabase backend
 2. MAINTAIN EXACT SAME FUNCTIONALITY - Every feature must work identically to the web version
 3. AUTO-DETECT what to convert vs preserve - Keep all backend logic, convert only UI layer
+4. ANALYZE ALL FILES - Convert components, hooks, utilities, and configurations as needed
 
 CURRENT SUPABASE SETUP TO PRESERVE:
 ${backendAnalysis ? JSON.stringify(backendAnalysis, null, 2) : 'Backend analysis pending...'}
 
-SOURCE CODE TO CONVERT:
-${sourceCode}
+UPLOADED PROJECT FILES:
+${fileContents.map(file => `
+=== FILE: ${file.path} ===
+${file.content}
+`).join('\n')}
 
 CONVERSION REQUIREMENTS:
 - Supabase Project URL: https://udpldrrpebdyuiqdtqnq.supabase.co
@@ -140,6 +204,8 @@ MOBILE PLATFORM SPECIFICS:
 4. Implement native Supabase client setup
 5. Add proper error handling and loading states
 6. Include offline data caching where appropriate
+7. Convert all hooks and utilities to platform equivalents
+8. Maintain state management patterns
 
 DELIVERABLES:
 1. Complete ${targetPlatform} app source code with Supabase integration
@@ -148,7 +214,8 @@ DELIVERABLES:
 4. Authentication flow implementation
 5. Database operation examples
 6. Build instructions and app store deployment guide
-7. File structure and organization
+7. Complete file structure and organization
+8. Converted utilities and helper functions
 
 The converted app should work with your existing Supabase backend WITHOUT requiring any backend changes. All authentication, database operations, edge functions, and storage should work identically to your web version.`;
 
@@ -240,20 +307,71 @@ The converted app should work with your existing Supabase backend WITHOUT requir
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Code className="h-5 w-5" />
-              Source Code
+              <Upload className="h-5 w-5" />
+              Upload Project Files
             </CardTitle>
             <CardDescription>
-              Paste your website source code here (React components, hooks, etc.). The converter will automatically preserve all Supabase backend connections.
+              Upload your entire website project files (.tsx, .ts, .jsx, .js, .json, .css, .html). The converter will analyze everything and preserve all Supabase backend connections.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Textarea
-              placeholder="Paste your React components, hooks, or other frontend code here. All Supabase connections will be automatically preserved..."
-              value={sourceCode}
-              onChange={(e) => setSourceCode(e.target.value)}
-              className="min-h-[200px] font-mono text-sm"
-            />
+            {/* File Upload Zone */}
+            <div 
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                dragActive 
+                  ? 'border-primary bg-primary/5' 
+                  : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-2">
+                Drag and drop your project files here, or click to browse
+              </p>
+              <input
+                type="file"
+                multiple
+                accept=".tsx,.ts,.jsx,.js,.json,.css,.html,.md"
+                onChange={(e) => handleFileUpload(e.target.files)}
+                className="hidden"
+                id="file-upload"
+              />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => document.getElementById('file-upload')?.click()}
+              >
+                Choose Files
+              </Button>
+            </div>
+
+            {/* Uploaded Files List */}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Uploaded Files ({uploadedFiles.length})</label>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {uploadedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-3 w-3" />
+                        {file.name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Target Platform</label>
@@ -270,11 +388,11 @@ The converted app should work with your existing Supabase backend WITHOUT requir
 
             <Button 
               onClick={convertCode} 
-              disabled={loading || !canUse || !sourceCode.trim() || !targetPlatform || analyzing}
+              disabled={loading || !canUse || uploadedFiles.length === 0 || !targetPlatform || analyzing}
               className="w-full"
             >
               {loading ? (
-                <>Converting with Backend Integration...</>
+                <>Converting {uploadedFiles.length} Files with Backend Integration...</>
               ) : analyzing ? (
                 <>Analyzing Backend Setup...</>
               ) : !canUse ? (
@@ -285,7 +403,7 @@ The converted app should work with your existing Supabase backend WITHOUT requir
               ) : (
                 <>
                   <ArrowRight className="h-4 w-4 mr-2" />
-                  Convert to {targetPlatform === 'android' ? 'Android' : 'iOS'} (Backend-Aware)
+                  Convert to {targetPlatform === 'android' ? 'Android' : 'iOS'} ({uploadedFiles.length} Files)
                 </>
               )}
             </Button>
@@ -297,24 +415,29 @@ The converted app should work with your existing Supabase backend WITHOUT requir
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Download className="h-5 w-5" />
-              Converted App Code
+              Converted Mobile App
             </CardTitle>
             <CardDescription>
-              Complete mobile app code with full Supabase backend integration preserved
+              Complete mobile app project with full Supabase backend integration preserved
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
               value={convertedCode}
               readOnly
-              placeholder="Backend-aware converted code will appear here. All Supabase connections will be preserved..."
+              placeholder="Your complete mobile app project will appear here. All files analyzed and converted with Supabase connections preserved..."
               className="min-h-[200px] font-mono text-sm"
             />
             
             {convertedCode && (
-              <Button onClick={copyToClipboard} variant="outline" className="w-full">
-                Copy Converted Code
-              </Button>
+              <div className="space-y-2">
+                <Button onClick={copyToClipboard} variant="outline" className="w-full">
+                  Copy Complete Mobile Project
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Includes: Source code, dependencies, build config, deployment guide
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
