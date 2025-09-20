@@ -23,7 +23,8 @@ import {
   Radio,
   ImageIcon,
   Brain,
-  Smartphone
+  Smartphone,
+  ExternalLink
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
@@ -54,7 +55,8 @@ const navigationItems = [
   { id: 'radio', label: 'Radio & CB Scanner', icon: Radio },
   { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
   { id: 'document-ai', label: 'Document AI', icon: Brain },
-  { id: 'app-converter', label: 'App Converter', icon: Smartphone }
+  { id: 'app-converter', label: 'App Converter', icon: Smartphone },
+  { id: 'farming-simulator', label: 'Farming Simulator', icon: Wheat, external: true, url: 'https://farmgenie-studio.lovable.app/' }
 ];
 
 export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarProps) {
@@ -68,6 +70,22 @@ export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarP
         <div className="space-y-1 p-3">
           {navigationItems.map((item) => {
             const Icon = item.icon;
+            
+            if (item.external) {
+              return (
+                <Button
+                  key={item.id}
+                  variant="ghost"
+                  className="w-full justify-start gap-3 h-10"
+                  onClick={() => window.open(item.url, '_blank')}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                  <ExternalLink className="h-3 w-3 ml-auto" />
+                </Button>
+              );
+            }
+            
             return (
               <Button
                 key={item.id}
