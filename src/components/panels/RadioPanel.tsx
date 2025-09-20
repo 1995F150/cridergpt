@@ -205,7 +205,7 @@ export function RadioPanel() {
       audioRef.current.preload = 'auto';
       // @ts-expect-error playsInline is supported on HTMLMediaElement
       audioRef.current.playsInline = true;
-      audioRef.current.crossOrigin = "anonymous";
+      // Removed crossOrigin to improve compatibility with stations that lack CORS headers
       audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
 
       // Enhanced error handling
@@ -287,7 +287,7 @@ export function RadioPanel() {
       audioRef.current = new Audio();
       audioRef.current.src = streams[index];
       audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
-      audioRef.current.crossOrigin = "anonymous";
+      // Removed crossOrigin to improve compatibility with stations that lack CORS headers
       
       audioRef.current.onerror = () => {
         // Try next stream
