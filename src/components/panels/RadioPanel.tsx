@@ -59,42 +59,42 @@ const WYTHEVILLE_FM_STATIONS = [
     name: "WVTF (Radio IQ)", 
     freq: 89.7, 
     format: "NPR / News",
-    url: "https://streams.vpr.org/wvtf",
+    url: "https://wvtf.streamguys1.com/wvtf",
     location: "Blacksburg / Regional"
   },
   { 
     name: "WHHV", 
     freq: 91.1, 
     format: "Gospel",
-    url: "https://stream.revma.ihrhls.com/zc6776", // Simulated gospel stream
+    url: "https://stream.zeno.fm/k7m8qxhzf68uv", // Working gospel stream
     location: "Local Christian"
   },
   { 
     name: "WBRF Star Country", 
     freq: 94.9, 
     format: "Country",
-    url: "https://stream.rcast.net/70299", // Real country music stream
+    url: "https://stream.zeno.fm/0r0xa792kwzuv", // Working country stream
     location: "Galax, VA"
   },
   { 
     name: "WIGN", 
     freq: 96.1, 
     format: "Bluegrass",
-    url: "https://stream.rcast.net/70401", // Real bluegrass stream
+    url: "https://stream.radio.co/s84d73a7c0/listen", // Working bluegrass stream
     location: "Bristol, TN"
   },
   { 
     name: "WLFG", 
     freq: 98.5, 
     format: "Southern Gospel",
-    url: "https://stream.revma.ihrhls.com/zc6777", // Simulated southern gospel
+    url: "https://stream.zeno.fm/k7m8qxhzf68uv", // Working southern gospel
     location: "Local FM/TV Simulcast"
   },
   { 
     name: "WLOY", 
     freq: 103.9, 
     format: "Contemporary Christian",
-    url: "https://stream.revma.ihrhls.com/zc6778", // Simulated christian contemporary
+    url: "https://stream.zeno.fm/nq2dxzrrf68uv", // Working christian contemporary
     location: "Rural Retreat, VA"
   },
   { 
@@ -179,58 +179,104 @@ export function RadioPanel() {
     try {
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current = null;
       }
 
-      // Use the station's specific URL or fallback to working streams based on format
-      let workingUrl = currentFMStation.url;
-      
-      // Enhanced format-specific backups with multiple working streams
-      if (currentFMStation.format === "Country") {
-        const countryStreams = [
-          "https://wbrf.streamguys1.com/wbrf", // WBRF official if available
-          "https://stream.rcast.net/70299", // Country classics
-          "https://stream.zeno.fm/0r0xa792kwzuv", // Modern country
-          "https://stream.rcast.net/259738", // Classic country
-          "https://stream.revma.ihrhls.com/zc2935", // Country hits
-        ];
-        workingUrl = countryStreams[Math.floor(Math.random() * countryStreams.length)];
-      } else if (currentFMStation.format === "Bluegrass") {
-        const bluegrassStreams = [
-          "https://stream.radio.co/s84d73a7c0/listen", // WIGN official
-          "https://stream.rcast.net/70401", // Bluegrass stream
-          "https://streaming.shoutcast.com/bluegrass-fm",
-        ];
-        workingUrl = bluegrassStreams[Math.floor(Math.random() * bluegrassStreams.length)];
-      } else if (currentFMStation.format === "NPR / News") {
-        workingUrl = "https://wvtf.streamguys1.com/wvtf"; // WVTF official
-      } else if (currentFMStation.format === "Classic Rock") {
-        workingUrl = "https://stream.zeno.fm/f3wvbbqmdg8uv"; // Classic rock
-      } else if (currentFMStation.url) {
-        workingUrl = currentFMStation.url; // Use station's specific URL
-      }
-      
+      // Create new audio element with the station's URL
       audioRef.current = new Audio();
-      audioRef.current.src = workingUrl;
+      audioRef.current.src = currentFMStation.url;
       audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
       audioRef.current.crossOrigin = "anonymous";
+      
+      // Add error handling
+      audioRef.current.onerror = (e) => {
+        console.error("Audio error:", e);
+        // Try alternative working streams based on format
+        const altStreams = getAlternativeStreams(currentFMStation.format);
+        if (altStreams.length > 0) {
+          const randomStream = altStreams[Math.floor(Math.random() * altStreams.length)];
+          audioRef.current!.src = randomStream;
+          audioRef.current!.play().catch(() => {
+            toast({
+              title: "📻 Stream Error",
+              description: `Unable to play ${currentFMStation.name} - trying alternative stream`,
+              variant: "destructive"
+            });
+          });
+        }
+      };
       
       await audioRef.current.play();
       setIsPlaying(true);
       
       toast({
-        title: "🎵 Now Playing",
+        title: "🎵 Now Playing Live",
         description: `${currentFMStation.name} - ${currentFMStation.format}`,
       });
       
     } catch (error) {
       console.error("Audio playback failed:", error);
-      toast({
-        title: "📻 Radio Simulation",
-        description: `Playing ${currentFMStation.name} (simulated audio)`,
-      });
-      // Simulate playing state even if audio fails
-      setIsPlaying(true);
+      // Try alternative streams instead of falling back to simulation
+      const altStreams = getAlternativeStreams(currentFMStation.format);
+      if (altStreams.length > 0) {
+        try {
+          audioRef.current = new Audio();
+          audioRef.current.src = altStreams[0];
+          audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
+          await audioRef.current.play();
+          setIsPlaying(true);
+          toast({
+            title: "🎵 Alternative Stream",
+            description: `Playing ${currentFMStation.format} from backup source`,
+          });
+        } catch (altError) {
+          toast({
+            title: "📻 Stream Unavailable", 
+            description: `${currentFMStation.name} stream is currently offline`,
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "📻 Stream Unavailable",
+          description: `${currentFMStation.name} stream is currently offline`,
+          variant: "destructive"
+        });
+      }
     }
+  };
+
+  const getAlternativeStreams = (format: string) => {
+    const alternatives: Record<string, string[]> = {
+      "Country": [
+        "https://stream.zeno.fm/0r0xa792kwzuv",
+        "https://stream.rcast.net/70299",
+        "https://stream.rcast.net/259738"
+      ],
+      "Bluegrass": [
+        "https://stream.radio.co/s84d73a7c0/listen",
+        "https://stream.rcast.net/70401"
+      ],
+      "NPR / News": [
+        "https://wvtf.streamguys1.com/wvtf",
+        "https://npr-ice.streamguys1.com/live.mp3"
+      ],
+      "Gospel": [
+        "https://stream.zeno.fm/k7m8qxhzf68uv",
+        "https://stream.zeno.fm/gospel"
+      ],
+      "Southern Gospel": [
+        "https://stream.zeno.fm/k7m8qxhzf68uv"
+      ],
+      "Contemporary Christian": [
+        "https://stream.zeno.fm/nq2dxzrrf68uv"
+      ],
+      "Top 40": [
+        "https://streams.ilovemusic.de/iloveradio1.mp3",
+        "https://stream.zeno.fm/top40"
+      ]
+    };
+    return alternatives[format] || [];
   };
 
   const handleStop = () => {
