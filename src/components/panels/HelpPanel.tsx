@@ -53,7 +53,7 @@ export default function HelpPanel() {
                 <h3 className="text-lg font-semibold mb-3">Quick Start Guide</h3>
                 <ol className="space-y-2 text-sm">
                   <li>1. <strong>Navigation:</strong> Use the sidebar to access different panels and features</li>
-                  <li>2. <strong>AI Assistant:</strong> Chat with CriderGPT for technical help and guidance</li>
+                  <li>2. <strong>CriderGPT:</strong> Chat with CriderGPT for technical help and guidance</li>
                   <li>3. <strong>Social Features:</strong> Connect with friends, share photos, and video chat</li>
                   <li>4. <strong>Calculators:</strong> Access specialized tools for your field of work</li>
                   <li>5. <strong>Projects:</strong> Manage your work and educational projects</li>
@@ -65,7 +65,7 @@ export default function HelpPanel() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <MessageSquare className="h-4 w-4" />
-                      AI & Communication
+                      CriderGPT & Communication
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-sm space-y-2">
