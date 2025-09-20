@@ -500,10 +500,28 @@ export const SocialChatInterface: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: "Voice Call",
+                  description: "Starting voice call with " + conversation?.friend?.display_name,
+                });
+              }}
+            >
               <Phone className="h-4 w-4" />
             </Button>
-            <Button size="sm" variant="outline">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: "Video Call", 
+                  description: "Starting video call with " + conversation?.friend?.display_name,
+                });
+              }}
+            >
               <Video className="h-4 w-4" />
             </Button>
             <Button 
@@ -624,10 +642,28 @@ export const SocialChatInterface: React.FC = () => {
                       >
                         <MessageSquare className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          toast({
+                            title: "Voice Call",
+                            description: "Starting voice call with " + friendship.friend?.display_name,
+                          });
+                        }}
+                      >
                         <Phone className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          toast({
+                            title: "Video Call",
+                            description: "Starting video call with " + friendship.friend?.display_name,
+                          });
+                        }}
+                      >
                         <Video className="h-4 w-4" />
                       </Button>
                     </div>
@@ -667,6 +703,7 @@ export const SocialChatInterface: React.FC = () => {
                     <Button 
                       size="sm" 
                       onClick={() => handleFriendRequest(request.id, 'accepted')}
+                      className="bg-green-600 hover:bg-green-700 text-white"
                     >
                       <Check className="h-4 w-4" />
                     </Button>
@@ -674,6 +711,7 @@ export const SocialChatInterface: React.FC = () => {
                       size="sm" 
                       variant="outline"
                       onClick={() => handleFriendRequest(request.id, 'declined')}
+                      className="border-red-500 text-red-500 hover:bg-red-50"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -761,6 +799,7 @@ export const SocialChatInterface: React.FC = () => {
                         <Button 
                           size="sm" 
                           onClick={() => sendFriendRequest(discoveredUser.id)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
                           <UserPlus className="h-4 w-4 mr-1" />
                           Add Friend

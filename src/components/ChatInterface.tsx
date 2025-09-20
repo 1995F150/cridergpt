@@ -340,14 +340,15 @@ export const ChatInterface: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost">
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        createNewConversation(chatUser.id);
+                      }}
+                    >
                       <MessageSquare className="h-3 w-3" />
-                    </Button>
-                    <Button size="sm" variant="ghost">
-                      <Phone className="h-3 w-3" />
-                    </Button>
-                    <Button size="sm" variant="ghost">
-                      <Video className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -459,12 +460,9 @@ export const ChatInterface: React.FC = () => {
           </h3>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline">
-            <Phone className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="outline">
-            <Video className="h-4 w-4" />
-          </Button>
+          <Badge variant="outline" className="text-xs">
+            AI Chat - No voice/video available
+          </Badge>
         </div>
       </div>
 
