@@ -122,16 +122,16 @@ export const SocialChatInterface: React.FC = () => {
     if (!user) return;
 
     try {
+      console.log('Loading friends for user:', user.id);
+      
       const { data: friendships, error } = await supabase
         .from('friendships')
-        .select(`
-          *,
-          user1:user1_id(*),
-          user2:user2_id(*)
-        `)
+        .select('*')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
       if (error) throw error;
+
+      console.log('Found friendships:', friendships?.length || 0);
 
       if (friendships) {
         const friendsWithDetails = await Promise.all(
@@ -158,6 +158,7 @@ export const SocialChatInterface: React.FC = () => {
           })
         );
 
+        console.log('Friends with details:', friendsWithDetails.length);
         setFriends(friendsWithDetails.filter(f => f.friend));
       }
     } catch (error) {
@@ -242,6 +243,8 @@ export const SocialChatInterface: React.FC = () => {
   // Accept/decline friend request
   const handleFriendRequest = async (requestId: string, action: 'accepted' | 'declined') => {
     try {
+      console.log('Handling friend request:', requestId, action);
+      
       const { error } = await supabase
         .from('friend_requests')
         .update({ status: action })
@@ -254,9 +257,16 @@ export const SocialChatInterface: React.FC = () => {
         description: `You have ${action} the friend request.`
       });
 
-      loadFriendRequests();
+      // Reload data in proper order
+      await loadFriendRequests();
       if (action === 'accepted') {
-        loadFriends();
+        // Add a small delay to ensure trigger has executed
+        setTimeout(async () => {
+          console.log('Refreshing friends list after acceptance');
+          await loadFriends();
+          // Also refresh conversations since new friendship might enable direct messaging
+          await loadConversations();
+        }, 1000);
       }
     } catch (error) {
       console.error('Error handling friend request:', error);

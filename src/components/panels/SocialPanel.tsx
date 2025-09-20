@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, Phone, Video, MapPin, Globe, Settings, Users, Mic, MicOff, VideoOff } from "lucide-react";
+import { MessageSquare, Phone, Video, MapPin, Globe, Settings, Users, Mic, MicOff, VideoOff, PhoneOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FeatureGate } from "@/components/FeatureGate";
 import { SocialChatInterface } from "@/components/SocialChatInterface";
+import { VideoCallInterface } from "@/components/VideoCallInterface";
 import { supabase } from "@/integrations/supabase/client";
 
 export function SocialPanel() {
@@ -57,7 +58,7 @@ export function SocialPanel() {
     setIsInCall(true);
     toast({
       title: "Video Call Started",
-      description: "Connecting to video chat...",
+      description: "Initializing video call interface...",
     });
   };
 
@@ -65,7 +66,7 @@ export function SocialPanel() {
     setIsInCall(true);
     toast({
       title: "Voice Call Started", 
-      description: "Connecting to voice chat...",
+      description: "Initializing voice call interface...",
     });
   };
 
@@ -73,6 +74,10 @@ export function SocialPanel() {
     setIsInCall(false);
     setIsVideoEnabled(true);
     setIsAudioEnabled(true);
+    toast({
+      title: "Call Ended",
+      description: "You have left the call.",
+    });
   };
 
   return (
@@ -149,27 +154,11 @@ export function SocialPanel() {
 
             <TabsContent value="calls" className="flex-1 mt-4">
               {isInCall ? (
-                <div className="flex flex-col items-center justify-center h-full space-y-4">
-                  <div className="text-lg font-semibold">Call in Progress</div>
-                  <div className="flex gap-4">
-                    <Button
-                      variant={isAudioEnabled ? "default" : "destructive"}
-                      size="icon"
-                      onClick={() => setIsAudioEnabled(!isAudioEnabled)}
-                    >
-                      {isAudioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant={isVideoEnabled ? "default" : "destructive"}
-                      size="icon"
-                      onClick={() => setIsVideoEnabled(!isVideoEnabled)}
-                    >
-                      {isVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-                    </Button>
-                    <Button variant="destructive" onClick={endCall}>
-                      End Call
-                    </Button>
-                  </div>
+                <div className="h-96">
+                  <VideoCallInterface 
+                    onEndCall={endCall} 
+                    isVideoCall={true}
+                  />
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -185,6 +174,9 @@ export function SocialPanel() {
                         Video Call
                       </Button>
                     </div>
+                    <p className="text-sm text-muted-foreground mt-4">
+                      Real-time video and voice calling with friends
+                    </p>
                   </div>
                 </div>
               )}
