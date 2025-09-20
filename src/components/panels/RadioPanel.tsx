@@ -73,7 +73,7 @@ const WYTHEVILLE_FM_STATIONS = [
     name: "WBRF Star Country", 
     freq: 94.9, 
     format: "Country",
-    url: "https://stream.zeno.fm/0r0xa792kwzuv", // Working country stream
+    url: "https://stream.rcast.net/70299", // Working country music stream
     location: "Galax, VA"
   },
   { 
@@ -249,9 +249,10 @@ export function RadioPanel() {
   const getAlternativeStreams = (format: string) => {
     const alternatives: Record<string, string[]> = {
       "Country": [
-        "https://stream.zeno.fm/0r0xa792kwzuv",
-        "https://stream.rcast.net/70299",
-        "https://stream.rcast.net/259738"
+        "https://stream.rcast.net/70299", // Primary country stream
+        "https://stream.rcast.net/259738", // Backup country stream  
+        "https://usa9.fastcast4u.com/proxy/jamz?mp=/1", // Country music stream
+        "https://stream.zeno.fm/0r0xa792kwzuv" // Alternative country
       ],
       "Bluegrass": [
         "https://stream.radio.co/s84d73a7c0/listen",
