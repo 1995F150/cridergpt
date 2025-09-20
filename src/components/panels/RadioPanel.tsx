@@ -71,13 +71,22 @@ const WYTHEVILLE_FM_STATIONS = [
     location: "Local Christian"
   },
   { 
-    name: "WBRF Star Country", 
+    name: "WSLC 94.9 Star Country", 
     freq: 94.9, 
     format: "Country",
     url: "https://player.amperwave.net/1295",
-    streamUrl: "https://ice1.securenetsystems.net/WBRF",
     pageUrl: "https://player.amperwave.net/1295",
-    location: "Galax, VA"
+    streamUrl: "https://ice1.securenetsystems.net/WBRF",
+    candidateStreams: [
+      "https://ice1.securenetsystems.net/WBRF",
+      "https://ice8.securenetsystems.net/WBRF",
+      "https://ice9.securenetsystems.net/WBRF",
+      "https://ice1.securenetsystems.net/WSLC",
+      "https://ice8.securenetsystems.net/WSLC",
+      "https://ice9.securenetsystems.net/WSLC",
+      "https://usa9.fastcast4u.com/proxy/jamz?mp=/1"
+    ],
+    location: "Roanoke, VA"
   },
   { 
     name: "WIGN", 
@@ -211,13 +220,23 @@ export function RadioPanel() {
       // Removed crossOrigin to improve compatibility with stations that lack CORS headers
       audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
 
+      // Diagnostic event listeners for better debugging
+      audioRef.current.addEventListener('stalled', () => console.warn('Audio stalled', { readyState: audioRef.current?.readyState, networkState: audioRef.current?.networkState }));
+      audioRef.current.addEventListener('suspend', () => console.warn('Audio suspend', { readyState: audioRef.current?.readyState }));
+      audioRef.current.addEventListener('waiting', () => console.warn('Audio waiting', { readyState: audioRef.current?.readyState }));
+      audioRef.current.addEventListener('playing', () => console.info('Audio playing'));
+      audioRef.current.addEventListener('loadedmetadata', () => console.info('Audio loadedmetadata'));
+
+
       // Enhanced error handling
       audioRef.current.onerror = (e) => {
-        console.error("Audio stream error:", e);
+        console.error("Audio stream error:", e, audioRef.current?.error);
         setIsPlaying(false);
-        
-        // Try alternative streams
-        const altStreams = getAlternativeStreams(currentFMStation.format);
+        const stationStreams: string[] = currentFMStation?.candidateStreams || [];
+        const altStreams = Array.from(new Set([
+          ...stationStreams,
+          ...getAlternativeStreams(currentFMStation.format),
+        ].filter(Boolean)));
         if (altStreams.length > 0) {
           tryAlternativeStreams(altStreams, 0);
         } else {
@@ -258,7 +277,11 @@ export function RadioPanel() {
       setIsPlaying(false);
       
       // Try alternative streams automatically
-      const altStreams = getAlternativeStreams(currentFMStation.format);
+      const stationStreams: string[] = currentFMStation?.candidateStreams || [];
+      const altStreams = Array.from(new Set([
+        ...stationStreams,
+        ...getAlternativeStreams(currentFMStation.format),
+      ].filter(Boolean)));
       if (altStreams.length > 0) {
         tryAlternativeStreams(altStreams, 0);
       } else {
