@@ -61,17 +61,46 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
     return;
   }
   
-  // Get user_id from email
-  const { data: userData, error: userError } = await supabase
-    .from('ai_usage')
-    .select('user_id')
-    .eq('email', email)
-    .single();
+  console.log(`Looking for user with email: ${email}`);
   
-  const userId = userData?.user_id;
+  // First, try to get user_id from auth.users by email
+  const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
+  let targetUserId = null;
   
-  // Update or create usage record
-  const { error } = await supabase
+  if (authUser?.users) {
+    const user = authUser.users.find(u => u.email === email);
+    if (user) {
+      targetUserId = user.id;
+      console.log(`Found user_id: ${targetUserId} for email: ${email}`);
+    }
+  }
+  
+  // Update ai_usage table - try both by email AND by user_id
+  if (targetUserId) {
+    // Update by user_id (this is the correct way)
+    const { error: userIdError } = await supabase
+      .from('ai_usage')
+      .upsert({
+        user_id: targetUserId,
+        email: email, // Store actual email, not UUID
+        user_plan: plan,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        updated_at: new Date().toISOString()
+      }, { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false 
+      });
+    
+    if (userIdError) {
+      console.error('Failed to update by user_id:', userIdError);
+    } else {
+      console.log(`Successfully updated plan for user_id ${targetUserId} (${email}) to ${plan}`);
+    }
+  }
+  
+  // Also try to update by email in case the email field actually contains emails
+  const { error: emailError } = await supabase
     .from('ai_usage')
     .upsert({
       email: email,
@@ -84,17 +113,14 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
       ignoreDuplicates: false 
     });
   
-  if (error) {
-    console.error('Failed to update user plan:', error);
-    return;
+  if (emailError) {
+    console.log('Email-based update failed (expected if email field contains UUIDs):', emailError);
   }
   
-  console.log(`Successfully updated plan for ${email} to ${plan}`);
-  
   // Send real-time notification to frontend if we have a user_id
-  if (userId) {
+  if (targetUserId) {
     const notificationData = {
-      user_id: userId,
+      user_id: targetUserId,
       notification_type: 'subscription_updated',
       data: {
         new_plan: plan,
@@ -111,7 +137,7 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
     if (notificationError) {
       console.error('Failed to send notification:', notificationError);
     } else {
-      console.log(`Sent real-time notification to user ${userId} for plan change to ${plan}`);
+      console.log(`Sent real-time notification to user ${targetUserId} for plan change to ${plan}`);
     }
   }
 }

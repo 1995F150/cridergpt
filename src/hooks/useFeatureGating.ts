@@ -39,14 +39,15 @@ export function useFeatureGating() {
     if (!user) return;
 
     try {
-      // Get user's current plan
+      // Get user's current plan from ai_usage table
       const { data: usageData } = await supabase
         .from('ai_usage')
-        .select('user_plan')
+        .select('user_plan, tokens_used')
         .eq('user_id', user.id)
         .single();
 
       const plan = usageData?.user_plan || 'free';
+      console.log(`📊 Current user plan: ${plan} for user ${user.id}`);
       setCurrentPlan(plan);
 
       // Get plan limits
@@ -60,13 +61,6 @@ export function useFeatureGating() {
         setPlanLimits(planConfig.limits as any);
       }
 
-      // Get current usage (simplified for now)
-      const { data: usage } = await supabase
-        .from('ai_usage')
-        .select('tokens_used')
-        .eq('user_id', user.id)
-        .single();
-
       // Get TTS usage for current month
       const currentMonth = new Date().toISOString().slice(0, 7);
       const { data: ttsData } = await supabase
@@ -77,7 +71,7 @@ export function useFeatureGating() {
         .single();
 
       setUserUsage({
-        tokens_used: usage?.tokens_used || 0,
+        tokens_used: usageData?.tokens_used || 0,
         tts_requests: ttsData?.count || 0,
         ai_images_used: 0, // TODO: Track this
         documents_analyzed: 0 // TODO: Track this
@@ -89,6 +83,34 @@ export function useFeatureGating() {
       setLoading(false);
     }
   };
+
+  // Listen for real-time plan updates via notifications
+  useEffect(() => {
+    if (!user) return;
+
+    const subscription = supabase
+      .channel('plan_updates')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'feature_notifications',
+          filter: `user_id=eq.${user.id}`
+        }, 
+        (payload) => {
+          console.log('📢 Received plan update notification:', payload);
+          if (payload.new.notification_type === 'subscription_updated') {
+            // Refresh the plan data immediately
+            fetchUserPlanAndUsage();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user]);
 
   // Feature access checks
   const hasFeatureAccess = (feature: string): boolean => {
