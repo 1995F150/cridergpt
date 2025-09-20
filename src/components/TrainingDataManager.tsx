@@ -4,112 +4,114 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Save, Trash2, BookOpen } from 'lucide-react';
+import { Upload, Database, FileText, Brain } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-interface TrainingData {
+interface TrainingDataset {
   id: string;
-  context: string;
-  example_input?: string;
-  example_response?: string;
-  data_type: 'personal_info' | 'preference' | 'experience' | 'knowledge';
-  tags: string[];
+  name: string;
+  description: string;
+  category: 'agriculture' | 'mechanics' | 'electrical' | 'welding' | 'ffa' | 'general';
+  data_type: 'text' | 'qa_pairs' | 'manual' | 'reference';
+  status: 'pending' | 'processing' | 'active' | 'error';
   created_at: string;
+  data_size?: number;
 }
 
 export function TrainingDataManager() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [trainingData, setTrainingData] = useState<TrainingData[]>([]);
+  const [datasets, setDatasets] = useState<TrainingDataset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [newEntry, setNewEntry] = useState({
-    context: '',
-    example_input: '',
-    example_response: '',
-    data_type: 'personal_info' as const,
-    tags: ''
+  const [uploadData, setUploadData] = useState({
+    name: '',
+    description: '',
+    category: 'general' as const,
+    data_type: 'text' as const,
+    content: ''
   });
 
-  const loadTrainingData = async () => {
+  const loadDatasets = async () => {
     if (!user) return;
-
+    
     try {
-      // For now, we'll store in localStorage until the DB migration is approved
-      const stored = localStorage.getItem(`training_data_${user.id}`);
+      // For now, load from localStorage until proper database is set up
+      const stored = localStorage.getItem('cridergpt_training_datasets');
       if (stored) {
-        setTrainingData(JSON.parse(stored));
+        setDatasets(JSON.parse(stored));
       }
     } catch (error) {
-      console.error('Error loading training data:', error);
+      console.error('Error loading datasets:', error);
     }
   };
 
   useEffect(() => {
-    loadTrainingData();
+    loadDatasets();
   }, [user]);
 
-  const saveToStorage = (data: TrainingData[]) => {
-    if (!user) return;
-    localStorage.setItem(`training_data_${user.id}`, JSON.stringify(data));
-    setTrainingData(data);
-  };
-
-  const addTrainingEntry = () => {
-    if (!newEntry.context.trim()) {
+  const saveDataset = () => {
+    if (!uploadData.name.trim() || !uploadData.content.trim()) {
       toast({
-        title: "Context Required",
-        description: "Please add some context about yourself",
+        title: "Missing Information",
+        description: "Please provide dataset name and content",
         variant: "destructive"
       });
       return;
     }
 
-    const entry: TrainingData = {
+    const dataset: TrainingDataset = {
       id: crypto.randomUUID(),
-      context: newEntry.context,
-      example_input: newEntry.example_input || undefined,
-      example_response: newEntry.example_response || undefined,
-      data_type: newEntry.data_type,
-      tags: newEntry.tags ? newEntry.tags.split(',').map(t => t.trim()) : [],
-      created_at: new Date().toISOString()
+      name: uploadData.name,
+      description: uploadData.description,
+      category: uploadData.category,
+      data_type: uploadData.data_type,
+      status: 'active',
+      created_at: new Date().toISOString(),
+      data_size: uploadData.content.length
     };
 
-    const updated = [...trainingData, entry];
-    saveToStorage(updated);
+    const updated = [...datasets, dataset];
+    localStorage.setItem('cridergpt_training_datasets', JSON.stringify(updated));
+    setDatasets(updated);
 
-    setNewEntry({
-      context: '',
-      example_input: '',
-      example_response: '',
-      data_type: 'personal_info',
-      tags: ''
+    // Save the actual content separately
+    localStorage.setItem(`dataset_content_${dataset.id}`, uploadData.content);
+
+    setUploadData({
+      name: '',
+      description: '',
+      category: 'general',
+      data_type: 'text',
+      content: ''
     });
 
     toast({
       title: "Training Data Added",
-      description: "CriderGPT will learn from this information"
+      description: "CriderGPT training dataset has been uploaded successfully"
     });
   };
 
-  const removeEntry = (id: string) => {
-    const updated = trainingData.filter(entry => entry.id !== id);
-    saveToStorage(updated);
-    
-    toast({
-      title: "Entry Removed",
-      description: "Training data has been deleted"
-    });
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'personal_info': return 'bg-blue-500/10 text-blue-500';
-      case 'preference': return 'bg-green-500/10 text-green-500';
-      case 'experience': return 'bg-purple-500/10 text-purple-500';
-      case 'knowledge': return 'bg-orange-500/10 text-orange-500';
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'agriculture': return 'bg-green-500/10 text-green-500';
+      case 'mechanics': return 'bg-blue-500/10 text-blue-500';
+      case 'electrical': return 'bg-yellow-500/10 text-yellow-500';
+      case 'welding': return 'bg-red-500/10 text-red-500';
+      case 'ffa': return 'bg-purple-500/10 text-purple-500';
+      case 'general': return 'bg-gray-500/10 text-gray-500';
       default: return 'bg-gray-500/10 text-gray-500';
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'text': return <FileText className="h-4 w-4" />;
+      case 'qa_pairs': return <Brain className="h-4 w-4" />;
+      case 'manual': return <Database className="h-4 w-4" />;
+      case 'reference': return <Upload className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
     }
   };
 
@@ -118,71 +120,87 @@ export function TrainingDataManager() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Train CriderGPT About You
+            <Upload className="h-5 w-5" />
+            Upload CriderGPT Training Data
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400">
+            <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Owner Access Only</h4>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              This section is for uploading training data to improve CriderGPT's knowledge base. 
+              Add manuals, Q&A pairs, and technical documentation here.
+            </p>
+          </div>
+
           <div className="grid gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Dataset Name</label>
+                <Input
+                  placeholder="e.g., John Deere Service Manual 2024"
+                  value={uploadData.name}
+                  onChange={(e) => setUploadData(prev => ({ ...prev, name: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Category</label>
+                <select
+                  value={uploadData.category}
+                  onChange={(e) => setUploadData(prev => ({ ...prev, category: e.target.value as any }))}
+                  className="mt-1 w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="agriculture">Agriculture</option>
+                  <option value="mechanics">Mechanics</option>
+                  <option value="electrical">Electrical</option>
+                  <option value="welding">Welding</option>
+                  <option value="ffa">FFA/Education</option>
+                  <option value="general">General</option>
+                </select>
+              </div>
+            </div>
+
             <div>
-              <label className="text-sm font-medium">Context/Information</label>
-              <Textarea
-                placeholder="Tell CriderGPT something about yourself (e.g., 'I prefer Ford trucks over Chevy', 'My favorite farming technique is no-till', 'I code in TypeScript and React')"
-                value={newEntry.context}
-                onChange={(e) => setNewEntry(prev => ({ ...prev, context: e.target.value }))}
+              <label className="text-sm font-medium">Description</label>
+              <Input
+                placeholder="Brief description of this training data"
+                value={uploadData.description}
+                onChange={(e) => setUploadData(prev => ({ ...prev, description: e.target.value }))}
                 className="mt-1"
               />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Example Question (Optional)</label>
-                <Input
-                  placeholder="What someone might ask about this"
-                  value={newEntry.example_input}
-                  onChange={(e) => setNewEntry(prev => ({ ...prev, example_input: e.target.value }))}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Expected Response (Optional)</label>
-                <Input
-                  placeholder="How CriderGPT should respond"
-                  value={newEntry.example_response}
-                  onChange={(e) => setNewEntry(prev => ({ ...prev, example_response: e.target.value }))}
-                  className="mt-1"
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium">Data Type</label>
+              <select
+                value={uploadData.data_type}
+                onChange={(e) => setUploadData(prev => ({ ...prev, data_type: e.target.value as any }))}
+                className="mt-1 w-full px-3 py-2 border rounded-md"
+              >
+                <option value="text">Text/Manual</option>
+                <option value="qa_pairs">Q&A Pairs</option>
+                <option value="manual">Technical Manual</option>
+                <option value="reference">Reference Material</option>
+              </select>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Type</label>
-                <select
-                  value={newEntry.data_type}
-                  onChange={(e) => setNewEntry(prev => ({ ...prev, data_type: e.target.value as any }))}
-                  className="mt-1 w-full px-3 py-2 border rounded-md"
-                >
-                  <option value="personal_info">Personal Info</option>
-                  <option value="preference">Preference</option>
-                  <option value="experience">Experience</option>
-                  <option value="knowledge">Knowledge</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tags (comma-separated)</label>
-                <Input
-                  placeholder="farming, coding, trucks, etc."
-                  value={newEntry.tags}
-                  onChange={(e) => setNewEntry(prev => ({ ...prev, tags: e.target.value }))}
-                  className="mt-1"
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium">Training Content</label>
+              <Textarea
+                placeholder="Paste your training data here... (manuals, Q&A pairs, technical documentation, etc.)"
+                value={uploadData.content}
+                onChange={(e) => setUploadData(prev => ({ ...prev, content: e.target.value }))}
+                className="mt-1 min-h-[200px]"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Characters: {uploadData.content.length}
+              </p>
             </div>
 
-            <Button onClick={addTrainingEntry} className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Training Data
+            <Button onClick={saveDataset} className="w-full">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Training Dataset
             </Button>
           </div>
         </CardContent>
@@ -190,54 +208,44 @@ export function TrainingDataManager() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Training Data ({trainingData.length})</CardTitle>
+          <CardTitle>CriderGPT Training Datasets ({datasets.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {trainingData.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No training data yet. Add some information about yourself above!
-            </p>
+          {datasets.length === 0 ? (
+            <div className="text-center py-8">
+              <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                No training datasets uploaded yet. Add some data above to improve CriderGPT's knowledge.
+              </p>
+            </div>
           ) : (
             <div className="space-y-4">
-              {trainingData.map((entry) => (
-                <div key={entry.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge className={getTypeColor(entry.data_type)}>
-                      {entry.data_type.replace('_', ' ')}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeEntry(entry.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+              {datasets.map((dataset) => (
+                <div key={dataset.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-2">
+                      {getTypeIcon(dataset.data_type)}
+                      <h3 className="font-semibold">{dataset.name}</h3>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge className={getCategoryColor(dataset.category)}>
+                        {dataset.category}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {dataset.status}
+                      </Badge>
+                    </div>
                   </div>
                   
-                  <p className="text-sm mb-2">{entry.context}</p>
-                  
-                  {entry.example_input && (
-                    <div className="text-xs text-muted-foreground">
-                      <strong>Q:</strong> {entry.example_input}
-                    </div>
+                  {dataset.description && (
+                    <p className="text-sm text-muted-foreground mb-2">{dataset.description}</p>
                   )}
                   
-                  {entry.example_response && (
-                    <div className="text-xs text-muted-foreground">
-                      <strong>A:</strong> {entry.example_response}
-                    </div>
-                  )}
-                  
-                  {entry.tags.length > 0 && (
-                    <div className="flex gap-1 mt-2">
-                      {entry.tags.map((tag, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                    <span>Type: {dataset.data_type.replace('_', ' ')}</span>
+                    <span>Size: {dataset.data_size ? `${dataset.data_size} characters` : 'Unknown'}</span>
+                    <span>Added: {new Date(dataset.created_at).toLocaleDateString()}</span>
+                  </div>
                 </div>
               ))}
             </div>
