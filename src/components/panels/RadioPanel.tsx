@@ -74,7 +74,7 @@ const WYTHEVILLE_FM_STATIONS = [
     name: "WBRF Star Country", 
     freq: 94.9, 
     format: "Country",
-    url: "https://usa9.fastcast4u.com/proxy/jamz?mp=/1", // Reliable country music stream
+    url: "https://player.amperwave.net/1295",
     location: "Galax, VA"
   },
   { 
