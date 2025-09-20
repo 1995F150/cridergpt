@@ -6,34 +6,34 @@
 
 @layer base {
   :root {
-    /* Light mode colors */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Light mode colors - FFA Theme */
+    --background: 200 75% 95%;
+    --foreground: 210 100% 25%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 100% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 100% 25%;
 
-    --primary: 195 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 210 100% 35%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary: 45 100% 50%;
+    --secondary-foreground: 210 100% 25%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 48 100% 90%;
+    --muted-foreground: 210 100% 35%;
 
-    --accent: 195 100% 50%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 210 100% 25%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 195 100% 50%;
+    --border: 48 50% 85%;
+    --input: 48 50% 90%;
+    --ring: 210 100% 35%;
 
     /* CriderGPT Custom Colors */
     --cyber-blue: 195 100% 50%;
@@ -71,34 +71,34 @@
   }
 
   .dark {
-    /* Dark mode colors */
-    --background: 222 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark mode colors - FFA Theme */
+    --background: 210 100% 8%;
+    --foreground: 45 100% 85%;
 
-    --card: 228 71% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 210 100% 12%;
+    --card-foreground: 45 100% 85%;
 
-    --popover: 228 71% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 210 100% 12%;
+    --popover-foreground: 45 100% 85%;
 
-    --primary: 195 100% 50%;
-    --primary-foreground: 222 84% 4.9%;
+    --primary: 45 100% 50%;
+    --primary-foreground: 210 100% 15%;
 
-    --secondary: 228 71% 12%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 100% 20%;
+    --secondary-foreground: 45 100% 85%;
 
-    --muted: 228 71% 12%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 210 100% 15%;
+    --muted-foreground: 48 50% 70%;
 
-    --accent: 195 100% 50%;
-    --accent-foreground: 222 84% 4.9%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 210 100% 15%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 228 71% 12%;
-    --input: 228 71% 15%;
-    --ring: 195 100% 50%;
+    --border: 210 100% 20%;
+    --input: 210 100% 18%;
+    --ring: 45 100% 50%;
 
     /* CriderGPT Custom Colors */
     --cyber-blue: 195 100% 50%;
@@ -141,14 +141,14 @@
 
   body {
     @apply text-foreground;
-    /* ChatGPT-inspired gradient background */
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* FFA-inspired gradient background */
+    background: var(--gradient-ffa);
     background-attachment: fixed;
     min-height: 100vh;
     position: relative;
   }
 
-  /* Add subtle animated background pattern like ChatGPT */
+  /* Add subtle animated background pattern with FFA colors */
   body::before {
     content: '';
     position: fixed;
@@ -157,9 +157,9 @@
     width: 100%;
     height: 100%;
     background: 
-      radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+      radial-gradient(circle at 20% 50%, hsl(var(--ffa-gold) / 0.2) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--ffa-corn) / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, hsl(var(--ffa-blue) / 0.15) 0%, transparent 50%);
     z-index: -1;
     pointer-events: none;
   }
