@@ -75,6 +75,8 @@ const WYTHEVILLE_FM_STATIONS = [
     freq: 94.9, 
     format: "Country",
     url: "https://player.amperwave.net/1295",
+    streamUrl: "https://ice1.securenetsystems.net/WBRF",
+    pageUrl: "https://player.amperwave.net/1295",
     location: "Galax, VA"
   },
   { 
@@ -200,7 +202,8 @@ export function RadioPanel() {
 
       // Create new audio element
       audioRef.current = new Audio();
-      const src = currentFMStation.url + (currentFMStation.url.includes('?') ? '&' : '?') + `v=${Date.now()}`;
+      const base = currentFMStation.streamUrl ?? currentFMStation.url;
+      const src = base + (base.includes('?') ? '&' : '?') + `v=${Date.now()}`;
       audioRef.current.src = src;
       audioRef.current.preload = 'auto';
       // @ts-expect-error playsInline is supported on HTMLMediaElement
@@ -285,7 +288,8 @@ export function RadioPanel() {
       }
 
       audioRef.current = new Audio();
-      audioRef.current.src = streams[index];
+      const base = streams[index];
+      audioRef.current.src = base + (base.includes('?') ? '&' : '?') + `v=${Date.now()}`;
       audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
       // Removed crossOrigin to improve compatibility with stations that lack CORS headers
       
@@ -311,8 +315,10 @@ export function RadioPanel() {
 
   const getAlternativeStreams = (format: string) => {
     const alternatives: Record<string, string[]> = {
-      Country: [
+       Country: [
         "https://ice1.securenetsystems.net/WBRF",
+        "https://ice8.securenetsystems.net/WBRF",
+        "https://ice9.securenetsystems.net/WBRF",
         "https://usa9.fastcast4u.com/proxy/jamz?mp=/1"
       ],
       Bluegrass: [
@@ -570,7 +576,7 @@ export function RadioPanel() {
 
             <Button
               variant="outline"
-              onClick={() => currentFMStation && window.open(currentFMStation.url, '_blank', 'noopener')}
+              onClick={() => currentFMStation && window.open(currentFMStation.pageUrl || currentFMStation.url, '_blank', 'noopener')}
               disabled={!currentFMStation}
             >
               Open Stream
