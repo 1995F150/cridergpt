@@ -253,10 +253,10 @@ export function RadioPanel() {
   const getAlternativeStreams = (format: string) => {
     const alternatives: Record<string, string[]> = {
       "Country": [
-        "https://usa9.fastcast4u.com/proxy/jamz?mp=/1", // Primary country stream
-        "https://stream.streamgenial.stream/k5u6s0a6s0mvy", // Backup country stream
-        "https://stream.rcast.net/70299", // Alternative country
-        "https://stream.streamafrica.net/8000/stream", // Country backup
+        "https://stream.countryradio.ch/crs-128.mp3", // Reliable country (Switzerland)
+        "https://usa9.fastcast4u.com/proxy/jamz?mp=/1", // Country stream
+        "https://stream.streamgenial.stream/k5u6s0a6s0mvy", // Backup
+        "https://stream.rcast.net/70299", // Alternative
         "https://stream.zeno.fm/0r0xa792kwzuv" // Final fallback
       ],
       "Bluegrass": [
@@ -514,6 +514,14 @@ export function RadioPanel() {
               disabled={!currentFMStation || !isPlaying}
             >
               {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => currentFMStation && window.open(currentFMStation.url, '_blank', 'noopener')}
+              disabled={!currentFMStation}
+            >
+              Open Stream
             </Button>
             
             <div className="flex-1 space-y-2">
