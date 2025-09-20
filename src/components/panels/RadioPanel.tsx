@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioIcon, Volume2, VolumeX, Play, Square, Signal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
+import Hls from "hls.js";
 
 const CB_CHANNELS = [
   { channel: 1, freq: "26.965" },
@@ -130,6 +131,7 @@ export function RadioPanel() {
   const [currentFMStation, setCurrentFMStation] = useState<any>(null);
   const [isStatic, setIsStatic] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [customStreamUrl, setCustomStreamUrl] = useState<string>("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const staticRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
@@ -263,14 +265,39 @@ export function RadioPanel() {
         });
       };
       
-      audioRef.current.load();
-      await audioRef.current.play();
-      setIsPlaying(true);
+      if (src.includes(".m3u8")) {
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource(src);
+          hls.attachMedia(audioRef.current!);
+          hls.on(Hls.Events.MANIFEST_PARSED, async () => {
+            await audioRef.current!.play();
+            setIsPlaying(true);
+            toast({
+              title: "🎵 Now Playing Live",
+              description: `${currentFMStation.name} - ${currentFMStation.format}`,
+            });
+          });
+        } else if (audioRef.current!.canPlayType("application/vnd.apple.mpegurl")) {
+          await audioRef.current.play();
+          setIsPlaying(true);
+          toast({
+            title: "🎵 Now Playing Live",
+            description: `${currentFMStation.name} - ${currentFMStation.format}`,
+          });
+        } else {
+          throw new Error("HLS not supported by this browser");
+        }
+      } else {
+        audioRef.current.load();
+        await audioRef.current.play();
+        setIsPlaying(true);
 
-      toast({
-        title: "🎵 Now Playing Live",
-        description: `${currentFMStation.name} - ${currentFMStation.format}`,
-      });
+        toast({
+          title: "🎵 Now Playing Live",
+          description: `${currentFMStation.name} - ${currentFMStation.format}`,
+        });
+      }
       
     } catch (error) {
       console.error("Audio playback failed:", error);
@@ -321,13 +348,37 @@ export function RadioPanel() {
         tryAlternativeStreams(streams, index + 1);
       };
       
-      await audioRef.current.play();
-      setIsPlaying(true);
-      
-      toast({
-        title: "🎵 Connected to Backup Stream",
-        description: `Playing alternative ${currentFMStation?.format} stream`,
-      });
+      if (base.includes('.m3u8')) {
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource(base);
+          hls.attachMedia(audioRef.current!);
+          hls.on(Hls.Events.MANIFEST_PARSED, async () => {
+            await audioRef.current!.play();
+            setIsPlaying(true);
+            toast({
+              title: "🎵 Connected to Backup Stream",
+              description: `Playing alternative ${currentFMStation?.format} stream`,
+            });
+          });
+        } else if (audioRef.current!.canPlayType('application/vnd.apple.mpegurl')) {
+          await audioRef.current!.play();
+          setIsPlaying(true);
+          toast({
+            title: "🎵 Connected to Backup Stream",
+            description: `Playing alternative ${currentFMStation?.format} stream`,
+          });
+        } else {
+          throw new Error('HLS not supported');
+        }
+      } else {
+        await audioRef.current.play();
+        setIsPlaying(true);
+        toast({
+          title: "🎵 Connected to Backup Stream",
+          description: `Playing alternative ${currentFMStation?.format} stream`,
+        });
+      }
       
     } catch (error) {
       console.error(`Alternative stream ${index + 1} failed:`, error);
@@ -619,6 +670,35 @@ export function RadioPanel() {
           
           <div className="bg-muted/30 p-3 rounded text-xs text-muted-foreground">
             <strong>🎵 FM Radio Experience:</strong> Tune to a local frequency, then press Play to listen.
+          </div>
+
+          <div className="space-y-2 mt-4">
+            <Label>Custom stream URL (mp3/aac/m3u8)</Label>
+            <div className="flex gap-2">
+              <Input
+                value={customStreamUrl}
+                onChange={(e) => setCustomStreamUrl(e.target.value)}
+                placeholder="https://example.com/stream.m3u8"
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!customStreamUrl) return;
+                  setSelectedStation(customStreamUrl);
+                  setCurrentFMStation((s: any) => s ? { ...s, streamUrl: customStreamUrl } : {
+                    name: 'Custom Stream',
+                    freq: fmFrequency[0],
+                    format: 'Custom',
+                    url: customStreamUrl,
+                    streamUrl: customStreamUrl,
+                    pageUrl: customStreamUrl
+                  });
+                  toast({ title: '📻 Custom Stream Set', description: 'Press Play to start' });
+                }}
+              >
+                Set
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
