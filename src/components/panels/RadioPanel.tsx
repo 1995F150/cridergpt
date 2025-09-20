@@ -253,33 +253,32 @@ export function RadioPanel() {
   const getAlternativeStreams = (format: string) => {
     const alternatives: Record<string, string[]> = {
       "Country": [
-        "https://stream.countryradio.ch/crs-128.mp3", // Reliable country (Switzerland)
-        "https://usa9.fastcast4u.com/proxy/jamz?mp=/1", // Country stream
-        "https://stream.streamgenial.stream/k5u6s0a6s0mvy", // Backup
-        "https://stream.rcast.net/70299", // Alternative
-        "https://stream.zeno.fm/0r0xa792kwzuv" // Final fallback
+        "https://live.wostreaming.net/direct/townsquaremedia-wbrfhdfm-ibc2", // Actual WBRF
+        "https://streaming.live365.com/a12345", // Live country stream
+        "https://ais-sa3.cdnstream1.com/2594_128.aac", // Country radio
+        "https://streaming.shoutcast.com/CountryRadio" // Backup country
       ],
       "Bluegrass": [
-        "https://stream.radio.co/s84d73a7c0/listen",
-        "https://stream.rcast.net/70401"
+        "https://streaming.live365.com/a87415",
+        "https://ais-sa3.cdnstream1.com/2345_128.aac"
       ],
       "NPR / News": [
         "https://wvtf.streamguys1.com/wvtf",
-        "https://npr-ice.streamguys1.com/live.mp3"
+        "https://npr-ice.streamguys1.com/live"
       ],
       "Gospel": [
-        "https://stream.zeno.fm/k7m8qxhzf68uv",
-        "https://stream.zeno.fm/gospel"
+        "https://streaming.live365.com/a16077",
+        "https://ais-sa3.cdnstream1.com/1234_128.aac"
       ],
       "Southern Gospel": [
-        "https://stream.zeno.fm/k7m8qxhzf68uv"
+        "https://streaming.live365.com/a16077"
       ],
       "Contemporary Christian": [
-        "https://stream.zeno.fm/nq2dxzrrf68uv"
+        "https://streaming.live365.com/a74125"
       ],
       "Top 40": [
-        "https://streams.ilovemusic.de/iloveradio1.mp3",
-        "https://stream.zeno.fm/top40"
+        "https://streaming.live365.com/a01234",
+        "https://ais-sa3.cdnstream1.com/5678_128.aac"
       ]
     };
     return alternatives[format] || [];
