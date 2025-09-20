@@ -520,6 +520,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cridergpt_training_data: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          data_type: string
+          dataset_name: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          data_type?: string
+          dataset_name: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          data_type?: string
+          dataset_name?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string | null

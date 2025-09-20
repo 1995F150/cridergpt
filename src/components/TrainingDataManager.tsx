@@ -11,13 +11,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface TrainingDataset {
   id: string;
-  name: string;
+  dataset_name: string;
   description: string;
-  category: 'agriculture' | 'mechanics' | 'electrical' | 'welding' | 'ffa' | 'general';
-  data_type: 'text' | 'qa_pairs' | 'manual' | 'reference';
+  category: 'agriculture' | 'mechanics' | 'electrical' | 'welding' | 'ffa' | 'general' | 'personal';
+  data_type: 'text' | 'qa_pairs' | 'manual' | 'reference' | 'life_story';
   status: 'pending' | 'processing' | 'active' | 'error';
   created_at: string;
-  data_size?: number;
+  content?: string;
+  metadata?: any;
 }
 
 export function TrainingDataManager() {
@@ -26,7 +27,7 @@ export function TrainingDataManager() {
   const [datasets, setDatasets] = useState<TrainingDataset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadData, setUploadData] = useState({
-    name: '',
+    dataset_name: '',
     description: '',
     category: 'general' as const,
     data_type: 'text' as const,
@@ -37,13 +38,31 @@ export function TrainingDataManager() {
     if (!user) return;
     
     try {
-      // For now, load from localStorage until proper database is set up
-      const stored = localStorage.getItem('cridergpt_training_datasets');
-      if (stored) {
-        setDatasets(JSON.parse(stored));
-      }
+      const { data, error } = await supabase
+        .from('cridergpt_training_data')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setDatasets(data?.map(item => ({
+        id: item.id,
+        dataset_name: item.dataset_name,
+        description: item.description || '',
+        category: item.category as any,
+        data_type: item.data_type as any,
+        status: item.status as any,
+        created_at: item.created_at,
+        content: item.content,
+        metadata: item.metadata
+      })) || []);
     } catch (error) {
       console.error('Error loading datasets:', error);
+      toast({
+        title: "Error Loading Data",
+        description: "Failed to load training datasets",
+        variant: "destructive"
+      });
     }
   };
 
@@ -51,8 +70,32 @@ export function TrainingDataManager() {
     loadDatasets();
   }, [user]);
 
-  const saveDataset = () => {
-    if (!uploadData.name.trim() || !uploadData.content.trim()) {
+  const addLifeStory = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('add-training-data', {
+        body: {}
+      });
+
+      if (error) throw error;
+
+      await loadDatasets();
+      
+      toast({
+        title: "Life Story Added",
+        description: "Jessie's life story has been added to CriderGPT training data"
+      });
+    } catch (error) {
+      console.error('Error adding life story:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add life story",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const saveDataset = async () => {
+    if (!uploadData.dataset_name.trim() || !uploadData.content.trim()) {
       toast({
         title: "Missing Information",
         description: "Please provide dataset name and content",
@@ -61,36 +104,42 @@ export function TrainingDataManager() {
       return;
     }
 
-    const dataset: TrainingDataset = {
-      id: crypto.randomUUID(),
-      name: uploadData.name,
-      description: uploadData.description,
-      category: uploadData.category,
-      data_type: uploadData.data_type,
-      status: 'active',
-      created_at: new Date().toISOString(),
-      data_size: uploadData.content.length
-    };
+    try {
+      const { error } = await supabase
+        .from('cridergpt_training_data')
+        .insert({
+          dataset_name: uploadData.dataset_name,
+          description: uploadData.description,
+          category: uploadData.category,
+          data_type: uploadData.data_type,
+          content: uploadData.content,
+          status: 'active'
+        });
 
-    const updated = [...datasets, dataset];
-    localStorage.setItem('cridergpt_training_datasets', JSON.stringify(updated));
-    setDatasets(updated);
+      if (error) throw error;
 
-    // Save the actual content separately
-    localStorage.setItem(`dataset_content_${dataset.id}`, uploadData.content);
+      await loadDatasets();
 
-    setUploadData({
-      name: '',
-      description: '',
-      category: 'general',
-      data_type: 'text',
-      content: ''
-    });
+      setUploadData({
+        dataset_name: '',
+        description: '',
+        category: 'general',
+        data_type: 'text',
+        content: ''
+      });
 
-    toast({
-      title: "Training Data Added",
-      description: "CriderGPT training dataset has been uploaded successfully"
-    });
+      toast({
+        title: "Training Data Added",
+        description: "CriderGPT training dataset has been uploaded successfully"
+      });
+    } catch (error) {
+      console.error('Error saving dataset:', error);
+      toast({
+        title: "Error Saving Data",
+        description: "Failed to save training dataset",
+        variant: "destructive"
+      });
+    }
   };
 
   const getCategoryColor = (category: string) => {
@@ -131,6 +180,11 @@ export function TrainingDataManager() {
               This section is for uploading training data to improve CriderGPT's knowledge base. 
               Add manuals, Q&A pairs, and technical documentation here.
             </p>
+            <div className="mt-3">
+              <Button onClick={addLifeStory} variant="outline" size="sm">
+                Add Founder Life Story
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-4">
@@ -139,8 +193,8 @@ export function TrainingDataManager() {
                 <label className="text-sm font-medium">Dataset Name</label>
                 <Input
                   placeholder="e.g., John Deere Service Manual 2024"
-                  value={uploadData.name}
-                  onChange={(e) => setUploadData(prev => ({ ...prev, name: e.target.value }))}
+                  value={uploadData.dataset_name}
+                  onChange={(e) => setUploadData(prev => ({ ...prev, dataset_name: e.target.value }))}
                   className="mt-1"
                 />
               </div>
@@ -225,7 +279,7 @@ export function TrainingDataManager() {
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2">
                       {getTypeIcon(dataset.data_type)}
-                      <h3 className="font-semibold">{dataset.name}</h3>
+                      <h3 className="font-semibold">{dataset.dataset_name}</h3>
                     </div>
                     <div className="flex gap-2">
                       <Badge className={getCategoryColor(dataset.category)}>
@@ -243,7 +297,7 @@ export function TrainingDataManager() {
                   
                   <div className="flex justify-between items-center text-xs text-muted-foreground">
                     <span>Type: {dataset.data_type.replace('_', ' ')}</span>
-                    <span>Size: {dataset.data_size ? `${dataset.data_size} characters` : 'Unknown'}</span>
+                    <span>Size: {dataset.content ? `${dataset.content.length} characters` : 'Unknown'}</span>
                     <span>Added: {new Date(dataset.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
