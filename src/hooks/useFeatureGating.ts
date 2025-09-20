@@ -39,15 +39,15 @@ export function useFeatureGating() {
     if (!user) return;
 
     try {
-      // Get user's current plan from ai_usage table
-      const { data: usageData } = await supabase
-        .from('ai_usage')
-        .select('user_plan, tokens_used')
+      // Get user's current plan from new user_subscriptions table
+      const { data: subscriptionData } = await supabase
+        .from('user_subscriptions')
+        .select('plan_name, plan_status')
         .eq('user_id', user.id)
         .single();
 
-      const plan = usageData?.user_plan || 'free';
-      console.log(`📊 Current user plan: ${plan} for user ${user.id}`);
+      const plan = subscriptionData?.plan_name || 'free';
+      console.log(`📊 Current user plan: ${plan} for user ${user.id} (status: ${subscriptionData?.plan_status})`);
       setCurrentPlan(plan);
 
       // Get plan limits
@@ -60,6 +60,13 @@ export function useFeatureGating() {
       if (planConfig?.limits) {
         setPlanLimits(planConfig.limits as any);
       }
+
+      // Get usage data from ai_usage table
+      const { data: usageData } = await supabase
+        .from('ai_usage')
+        .select('tokens_used')
+        .eq('user_id', user.id)
+        .single();
 
       // Get TTS usage for current month
       const currentMonth = new Date().toISOString().slice(0, 7);

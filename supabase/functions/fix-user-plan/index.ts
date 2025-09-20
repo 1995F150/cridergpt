@@ -45,12 +45,32 @@ serve(async (req) => {
 
     console.log(`Manually updating plan for user ${user.id} (${user.email}) to: ${plan}`);
 
-    // Update the ai_usage table with correct user_id and email
-    const { error: updateError } = await supabase
+    // Update the user_subscriptions table with correct user_id and email
+    const { error: subscriptionError } = await supabase
+      .from('user_subscriptions')
+      .upsert({
+        user_id: user.id,
+        email: user.email,
+        plan_name: plan,
+        plan_status: 'active',
+        subscription_start_date: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false 
+      });
+
+    if (subscriptionError) {
+      console.error('Failed to update user subscription:', subscriptionError);
+      throw new Error(`Failed to update subscription: ${subscriptionError.message}`);
+    }
+
+    // Also update ai_usage table for backward compatibility
+    const { error: usageError } = await supabase
       .from('ai_usage')
       .upsert({
         user_id: user.id,
-        email: user.email, // Store actual email, not UUID
+        email: user.email,
         user_plan: plan,
         updated_at: new Date().toISOString()
       }, { 
@@ -58,9 +78,8 @@ serve(async (req) => {
         ignoreDuplicates: false 
       });
 
-    if (updateError) {
-      console.error('Failed to update user plan:', updateError);
-      throw new Error(`Failed to update plan: ${updateError.message}`);
+    if (usageError) {
+      console.log('Warning: Failed to update ai_usage (non-critical):', usageError);
     }
 
     // Send notification for real-time update

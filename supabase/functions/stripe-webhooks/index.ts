@@ -43,7 +43,7 @@ function getWebhookSecret(eventType: string): string {
   return secretMap[eventType] || '';
 }
 
-async function updateUserPlan(customerId: string, plan: string, subscriptionId?: string) {
+async function updateUserPlan(customerId: string, plan: string, subscriptionId?: string, priceId?: string) {
   console.log(`Updating user plan: customerId=${customerId}, plan=${plan}`);
   
   // Get customer from Stripe to find email
@@ -63,7 +63,7 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
   
   console.log(`Looking for user with email: ${email}`);
   
-  // First, try to get user_id from auth.users by email
+  // Get user_id from auth.users by email
   const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
   let targetUserId = null;
   
@@ -75,70 +75,75 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
     }
   }
   
-  // Update ai_usage table - try both by email AND by user_id
-  if (targetUserId) {
-    // Update by user_id (this is the correct way)
-    const { error: userIdError } = await supabase
-      .from('ai_usage')
-      .upsert({
-        user_id: targetUserId,
-        email: email, // Store actual email, not UUID
-        user_plan: plan,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscriptionId,
-        updated_at: new Date().toISOString()
-      }, { 
-        onConflict: 'user_id',
-        ignoreDuplicates: false 
-      });
-    
-    if (userIdError) {
-      console.error('Failed to update by user_id:', userIdError);
-    } else {
-      console.log(`Successfully updated plan for user_id ${targetUserId} (${email}) to ${plan}`);
-    }
+  if (!targetUserId) {
+    console.error(`No user found with email: ${email}`);
+    return;
   }
-  
-  // Also try to update by email in case the email field actually contains emails
-  const { error: emailError } = await supabase
-    .from('ai_usage')
-    .upsert({
-      email: email,
-      user_plan: plan,
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscriptionId,
-      updated_at: new Date().toISOString()
-    }, { 
-      onConflict: 'email',
+
+  // Update the new user_subscriptions table
+  const subscriptionData = {
+    user_id: targetUserId,
+    email: email,
+    plan_name: plan,
+    plan_status: 'active',
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscriptionId,
+    stripe_price_id: priceId,
+    subscription_start_date: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  const { error: subscriptionError } = await supabase
+    .from('user_subscriptions')
+    .upsert(subscriptionData, { 
+      onConflict: 'user_id',
       ignoreDuplicates: false 
     });
   
-  if (emailError) {
-    console.log('Email-based update failed (expected if email field contains UUIDs):', emailError);
+  if (subscriptionError) {
+    console.error('Failed to update user subscription:', subscriptionError);
+    return;
   }
   
-  // Send real-time notification to frontend if we have a user_id
-  if (targetUserId) {
-    const notificationData = {
+  console.log(`Successfully updated subscription for ${email} to ${plan}`);
+  
+  // Also update ai_usage table for backward compatibility
+  const { error: usageError } = await supabase
+    .from('ai_usage')
+    .upsert({
       user_id: targetUserId,
-      notification_type: 'subscription_updated',
-      data: {
-        new_plan: plan,
-        subscription_id: subscriptionId,
-        customer_id: customerId,
-        timestamp: new Date().toISOString()
-      }
-    };
-    
-    const { error: notificationError } = await supabase
-      .from('feature_notifications')
-      .insert(notificationData);
-    
-    if (notificationError) {
-      console.error('Failed to send notification:', notificationError);
-    } else {
-      console.log(`Sent real-time notification to user ${targetUserId} for plan change to ${plan}`);
+      email: email,
+      user_plan: plan,
+      updated_at: new Date().toISOString()
+    }, { 
+      onConflict: 'user_id',
+      ignoreDuplicates: false 
+    });
+  
+  if (usageError) {
+    console.log('Warning: Failed to update ai_usage (non-critical):', usageError);
+  }
+
+  // Send real-time notification to frontend
+  const notificationData = {
+    user_id: targetUserId,
+    notification_type: 'subscription_updated',
+    data: {
+      new_plan: plan,
+      subscription_id: subscriptionId,
+      customer_id: customerId,
+      timestamp: new Date().toISOString()
     }
+  };
+  
+  const { error: notificationError } = await supabase
+    .from('feature_notifications')
+    .insert(notificationData);
+  
+  if (notificationError) {
+    console.error('Failed to send notification:', notificationError);
+  } else {
+    console.log(`Sent real-time notification to user ${targetUserId} for plan change to ${plan}`);
   }
 }
 
@@ -186,7 +191,7 @@ serve(async (req) => {
         if (priceId) {
           const price = await stripe.prices.retrieve(priceId);
           const plan = getPlanFromAmount(price.unit_amount || 0);
-          await updateUserPlan(customerId, plan, subscription.id);
+          await updateUserPlan(customerId, plan, subscription.id, priceId);
         }
         break;
       }
@@ -210,7 +215,7 @@ serve(async (req) => {
           if (priceId) {
             const price = await stripe.prices.retrieve(priceId);
             const plan = getPlanFromAmount(price.unit_amount || 0);
-            await updateUserPlan(customerId, plan, subscription.id);
+            await updateUserPlan(customerId, plan, subscription.id, priceId);
           }
         }
         break;
@@ -235,7 +240,7 @@ serve(async (req) => {
           if (priceId) {
             const price = await stripe.prices.retrieve(priceId);
             const plan = getPlanFromAmount(price.unit_amount || 0);
-            await updateUserPlan(customerId, plan, subscription.id);
+            await updateUserPlan(customerId, plan, subscription.id, priceId);
           }
         }
         break;
