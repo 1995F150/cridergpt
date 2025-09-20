@@ -98,11 +98,11 @@ const WYTHEVILLE_FM_STATIONS = [
     url: "https://stream.zeno.fm/nq2dxzrrf68uv", // Working christian contemporary
     location: "Rural Retreat, VA"
   },
-  { 
-    name: "WZVA Hot 103.5", 
-    freq: 107.1, 
+  {
+    name: "WZVA Hot 103.5",
+    freq: 107.1,
     format: "Top 40",
-    url: "https://streams.ilovemusic.de/iloveradio1.mp3",
+    url: "https://stream.rcast.net/14578", // Alternative Top 40 stream (no .mp3 extension)
     location: "Regional Market"
   }
 ];
@@ -200,10 +200,14 @@ export function RadioPanel() {
 
       // Create new audio element
       audioRef.current = new Audio();
-      audioRef.current.src = currentFMStation.url;
-      audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
+      const src = currentFMStation.url + (currentFMStation.url.includes('?') ? '&' : '?') + `v=${Date.now()}`;
+      audioRef.current.src = src;
+      audioRef.current.preload = 'auto';
+      // @ts-expect-error playsInline is supported on HTMLMediaElement
+      audioRef.current.playsInline = true;
       audioRef.current.crossOrigin = "anonymous";
-      
+      audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
+
       // Enhanced error handling
       audioRef.current.onerror = (e) => {
         console.error("Audio stream error:", e);
@@ -237,9 +241,10 @@ export function RadioPanel() {
         });
       };
       
+      audioRef.current.load();
       await audioRef.current.play();
       setIsPlaying(true);
-      
+
       toast({
         title: "🎵 Now Playing Live",
         description: `${currentFMStation.name} - ${currentFMStation.format}`,
@@ -306,23 +311,18 @@ export function RadioPanel() {
 
   const getAlternativeStreams = (format: string) => {
     const alternatives: Record<string, string[]> = {
-      "Country": [
-        "https://ice1.securenetsystems.net/WBRF", // Primary WBRF stream
-        "https://stream.rcast.net/67890", // Backup country stream 1
-        "https://stream.rcast.net/12345", // Backup country stream 2
-        "https://live.wostreaming.net/country" // Alternative country
+      Country: [
+        "https://ice1.securenetsystems.net/WBRF",
+        "https://usa9.fastcast4u.com/proxy/jamz?mp=/1"
       ],
-      "Bluegrass": [
-        "https://stream.rcast.net/5022",
-        "https://stream.rcast.net/70401"
+      Bluegrass: [
+        "https://stream.rcast.net/5022"
       ],
       "NPR / News": [
-        "https://wvtf.streamguys1.com/wvtf",
-        "https://npr-ice.streamguys1.com/live"
+        "https://wvtf.streamguys1.com/wvtf"
       ],
-      "Gospel": [
-        "https://stream.rcast.net/236488",
-        "https://stream.rcast.net/gospel"
+      Gospel: [
+        "https://stream.rcast.net/236488"
       ],
       "Southern Gospel": [
         "https://stream.rcast.net/14289"
@@ -331,8 +331,7 @@ export function RadioPanel() {
         "https://stream.rcast.net/8156"
       ],
       "Top 40": [
-        "https://stream.rcast.net/14578",
-        "https://stream.rcast.net/top40"
+        "https://stream.rcast.net/14578"
       ]
     };
     return alternatives[format] || [];
@@ -590,8 +589,7 @@ export function RadioPanel() {
           </div>
           
           <div className="bg-muted/30 p-3 rounded text-xs text-muted-foreground">
-            <strong>🎵 Real FM Radio Experience:</strong> Tune through frequencies to find Wytheville area stations. 
-            Stations auto-play when tuned in - just like a real radio!
+            <strong>🎵 FM Radio Experience:</strong> Tune to a local frequency, then press Play to listen.
           </div>
         </CardContent>
       </Card>
