@@ -43,13 +43,13 @@ function getWebhookSecret(eventType: string): string {
   return secretMap[eventType] || '';
 }
 
-async function updateUserPlan(customerId: string, plan: string, subscriptionId?: string, priceId?: string) {
-  console.log(`Updating user plan: customerId=${customerId}, plan=${plan}`);
+async function updateUserSubscription(customerId: string, plan: string, subscriptionId?: string, priceId?: string) {
+  console.log(`🔄 Updating user subscription: customerId=${customerId}, plan=${plan}, subscriptionId=${subscriptionId}`);
   
   // Get customer from Stripe to find email
   const customer = await stripe.customers.retrieve(customerId);
   if (!customer || customer.deleted) {
-    console.error('Customer not found or deleted');
+    console.error('❌ Customer not found or deleted');
     return;
   }
   
@@ -57,11 +57,11 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
   const email = customerData.email;
   
   if (!email) {
-    console.error('Customer email not found');
+    console.error('❌ Customer email not found');
     return;
   }
   
-  console.log(`Looking for user with email: ${email}`);
+  console.log(`🔍 Looking for user with email: ${email}`);
   
   // Get user_id from auth.users by email
   const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
@@ -71,41 +71,64 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
     const user = authUser.users.find(u => u.email === email);
     if (user) {
       targetUserId = user.id;
-      console.log(`Found user_id: ${targetUserId} for email: ${email}`);
+      console.log(`✅ Found user_id: ${targetUserId} for email: ${email}`);
     }
   }
   
   if (!targetUserId) {
-    console.error(`No user found with email: ${email}`);
+    console.error(`❌ No user found with email: ${email}`);
     return;
   }
-
-  // Update the new user_subscriptions table
-  const subscriptionData = {
+  
+  // Get subscription details if we have subscription ID
+  let subscriptionData = null;
+  if (subscriptionId) {
+    try {
+      subscriptionData = await stripe.subscriptions.retrieve(subscriptionId);
+      console.log(`📋 Retrieved subscription data: status=${subscriptionData.status}`);
+    } catch (error) {
+      console.error('❌ Failed to retrieve subscription data:', error);
+    }
+  }
+  
+  // Prepare subscription update data
+  const subscriptionUpdate = {
     user_id: targetUserId,
     email: email,
     plan_name: plan,
-    plan_status: 'active',
+    plan_status: plan === 'free' ? 'canceled' : 'active',
     stripe_customer_id: customerId,
     stripe_subscription_id: subscriptionId,
     stripe_price_id: priceId,
-    subscription_start_date: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    subscription_start_date: subscriptionData ? new Date(subscriptionData.created * 1000).toISOString() : null,
+    subscription_end_date: subscriptionData ? new Date(subscriptionData.current_period_end * 1000).toISOString() : null,
+    trial_end_date: subscriptionData?.trial_end ? new Date(subscriptionData.trial_end * 1000).toISOString() : null,
+    cancel_at_period_end: subscriptionData?.cancel_at_period_end || false,
+    canceled_at: plan === 'free' ? new Date().toISOString() : null,
+    updated_at: new Date().toISOString(),
+    metadata: {
+      last_stripe_event: new Date().toISOString(),
+      stripe_status: subscriptionData?.status || 'unknown',
+      webhook_processed: true
+    }
   };
-
+  
+  console.log(`💾 Updating user_subscriptions table for user ${targetUserId}`);
+  
+  // Update user_subscriptions table with complete subscription info
   const { error: subscriptionError } = await supabase
     .from('user_subscriptions')
-    .upsert(subscriptionData, { 
+    .upsert(subscriptionUpdate, { 
       onConflict: 'user_id',
       ignoreDuplicates: false 
     });
   
   if (subscriptionError) {
-    console.error('Failed to update user subscription:', subscriptionError);
+    console.error('❌ Failed to update user subscription:', subscriptionError);
     return;
   }
   
-  console.log(`Successfully updated subscription for ${email} to ${plan}`);
+  console.log(`✅ Successfully updated subscription for user ${targetUserId} (${email}) to ${plan}`);
   
   // Also update ai_usage table for backward compatibility
   const { error: usageError } = await supabase
@@ -121,10 +144,12 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
     });
   
   if (usageError) {
-    console.log('Warning: Failed to update ai_usage (non-critical):', usageError);
+    console.log('⚠️ AI usage table update failed (non-critical):', usageError);
+  } else {
+    console.log('✅ Also updated ai_usage table for backward compatibility');
   }
-
-  // Send real-time notification to frontend
+  
+  // Send real-time notification for immediate frontend update
   const notificationData = {
     user_id: targetUserId,
     notification_type: 'subscription_updated',
@@ -132,6 +157,8 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
       new_plan: plan,
       subscription_id: subscriptionId,
       customer_id: customerId,
+      price_id: priceId,
+      plan_status: subscriptionUpdate.plan_status,
       timestamp: new Date().toISOString()
     }
   };
@@ -141,9 +168,9 @@ async function updateUserPlan(customerId: string, plan: string, subscriptionId?:
     .insert(notificationData);
   
   if (notificationError) {
-    console.error('Failed to send notification:', notificationError);
+    console.error('❌ Failed to send real-time notification:', notificationError);
   } else {
-    console.log(`Sent real-time notification to user ${targetUserId} for plan change to ${plan}`);
+    console.log(`📢 Sent real-time notification to user ${targetUserId} for plan change to ${plan}`);
   }
 }
 
@@ -165,7 +192,7 @@ serve(async (req) => {
     const webhookSecret = getWebhookSecret(event.type);
     
     if (!webhookSecret) {
-      console.log(`No webhook secret configured for event type: ${event.type}`);
+      console.log(`⚠️ No webhook secret configured for event type: ${event.type}`);
       return new Response('Event type not configured', { status: 200 });
     }
 
@@ -174,11 +201,11 @@ serve(async (req) => {
     try {
       verifiedEvent = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
-      console.error('Webhook signature verification failed:', err);
+      console.error('❌ Webhook signature verification failed:', err);
       return new Response('Webhook signature verification failed', { status: 400 });
     }
 
-    console.log(`Processing webhook event: ${verifiedEvent.type}`);
+    console.log(`🎯 Processing webhook event: ${verifiedEvent.type}`);
 
     // Handle different event types
     switch (verifiedEvent.type) {
@@ -191,7 +218,7 @@ serve(async (req) => {
         if (priceId) {
           const price = await stripe.prices.retrieve(priceId);
           const plan = getPlanFromAmount(price.unit_amount || 0);
-          await updateUserPlan(customerId, plan, subscription.id, priceId);
+          await updateUserSubscription(customerId, plan, subscription.id, priceId);
         }
         break;
       }
@@ -199,7 +226,8 @@ serve(async (req) => {
       case 'customer.subscription.deleted': {
         const subscription = verifiedEvent.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
-        await updateUserPlan(customerId, 'free');
+        const priceId = subscription.items.data[0]?.price.id;
+        await updateUserSubscription(customerId, 'free', subscription.id, priceId);
         break;
       }
 
@@ -215,7 +243,7 @@ serve(async (req) => {
           if (priceId) {
             const price = await stripe.prices.retrieve(priceId);
             const plan = getPlanFromAmount(price.unit_amount || 0);
-            await updateUserPlan(customerId, plan, subscription.id, priceId);
+            await updateUserSubscription(customerId, plan, subscription.id, priceId);
           }
         }
         break;
@@ -225,7 +253,7 @@ serve(async (req) => {
         const invoice = verifiedEvent.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
         // Downgrade to free plan on payment failure
-        await updateUserPlan(customerId, 'free');
+        await updateUserSubscription(customerId, 'free');
         break;
       }
 
@@ -240,14 +268,14 @@ serve(async (req) => {
           if (priceId) {
             const price = await stripe.prices.retrieve(priceId);
             const plan = getPlanFromAmount(price.unit_amount || 0);
-            await updateUserPlan(customerId, plan, subscription.id, priceId);
+            await updateUserSubscription(customerId, plan, subscription.id, priceId);
           }
         }
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${verifiedEvent.type}`);
+        console.log(`⚠️ Unhandled event type: ${verifiedEvent.type}`);
     }
 
     return new Response('Webhook processed successfully', { 
@@ -256,7 +284,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    console.error('❌ Webhook processing error:', error);
     return new Response(`Webhook error: ${error.message}`, { 
       status: 500,
       headers: corsHeaders 

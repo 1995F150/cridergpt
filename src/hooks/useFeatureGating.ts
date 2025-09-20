@@ -39,18 +39,35 @@ export function useFeatureGating() {
     if (!user) return;
 
     try {
-      // Get user's current plan from new user_subscriptions table
-      const { data: subscriptionData } = await supabase
+      console.log(`🔍 Fetching plan data for user: ${user.id}`);
+      
+      // Get user's current plan from user_subscriptions table (primary source)
+      const { data: subscriptionData, error: subscriptionError } = await supabase
         .from('user_subscriptions')
-        .select('plan_name, plan_status')
+        .select('plan_name, plan_status, subscription_end_date, stripe_subscription_id')
         .eq('user_id', user.id)
         .single();
 
-      const plan = subscriptionData?.plan_name || 'free';
-      console.log(`📊 Current user plan: ${plan} for user ${user.id} (status: ${subscriptionData?.plan_status})`);
+      let plan = 'free';
+      if (subscriptionData && !subscriptionError) {
+        plan = subscriptionData.plan_name;
+        console.log(`📋 Found subscription: plan=${plan}, status=${subscriptionData.plan_status}`);
+      } else {
+        // Fallback to ai_usage table for backward compatibility
+        const { data: usageData } = await supabase
+          .from('ai_usage')
+          .select('user_plan')
+          .eq('user_id', user.id)
+          .single();
+        
+        plan = usageData?.user_plan || 'free';
+        console.log(`📋 Fallback to ai_usage: plan=${plan}`);
+      }
+
+      console.log(`📊 Current user plan: ${plan} for user ${user.id}`);
       setCurrentPlan(plan);
 
-      // Get plan limits
+      // Get plan limits from configuration
       const { data: planConfig } = await supabase
         .from('plan_configurations')
         .select('limits')
@@ -59,6 +76,7 @@ export function useFeatureGating() {
 
       if (planConfig?.limits) {
         setPlanLimits(planConfig.limits as any);
+        console.log(`⚙️ Loaded plan limits for ${plan}:`, planConfig.limits);
       }
 
       // Get usage data from ai_usage table
@@ -85,7 +103,7 @@ export function useFeatureGating() {
       });
 
     } catch (error) {
-      console.error('Error fetching plan data:', error);
+      console.error('❌ Error fetching plan data:', error);
     } finally {
       setLoading(false);
     }
@@ -94,6 +112,8 @@ export function useFeatureGating() {
   // Listen for real-time plan updates via notifications
   useEffect(() => {
     if (!user) return;
+
+    console.log(`👂 Setting up real-time subscription listener for user ${user.id}`);
 
     const subscription = supabase
       .channel('plan_updates')
@@ -107,6 +127,7 @@ export function useFeatureGating() {
         (payload) => {
           console.log('📢 Received plan update notification:', payload);
           if (payload.new.notification_type === 'subscription_updated') {
+            console.log('🔄 Refreshing plan data due to subscription update');
             // Refresh the plan data immediately
             fetchUserPlanAndUsage();
           }
@@ -115,6 +136,7 @@ export function useFeatureGating() {
       .subscribe();
 
     return () => {
+      console.log('🛑 Unsubscribing from plan updates');
       subscription.unsubscribe();
     };
   }, [user]);
@@ -211,7 +233,7 @@ export function useFeatureGating() {
     switch (currentPlan) {
       case 'plus':
       case 'plu':
-        return 'CriderGPT Plu';
+        return 'CriderGPT Plus';
       case 'pro':
         return 'CriderGPT Pro';
       default:

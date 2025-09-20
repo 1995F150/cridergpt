@@ -43,9 +43,9 @@ serve(async (req) => {
       throw new Error('Invalid plan. Must be: free, plus, or pro');
     }
 
-    console.log(`Manually updating plan for user ${user.id} (${user.email}) to: ${plan}`);
+    console.log(`🔧 Manually updating plan for user ${user.id} (${user.email}) to: ${plan}`);
 
-    // Update the user_subscriptions table with correct user_id and email
+    // Update the user_subscriptions table (primary source)
     const { error: subscriptionError } = await supabase
       .from('user_subscriptions')
       .upsert({
@@ -54,23 +54,30 @@ serve(async (req) => {
         plan_name: plan,
         plan_status: 'active',
         subscription_start_date: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        metadata: {
+          manual_update: true,
+          updated_by: 'manual_fix_function',
+          timestamp: new Date().toISOString()
+        }
       }, { 
         onConflict: 'user_id',
         ignoreDuplicates: false 
       });
 
     if (subscriptionError) {
-      console.error('Failed to update user subscription:', subscriptionError);
+      console.error('❌ Failed to update user subscription:', subscriptionError);
       throw new Error(`Failed to update subscription: ${subscriptionError.message}`);
     }
 
-    // Also update ai_usage table for backward compatibility
-    const { error: usageError } = await supabase
+    console.log(`✅ Updated user_subscriptions table for user ${user.id}`);
+
+    // Also update the ai_usage table for backward compatibility
+    const { error: updateError } = await supabase
       .from('ai_usage')
       .upsert({
         user_id: user.id,
-        email: user.email,
+        email: user.email, // Store actual email, not UUID
         user_plan: plan,
         updated_at: new Date().toISOString()
       }, { 
@@ -78,8 +85,10 @@ serve(async (req) => {
         ignoreDuplicates: false 
       });
 
-    if (usageError) {
-      console.log('Warning: Failed to update ai_usage (non-critical):', usageError);
+    if (updateError) {
+      console.error('⚠️ Failed to update ai_usage (non-critical):', updateError);
+    } else {
+      console.log(`✅ Updated ai_usage table for backward compatibility`);
     }
 
     // Send notification for real-time update
@@ -96,23 +105,26 @@ serve(async (req) => {
       });
 
     if (notificationError) {
-      console.error('Failed to send notification:', notificationError);
+      console.error('⚠️ Failed to send notification:', notificationError);
+    } else {
+      console.log(`📢 Sent real-time notification for plan update`);
     }
 
-    console.log(`Successfully updated plan for ${user.email} to ${plan}`);
+    console.log(`🎉 Successfully updated plan for ${user.email} to ${plan}`);
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: `Plan updated to ${plan} for ${user.email}`,
       user_id: user.id,
-      new_plan: plan
+      new_plan: plan,
+      updated_tables: ['user_subscriptions', 'ai_usage']
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
 
   } catch (error) {
-    console.error("Manual plan fix error:", error);
+    console.error("❌ Manual plan fix error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
