@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { RadioIcon, Volume2, VolumeX, Play, Square, Signal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 const CB_CHANNELS = [
   { channel: 1, freq: "26.965" },
@@ -117,9 +118,14 @@ export function RadioPanel() {
   const [fmFrequency, setFmFrequency] = useState<number[]>([94.9]);
   const [currentFMStation, setCurrentFMStation] = useState<any>(null);
   const [isStatic, setIsStatic] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const staticRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+  const { handleError, handleAsyncError } = useErrorHandler({ 
+    component: 'RadioPanel',
+    showToast: true 
+  });
 
   useEffect(() => {
     const selectedChannel = CB_CHANNELS.find(ch => ch.channel === selectedCBChannel);
@@ -174,36 +180,61 @@ export function RadioPanel() {
   };
 
   const handlePlay = async () => {
-    if (!currentFMStation) return;
+    if (!currentFMStation) {
+      toast({
+        title: "📻 No Station Selected",
+        description: "Please tune to a station first",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
+      // Stop any existing audio
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.src = '';
         audioRef.current = null;
       }
 
-      // Create new audio element with the station's URL
+      // Create new audio element
       audioRef.current = new Audio();
       audioRef.current.src = currentFMStation.url;
       audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
       audioRef.current.crossOrigin = "anonymous";
       
-      // Add error handling
+      // Enhanced error handling
       audioRef.current.onerror = (e) => {
-        console.error("Audio error:", e);
-        // Try alternative working streams based on format
+        console.error("Audio stream error:", e);
+        setIsPlaying(false);
+        
+        // Try alternative streams
         const altStreams = getAlternativeStreams(currentFMStation.format);
         if (altStreams.length > 0) {
-          const randomStream = altStreams[Math.floor(Math.random() * altStreams.length)];
-          audioRef.current!.src = randomStream;
-          audioRef.current!.play().catch(() => {
-            toast({
-              title: "📻 Stream Error",
-              description: `Unable to play ${currentFMStation.name} - trying alternative stream`,
-              variant: "destructive"
-            });
+          tryAlternativeStreams(altStreams, 0);
+        } else {
+          toast({
+            title: "📻 Stream Unavailable",
+            description: `${currentFMStation.name} stream is currently offline`,
+            variant: "destructive"
           });
         }
+      };
+
+      // Handle loading states
+      audioRef.current.onloadstart = () => {
+        toast({
+          title: "📻 Connecting...",
+          description: `Connecting to ${currentFMStation.name}`,
+        });
+      };
+
+      audioRef.current.oncanplay = () => {
+        toast({
+          title: "🎵 Connected",
+          description: `Ready to play ${currentFMStation.name}`,
+        });
       };
       
       await audioRef.current.play();
@@ -216,69 +247,92 @@ export function RadioPanel() {
       
     } catch (error) {
       console.error("Audio playback failed:", error);
-      // Automatically try alternative streams for country music
+      setIsPlaying(false);
+      
+      // Try alternative streams automatically
       const altStreams = getAlternativeStreams(currentFMStation.format);
-      let streamWorked = false;
-      
-      for (let i = 0; i < altStreams.length && !streamWorked; i++) {
-        try {
-          audioRef.current = new Audio();
-          audioRef.current.src = altStreams[i];
-          audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
-          audioRef.current.crossOrigin = "anonymous";
-          
-          await audioRef.current.play();
-          setIsPlaying(true);
-          streamWorked = true;
-          
-          toast({
-            title: "🎵 Star Country Playing",
-            description: `Connected to backup stream - ${currentFMStation.format} music now playing`,
-          });
-        } catch (altError) {
-          console.error(`Alternative stream ${i + 1} failed:`, altError);
-        }
-      }
-      
-      if (!streamWorked) {
+      if (altStreams.length > 0) {
+        tryAlternativeStreams(altStreams, 0);
+      } else {
         toast({
-          title: "📻 All Streams Offline",
-          description: `${currentFMStation.name} and backup streams are currently unavailable. Please try another station.`,
+          title: "📻 Playback Failed",
+          description: `Unable to play ${currentFMStation.name}. This may be due to browser restrictions or stream availability.`,
           variant: "destructive"
         });
       }
     }
   };
 
+  const tryAlternativeStreams = async (streams: string[], index: number) => {
+    if (index >= streams.length) {
+      toast({
+        title: "📻 All Streams Offline",
+        description: `${currentFMStation?.name} and backup streams are currently unavailable.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      audioRef.current = new Audio();
+      audioRef.current.src = streams[index];
+      audioRef.current.volume = (isMuted ? 0 : volume[0]) / 100;
+      audioRef.current.crossOrigin = "anonymous";
+      
+      audioRef.current.onerror = () => {
+        // Try next stream
+        tryAlternativeStreams(streams, index + 1);
+      };
+      
+      await audioRef.current.play();
+      setIsPlaying(true);
+      
+      toast({
+        title: "🎵 Connected to Backup Stream",
+        description: `Playing alternative ${currentFMStation?.format} stream`,
+      });
+      
+    } catch (error) {
+      console.error(`Alternative stream ${index + 1} failed:`, error);
+      // Try next stream
+      tryAlternativeStreams(streams, index + 1);
+    }
+  };
+
   const getAlternativeStreams = (format: string) => {
     const alternatives: Record<string, string[]> = {
       "Country": [
-        "https://live.wostreaming.net/direct/townsquaremedia-wbrfhdfm-ibc2", // Actual WBRF
-        "https://streaming.live365.com/a12345", // Live country stream
-        "https://ais-sa3.cdnstream1.com/2594_128.aac", // Country radio
-        "https://streaming.shoutcast.com/CountryRadio" // Backup country
+        "https://ice1.securenetsystems.net/WBRF", // Primary WBRF stream
+        "https://stream.rcast.net/67890", // Backup country stream 1
+        "https://stream.rcast.net/12345", // Backup country stream 2
+        "https://live.wostreaming.net/country" // Alternative country
       ],
       "Bluegrass": [
-        "https://streaming.live365.com/a87415",
-        "https://ais-sa3.cdnstream1.com/2345_128.aac"
+        "https://stream.rcast.net/5022",
+        "https://stream.rcast.net/70401"
       ],
       "NPR / News": [
         "https://wvtf.streamguys1.com/wvtf",
         "https://npr-ice.streamguys1.com/live"
       ],
       "Gospel": [
-        "https://streaming.live365.com/a16077",
-        "https://ais-sa3.cdnstream1.com/1234_128.aac"
+        "https://stream.rcast.net/236488",
+        "https://stream.rcast.net/gospel"
       ],
       "Southern Gospel": [
-        "https://streaming.live365.com/a16077"
+        "https://stream.rcast.net/14289"
       ],
       "Contemporary Christian": [
-        "https://streaming.live365.com/a74125"
+        "https://stream.rcast.net/8156"
       ],
       "Top 40": [
-        "https://streaming.live365.com/a01234",
-        "https://ais-sa3.cdnstream1.com/5678_128.aac"
+        "https://stream.rcast.net/14578",
+        "https://stream.rcast.net/top40"
       ]
     };
     return alternatives[format] || [];

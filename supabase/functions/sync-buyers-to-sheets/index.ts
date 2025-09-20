@@ -48,11 +48,35 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   
-  // Create signature
+  // Create signature - fix private key format issue
   const textToSign = `${encodedHeader}.${encodedPayload}`;
+  
+  // Properly format the private key
+  let privateKeyPem = serviceAccount.private_key;
+  if (!privateKeyPem.includes('-----BEGIN PRIVATE KEY-----')) {
+    // Handle base64 encoded keys
+    privateKeyPem = `-----BEGIN PRIVATE KEY-----\n${privateKeyPem}\n-----END PRIVATE KEY-----`;
+  }
+  
+  // Clean up the PEM formatting
+  privateKeyPem = privateKeyPem
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .replace(/\n+/g, '\n')
+    .trim();
+  
+  // Convert PEM to DER format for WebCrypto
+  const pemLines = privateKeyPem.split('\n');
+  const keyData = pemLines
+    .filter(line => !line.includes('-----'))
+    .join('')
+    .replace(/\s/g, '');
+  
+  const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+  
   const privateKey = await crypto.subtle.importKey(
     'pkcs8',
-    new TextEncoder().encode(serviceAccount.private_key.replace(/\\n/g, '\n')),
+    binaryKey,
     {
       name: 'RSASSA-PKCS1-v1_5',
       hash: 'SHA-256'
