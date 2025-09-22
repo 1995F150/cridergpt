@@ -18,6 +18,11 @@ import { AgricultureCalculator } from "@/components/FFA/AgricultureCalculator";
 import { FFARecordBook } from "@/components/FFA/FFARecordBook";
 import { CropPlanner } from "@/components/FFA/CropPlanner";
 import { LivestockTracker } from "@/components/FFA/LivestockTracker";
+import { SoilHealthCalculator } from "@/components/agriculture/SoilHealthCalculator";
+import { PesticideCalculator } from "@/components/agriculture/PesticideCalculator";
+import { IrrigationPlanner } from "@/components/agriculture/IrrigationPlanner";
+import { LivestockRationCalculator } from "@/components/agriculture/LivestockRationCalculator";
+import { EquipmentTracker } from "@/components/agriculture/EquipmentTracker";
 
 export function FFAPanel() {
   return (
@@ -49,7 +54,7 @@ export function FFAPanel() {
 
       <div className="p-6">
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6 bg-ffa-sky/10">
+          <TabsList className="grid w-full grid-cols-7 bg-ffa-sky/10">
             <TabsTrigger value="dashboard" className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               Dashboard
@@ -65,6 +70,10 @@ export function FFAPanel() {
             <TabsTrigger value="calculator" className="flex items-center gap-1">
               <Calculator className="h-4 w-4" />
               Calculators
+            </TabsTrigger>
+            <TabsTrigger value="precision" className="flex items-center gap-1">
+              <Trophy className="h-4 w-4" />
+              Precision Ag
             </TabsTrigger>
             <TabsTrigger value="records" className="flex items-center gap-1">
               <BookOpen className="h-4 w-4" />
@@ -90,6 +99,16 @@ export function FFAPanel() {
 
           <TabsContent value="calculator">
             <AgricultureCalculator />
+          </TabsContent>
+
+          <TabsContent value="precision" className="space-y-4">
+            <div className="grid grid-cols-1 gap-6">
+              <SoilHealthCalculator />
+              <PesticideCalculator />
+              <IrrigationPlanner />
+              <LivestockRationCalculator />
+              <EquipmentTracker />
+            </div>
           </TabsContent>
 
           <TabsContent value="records">
