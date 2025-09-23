@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useCalculatorTracking } from "@/hooks/useCalculatorTracking";
+import { useTrainingInputs } from "@/hooks/useTrainingInputs";
 import { 
   Beaker, 
   TrendingUp, 
@@ -24,16 +26,22 @@ export function SoilHealthCalculator() {
   });
 
   const [recommendations, setRecommendations] = useState<any>(null);
+  
+  const { executeCalculation, isChecking } = useCalculatorTracking({
+    calculatorType: 'soil_health'
+  });
+  const { trainingInputs } = useTrainingInputs('soil_health');
 
-  const analyzeSoil = () => {
-    const pH = parseFloat(soilData.pH);
-    const N = parseFloat(soilData.nitrogen);
-    const P = parseFloat(soilData.phosphorus);
-    const K = parseFloat(soilData.potassium);
-    const OM = parseFloat(soilData.organicMatter);
-    const acres = parseFloat(soilData.acres);
+  const analyzeSoil = async () => {
+    const calculation = () => {
+      const pH = parseFloat(soilData.pH);
+      const N = parseFloat(soilData.nitrogen);
+      const P = parseFloat(soilData.phosphorus);
+      const K = parseFloat(soilData.potassium);
+      const OM = parseFloat(soilData.organicMatter);
+      const acres = parseFloat(soilData.acres);
 
-    if (!pH || !N || !P || !K || !acres) return;
+      if (!pH || !N || !P || !K || !acres) return null;
 
     // pH Recommendations
     let pHRecommendation = "";
@@ -55,25 +63,35 @@ export function SoilHealthCalculator() {
     // Organic Matter
     const omRecommendation = OM < 3 ? "Low organic matter. Consider cover crops or compost addition." : "Good organic matter levels.";
 
-    // Overall soil health score
-    let score = 0;
-    if (pH >= 6.0 && pH <= 7.5) score += 25;
-    if (N >= 20) score += 25;
-    if (P >= 30) score += 25;
-    if (K >= 150) score += 25;
+      // Overall soil health score
+      let score = 0;
+      if (pH >= 6.0 && pH <= 7.5) score += 25;
+      if (N >= 20) score += 25;
+      if (P >= 30) score += 25;
+      if (K >= 150) score += 25;
 
-    setRecommendations({
-      score,
-      pH: pHRecommendation,
-      nitrogen: nRecommendation,
-      phosphorus: pRecommendation,
-      potassium: kRecommendation,
-      organicMatter: omRecommendation,
-      limeNeeded,
-      totalFertilizerCost: ((N < 20 ? (30 - N) * acres * 0.50 : 0) + 
-                           (P < 30 ? (40 - P) * acres * 0.80 : 0) + 
-                           (K < 150 ? (200 - K) * acres * 0.40 : 0))
-    });
+      return {
+        score,
+        pH: pHRecommendation,
+        nitrogen: nRecommendation,
+        phosphorus: pRecommendation,
+        potassium: kRecommendation,
+        organicMatter: omRecommendation,
+        limeNeeded,
+        totalFertilizerCost: ((N < 20 ? (30 - N) * acres * 0.50 : 0) + 
+                             (P < 30 ? (40 - P) * acres * 0.80 : 0) + 
+                             (K < 150 ? (200 - K) * acres * 0.40 : 0)),
+        trainingContext: trainingInputs.filter(input => 
+          input.content.toLowerCase().includes('soil') ||
+          input.content.toLowerCase().includes('fertilizer')
+        ).slice(0, 3)
+      };
+    };
+
+    const result = await executeCalculation(soilData, calculation);
+    if (result) {
+      setRecommendations(result);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -161,9 +179,13 @@ export function SoilHealthCalculator() {
             </div>
           </div>
 
-          <Button onClick={analyzeSoil} className="w-full bg-ffa-harvest hover:bg-ffa-gold text-white">
+          <Button 
+            onClick={analyzeSoil} 
+            className="w-full bg-ffa-harvest hover:bg-ffa-gold text-white"
+            disabled={isChecking}
+          >
             <TrendingUp className="h-4 w-4 mr-2" />
-            Analyze Soil Health
+            {isChecking ? 'Checking Limits...' : 'Analyze Soil Health'}
           </Button>
 
           {recommendations && (
