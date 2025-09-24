@@ -744,6 +744,39 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          last_used_at: string | null
+          max_messages: number | null
+          messages_sent: number | null
+          session_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_used_at?: string | null
+          max_messages?: number | null
+          messages_sent?: number | null
+          session_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_used_at?: string | null
+          max_messages?: number | null
+          messages_sent?: number | null
+          session_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       direct_conversations: {
         Row: {
           created_at: string
@@ -1114,6 +1147,36 @@ export type Database = {
           },
         ]
       }
+      lifetime_plan_config: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          lifetime_plan_count: number | null
+          max_lifetime_buyers: number | null
+          promotion_end_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          lifetime_plan_count?: number | null
+          max_lifetime_buyers?: number | null
+          promotion_end_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          lifetime_plan_count?: number | null
+          max_lifetime_buyers?: number | null
+          promotion_end_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       memories: {
         Row: {
           created_at: string
@@ -1231,6 +1294,7 @@ export type Database = {
           features: Json
           id: string
           is_active: boolean
+          lifetime_access: boolean | null
           limits: Json
           plan_display_name: string
           plan_name: string
@@ -1244,6 +1308,7 @@ export type Database = {
           features?: Json
           id?: string
           is_active?: boolean
+          lifetime_access?: boolean | null
           limits?: Json
           plan_display_name: string
           plan_name: string
@@ -1257,6 +1322,7 @@ export type Database = {
           features?: Json
           id?: string
           is_active?: boolean
+          lifetime_access?: boolean | null
           limits?: Json
           plan_display_name?: string
           plan_name?: string

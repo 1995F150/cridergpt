@@ -73,13 +73,38 @@ export function useAILearning() {
     }
   }, [user]);
 
+  const generateDemoResponse = async (input: string): Promise<string> => {
+    try {
+      // For demo users, use the demo chat edge function
+      const sessionId = localStorage.getItem('cridergpt_demo_session') || 
+        'demo_' + Math.random().toString(36).substr(2, 9);
+      
+      if (!localStorage.getItem('cridergpt_demo_session')) {
+        localStorage.setItem('cridergpt_demo_session', sessionId);
+      }
+
+      const { data, error } = await supabase.functions.invoke('demo-chat', {
+        body: { message: input, sessionId }
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.message);
+
+      return data.response;
+    } catch (error) {
+      console.error('Demo response error:', error);
+      throw new Error(error.message || 'Failed to generate demo response');
+    }
+  };
+
   const generateSmartResponse = useCallback(async (
     input: string,
     selectedModel: string = 'gpt-4o-mini',
     category?: string
   ): Promise<string> => {
+    // Handle demo mode for non-authenticated users
     if (!user) {
-      throw new Error('User must be authenticated');
+      return generateDemoResponse(input);
     }
 
     setIsLoading(true);

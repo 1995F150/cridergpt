@@ -28,8 +28,8 @@ serve(async (req) => {
     }
     logStep("Stripe key verified");
 
-    const { priceId } = await req.json();
-    logStep("Request body parsed", { priceId });
+    const { priceId, planName } = await req.json();
+    logStep("Request body parsed", { priceId, planName });
     
     if (!priceId) {
       logStep("ERROR: Price ID is required");
@@ -42,12 +42,49 @@ serve(async (req) => {
     });
     logStep("Stripe client initialized");
 
-    // Get authenticated user
+    // Initialize Supabase client for database operations
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
-    logStep("Supabase client initialized");
+
+    // Check lifetime plan availability if this is a lifetime purchase
+    if (planName === 'lifetime') {
+      const { data: lifetimeConfig, error: configError } = await supabaseClient
+        .from('lifetime_plan_config')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+
+      if (configError || !lifetimeConfig) {
+        logStep("ERROR: Could not fetch lifetime plan config");
+        throw new Error("Lifetime plan configuration not found");
+      }
+
+      if (lifetimeConfig.lifetime_plan_count >= lifetimeConfig.max_lifetime_buyers) {
+        logStep("ERROR: Lifetime plan sold out", { 
+          current: lifetimeConfig.lifetime_plan_count, 
+          max: lifetimeConfig.max_lifetime_buyers 
+        });
+        throw new Error("Lifetime Founder Plan is sold out. Thanks to our 35 early supporters!");
+      }
+
+      if (lifetimeConfig.promotion_end_date) {
+        const endDate = new Date(lifetimeConfig.promotion_end_date);
+        const now = new Date();
+        if (now > endDate) {
+          logStep("ERROR: Lifetime plan promotion ended");
+          throw new Error("Lifetime Founder Plan promotion has ended");
+        }
+      }
+
+      logStep("Lifetime plan availability confirmed", {
+        slots_remaining: lifetimeConfig.max_lifetime_buyers - lifetimeConfig.lifetime_plan_count
+      });
+    }
+
+    // Get authenticated user
+    logStep("Authenticating user");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -106,6 +143,7 @@ serve(async (req) => {
       cancel_url: `${origin}/`,
       metadata: {
         userId: user.id,
+        planName: planName || 'unknown',
       },
       allow_promotion_codes: true,
       billing_address_collection: "auto",

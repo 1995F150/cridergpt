@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, Brain, BookOpen, HelpCircle } from "lucide-react";
-import OpenAIChat from "@/components/OpenAIChat";
+import DemoAwareOpenAIChat from "@/components/DemoAwareOpenAIChat";
 import { KnowledgeViewer } from "@/components/KnowledgeViewer";
 import { TrainingDataManager } from "@/components/TrainingDataManager";
 
@@ -38,7 +38,7 @@ export default function ChatPanel() {
           </TabsList>
           
           <TabsContent value="chat" className="h-full mt-4">
-            <OpenAIChat />
+            <DemoAwareOpenAIChat />
           </TabsContent>
           
           <TabsContent value="help" className="h-full mt-4">
