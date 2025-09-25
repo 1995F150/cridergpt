@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-const SYSTEM_PROMPT = (userEmail) => `
+const SYSTEM_PROMPT = (userEmail: string) => `
   You are CriderGPT, a next-gen AI assistant built by Jessie Crider from Southwest Virginia. 
 
   ${userEmail === 'jessiecrider3@gmail.com' ? 
@@ -140,7 +140,7 @@ serve(async (req) => {
 
     // Check token limits based on user plan
     const userPlan = usage.user_plan || 'free';
-    const tokenLimit = TOKEN_LIMITS[userPlan] || TOKEN_LIMITS.free;
+    const tokenLimit = TOKEN_LIMITS[userPlan as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
     
     console.log(`User plan: ${userPlan}, Used: ${usage.tokens_used}, Limit: ${tokenLimit}`);
 
@@ -168,7 +168,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT(userEmail) },
+          { role: 'system', content: SYSTEM_PROMPT(userEmail || 'anonymous') },
           { role: 'user', content: message }
         ],
         max_tokens: 1000,
@@ -212,7 +212,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in chat-with-ai function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -90,7 +90,7 @@ This personal journey drives my commitment to creating technology that serves re
   } catch (error) {
     console.error('Error in add-training-data function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: (error as Error).message,
       success: false 
     }), {
       status: 500,
