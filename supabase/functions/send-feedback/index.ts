@@ -47,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
           </p>
         </div>
       `,
-      replyTo: userEmail,
+      reply_to: userEmail,
     });
 
     console.log("Feedback email sent successfully:", emailResponse);

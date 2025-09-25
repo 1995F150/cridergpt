@@ -107,7 +107,7 @@ serve(async (req) => {
 
     // Check token limits based on user plan
     const userPlan = usage.user_plan || 'free';
-    const tokenLimit = TOKEN_LIMITS[userPlan] || TOKEN_LIMITS.free;
+    const tokenLimit = TOKEN_LIMITS[userPlan as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
     
     console.log(`User plan: ${userPlan}, Used: ${usage.tokens_used}, Limit: ${tokenLimit}`);
 

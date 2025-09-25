@@ -360,7 +360,7 @@ async function autoUnstuckUsers(supabase: any, issue: any) {
         .from('ai_usage')
         .update({ 
           tokens_used: 0,
-          last_reset: new Date().toDate()
+          last_reset: new Date()
         })
         .eq('user_id', user.user_id);
         
