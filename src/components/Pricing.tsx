@@ -18,7 +18,7 @@ const Pricing = () => {
   const priceIdMap: Record<string, string> = {
     'plus': 'price_1QWi0fIJp5CmkQf3fE8NSFZE',
     'pro': 'price_1QWi1AIJp5CmkQf3Y8wQEP2V',
-    'lifetime': 'price_lifetime_founder_plan' // Replace with actual Stripe price ID
+    'lifetime': 'price_1SAGoNP90uC07RqGhogvN43V'
   };
 
   const handlePlanSelect = async (planName: string) => {
@@ -149,9 +149,16 @@ const Pricing = () => {
                     ${plan.price_monthly}
                   </span>
                   <span className="text-muted-foreground ml-1">
-                    {plan.plan_name === 'lifetime' ? 'once' : '/month'}
+                    {plan.plan_name === 'lifetime' ? 'one-time' : '/month'}
                   </span>
                 </div>
+                
+                {/* Lifetime plan one-time payment subtitle */}
+                {plan.plan_name === 'lifetime' && (
+                  <p className="text-sm text-yellow-600/80 text-center mt-1">
+                    One-Time Payment – No Renewal Fees
+                  </p>
+                )}
                 
                 {/* Lifetime plan special messaging */}
                 {plan.plan_name === 'lifetime' && isLifetimeAvailable() && (

@@ -130,7 +130,7 @@ serve(async (req) => {
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
+      mode: planName === 'lifetime' ? "payment" : "subscription",
       line_items: [
         {
           price: priceId,
