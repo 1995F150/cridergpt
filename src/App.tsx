@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Success from "./pages/Success";
+import Cancel from "./pages/Cancel";
 import SystemDiagnostics from "./pages/SystemDiagnostics";
 import TTSPolicyPage from "./pages/TTSPolicyPage";
 import UserAgreement from "./pages/UserAgreement";
@@ -47,7 +48,8 @@ const App = () => {
                 <Routes>
                   {/* Public routes */}
                   <Route path="/auth" element={<Auth />} />
-                  <Route path="/success" element={<Success />} />  
+                  <Route path="/success" element={<Success />} />
+                  <Route path="/cancel" element={<Cancel />} />
                   <Route path="/upgrade" element={<Navigate to="/" replace />} />
                   <Route path="/pricing" element={<Navigate to="/" replace />} />
                   <Route path="/payment" element={<Navigate to="/" replace />} />
@@ -55,15 +57,8 @@ const App = () => {
                   <Route path="/tts-policy" element={<TTSPolicyPage />} />
                   <Route path="/user-agreement" element={<UserAgreement />} />
                   
-                  {/* Protected routes */}
-                  <Route 
-                    path="/" 
-                    element={
-                      <ProtectedRoute>
-                        <Index />
-                      </ProtectedRoute>
-                    } 
-                  />
+                  {/* Home route - now public, handles guest and authenticated users */}
+                  <Route path="/" element={<Index />} />
                   
                   {/* Catch all route */}
                   <Route path="*" element={<NotFound />} />
