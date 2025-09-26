@@ -78,7 +78,7 @@ async function checkUserProblems(supabase: any) {
       type: 'user_monitoring',
       severity: 'critical',
       description: 'Failed to monitor user problems',
-      error: error.message
+      error: (error as Error).message
     });
   }
 
@@ -402,7 +402,7 @@ async function autoFixUploadIssues(supabase: any, issue: any) {
     return {
       type: 'upload_issues',
       action: 'fix_failed',
-      result: { error: error.message }
+      result: { error: (error as Error).message }
     };
   }
 }

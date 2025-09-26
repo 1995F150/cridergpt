@@ -68,7 +68,7 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   // Convert PEM to DER format for WebCrypto
   const pemLines = privateKeyPem.split('\n');
   const keyData = pemLines
-    .filter(line => !line.includes('-----'))
+    .filter((line: string) => !line.includes('-----'))
     .join('')
     .replace(/\s/g, '');
   
@@ -312,13 +312,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in sync-buyers-to-sheets function:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('Stack trace:', (error as Error).stack);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Unknown error occurred',
-        details: error.stack
+        error: (error as Error).message || 'Unknown error occurred',
+        details: (error as Error).stack
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

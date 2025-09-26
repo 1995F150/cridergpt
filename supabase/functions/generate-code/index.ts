@@ -60,7 +60,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-code function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: (error as Error).message,
       reply: "// Error generating code. Please check the logs." 
     }), {
       status: 500,

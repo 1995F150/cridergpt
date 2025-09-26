@@ -78,8 +78,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in document-ai-analysis function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to analyze document',
-      details: error.toString()
+      error: (error as Error).message || 'Failed to analyze document',
+      details: (error as Error).toString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

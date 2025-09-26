@@ -285,7 +285,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Webhook processing error:', error);
-    return new Response(`Webhook error: ${error.message}`, { 
+    return new Response(`Webhook error: ${(error as Error).message}`, { 
       status: 500,
       headers: corsHeaders 
     });

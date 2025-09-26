@@ -19,7 +19,7 @@ interface AutonomousTask {
   timestamp: string;
 }
 
-serve(async (req) => {
+serve(async (req): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -44,10 +44,16 @@ serve(async (req) => {
         });
       
       case 'auto_fix_issues':
-        return await autoFixAuthIssues(supabase, openAIApiKey, data.issues);
+        const fixResult = await autoFixAuthIssues(supabase, openAIApiKey, data.issues);
+        return new Response(JSON.stringify(fixResult), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       
       case 'push_updates':
-        return await pushUpdates(supabase, openAIApiKey, data.updates);
+        const updateResult = await pushUpdates(supabase, openAIApiKey, data.updates);
+        return new Response(JSON.stringify(updateResult), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       
       case 'get_status':
         return await getAutonomousStatus(supabase);
@@ -246,7 +252,7 @@ async function checkSystemHealth(supabase: any) {
       type: 'monitoring',
       severity: 'critical',
       description: 'Failed to perform health check',
-      error: error.message
+      error: (error as Error).message
     });
   }
 
@@ -265,7 +271,7 @@ async function checkForErrors(supabase: any) {
       .gte('created_at', new Date(Date.now() - 1800000).toISOString());
 
     if (userUpdates) {
-      errors.push(...userUpdates.map(update => ({
+      errors.push(...userUpdates.map((update: any) => ({
         type: 'user_error',
         source: 'user_updates',
         description: update.description,
@@ -293,7 +299,7 @@ async function checkForErrors(supabase: any) {
     errors.push({
       type: 'error_check',
       description: 'Failed to check for errors',
-      error: error.message
+      error: (error as Error).message
     });
   }
 
@@ -318,7 +324,7 @@ async function checkPerformance(supabase: any) {
       .limit(100);
 
     if (apiRequests && apiRequests.length > 0) {
-      const avgResponseTime = apiRequests.reduce((sum, req) => sum + (req.response_time_ms || 0), 0) / apiRequests.length;
+      const avgResponseTime = apiRequests.reduce((sum: number, req: any) => sum + (req.response_time_ms || 0), 0) / apiRequests.length;
       metrics.responseTime = avgResponseTime;
     }
 
@@ -378,7 +384,7 @@ async function autoFixDetectedIssues(supabase: any, openAIApiKey: string, diagno
       fixes.push({
         type: issue.type,
         action: 'fix_failed',
-        result: { error: error.message }
+        result: { error: (error as Error).message }
       });
     }
   }
@@ -528,7 +534,7 @@ async function pushUpdates(supabase: any, openAIApiKey: string, updates: any) {
       console.error(`Failed to apply update ${update.type}:`, error);
       results.push({
         update: update.description,
-        result: { error: error.message },
+        result: { error: (error as Error).message },
         timestamp: new Date().toISOString()
       });
     }
@@ -675,7 +681,7 @@ async function checkUserProblems(supabase: any) {
       type: 'user_monitoring',
       severity: 'critical',
       description: 'Failed to monitor user problems',
-      error: error.message
+      error: (error as Error).message
     });
   }
 

@@ -74,7 +74,7 @@ serve(async (req) => {
       results.push({
         service: 'Supabase Database',
         status: 'error',
-        message: `Database connection failed: ${error.message}`,
+        message: `Database connection failed: ${(error as Error).message}`,
         timestamp: new Date().toISOString()
       });
       recommendations.push("Check Supabase connection and service role key");
@@ -143,7 +143,7 @@ serve(async (req) => {
         results.push({
           service: 'OpenAI API',
           status: 'error',
-          message: `OpenAI API test failed: ${error.message}`,
+          message: `OpenAI API test failed: ${(error as Error).message}`,
           timestamp: new Date().toISOString()
         });
         recommendations.push("Verify OpenAI API key validity and quota limits");
@@ -195,7 +195,7 @@ serve(async (req) => {
         results.push({
           service: 'Stripe API',
           status: 'error',
-          message: `Stripe API test failed: ${error.message}`,
+          message: `Stripe API test failed: ${(error as Error).message}`,
           timestamp: new Date().toISOString()
         });
         recommendations.push("Verify Stripe secret key and account status");
@@ -237,7 +237,7 @@ serve(async (req) => {
         results.push({
           service: 'ElevenLabs TTS',
           status: 'error',
-          message: `ElevenLabs API test failed: ${error.message}`,
+          message: `ElevenLabs API test failed: ${(error as Error).message}`,
           timestamp: new Date().toISOString()
         });
         recommendations.push("Verify ElevenLabs API key and account status");
@@ -302,7 +302,7 @@ serve(async (req) => {
       results.push({
         service: 'Usage Statistics',
         status: 'error',
-        message: `Failed to collect usage statistics: ${error.message}`,
+        message: `Failed to collect usage statistics: ${(error as Error).message}`,
         timestamp: new Date().toISOString()
       });
       recommendations.push("Check database permissions for usage statistics queries");
@@ -329,7 +329,7 @@ serve(async (req) => {
       results.push({
         service: 'Supabase Authentication',
         status: 'error',
-        message: `Authentication test failed: ${error.message}`,
+        message: `Authentication test failed: ${(error as Error).message}`,
         timestamp: new Date().toISOString()
       });
       recommendations.push("Check Supabase authentication configuration");
@@ -363,7 +363,7 @@ serve(async (req) => {
       results.push({
         service: 'Edge Functions',
         status: 'error',
-        message: `Edge function test failed: ${error.message}`,
+        message: `Edge function test failed: ${(error as Error).message}`,
         timestamp: new Date().toISOString()
       });
     }
@@ -406,7 +406,7 @@ serve(async (req) => {
     console.error("Critical error in system diagnostics:", error);
     return new Response(JSON.stringify({
       overallStatus: 'critical',
-      error: error.message,
+      error: (error as Error).message,
       timestamp: new Date().toISOString()
     }), {
       status: 500,

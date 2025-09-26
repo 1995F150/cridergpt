@@ -128,7 +128,7 @@ serve(async (req) => {
 
     // Check TTS limits based on user plan
     const userPlan = usage.user_plan || 'free';
-    const ttsLimit = TTS_LIMITS[userPlan] || TTS_LIMITS.free;
+    const ttsLimit = TTS_LIMITS[userPlan as keyof typeof TTS_LIMITS] || TTS_LIMITS.free;
     const currentTTSUsage = usage.tts_requests || 0;
     
     console.log(`User plan: ${userPlan}, TTS Used: ${currentTTSUsage}, TTS Limit: ${ttsLimit}`);
@@ -213,7 +213,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in text-to-speech function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

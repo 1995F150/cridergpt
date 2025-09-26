@@ -60,9 +60,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-ai-image function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to generate image',
-      details: error.toString()
+    return new Response(JSON.stringify({
+      error: (error as Error).message || 'Failed to generate image',
+      details: (error as Error).toString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
