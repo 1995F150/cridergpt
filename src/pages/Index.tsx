@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Head from 'next/head';  // ✅ Add this import
 import { NavigationSidebar } from '@/components/NavigationSidebar';
 import { Header } from '@/components/Header';
 import { SystemChecker } from '@/components/SystemChecker';
@@ -72,11 +71,6 @@ export default function Index() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* ✅ Add Head at the top of your return */}
-      <Head>
-        <meta name="google-site-verification" content="WWM_5GO3WCC5WiiKnusUfuzXHXTpaNsUr37OkZoc2ag" />
-      </Head>
-
       <NavigationSidebar
         activeTab={activePanel}
         onTabChange={handlePanelChange}
@@ -118,6 +112,7 @@ export default function Index() {
     </div>
   );
 }
+
 
 
 
