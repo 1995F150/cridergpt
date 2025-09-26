@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ProfileSheet } from "@/components/profile/ProfileSheet";
 import { ManualPlanFix } from "@/components/ManualPlanFix";
+import { FeatureToggles } from "@/components/FeatureToggles";
 
 export function ProfilePanel() {
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -13,6 +14,9 @@ export function ProfilePanel() {
           Manage your account settings, preferences, and view your usage statistics.
         </p>
       </div>
+      
+      {/* Feature Toggles */}
+      <FeatureToggles />
       
       {/* Manual Plan Fix Component */}
       <ManualPlanFix />

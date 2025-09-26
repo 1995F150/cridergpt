@@ -918,6 +918,66 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_settings: {
+        Row: {
+          created_at: string | null
+          harvest_helper_enabled: boolean | null
+          id: string
+          innovator_enabled: boolean | null
+          savannah_tone_enabled: boolean | null
+          tech_tillage_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          harvest_helper_enabled?: boolean | null
+          id?: string
+          innovator_enabled?: boolean | null
+          savannah_tone_enabled?: boolean | null
+          tech_tillage_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          harvest_helper_enabled?: boolean | null
+          id?: string
+          innovator_enabled?: boolean | null
+          savannah_tone_enabled?: boolean | null
+          tech_tillage_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      feature_usage: {
+        Row: {
+          created_at: string | null
+          feature_name: string
+          id: string
+          status: string
+          timestamp: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feature_name: string
+          id?: string
+          status: string
+          timestamp?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feature_name?: string
+          id?: string
+          status?: string
+          timestamp?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           calculator_record_id: string | null
@@ -1993,6 +2053,39 @@ export type Database = {
           subject?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_audit: {
+        Row: {
+          created_at: string | null
+          event_description: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          risk_level: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_description: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          risk_level?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_description?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          risk_level?: string | null
+          timestamp?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
