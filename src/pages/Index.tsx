@@ -26,6 +26,8 @@ import { AIImagePanel } from '@/components/panels/AIImagePanel';
 import { DocumentAIPanel } from '@/components/panels/DocumentAIPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
 import { AppConverterPanel } from '@/components/panels/AppConverterPanel';
+import { Footer } from '@/components/Footer';
+import FixxyBotTrigger from '@/components/FixxyBotTrigger';
 
 export type PanelType = 
   | 'chat' 
@@ -105,7 +107,9 @@ export default function Index() {
             {activePanel === 'app-converter' && <AppConverterPanel />}
           </div>
         </main>
+        <Footer />
       </div>
+      <FixxyBotTrigger />
     </div>
   );
 }
