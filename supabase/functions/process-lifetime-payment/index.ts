@@ -48,7 +48,7 @@ serve(async (req) => {
 
     console.log(`Processing lifetime payment for user ${userId}, email: ${userEmail}`);
 
-    // Update user's plan to lifetime
+    // Update user's plan to lifetime in ai_usage table
     const { error: usageError } = await supabase
       .from('ai_usage')
       .upsert({
@@ -65,7 +65,7 @@ serve(async (req) => {
       throw new Error(`Failed to update user plan: ${usageError.message}`);
     }
 
-    // Update profiles table
+    // Update profiles table for frontend display
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
@@ -80,6 +80,7 @@ serve(async (req) => {
 
     if (profileError) {
       console.error('Error updating profiles:', profileError);
+      // Don't throw error here, just log it
     }
 
     // Increment lifetime plan count
