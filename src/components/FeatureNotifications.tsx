@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Sparkles, MapPin, Zap, Users, ExternalLink } from "lucide-react";
+import { X, Sparkles, MapPin, Zap, Users, ExternalLink, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFeatureNotifications } from "@/hooks/useFeatureNotifications";
 import { useToast } from "@/hooks/use-toast";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 
 interface Notification {
   id: string;
@@ -24,11 +25,29 @@ export function FeatureNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const { getUpcomingEvents } = useCalendarEvents();
   
   // Subscribe to real-time notifications
   useFeatureNotifications();
 
   useEffect(() => {
+    // Get upcoming calendar events and convert to notifications
+    const upcomingEvents = getUpcomingEvents();
+    const eventNotifications: Notification[] = upcomingEvents.map(event => ({
+      id: `event-${event.id}`,
+      type: 'announcement' as const,
+      title: `Upcoming: ${event.title}`,
+      message: `${event.category} event starting soon at ${new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+      icon: CalendarIcon,
+      gradient: `bg-gradient-to-r ${
+        event.category === 'FFA' ? 'from-green-500 to-emerald-600' :
+        event.category === 'School' ? 'from-blue-500 to-cyan-600' :
+        event.category === 'Business' ? 'from-purple-500 to-violet-600' :
+        'from-pink-500 to-rose-600'
+      }`,
+      priority: 'high' as const,
+    }));
+
     // Static notifications for all users
     const staticNotifications: Notification[] = [
       {
@@ -72,7 +91,8 @@ export function FeatureNotifications() {
       }
     ];
 
-    setNotifications(staticNotifications);
+    // Combine event notifications with static notifications
+    setNotifications([...eventNotifications, ...staticNotifications]);
 
     // Load dismissed notifications from localStorage
     const dismissed = localStorage.getItem('dismissed-notifications');

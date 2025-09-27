@@ -4,8 +4,9 @@ import { ProjectManager } from "@/components/ProjectManager";
 import { FileUpload } from "@/components/FileUpload";
 import { TextToSpeech } from "@/components/TextToSpeech";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard } from "lucide-react";
+import { Bot, FolderOpen, Upload, Volume2, BarChart3, CreditCard, Calendar } from "lucide-react";
 import Pricing from "@/components/Pricing";
+import { CalendarPanel } from "@/components/panels/CalendarPanel";
 
 export function Sidebar() {
   return (
@@ -43,6 +44,12 @@ export function Sidebar() {
             <CreditCard className="h-5 w-5" />
           </TabsTrigger>
           <TabsTrigger 
+            value="calendar" 
+            className="w-12 h-12 p-0 flex items-center justify-center data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+          >
+            <Calendar className="h-5 w-5" />
+          </TabsTrigger>
+          <TabsTrigger 
             value="status" 
             className="w-12 h-12 p-0 flex items-center justify-center data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
@@ -70,6 +77,10 @@ export function Sidebar() {
           
           <TabsContent value="pricing" className="w-full h-full flex flex-col overflow-y-auto p-0 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
             <Pricing />
+          </TabsContent>
+          
+          <TabsContent value="calendar" className="w-full h-full flex flex-col overflow-y-auto p-0 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
+            <CalendarPanel />
           </TabsContent>
           
           <TabsContent value="status" className="w-full h-full flex flex-col overflow-y-auto p-8 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
