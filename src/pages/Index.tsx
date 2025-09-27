@@ -27,6 +27,8 @@ import { PlanPanel } from '@/components/panels/PlanPanel';
 import { AppConverterPanel } from '@/components/panels/AppConverterPanel';
 import { Footer } from '@/components/Footer';
 import FixxyBotTrigger from '@/components/FixxyBotTrigger';
+import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
+import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 
 export type PanelType = 
   | 'chat' 
@@ -55,6 +57,8 @@ export type PanelType =
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const { isSupported, permission } = useBrowserNotifications();
 
   useEffect(() => {
     const savedPanel = localStorage.getItem('activePanel') as PanelType;
@@ -62,6 +66,21 @@ export default function Index() {
       setActivePanel(savedPanel);
     }
   }, []);
+
+  // Show notification permission modal after a short delay for new users
+  useEffect(() => {
+    if (isSupported && permission === 'default') {
+      const hasShownModal = localStorage.getItem('notification-modal-shown');
+      if (!hasShownModal) {
+        const timer = setTimeout(() => {
+          setShowNotificationModal(true);
+          localStorage.setItem('notification-modal-shown', 'true');
+        }, 3000); // Show after 3 seconds
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isSupported, permission]);
 
   const handlePanelChange = (panel: string) => {
     const panelType = panel as PanelType;
@@ -109,6 +128,12 @@ export default function Index() {
         <Footer />
       </div>
       <FixxyBotTrigger />
+      
+      <NotificationPermissionModal
+        open={showNotificationModal}
+        onOpenChange={setShowNotificationModal}
+        onPermissionGranted={() => setShowNotificationModal(false)}
+      />
     </div>
   );
 }

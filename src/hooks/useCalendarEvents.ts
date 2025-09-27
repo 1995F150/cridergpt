@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
+import { getNotificationSettings } from '@/components/NotificationSettings';
 
 export interface CalendarEvent {
   id: string;
@@ -18,6 +20,7 @@ export function useCalendarEvents() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { sendEventNotification } = useBrowserNotifications();
 
   const fetchEvents = async () => {
     try {
@@ -138,6 +141,38 @@ export function useCalendarEvents() {
       return startTime >= now && startTime <= soon;
     });
   };
+
+  // Send browser notifications for upcoming events
+  useEffect(() => {
+    const settings = getNotificationSettings();
+    if (!settings.calendarEvents) return;
+
+    const checkUpcomingEvents = () => {
+      const upcomingEvents = getUpcomingEvents();
+      
+      upcomingEvents.forEach(event => {
+        const notificationKey = `event-notified-${event.id}`;
+        const alreadyNotified = sessionStorage.getItem(notificationKey);
+        
+        if (!alreadyNotified) {
+          sendEventNotification({
+            title: event.title,
+            category: event.category,
+            startTime: event.start_time,
+          });
+          
+          // Mark as notified for this session
+          sessionStorage.setItem(notificationKey, 'true');
+        }
+      });
+    };
+
+    // Check immediately and then every minute
+    checkUpcomingEvents();
+    const interval = setInterval(checkUpcomingEvents, 60000);
+
+    return () => clearInterval(interval);
+  }, [events, sendEventNotification]);
 
   useEffect(() => {
     fetchEvents();

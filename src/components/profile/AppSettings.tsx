@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
+import { NotificationSettings } from "@/components/NotificationSettings";
 
 export function AppSettings() {
   const { theme, toggleTheme } = useTheme();
@@ -52,25 +53,24 @@ export function AppSettings() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Notifications</CardTitle>
+          <CardDescription>
+            Configure browser notifications for desktop and mobile.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <NotificationSettings />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Preferences</CardTitle>
           <CardDescription>
             Configure your application preferences.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="notifications">Push Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Receive notifications for important updates.
-              </p>
-            </div>
-            <Switch
-              id="notifications"
-              onCheckedChange={handleNotificationToggle}
-            />
-          </div>
-          
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="auto-save">Auto Save</Label>
