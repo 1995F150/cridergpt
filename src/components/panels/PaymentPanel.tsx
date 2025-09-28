@@ -17,7 +17,7 @@ export function PaymentPanel() {
   const priceIdMap: Record<string, string> = {
     plus: "price_1Rell1P90uC07RqG5S4mEjHC",
     pro: "price_1RellmP90uC07RqGFSDHaCwu",
-    lifetime: "price_1SAGoNP90uC07RqGhogvN43V", // ✅ one-time payment
+    lifetime: "price_1SAGoNP90uC07RqGhogvN43V",
   };
 
   const iconMap: Record<string, React.ReactNode> = {
@@ -59,21 +59,22 @@ export function PaymentPanel() {
         return;
       }
 
-      // Call Edge Function for checkout
-      const { data, error } = await supabase.functions.invoke("process-lifetime-payment", {
-        body: {
-          priceId,
-          planName,
-          userId: session.user.id,
-          userEmail: session.user.email,
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "process-lifetime-payment",
+        {
+          body: {
+            priceId,
+            planName,
+            userId: session.user.id,
+            userEmail: session.user.email,
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
       if (error) throw error;
-
       if (data?.url) {
         window.open(data.url, "_blank");
       } else {
@@ -91,6 +92,22 @@ export function PaymentPanel() {
     }
   };
 
+  // 🔑 Ensure Lifetime shows only once
+  const allPlans = [...plans];
+  if (!allPlans.some((p) => p.plan_name === "lifetime")) {
+    allPlans.push({
+      plan_name: "lifetime",
+      plan_display_name: "Lifetime Founder",
+      price_monthly: 100,
+      features: [
+        "Unlimited everything forever",
+        "Priority support",
+        "All future features included",
+        "Lifetime Founder badge",
+      ],
+    });
+  }
+
   return (
     <div className="panel h-full w-full p-6 overflow-y-auto">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -106,12 +123,7 @@ export function PaymentPanel() {
         <ManageSubscription />
 
         <div className="grid md:grid-cols-4 gap-6 mb-8">
-          {[...plans, { plan_name: "lifetime", plan_display_name: "Lifetime Founder", price_monthly: 100, features: [
-            "Unlimited everything forever",
-            "Priority support",
-            "All future features included",
-            "Lifetime Founder badge"
-          ] }].map((plan) => (
+          {allPlans.map((plan) => (
             <Card
               key={plan.plan_name}
               className={`relative transition-all duration-300 ${
@@ -147,7 +159,8 @@ export function PaymentPanel() {
                   {plan.plan_name === "free" && "Perfect for getting started"}
                   {plan.plan_name === "plus" && "Enhanced features for power users"}
                   {plan.plan_name === "pro" && "Complete solution for professionals"}
-                  {plan.plan_name === "lifetime" && "One-time payment – no monthly fees"}
+                  {plan.plan_name === "lifetime" &&
+                    "One-time payment – no monthly fees"}
                 </CardDescription>
                 <div className="flex items-baseline justify-center mt-4">
                   <span className="text-4xl font-bold text-primary">
