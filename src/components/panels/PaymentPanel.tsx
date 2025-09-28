@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, CreditCard, Star, Zap, Trophy } from "lucide-react";
+import { Check, CreditCard, Star, Zap, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -13,59 +13,74 @@ export function PaymentPanel() {
   const [loading, setLoading] = useState<string | null>(null);
   const { plans } = usePlanConfigurations();
 
-  // ✅ Stripe price IDs
+  // Stripe price IDs
   const priceIdMap: Record<string, string> = {
-    'plus': 'price_1Rell1P90uC07RqG5S4mEjHC',
-    'pro': 'price_1RellmP90uC07RqGFSDHaCwu',
-    'lifetime': 'price_1SAGoNP90uC07RqGhogvN43V' // ✅ Your lifetime one-time price
+    plus: "price_1Rell1P90uC07RqG5S4mEjHC",
+    pro: "price_1RellmP90uC07RqGFSDHaCwu",
+    lifetime: "price_1SAGoNP90uC07RqGhogvN43V", // ✅ one-time payment
   };
 
   const iconMap: Record<string, React.ReactNode> = {
-    'free': <CreditCard className="h-6 w-6" />,
-    'plus': <Zap className="h-6 w-6" />,
-    'pro': <Star className="h-6 w-6" />,
-    'lifetime': <Trophy className="h-6 w-6 text-yellow-500" />
+    free: <CreditCard className="h-6 w-6" />,
+    plus: <Zap className="h-6 w-6" />,
+    pro: <Star className="h-6 w-6" />,
+    lifetime: <Crown className="h-6 w-6 text-yellow-500" />,
   };
 
   const handlePlanSelect = async (planName: string) => {
     const priceId = priceIdMap[planName];
-    
-    if (!priceId) {
-      window.location.href = '/auth';
+
+    if (!priceId && planName !== "free") {
+      toast({
+        title: "Error",
+        description: "Invalid plan selected.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (planName === "free") {
+      window.location.href = "/auth";
       return;
     }
 
     setLoading(planName);
-    
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         toast({
           title: "Authentication Required",
-          description: "Please sign in to continue.",
+          description: "Please sign in to subscribe or purchase a plan.",
           variant: "destructive",
         });
-        window.location.href = '/auth';
+        window.location.href = "/auth";
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId, planName },
+      // Call Edge Function for checkout
+      const { data, error } = await supabase.functions.invoke("process-lifetime-payment", {
+        body: {
+          priceId,
+          planName,
+          userId: session.user.id,
+          userEmail: session.user.email,
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
-        }
+        },
       });
 
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank'); // ✅ Opens Stripe checkout
+        window.open(data.url, "_blank");
       } else {
-        throw new Error("No checkout URL returned");
+        throw new Error("No checkout URL returned.");
       }
     } catch (error: any) {
-      console.error('Payment error:', error);
+      console.error("Payment error:", error);
       toast({
         title: "Payment Error",
         description: error.message || "Failed to create checkout session",
@@ -81,17 +96,8 @@ export function PaymentPanel() {
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-green-600 mb-4">
-            ✅ Site Restored – CriderGPT Dashboard Safe Mode
+            ✅ CriderGPT – Payment & Billing
           </h1>
-        </div>
-
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <CreditCard className="h-8 w-8 text-primary" />
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyber-blue to-tech-accent bg-clip-text text-transparent">
-              Payment & Billing
-            </h2>
-          </div>
           <p className="text-muted-foreground text-lg">
             Choose the perfect plan for your needs
           </p>
@@ -99,19 +105,22 @@ export function PaymentPanel() {
 
         <ManageSubscription />
 
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {plans.map((plan) => (
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
+          {[...plans, { plan_name: "lifetime", plan_display_name: "Lifetime Founder", price_monthly: 100, features: [
+            "Unlimited everything forever",
+            "Priority support",
+            "All future features included",
+            "Lifetime Founder badge"
+          ] }].map((plan) => (
             <Card
               key={plan.plan_name}
               className={`relative transition-all duration-300 ${
-                plan.plan_name === 'pro'
+                plan.plan_name === "pro" || plan.plan_name === "lifetime"
                   ? "border-2 border-primary bg-primary/5 shadow-lg shadow-primary/20"
-                  : plan.plan_name === 'lifetime'
-                  ? "border-2 border-yellow-500 bg-yellow-50/20 shadow-lg shadow-yellow-200"
                   : "border border-border hover:border-primary/50"
               }`}
             >
-              {plan.plan_name === 'pro' && (
+              {plan.plan_name === "pro" && (
                 <Badge
                   variant="secondary"
                   className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cyber-blue to-tech-accent text-background border-0"
@@ -120,12 +129,12 @@ export function PaymentPanel() {
                 </Badge>
               )}
 
-              {plan.plan_name === 'lifetime' && (
+              {plan.plan_name === "lifetime" && (
                 <Badge
                   variant="secondary"
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black border-0 font-bold"
+                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black border-0"
                 >
-                  🏆 One-Time Payment
+                  Founder Deal
                 </Badge>
               )}
 
@@ -135,19 +144,17 @@ export function PaymentPanel() {
                 </div>
                 <CardTitle className="text-2xl">{plan.plan_display_name}</CardTitle>
                 <CardDescription>
-                  {plan.plan_name === 'free' && 'Perfect for getting started with CriderGPT'}
-                  {plan.plan_name === 'plus' && 'Enhanced features for power users'}
-                  {plan.plan_name === 'pro' && 'Complete solution for professionals'}
-                  {plan.plan_name === 'lifetime' && 'Lifetime access – pay once, use forever'}
+                  {plan.plan_name === "free" && "Perfect for getting started"}
+                  {plan.plan_name === "plus" && "Enhanced features for power users"}
+                  {plan.plan_name === "pro" && "Complete solution for professionals"}
+                  {plan.plan_name === "lifetime" && "One-time payment – no monthly fees"}
                 </CardDescription>
                 <div className="flex items-baseline justify-center mt-4">
-                  <span className={`text-4xl font-bold ${
-                    plan.plan_name === 'lifetime' ? 'text-yellow-500' : 'text-primary'
-                  }`}>
+                  <span className="text-4xl font-bold text-primary">
                     ${plan.price_monthly}
                   </span>
                   <span className="text-muted-foreground ml-1">
-                    {plan.plan_name === 'lifetime' ? 'one-time' : '/month'}
+                    {plan.plan_name === "lifetime" ? "one-time" : "/month"}
                   </span>
                 </div>
               </CardHeader>
@@ -162,49 +169,29 @@ export function PaymentPanel() {
                   ))}
                 </ul>
 
-                <div className="bg-gradient-to-r from-cyber-blue/10 to-tech-accent/10 p-4 rounded-lg border border-cyber-blue/20 mb-6">
-                  <p className="text-sm font-bold text-center leading-relaxed">
-                    🚀 Upgrade to CriderGPT+ or Pro for Exclusive Unlocking
-                  </p>
-                </div>
-
                 <Button
                   className={`w-full ${
-                    plan.plan_name === 'pro'
+                    plan.plan_name === "pro" || plan.plan_name === "lifetime"
                       ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
-                      : plan.plan_name === 'lifetime'
-                      ? "bg-gradient-to-r from-yellow-400 to-orange-500 hover:opacity-90 text-black font-bold"
                       : "bg-primary hover:bg-primary/90"
                   }`}
                   size="lg"
                   disabled={loading === plan.plan_name}
                   onClick={() => handlePlanSelect(plan.plan_name)}
                 >
-                  {loading === plan.plan_name 
-                    ? "Processing..." 
+                  {loading === plan.plan_name
+                    ? "Processing..."
                     : plan.plan_name === "free"
                     ? "Get Started Free"
                     : plan.plan_name === "lifetime"
-                    ? "Buy Lifetime Access"
+                    ? "Buy Now"
                     : "Subscribe Now"}
                 </Button>
               </CardContent>
             </Card>
           ))}
         </div>
-
-        <div className="text-center">
-          <p className="text-muted-foreground italic mb-4">
-            All paid plans include a 14-day free trial. Cancel anytime.
-          </p>
-          <div className="flex justify-center gap-4 text-sm text-muted-foreground">
-            <span>✓ Secure payments with Stripe</span>
-            <span>✓ No hidden fees</span>
-            <span>✓ Instant activation</span>
-          </div>
-        </div>
       </div>
     </div>
   );
 }
-
