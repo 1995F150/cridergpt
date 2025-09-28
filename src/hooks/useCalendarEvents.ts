@@ -25,17 +25,24 @@ export function useCalendarEvents() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
+      console.log('🗓️ Fetching calendar events...');
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.log('🗓️ No session found, cannot fetch events');
         setEvents([]);
         return;
       }
 
+      console.log('🗓️ Session found, calling calendar-events function');
       const { data, error } = await supabase.functions.invoke('calendar-events', {
         method: 'GET',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
+      console.log('🗓️ Calendar events response:', { data, error });
       if (error) throw error;
 
       setEvents(data.events || []);

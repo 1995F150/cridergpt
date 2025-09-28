@@ -46,6 +46,7 @@ const Pricing = () => {
       } = await supabase.auth.getSession();
 
       if (!session) {
+        console.log('💳 No session found - redirecting to auth');
         toast({
           title: "Authentication Required",
           description: "Please sign in to subscribe to a plan.",
@@ -55,6 +56,7 @@ const Pricing = () => {
         return;
       }
 
+      console.log('💳 Calling create-checkout with:', { priceId, planName });
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { priceId, planName },
         headers: {
@@ -62,12 +64,17 @@ const Pricing = () => {
         },
       });
 
-      console.log("Checkout response:", data, error);
+      console.log("💳 Checkout response:", data, error);
 
-      if (error) throw error;
+      if (error) {
+        console.error('💳 Checkout error:', error);
+        throw error;
+      }
       if (data?.url) {
+        console.log('💳 Redirecting to checkout URL:', data.url);
         window.location.href = data.url;
       } else {
+        console.error('💳 No checkout URL returned from server');
         throw new Error("No checkout URL returned");
       }
     } catch (error: any) {

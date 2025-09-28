@@ -4,6 +4,7 @@ import { Header } from '@/components/Header';
 import { SystemChecker } from '@/components/SystemChecker';
 import ChatPanel from '@/components/panels/ChatPanel';
 import { CalculatorPanel } from '@/components/panels/CalculatorPanel';
+import { CalendarPanel } from '@/components/panels/CalendarPanel';
 import { InvoicePanel } from '@/components/panels/InvoicePanel';
 import { FilesPanel } from '@/components/panels/FilesPanel';
 import { GalleryPanel } from '@/components/panels/GalleryPanel';
@@ -33,6 +34,7 @@ import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 export type PanelType = 
   | 'chat' 
   | 'calculators' 
+  | 'calendar'
   | 'invoices'
   | 'files' 
   | 'gallery'
@@ -102,6 +104,7 @@ export default function Index() {
           <div className="h-full">
             {activePanel === 'chat' && <ChatPanel />}
             {activePanel === 'calculators' && <CalculatorPanel />}
+            {activePanel === 'calendar' && <CalendarPanel />}
             {activePanel === 'invoices' && <InvoicePanel />}
             {activePanel === 'files' && <FilesPanel />}
             {activePanel === 'gallery' && <GalleryPanel />}

@@ -24,7 +24,8 @@ import {
   ImageIcon,
   Brain,
   Smartphone,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
@@ -35,6 +36,7 @@ interface NavigationSidebarProps {
 const navigationItems = [
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'calculators', label: 'Calculators', icon: Calculator },
+  { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'invoices', label: 'Invoices', icon: FileText },
   { id: 'files', label: 'Files', icon: Folder },
   { id: 'gallery', label: 'Gallery', icon: Images },
