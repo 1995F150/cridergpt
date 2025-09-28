@@ -3,15 +3,25 @@ import { Button } from "@/components/ui/button";
 import { Check, Clock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
 import { useLifetimePlan } from "@/hooks/useLifetimePlan";
 
 const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
-  const { plans } = usePlanConfigurations();
-  const { isLifetimeAvailable, getSlotsRemaining, getPromotionMessage, getSoldOutMessage } = useLifetimePlan();
+const { plans } = usePlanConfigurations();
+const { isLifetimeAvailable, getSlotsRemaining, getPromotionMessage, getSoldOutMessage } = useLifetimePlan();
+
+// Auth state for clearer CTA text
+const [isSignedIn, setIsSignedIn] = useState(false);
+useEffect(() => {
+  supabase.auth.getSession().then(({ data }) => setIsSignedIn(!!data.session));
+  const { data: authListener } = supabase.auth.onAuthStateChange((_e, session) => {
+    setIsSignedIn(!!session);
+  });
+  return () => authListener.subscription.unsubscribe();
+}, []);
 
   // Stripe Price IDs
   const priceIdMap: Record<string, string> = {
@@ -191,12 +201,14 @@ const Pricing = () => {
                     <Clock className="h-4 w-4 animate-spin" />
                     Processing...
                   </span>
+                ) : !isSignedIn ? (
+                  plan.plan_name === "lifetime" ? "Sign in to purchase" : "Sign in to subscribe"
                 ) : plan.plan_name === "free" ? (
                   "Get Started Free"
                 ) : plan.plan_name === "lifetime" && !isLifetimeAvailable() ? (
                   "Sold Out"
                 ) : plan.plan_name === "lifetime" ? (
-                  "Secure Founder Spot"
+                  "Buy Lifetime — $100 one-time"
                 ) : (
                   "Subscribe Now"
                 )}
