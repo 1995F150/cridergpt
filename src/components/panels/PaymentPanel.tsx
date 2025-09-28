@@ -1,37 +1,36 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, CreditCard, Star, Zap } from "lucide-react";
+import { Check, CreditCard, Star, Zap, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
 import { ManageSubscription } from "@/components/ManageSubscription";
 
-
 export function PaymentPanel() {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
   const { plans } = usePlanConfigurations();
 
-  // Legacy price IDs for Stripe integration
+  // ✅ Stripe price IDs
   const priceIdMap: Record<string, string> = {
     'plus': 'price_1Rell1P90uC07RqG5S4mEjHC',
-    'pro': 'price_1RellmP90uC07RqGFSDHaCwu'
+    'pro': 'price_1RellmP90uC07RqGFSDHaCwu',
+    'lifetime': 'price_1SAGoNP90uC07RqGhogvN43V' // ✅ Your lifetime one-time price
   };
 
   const iconMap: Record<string, React.ReactNode> = {
     'free': <CreditCard className="h-6 w-6" />,
     'plus': <Zap className="h-6 w-6" />,
-    'pro': <Star className="h-6 w-6" />
+    'pro': <Star className="h-6 w-6" />,
+    'lifetime': <Trophy className="h-6 w-6 text-yellow-500" />
   };
 
   const handlePlanSelect = async (planName: string) => {
     const priceId = priceIdMap[planName];
     
     if (!priceId) {
-      // Free plan - redirect to auth
       window.location.href = '/auth';
       return;
     }
@@ -44,7 +43,7 @@ export function PaymentPanel() {
       if (!session) {
         toast({
           title: "Authentication Required",
-          description: "Please sign in to subscribe to a plan.",
+          description: "Please sign in to continue.",
           variant: "destructive",
         });
         window.location.href = '/auth';
@@ -52,19 +51,16 @@ export function PaymentPanel() {
       }
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId },
+        body: { priceId, planName },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         }
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (data?.url) {
-        // Open Stripe checkout in a new tab
-        window.open(data.url, '_blank');
+        window.open(data.url, '_blank'); // ✅ Opens Stripe checkout
       } else {
         throw new Error("No checkout URL returned");
       }
@@ -83,14 +79,11 @@ export function PaymentPanel() {
   return (
     <div className="panel h-full w-full p-6 overflow-y-auto">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Safe Mode Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-green-600 mb-4">
             ✅ Site Restored – CriderGPT Dashboard Safe Mode
           </h1>
         </div>
-
-        
 
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -104,7 +97,6 @@ export function PaymentPanel() {
           </p>
         </div>
 
-        {/* Subscription Management */}
         <ManageSubscription />
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -114,6 +106,8 @@ export function PaymentPanel() {
               className={`relative transition-all duration-300 ${
                 plan.plan_name === 'pro'
                   ? "border-2 border-primary bg-primary/5 shadow-lg shadow-primary/20"
+                  : plan.plan_name === 'lifetime'
+                  ? "border-2 border-yellow-500 bg-yellow-50/20 shadow-lg shadow-yellow-200"
                   : "border border-border hover:border-primary/50"
               }`}
             >
@@ -126,6 +120,15 @@ export function PaymentPanel() {
                 </Badge>
               )}
 
+              {plan.plan_name === 'lifetime' && (
+                <Badge
+                  variant="secondary"
+                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black border-0 font-bold"
+                >
+                  🏆 One-Time Payment
+                </Badge>
+              )}
+
               <CardHeader className="text-center">
                 <div className="flex items-center justify-center mb-2">
                   {iconMap[plan.plan_name] || <CreditCard className="h-6 w-6" />}
@@ -135,13 +138,16 @@ export function PaymentPanel() {
                   {plan.plan_name === 'free' && 'Perfect for getting started with CriderGPT'}
                   {plan.plan_name === 'plus' && 'Enhanced features for power users'}
                   {plan.plan_name === 'pro' && 'Complete solution for professionals'}
+                  {plan.plan_name === 'lifetime' && 'Lifetime access – pay once, use forever'}
                 </CardDescription>
                 <div className="flex items-baseline justify-center mt-4">
-                  <span className="text-4xl font-bold text-primary">
+                  <span className={`text-4xl font-bold ${
+                    plan.plan_name === 'lifetime' ? 'text-yellow-500' : 'text-primary'
+                  }`}>
                     ${plan.price_monthly}
                   </span>
                   <span className="text-muted-foreground ml-1">
-                    /month
+                    {plan.plan_name === 'lifetime' ? 'one-time' : '/month'}
                   </span>
                 </div>
               </CardHeader>
@@ -156,7 +162,6 @@ export function PaymentPanel() {
                   ))}
                 </ul>
 
-                {/* Static Upgrade Message */}
                 <div className="bg-gradient-to-r from-cyber-blue/10 to-tech-accent/10 p-4 rounded-lg border border-cyber-blue/20 mb-6">
                   <p className="text-sm font-bold text-center leading-relaxed">
                     🚀 Upgrade to CriderGPT+ or Pro for Exclusive Unlocking
@@ -167,6 +172,8 @@ export function PaymentPanel() {
                   className={`w-full ${
                     plan.plan_name === 'pro'
                       ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
+                      : plan.plan_name === 'lifetime'
+                      ? "bg-gradient-to-r from-yellow-400 to-orange-500 hover:opacity-90 text-black font-bold"
                       : "bg-primary hover:bg-primary/90"
                   }`}
                   size="lg"
@@ -175,8 +182,11 @@ export function PaymentPanel() {
                 >
                   {loading === plan.plan_name 
                     ? "Processing..." 
-                    : plan.plan_name === "free" ? "Get Started Free" : "Subscribe Now"
-                  }
+                    : plan.plan_name === "free"
+                    ? "Get Started Free"
+                    : plan.plan_name === "lifetime"
+                    ? "Buy Lifetime Access"
+                    : "Subscribe Now"}
                 </Button>
               </CardContent>
             </Card>
@@ -197,3 +207,4 @@ export function PaymentPanel() {
     </div>
   );
 }
+
