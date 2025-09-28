@@ -148,7 +148,7 @@ const Pricing = () => {
                     {plan.plan_name === "lifetime" ? `$${lifetimePrice}` : `$${plan.price_monthly}`}
                   </span>
                   <span className="text-muted-foreground ml-1">
-                    {plan.plan_name === "lifetime" ? "one-time" : "/month"}
+                    {plan.plan_name === "lifetime" ? "one-time (not a subscription)" : "/month"}
                   </span>
                 </div>
                 {plan.plan_name === "lifetime" && (
