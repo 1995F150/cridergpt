@@ -60,11 +60,22 @@ export function useCalendarEvents() {
 
   const createEvent = async (eventData: Omit<CalendarEvent, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('🗓️ Creating calendar event:', eventData);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No authentication session found');
+      }
+
       const { data, error } = await supabase.functions.invoke('calendar-events', {
         method: 'POST',
         body: eventData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
+      console.log('🗓️ Create event response:', { data, error });
       if (error) throw error;
 
       setEvents(prev => [...prev, data.event]);
@@ -87,9 +98,18 @@ export function useCalendarEvents() {
 
   const updateEvent = async (eventId: string, eventData: Partial<CalendarEvent>) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No authentication session found');
+      }
+
       const { data, error } = await supabase.functions.invoke('calendar-events?id=' + eventId, {
         method: 'PUT',
         body: eventData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
@@ -117,8 +137,17 @@ export function useCalendarEvents() {
 
   const deleteEvent = async (eventId: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No authentication session found');
+      }
+
       const { error } = await supabase.functions.invoke('calendar-events?id=' + eventId, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
