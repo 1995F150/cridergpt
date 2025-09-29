@@ -481,6 +481,36 @@ export type Database = {
         }
         Relationships: []
       }
+      categorized_interactions: {
+        Row: {
+          ai_response: string
+          categorized_at: string | null
+          category: string
+          created_at: string | null
+          id: string
+          interaction_id: string
+          user_input: string
+        }
+        Insert: {
+          ai_response: string
+          categorized_at?: string | null
+          category: string
+          created_at?: string | null
+          id?: string
+          interaction_id: string
+          user_input: string
+        }
+        Update: {
+          ai_response?: string
+          categorized_at?: string | null
+          category?: string
+          created_at?: string | null
+          id?: string
+          interaction_id?: string
+          user_input?: string
+        }
+        Relationships: []
+      }
       category_definitions: {
         Row: {
           category_name: string | null
@@ -2866,6 +2896,82 @@ export type Database = {
           input_text: string | null
           output_text: string | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      sellable_ai_categories: {
+        Row: {
+          ai_response: string | null
+          category: string | null
+          created_at: string | null
+          id: string | null
+          user_input: string | null
+        }
+        Insert: {
+          ai_response?: string | null
+          category?: never
+          created_at?: string | null
+          id?: string | null
+          user_input?: string | null
+        }
+        Update: {
+          ai_response?: string | null
+          category?: never
+          created_at?: string | null
+          id?: string | null
+          user_input?: string | null
+        }
+        Relationships: []
+      }
+      sellable_ai_dataset: {
+        Row: {
+          ai_response: string | null
+          category: string | null
+          created_at: string | null
+          id: string | null
+          user_input: string | null
+        }
+        Relationships: []
+      }
+      sellable_ai_interactions: {
+        Row: {
+          ai_response: string | null
+          category: string | null
+          id: string | null
+          user_input: string | null
+        }
+        Insert: {
+          ai_response?: string | null
+          category?: never
+          id?: string | null
+          user_input?: string | null
+        }
+        Update: {
+          ai_response?: string | null
+          category?: never
+          id?: string | null
+          user_input?: string | null
+        }
+        Relationships: []
+      }
+      sellable_dataset: {
+        Row: {
+          ai_response: string | null
+          category: string | null
+          id: string | null
+          user_input: string | null
+        }
+        Insert: {
+          ai_response?: string | null
+          category?: never
+          id?: string | null
+          user_input?: string | null
+        }
+        Update: {
+          ai_response?: string | null
+          category?: never
+          id?: string | null
+          user_input?: string | null
         }
         Relationships: []
       }
