@@ -105,6 +105,14 @@ export function PaymentPanel() {
         "All future features included",
         "Lifetime Founder badge",
       ],
+      limits: {
+        tokens: 999999,
+        tts: 999999,
+        projects: 999999,
+        api_keys: 999999,
+        file_upload_mb: 999999,
+      },
+      sort_order: 99,
     });
   }
 
