@@ -35,8 +35,13 @@ serve(async (req) => {
     const url = new URL(req.url);
     const method = req.method;
 
+    // Support supabase.functions.invoke (POST-only) by allowing action routing via body or query param
+    let body: any = null;
+    try { body = await req.json(); } catch (_) {}
+    const action = url.searchParams.get('action') || (body && body.action);
+
     // List events
-    if (method === 'GET') {
+    if (method === 'GET' || (method === 'POST' && action === 'list')) {
       const { data: events, error } = await supabaseClient
         .from('calendar_events')
         .select('*')
@@ -57,8 +62,8 @@ serve(async (req) => {
     }
 
     // Create event
-    if (method === 'POST') {
-      const eventData = await req.json();
+    if (method === 'POST' && (!action || action === 'create')) {
+      const eventData = (body?.data ?? body);
       
       const { data: event, error } = await supabaseClient
         .from('calendar_events')
@@ -83,9 +88,9 @@ serve(async (req) => {
     }
 
     // Update event
-    if (method === 'PUT') {
-      const eventData = await req.json();
-      const eventId = url.searchParams.get('id');
+    if (method === 'PUT' || (method === 'POST' && action === 'update')) {
+      const eventData = body?.data ?? body;
+      const eventId = url.searchParams.get('id') || (body && (body.id || body.eventId));
 
       if (!eventId) {
         return new Response(JSON.stringify({ error: 'Event ID is required' }), {
@@ -116,8 +121,8 @@ serve(async (req) => {
     }
 
     // Delete event
-    if (method === 'DELETE') {
-      const eventId = url.searchParams.get('id');
+    if (method === 'DELETE' || (method === 'POST' && action === 'delete')) {
+      const eventId = url.searchParams.get('id') || (body && (body.id || body.eventId));
 
       if (!eventId) {
         return new Response(JSON.stringify({ error: 'Event ID is required' }), {

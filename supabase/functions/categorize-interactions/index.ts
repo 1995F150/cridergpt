@@ -213,7 +213,7 @@ serve(async (req) => {
     console.error('Categorization error:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      details: error.message 
+      details: (error as any)?.message ?? String(error)
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

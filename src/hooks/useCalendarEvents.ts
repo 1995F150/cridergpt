@@ -36,7 +36,7 @@ export function useCalendarEvents() {
 
       console.log('🗓️ Session found, calling calendar-events function');
       const { data, error } = await supabase.functions.invoke('calendar-events', {
-        method: 'GET',
+        body: { action: 'list' },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -69,7 +69,7 @@ export function useCalendarEvents() {
 
       const { data, error } = await supabase.functions.invoke('calendar-events', {
         method: 'POST',
-        body: eventData,
+        body: { action: 'create', ...eventData },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -104,9 +104,8 @@ export function useCalendarEvents() {
         throw new Error('No authentication session found');
       }
 
-      const { data, error } = await supabase.functions.invoke('calendar-events?id=' + eventId, {
-        method: 'PUT',
-        body: eventData,
+      const { data, error } = await supabase.functions.invoke('calendar-events', {
+        body: { action: 'update', id: eventId, data: eventData },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -143,8 +142,8 @@ export function useCalendarEvents() {
         throw new Error('No authentication session found');
       }
 
-      const { error } = await supabase.functions.invoke('calendar-events?id=' + eventId, {
-        method: 'DELETE',
+      const { error } = await supabase.functions.invoke('calendar-events', {
+        body: { action: 'delete', id: eventId },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
