@@ -25,7 +25,8 @@ import {
   Brain,
   Smartphone,
   ExternalLink,
-  Calendar
+  Calendar,
+  Cloud
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
@@ -58,6 +59,7 @@ const navigationItems = [
   { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
   { id: 'document-ai', label: 'Document AI', icon: Brain },
   { id: 'app-converter', label: 'App Converter', icon: Smartphone },
+  { id: 'cloud-gaming', label: 'Cloud Gaming', icon: Cloud },
   { id: 'farming-simulator', label: 'Farming Simulator', icon: Wheat, external: true, url: 'https://farmgenie-studio.lovable.app/' }
 ];
 

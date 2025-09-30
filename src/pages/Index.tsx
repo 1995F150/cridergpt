@@ -26,6 +26,7 @@ import { AIImagePanel } from '@/components/panels/AIImagePanel';
 import { DocumentAIPanel } from '@/components/panels/DocumentAIPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
 import { AppConverterPanel } from '@/components/panels/AppConverterPanel';
+import { CloudGamingPanel } from '@/components/panels/CloudGamingPanel';
 import { Footer } from '@/components/Footer';
 import FixxyBotTrigger from '@/components/FixxyBotTrigger';
 import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
@@ -55,7 +56,8 @@ export type PanelType =
   | 'ai-image'
   | 'document-ai'
   | 'plan'
-  | 'app-converter';
+  | 'app-converter'
+  | 'cloud-gaming';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -126,6 +128,7 @@ export default function Index() {
             {activePanel === 'document-ai' && <DocumentAIPanel />}
             {activePanel === 'plan' && <PlanPanel />}
             {activePanel === 'app-converter' && <AppConverterPanel />}
+            {activePanel === 'cloud-gaming' && <CloudGamingPanel />}
           </div>
         </main>
         <Footer />
