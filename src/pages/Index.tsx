@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { SEO } from '@/components/SEO';
+import { trackPageView, trackFeatureUse } from '@/utils/analytics';
 import { NavigationSidebar } from '@/components/NavigationSidebar';
 import { Header } from '@/components/Header';
 import { SystemChecker } from '@/components/SystemChecker';
@@ -90,10 +92,21 @@ export default function Index() {
     const panelType = panel as PanelType;
     setActivePanel(panelType);
     localStorage.setItem('activePanel', panelType);
+    
+    // Track page view and feature usage
+    trackPageView(`/${panelType}`, `${panelType.charAt(0).toUpperCase() + panelType.slice(1)} | CriderGPT`);
+    trackFeatureUse(panelType);
   };
 
+  // Track initial page view
+  useEffect(() => {
+    trackPageView(`/${activePanel}`, `${activePanel.charAt(0).toUpperCase() + activePanel.slice(1)} | CriderGPT`);
+  }, []);
+
   return (
-    <div className="flex h-screen bg-background">
+    <>
+      <SEO page={activePanel} />
+      <div className="flex h-screen bg-background">
       <NavigationSidebar
         activeTab={activePanel}
         onTabChange={handlePanelChange}
@@ -140,7 +153,8 @@ export default function Index() {
         onOpenChange={setShowNotificationModal}
         onPermissionGranted={() => setShowNotificationModal(false)}
       />
-    </div>
+      </div>
+    </>
   );
 }
 
