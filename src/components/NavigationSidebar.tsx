@@ -26,12 +26,14 @@ import {
   Smartphone,
   ExternalLink,
   Calendar,
-  Cloud
+  Cloud,
+  Box
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  isDeveloper?: boolean;
 }
 
 const navigationItems = [
@@ -60,10 +62,11 @@ const navigationItems = [
   { id: 'document-ai', label: 'Document AI', icon: Brain },
   { id: 'app-converter', label: 'App Converter', icon: Smartphone },
   { id: 'cloud-gaming', label: 'Cloud Gaming', icon: Cloud },
+  { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
   { id: 'farming-simulator', label: 'Farming Simulator', icon: Wheat, external: true, url: 'https://farmgenie-studio.lovable.app/' }
 ];
 
-export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarProps) {
+export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false }: NavigationSidebarProps) {
   return (
     <div className="w-64 bg-card border-r border-border">
       <div className="p-6">
@@ -73,6 +76,11 @@ export function NavigationSidebar({ activeTab, onTabChange }: NavigationSidebarP
       <ScrollArea className="h-[calc(100vh-100px)]">
         <div className="space-y-1 p-3">
           {navigationItems.map((item) => {
+            // Hide developer-only items from non-developers
+            if ((item as any).developerOnly && !isDeveloper) {
+              return null;
+            }
+            
             const Icon = item.icon;
             
             if (item.external) {

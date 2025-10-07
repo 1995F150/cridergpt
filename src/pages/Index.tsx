@@ -29,10 +29,12 @@ import { DocumentAIPanel } from '@/components/panels/DocumentAIPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
 import { AppConverterPanel } from '@/components/panels/AppConverterPanel';
 import { CloudGamingPanel } from '@/components/panels/CloudGamingPanel';
+import { Model3DConverterPanel } from '@/components/panels/Model3DConverterPanel';
 import { Footer } from '@/components/Footer';
 import FixxyBotTrigger from '@/components/FixxyBotTrigger';
 import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type PanelType = 
   | 'chat' 
@@ -59,12 +61,16 @@ export type PanelType =
   | 'document-ai'
   | 'plan'
   | 'app-converter'
-  | 'cloud-gaming';
+  | 'cloud-gaming'
+  | '3d-converter';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const { isSupported, permission } = useBrowserNotifications();
+  const { user } = useAuth();
+  
+  const isDeveloper = user?.email === 'jessiecrider3@gmail.com';
 
   useEffect(() => {
     const savedPanel = localStorage.getItem('activePanel') as PanelType;
@@ -110,6 +116,7 @@ export default function Index() {
       <NavigationSidebar
         activeTab={activePanel}
         onTabChange={handlePanelChange}
+        isDeveloper={isDeveloper}
       />
 
       <div className="flex-1 flex flex-col min-h-0">
@@ -142,6 +149,7 @@ export default function Index() {
             {activePanel === 'plan' && <PlanPanel />}
             {activePanel === 'app-converter' && <AppConverterPanel />}
             {activePanel === 'cloud-gaming' && <CloudGamingPanel />}
+            {activePanel === '3d-converter' && isDeveloper && <Model3DConverterPanel />}
           </div>
         </main>
         <Footer />
