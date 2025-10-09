@@ -59,13 +59,13 @@ function SceneObject({ object, isSelected, onSelect, onTransform }: any) {
 
 export function StudioViewport({ objects, selectedObjectId, onObjectSelect, onObjectTransform }: StudioViewportProps) {
   return (
-    <div className="w-full h-full bg-background">
+    <div className="w-full h-full bg-zinc-900">
       <Canvas
         camera={{ position: [5, 5, 5], fov: 50 }}
         shadows
+        gl={{ preserveDrawingBuffer: true }}
+        style={{ background: '#1a1a1a' }}
       >
-        <color attach="background" args={['#1a1a1a']} />
-        
         {/* Lighting */}
         <ambientLight intensity={0.4} />
         <directionalLight
@@ -77,7 +77,6 @@ export function StudioViewport({ objects, selectedObjectId, onObjectSelect, onOb
 
         {/* Grid */}
         <Grid
-          args={[20, 20]}
           cellSize={1}
           cellThickness={0.5}
           cellColor="#444444"
@@ -86,6 +85,7 @@ export function StudioViewport({ objects, selectedObjectId, onObjectSelect, onOb
           sectionColor="#666666"
           fadeDistance={50}
           fadeStrength={1}
+          infiniteGrid
         />
 
         {/* Scene Objects */}
