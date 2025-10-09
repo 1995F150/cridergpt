@@ -30,6 +30,7 @@ import { PlanPanel } from '@/components/panels/PlanPanel';
 import { AppConverterPanel } from '@/components/panels/AppConverterPanel';
 import { CloudGamingPanel } from '@/components/panels/CloudGamingPanel';
 import { Model3DConverterPanel } from '@/components/panels/Model3DConverterPanel';
+import { StudioPanel } from '@/components/panels/StudioPanel';
 import { Footer } from '@/components/Footer';
 import FixxyBotTrigger from '@/components/FixxyBotTrigger';
 import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
@@ -62,7 +63,8 @@ export type PanelType =
   | 'plan'
   | 'app-converter'
   | 'cloud-gaming'
-  | '3d-converter';
+  | '3d-converter'
+  | 'studio';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -150,6 +152,7 @@ export default function Index() {
             {activePanel === 'app-converter' && <AppConverterPanel />}
             {activePanel === 'cloud-gaming' && <CloudGamingPanel />}
             {activePanel === '3d-converter' && isDeveloper && <Model3DConverterPanel />}
+            {activePanel === 'studio' && <StudioPanel />}
           </div>
         </main>
         <Footer />
