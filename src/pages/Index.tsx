@@ -31,6 +31,7 @@ import { AppConverterPanel } from '@/components/panels/AppConverterPanel';
 import { CloudGamingPanel } from '@/components/panels/CloudGamingPanel';
 import { Model3DConverterPanel } from '@/components/panels/Model3DConverterPanel';
 import { StudioPanel } from '@/components/panels/StudioPanel';
+import { ModToolsPanel } from '@/components/panels/ModToolsPanel';
 import { Footer } from '@/components/Footer';
 import FixxyBotTrigger from '@/components/FixxyBotTrigger';
 import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
@@ -57,6 +58,7 @@ export type PanelType =
   | 'timeline' 
   | 'memorial' 
   | 'ffa'
+  | 'mod-tools'
   | 'radio'
   | 'ai-image'
   | 'document-ai'
@@ -145,6 +147,7 @@ export default function Index() {
             {activePanel === 'timeline' && <TimelinePanel />}
             {activePanel === 'memorial' && <MemorialPanel />}
             {activePanel === 'ffa' && <FFAPanel />}
+            {activePanel === 'mod-tools' && <ModToolsPanel />}
             {activePanel === 'radio' && <RadioPanel />}
             {activePanel === 'ai-image' && <AIImagePanel />}
             {activePanel === 'document-ai' && <DocumentAIPanel />}

@@ -28,7 +28,8 @@ import {
   Calendar,
   Cloud,
   Box,
-  Cuboid
+  Cuboid,
+  Wrench
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
@@ -58,6 +59,7 @@ const navigationItems = [
   { id: 'timeline', label: 'Timeline', icon: Clock },
   { id: 'memorial', label: 'Memorial', icon: Heart },
   { id: 'ffa', label: 'FFA Center', icon: Wheat },
+  { id: 'mod-tools', label: '🧰 Mod Creation Tools', icon: Wrench },
   { id: 'radio', label: 'Radio & CB Scanner', icon: Radio },
   { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
   { id: 'document-ai', label: 'Document AI', icon: Brain },
