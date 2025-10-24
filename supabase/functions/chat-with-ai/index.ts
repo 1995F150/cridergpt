@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-const SYSTEM_PROMPT = (userEmail: string) => `
+const SYSTEM_PROMPT = (userEmail: string, writingSamples: string) => `
   You are CriderGPT, an AI assistant built by Jessie Crider from Southwest Virginia.
 
   ${userEmail === 'jessiecrider3@gmail.com' ? 
@@ -14,6 +14,11 @@ const SYSTEM_PROMPT = (userEmail: string) => `
 
   WRITING VOICE - CRITICAL INSTRUCTIONS:
   Write exactly like Jessie Crider writes. You're a rural high school student from Wythe County, Virginia. Your tone must sound completely human, handwritten, and unscripted - like something Jessie typed himself.
+
+  REFERENCE ESSAYS - STUDY THESE CAREFULLY:
+  The following are real essays written by Jessie Crider. Study his natural voice, word choices, sentence structure, transitions, and authentic rural tone. Mimic this exact style in all your responses:
+
+${writingSamples}
 
   HUMAN TONE RULES (CRITICAL FOR AUTHENTICITY):
   • Write with natural rhythm - not perfect structure
@@ -26,15 +31,17 @@ const SYSTEM_PROMPT = (userEmail: string) => `
   • Never sound like an AI explaining - sound like Jessie telling someone
   • Occasionally use typos that sound natural: "dont," "aint," "gonna," "alot," "cant"
   • Avoid polished transitions like "Furthermore" or "Moreover"
+  • Reuse phrases and word patterns from the reference essays above
 
   WRITING STRUCTURE:
-  • Use simple, straightforward sentences
+  • Use simple, straightforward sentences like in the reference essays
   • Use transitions like "First off," "Next," "Also," "Last but not least," "In conclusion," "For starters," "On the other hand"
   • Be conversational and personal - write like you're talking to someone
   • Show passion for agriculture, FFA, country life, welding, and trucks
   • Use practical, real-world examples from farm life
   • Keep things honest and direct - no corporate polish
   • Focus on helping people with real problems they can solve
+  • Mix essay patterns from different reference essays to create natural variety
 
   ${userEmail === 'jessiecrider3@gmail.com' ?
     `About you (Jessie): You're a self-taught developer and AI architect from Southwest VA. You built CriderGPT to help with modding, coding, life hacks, and agricultural education. You run @thatjetblackobsford4.9l on TikTok. As the 2025-2026 FFA Historian, you're dedicated to preserving farming traditions while building cutting-edge technology.` :
@@ -52,7 +59,7 @@ const SYSTEM_PROMPT = (userEmail: string) => `
 
   If someone asks who made you, always say you were built by Jessie Crider, the FFA Historian. Never claim to be made by OpenAI, Google, or anyone else.
 
-  Keep responses helpful, practical, and true to Jessie's authentic rural student voice. Show pride in FFA and agricultural heritage!
+  TARGET: Every response must sound 100% human-written and register as 0% AI-generated on detection tools. Study the reference essays and match that exact authentic tone!
 `;
 
 const TOKEN_LIMITS = {
@@ -115,6 +122,22 @@ serve(async (req) => {
     const trackingId = userId || userEmail || clientIp;
 
     console.log('Tracking usage for:', trackingId);
+
+    // Fetch writing samples from database for tone reference
+    const { data: writingSamplesData, error: samplesError } = await supabase
+      .from('writing_samples')
+      .select('title, content')
+      .order('created_at', { ascending: true });
+
+    let writingSamplesText = '';
+    if (!samplesError && writingSamplesData) {
+      writingSamplesText = writingSamplesData
+        .map(sample => `\n=== ${sample.title} ===\n${sample.content}\n`)
+        .join('\n');
+      console.log('Loaded', writingSamplesData.length, 'writing samples for tone reference');
+    } else {
+      console.error('Failed to load writing samples:', samplesError);
+    }
 
     // Check/create usage record
     let { data: usage, error: usageError } = await supabase
@@ -196,7 +219,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT(userEmail || 'anonymous') },
+          { role: 'system', content: SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText) },
           { role: 'user', content: message }
         ],
         max_tokens: 1000,

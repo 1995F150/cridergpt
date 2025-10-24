@@ -2863,6 +2863,33 @@ export type Database = {
         }
         Relationships: []
       }
+      writing_samples: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       category_summary: {
@@ -3005,7 +3032,7 @@ export type Database = {
     }
     Functions: {
       audit_user_platform_sync: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           cridergpt_features: string[]
           cridergpt_tier: string
@@ -3028,7 +3055,7 @@ export type Database = {
         }[]
       }
       batch_sync_user_tiers: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           new_tier: string
           old_tier: string
@@ -3036,10 +3063,7 @@ export type Database = {
           user_id: string
         }[]
       }
-      can_use_calculator: {
-        Args: { user_uuid: string }
-        Returns: Json
-      }
+      can_use_calculator: { Args: { user_uuid: string }; Returns: Json }
       can_user_make_request: {
         Args: {
           request_type?: string
@@ -3048,24 +3072,18 @@ export type Database = {
         }
         Returns: Json
       }
-      can_user_request_tts: {
-        Args: Record<PropertyKey, never> | { uid: string }
-        Returns: boolean
-      }
-      check_plus_access: {
-        Args: Record<PropertyKey, never> | { feature?: string }
-        Returns: boolean
-      }
-      check_tier_limit: {
-        Args: Record<PropertyKey, never> | { limit_type: string }
-        Returns: number
-      }
-      cleanup_expired_stories: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      can_user_request_tts:
+        | { Args: { uid: string }; Returns: boolean }
+        | { Args: never; Returns: boolean }
+      check_plus_access:
+        | { Args: { feature?: string }; Returns: boolean }
+        | { Args: never; Returns: boolean }
+      check_tier_limit:
+        | { Args: { limit_type: string }; Returns: number }
+        | { Args: never; Returns: boolean }
+      cleanup_expired_stories: { Args: never; Returns: undefined }
       compute_user_revenue_mapping: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_subscriptions: number
           email: string
@@ -3089,12 +3107,9 @@ export type Database = {
         }
         Returns: undefined
       }
-      example_function: {
-        Args: { input_value: number }
-        Returns: number
-      }
+      example_function: { Args: { input_value: number }; Returns: number }
       generate_complete_platform_audit: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           audit_id: string
           audit_timestamp: string
@@ -3122,7 +3137,7 @@ export type Database = {
         Returns: string
       }
       get_all_active_plans: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           features: Json
           limits: Json
@@ -3132,16 +3147,12 @@ export type Database = {
           sort_order: number
         }[]
       }
-      get_crideros_milestone: {
-        Args: Record<PropertyKey, never> | { milestone_name: string }
-        Returns: string
-      }
-      get_crideros_start_date: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_crideros_milestone:
+        | { Args: { milestone_name: string }; Returns: string }
+        | { Args: never; Returns: Record<string, unknown>[] }
+      get_crideros_start_date: { Args: never; Returns: string }
       get_crideros_timeline: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           milestone_date: string
           milestone_description: string
@@ -3149,13 +3160,22 @@ export type Database = {
           milestone_status: string
         }[]
       }
-      get_owner_details: {
-        Args: Record<PropertyKey, never> | { check_email: string }
-        Returns: {
-          contact_email: string
-          owner_name: string
-        }[]
-      }
+      get_owner_details:
+        | {
+            Args: { check_email: string }
+            Returns: {
+              is_owner: boolean
+              permissions: Json
+              role: string
+            }[]
+          }
+        | {
+            Args: never
+            Returns: {
+              contact_email: string
+              owner_name: string
+            }[]
+          }
       get_plan_features: {
         Args: { plan_name_input: string }
         Returns: {
@@ -3166,25 +3186,32 @@ export type Database = {
           price_monthly: number
         }[]
       }
-      get_stripe_customer_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_subscription_status: {
-        Args: Record<PropertyKey, never> | { user_id: string }
-        Returns: {
-          amount: number
-          cancel_at_period_end: boolean
-          currency: string
-          current_period_end: string
-          interval_count: number
-          interval_value: string
-          price_id: string
-          product_name: string
-          status: string
-          subscription_id: string
-        }[]
-      }
+      get_stripe_customer_id: { Args: never; Returns: string }
+      get_subscription_status:
+        | {
+            Args: never
+            Returns: {
+              amount: number
+              cancel_at_period_end: boolean
+              currency: string
+              current_period_end: string
+              interval_count: number
+              interval_value: string
+              price_id: string
+              product_name: string
+              status: string
+              subscription_id: string
+            }[]
+          }
+        | {
+            Args: { user_id: string }
+            Returns: {
+              current_period_end: string
+              is_subscribed: boolean
+              price_id: string
+              subscription_status: string
+            }[]
+          }
       get_training_inputs: {
         Args: {
           input_category?: string
@@ -3199,10 +3226,7 @@ export type Database = {
           metadata: Json
         }[]
       }
-      get_usage_summary: {
-        Args: { user_uuid: string }
-        Returns: Json
-      }
+      get_usage_summary: { Args: { user_uuid: string }; Returns: Json }
       get_user_current_plan: {
         Args: { user_uuid?: string }
         Returns: {
@@ -3223,7 +3247,7 @@ export type Database = {
         }[]
       }
       get_user_sync_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           email: string
@@ -3238,30 +3262,7 @@ export type Database = {
           username: string
         }[]
       }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
-        Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      has_active_subscription: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      has_active_subscription: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3269,30 +3270,29 @@ export type Database = {
         }
         Returns: boolean
       }
-      has_tier_feature: {
-        Args: { feature: string }
-        Returns: boolean
-      }
-      is_founder: {
-        Args: Record<PropertyKey, never> | { check_email: string }
-        Returns: boolean
-      }
-      log_tier_upgrade: {
-        Args:
-          | {
-              p_new_tier: string
-              p_old_tier: string
-              p_stripe_event_id: string
-              p_user_id: number
-            }
-          | {
+      has_tier_feature: { Args: { feature: string }; Returns: boolean }
+      is_founder:
+        | { Args: { check_email: string }; Returns: boolean }
+        | { Args: never; Returns: boolean }
+      log_tier_upgrade:
+        | {
+            Args: {
               p_new_tier?: string
               p_old_tier?: string
               p_stripe_event_id?: string
               p_user_id: string
             }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_new_tier: string
+              p_old_tier: string
+              p_stripe_event_id: string
+              p_user_id: number
+            }
+            Returns: undefined
+          }
       record_calculator_usage: {
         Args: {
           calc_type: string
@@ -3307,16 +3307,10 @@ export type Database = {
         Args: { amount_used?: number; request_type: string; user_uuid: string }
         Returns: boolean
       }
-      reset_monthly_usage: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      reset_query_statistics: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      reset_monthly_usage: { Args: never; Returns: undefined }
+      reset_query_statistics: { Args: never; Returns: undefined }
       safe_batch_sync_user_tiers: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           message: string
           new_tier: string
@@ -3326,18 +3320,8 @@ export type Database = {
           user_id: string
         }[]
       }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       update_pro_access: {
         Args: { new_pro_status: boolean; user_id: string }
         Returns: undefined
@@ -3347,7 +3331,7 @@ export type Database = {
         Returns: boolean
       }
       validate_cross_platform_unlocks: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           cridergpt_feature_id: string
           cridergpt_feature_name: string
