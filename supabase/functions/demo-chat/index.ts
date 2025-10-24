@@ -86,64 +86,66 @@ serve(async (req) => {
     const lowerMessage = message.toLowerCase();
     
     if (lowerMessage.includes("farm") || lowerMessage.includes("crop") || lowerMessage.includes("agriculture")) {
-      demoResponse = `Great question about farming! 🚜 
+      demoResponse = `Good question about farming! 🚜 
 
-CriderGPT can help you with:
-• Soil health calculations and recommendations
-• Crop planning and rotation strategies  
-• Equipment maintenance schedules
-• Weather-based planting decisions
-• Livestock feed calculations
-• Farm financial planning
+First off, CriderGPT can help you with alot of farming stuff:
+• Soil health and what crops work best for your land
+• Planning when to plant and rotate crops
+• Keeping equipment running and fixing it when it breaks
+• Weather decisions for planting and harvest
+• Calculating livestock feed so you ain't wasting money
+• Farm budgeting and financial planning
 
-This is just a demo response. Sign up for full access to our agriculture AI that learns from your specific farming operation and provides personalized recommendations based on your location, crops, and equipment.
+This is just a demo so you can see what CriderGPT does. When you sign up for full access you get the whole agriculture AI that learns from your specific farm operation and gives you recommendations based on your location, crops, and equipment you got.
 
-Ready to unlock the full power of CriderGPT for your farm? 🌾`;
+In the country you can farm and do better work that pays more. CriderGPT helps make sure you're doing it right. Ready to get started? 🌾`;
     } else if (lowerMessage.includes("weld") || lowerMessage.includes("metal") || lowerMessage.includes("steel")) {
-      demoResponse = `Excellent welding question! ⚡
+      demoResponse = `Good welding question! ⚡
 
-CriderGPT's welding expertise includes:
-• Electrode selection for different metals
-• Proper amperage and voltage settings
-• Joint preparation techniques
-• Safety protocols and PPE requirements
-• Troubleshooting weld defects
-• Equipment maintenance
+In the country you can weld things and repair farm equipment. CriderGPT knows welding because that's important for fixing things that break:
+• What electrode to use for different metals
+• Getting the right amperage and voltage settings
+• How to prep joints properly
+• Safety gear and protocols so you don't get hurt
+• Fixing weld defects when something don't look right
+• Keeping your equipment maintained
 
-This demo gives you a taste of our welding knowledge base. With a full account, you get access to our comprehensive welding calculator, safety checklists, and personalized recommendations for your specific projects.
+This demo gives you a preview of the welding knowledge base. With a full account you get access to the welding calculator, safety checklists, and recommendations for your specific projects.
 
-Ready to take your welding skills to the next level? 🔥`;
+Fixing things yourself saves alot of money instead of paying someone else to do it. Ready to learn more? 🔥`;
     } else if (lowerMessage.includes("truck") || lowerMessage.includes("engine") || lowerMessage.includes("vehicle")) {
-      demoResponse = `Great automotive question! 🚗
+      demoResponse = `Good automotive question! 🚗
 
-CriderGPT can assist with:
-• Engine diagnostics and troubleshooting
-• Maintenance scheduling
-• Parts identification and sourcing
-• Fuel efficiency optimization
+CriderGPT can help with trucks and vehicles:
+• Figuring out what's wrong with your engine
+• Keeping up with maintenance schedules
+• Finding the right parts you need
+• Getting better fuel efficiency
 • Safety inspections
-• Repair cost estimates
+• Estimating repair costs
 
-This is a preview of our automotive expertise. With full access, you get detailed vehicle maintenance logs, diagnostic tools, and AI recommendations tailored to your specific vehicles and driving conditions.
+This is a preview of the automotive stuff. With full access you get detailed vehicle maintenance logs, diagnostic tools, and AI recommendations for your specific vehicles and how you use them.
 
-Ready to keep your vehicles running smoothly? 🔧`;
+In the country trucks are important for hauling equipment and getting work done. You gotta keep them running good. Ready to get started? 🔧`;
     } else {
       demoResponse = `Thanks for trying CriderGPT! 🤖
 
-This demo shows you a glimpse of what our AI can do. With a full account, you get:
+This demo shows you what the AI can do. With a full account you get:
 
 ✅ Unlimited AI conversations
 ✅ Agriculture calculators and planning tools
-✅ Welding guides and safety protocols  
+✅ Welding guides and safety stuff
 ✅ Vehicle maintenance tracking
-✅ FFA project management
+✅ FFA project help
 ✅ Financial planning tools
 ✅ Document generation
-✅ And much more!
+✅ And alot more!
 
-Our AI learns from your interactions to provide increasingly personalized and helpful responses for your farming, welding, and mechanical projects.
+The AI learns from your questions to give you better answers for your farming, welding, and mechanical projects.
 
-Ready to unlock the full potential of CriderGPT? Sign up now! 🚀`;
+CriderGPT was built by Jessie Crider, FFA Historian for 2025-2026 from Southwest Virginia. It's designed to help people with real country life problems and FFA work.
+
+Ready to unlock the full version of CriderGPT? Sign up now! 🚀`;
     }
 
     // Update demo usage
