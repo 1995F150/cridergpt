@@ -29,7 +29,8 @@ import {
   Cloud,
   Box,
   Cuboid,
-  Wrench
+  Wrench,
+  Package
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
@@ -67,6 +68,7 @@ const navigationItems = [
   { id: 'cloud-gaming', label: 'Cloud Gaming', icon: Cloud },
   { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
   { id: 'studio', label: '3D Studio', icon: Cuboid },
+  { id: 'zip-to-exe', label: 'ZIP-to-EXE Builder', icon: Package },
   { id: 'farming-simulator', label: 'Farming Simulator', icon: Wheat, external: true, url: 'https://farmgenie-studio.lovable.app/' }
 ];
 
