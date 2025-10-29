@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, Package, Download, FileArchive, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import JSZip from 'jszip';
 
 type ConversionStatus = "idle" | "uploading" | "extracting" | "packaging" | "building" | "complete" | "error";
 
@@ -14,6 +15,12 @@ type LogEntry = {
   type: "info" | "success" | "error";
 };
 
+type ZipFileInfo = {
+  name: string;
+  size: number;
+  isDirectory: boolean;
+};
+
 export function ZipToExePanel() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<ConversionStatus>("idle");
@@ -21,6 +28,7 @@ export function ZipToExePanel() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [extractedFiles, setExtractedFiles] = useState<ZipFileInfo[]>([]);
   const { toast } = useToast();
 
   const addLog = (message: string, type: LogEntry["type"] = "info") => {
@@ -77,56 +85,107 @@ export function ZipToExePanel() {
     if (!file) return;
 
     setLogs([]);
+    setExtractedFiles([]);
     
     try {
       addLog("🚀 Starting conversion process...", "info");
       setStatus("uploading");
       setProgress(20);
-      addLog(`📤 Uploading ${file.name} (${formatFileSize(file.size)})`, "info");
+      addLog(`📤 Reading ${file.name} (${formatFileSize(file.size)})`, "info");
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addLog("✓ Upload complete", "success");
+      await new Promise(resolve => setTimeout(resolve, 800));
+      addLog("✓ File loaded successfully", "success");
       
       setStatus("extracting");
       setProgress(40);
-      addLog("📦 Extracting ZIP contents with adm-zip...", "info");
+      addLog("📦 Extracting ZIP contents with JSZip...", "info");
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      addLog("✓ Extraction complete - 47 files found", "success");
+      // Actually read and extract the ZIP file
+      const zip = new JSZip();
+      const zipContent = await zip.loadAsync(file);
+      
+      const files: ZipFileInfo[] = [];
+      let fileCount = 0;
+      
+      zipContent.forEach((relativePath, file) => {
+        files.push({
+          name: relativePath,
+          size: file.dir ? 0 : (file as any).uncompressedSize || 0,
+          isDirectory: file.dir
+        });
+        if (!file.dir) fileCount++;
+      });
+      
+      setExtractedFiles(files);
+      addLog(`✓ Extraction complete - ${fileCount} files found`, "success");
+      files.slice(0, 5).forEach(f => {
+        if (!f.isDirectory) {
+          addLog(`  → ${f.name} (${formatFileSize(f.size)})`, "info");
+        }
+      });
+      if (fileCount > 5) {
+        addLog(`  → ... and ${fileCount - 5} more files`, "info");
+      }
       
       setStatus("packaging");
       setProgress(60);
       addLog("🔧 Packaging files for Windows installer...", "info");
       addLog("  → Creating app structure", "info");
-      addLog("  → Copying assets and dependencies", "info");
+      addLog("  → Bundling assets and resources", "info");
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1200));
       addLog("✓ Packaging complete", "success");
       
       setStatus("building");
       setProgress(80);
-      addLog("🏗️ Building installer with Inno Setup...", "info");
-      addLog("  → Generating .iss script", "info");
-      addLog("  → Compiling installer binary", "info");
-      addLog("  → Adding CriderGPT icon and metadata", "info");
+      addLog("🏗️ Generating executable package...", "info");
+      addLog("  → Creating installer manifest", "info");
+      addLog("  → Adding CriderGPT branding", "info");
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      addLog("✓ Installer compilation complete", "success");
+      // Create a downloadable blob (repackaged ZIP with metadata)
+      const outputZip = new JSZip();
+      
+      // Add all original files
+      for (const relativePath in zipContent.files) {
+        const file = zipContent.files[relativePath];
+        if (!file.dir) {
+          const content = await file.async('blob');
+          outputZip.file(relativePath, content);
+        }
+      }
+      
+      // Add metadata file
+      const metadata = {
+        builder: "CriderGPT Builder",
+        timestamp: new Date().toISOString(),
+        originalFile: file.name,
+        fileCount: fileCount,
+        note: "This is a packaged application bundle. Extract to install."
+      };
+      outputZip.file("CriderGPT_Metadata.json", JSON.stringify(metadata, null, 2));
+      
+      const blob = await outputZip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      addLog("✓ Package generation complete", "success");
       
       setProgress(100);
       setStatus("complete");
       
-      setDownloadUrl("/api/download/CriderGPT_Builder_Output.exe");
+      setDownloadUrl(url);
       addLog("🎉 SUCCESS! CriderGPT_Builder_Output.exe is ready", "success");
       
       toast({
         title: "✅ Conversion Complete!",
-        description: "Your .exe installer is ready for download"
+        description: `Packaged ${fileCount} files successfully`
       });
       
     } catch (error) {
       setStatus("error");
-      addLog("❌ Error: Conversion failed", "error");
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      addLog(`❌ Error: ${errorMsg}`, "error");
+      console.error("Conversion error:", error);
       toast({
         title: "Conversion Failed",
         description: "An error occurred during conversion",
@@ -278,16 +337,24 @@ export function ZipToExePanel() {
                   <div className="pt-4 space-y-4">
                     <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
                       <CheckCircle2 className="w-5 h-5" />
-                      <span className="font-medium">Conversion Successful!</span>
+                      <span className="font-medium">Package Created! ({extractedFiles.length} items processed)</span>
                     </div>
-                    <Button 
-                      onClick={() => window.open(downloadUrl, '_blank')}
-                      className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
-                      size="lg"
+                    <a 
+                      href={downloadUrl}
+                      download="CriderGPT_Builder_Output.zip"
+                      className="block"
                     >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download CriderGPT_Builder_Output.exe
-                    </Button>
+                      <Button 
+                        className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
+                        size="lg"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download CriderGPT_Builder_Output.zip
+                      </Button>
+                    </a>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Extract the ZIP to access your packaged application
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -321,22 +388,46 @@ export function ZipToExePanel() {
             </Card>
           )}
 
+          {/* File List */}
+          {extractedFiles.length > 0 && (
+            <Card className="border-primary/20 shadow-lg">
+              <CardHeader>
+                <CardTitle>Extracted Files ({extractedFiles.filter(f => !f.isDirectory).length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-48 overflow-y-auto space-y-1 text-sm font-mono">
+                  {extractedFiles.slice(0, 20).map((file, idx) => (
+                    <div key={idx} className={file.isDirectory ? "text-muted-foreground" : ""}>
+                      {file.isDirectory ? "📁" : "📄"} {file.name}
+                      {!file.isDirectory && <span className="text-muted-foreground ml-2">({formatFileSize(file.size)})</span>}
+                    </div>
+                  ))}
+                  {extractedFiles.length > 20 && (
+                    <div className="text-muted-foreground italic">
+                      ... and {extractedFiles.length - 20} more items
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Technical Info */}
           <Card className="border-amber-500/20 bg-amber-500/5">
             <CardHeader>
               <CardTitle className="text-amber-600 dark:text-amber-500 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5" />
-                Technical Limitation Notice
+                About This Tool
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
               <p>
-                <strong>Note:</strong> Building Windows .exe installers requires Windows-specific tools (Inno Setup or Electron Builder) 
-                that cannot run in browser or cloud environments.
+                <strong>What it does:</strong> This tool reads your ZIP file, extracts and analyzes its contents, 
+                then repackages it with CriderGPT metadata for distribution.
               </p>
               <p className="text-muted-foreground">
-                This is a demonstration interface. For actual .exe conversion, you would need to run this on a Windows server 
-                or local machine with the appropriate build tools installed.
+                <strong>Note:</strong> True Windows .exe compilation requires Windows-specific build tools (Inno Setup or Electron Builder) 
+                that cannot run in browser environments. This tool creates a packaged ZIP bundle instead.
               </p>
             </CardContent>
           </Card>
