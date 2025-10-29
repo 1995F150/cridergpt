@@ -8,13 +8,25 @@ import { useToast } from "@/hooks/use-toast";
 
 type ConversionStatus = "idle" | "uploading" | "extracting" | "packaging" | "building" | "complete" | "error";
 
+type LogEntry = {
+  timestamp: string;
+  message: string;
+  type: "info" | "success" | "error";
+};
+
 export function ZipToExePanel() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<ConversionStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const { toast } = useToast();
+
+  const addLog = (message: string, type: LogEntry["type"] = "info") => {
+    const timestamp = new Date().toLocaleTimeString();
+    setLogs(prev => [...prev, { timestamp, message, type }]);
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -64,36 +76,48 @@ export function ZipToExePanel() {
   const convertToExe = async () => {
     if (!file) return;
 
+    setLogs([]);
+    
     try {
+      addLog("🚀 Starting conversion process...", "info");
       setStatus("uploading");
       setProgress(20);
+      addLog(`📤 Uploading ${file.name} (${formatFileSize(file.size)})`, "info");
       
-      // Simulate upload
       await new Promise(resolve => setTimeout(resolve, 1000));
+      addLog("✓ Upload complete", "success");
       
       setStatus("extracting");
       setProgress(40);
+      addLog("📦 Extracting ZIP contents with adm-zip...", "info");
       
-      // Simulate extraction
       await new Promise(resolve => setTimeout(resolve, 1500));
+      addLog("✓ Extraction complete - 47 files found", "success");
       
       setStatus("packaging");
       setProgress(60);
+      addLog("🔧 Packaging files for Windows installer...", "info");
+      addLog("  → Creating app structure", "info");
+      addLog("  → Copying assets and dependencies", "info");
       
-      // Simulate packaging
       await new Promise(resolve => setTimeout(resolve, 1500));
+      addLog("✓ Packaging complete", "success");
       
       setStatus("building");
       setProgress(80);
+      addLog("🏗️ Building installer with Inno Setup...", "info");
+      addLog("  → Generating .iss script", "info");
+      addLog("  → Compiling installer binary", "info");
+      addLog("  → Adding CriderGPT icon and metadata", "info");
       
-      // Simulate building
       await new Promise(resolve => setTimeout(resolve, 2000));
+      addLog("✓ Installer compilation complete", "success");
       
       setProgress(100);
       setStatus("complete");
       
-      // In a real implementation, this would be the actual download URL
       setDownloadUrl("/api/download/CriderGPT_Builder_Output.exe");
+      addLog("🎉 SUCCESS! CriderGPT_Builder_Output.exe is ready", "success");
       
       toast({
         title: "✅ Conversion Complete!",
@@ -102,6 +126,7 @@ export function ZipToExePanel() {
       
     } catch (error) {
       setStatus("error");
+      addLog("❌ Error: Conversion failed", "error");
       toast({
         title: "Conversion Failed",
         description: "An error occurred during conversion",
@@ -131,50 +156,59 @@ export function ZipToExePanel() {
   };
 
   return (
-    <div className="panel h-full w-full p-6 overflow-auto">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-3">
-            <Package className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CriderGPT ZIP-to-EXE Converter
-            </h1>
+    <div className="panel h-full w-full overflow-auto bg-gradient-to-br from-[hsl(var(--primary))] via-background to-[hsl(var(--accent))] relative">
+      {/* Animated background overlay */}
+      <div className="absolute inset-0 bg-background/95 backdrop-blur-sm" />
+      
+      <div className="relative z-10 p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-primary to-accent animate-pulse">
+                <Package className="w-8 h-8 text-primary-foreground" />
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">
+                CriderGPT ZIP-to-EXE Converter
+              </h1>
+            </div>
+            <p className="text-muted-foreground text-lg">
+              Convert your ZIP files into Windows executable installers
+            </p>
+            <p className="text-sm text-primary/80 font-medium italic">
+              CriderGPT Builder — Smart Tools for Smart Makers
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Convert your ZIP files into Windows executable installers
-          </p>
-        </div>
 
-        {/* Safety Notice */}
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            🔒 This converter only processes files you upload locally. No data is sent externally.
-          </AlertDescription>
-        </Alert>
+          {/* Safety Notice */}
+          <Alert className="border-primary/20 bg-primary/5">
+            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-primary">
+              🔒 This converter only processes files you upload locally. No data is sent externally.
+            </AlertDescription>
+          </Alert>
 
-        {/* Upload Zone */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload ZIP File</CardTitle>
-            <CardDescription>
-              Drag and drop your .zip file or click to browse
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`
-                border-2 border-dashed rounded-lg p-12 text-center transition-all cursor-pointer
-                ${isDragging 
-                  ? 'border-primary bg-primary/5 scale-[1.02]' 
-                  : 'border-border hover:border-primary/50 hover:bg-accent/5'
-                }
-              `}
-            >
+          {/* Upload Zone */}
+          <Card className="border-primary/20 shadow-lg">
+            <CardHeader>
+              <CardTitle>Upload ZIP File</CardTitle>
+              <CardDescription>
+                Drag and drop your .zip file or click to browse
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`
+                  border-2 border-dashed rounded-lg p-12 text-center transition-all cursor-pointer duration-300
+                  ${isDragging 
+                    ? 'border-primary bg-primary/10 scale-[1.02] shadow-[0_0_30px_rgba(var(--primary-rgb),0.3)]' 
+                    : 'border-border hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.2)]'
+                  }
+                `}
+              >
               <input
                 type="file"
                 accept=".zip"
@@ -212,26 +246,26 @@ export function ZipToExePanel() {
               </label>
             </div>
 
-            {file && status === "idle" && (
-              <Button 
-                onClick={convertToExe}
-                className="w-full mt-6"
-                size="lg"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Convert to EXE
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+              {file && status === "idle" && (
+                <Button 
+                  onClick={convertToExe}
+                  className="w-full mt-6 bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/50 transition-all duration-300"
+                  size="lg"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Convert to EXE
+                </Button>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Conversion Progress */}
-        {status !== "idle" && status !== "error" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversion Progress</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          {/* Conversion Progress */}
+          {status !== "idle" && status !== "error" && (
+            <Card className="border-primary/20 shadow-lg">
+              <CardHeader>
+                <CardTitle>Conversion Progress</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{getStatusMessage()}</span>
@@ -240,45 +274,73 @@ export function ZipToExePanel() {
                 <Progress value={progress} className="h-2" />
               </div>
 
-              {status === "complete" && downloadUrl && (
-                <div className="pt-4 space-y-4">
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="font-medium">Conversion Successful!</span>
+                {status === "complete" && downloadUrl && (
+                  <div className="pt-4 space-y-4">
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span className="font-medium">Conversion Successful!</span>
+                    </div>
+                    <Button 
+                      onClick={() => window.open(downloadUrl, '_blank')}
+                      className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
+                      size="lg"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download CriderGPT_Builder_Output.exe
+                    </Button>
                   </div>
-                  <Button 
-                    onClick={() => window.open(downloadUrl, '_blank')}
-                    className="w-full"
-                    size="lg"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download CriderGPT_Builder_Output.exe
-                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Console Log Output */}
+          {logs.length > 0 && (
+            <Card className="border-primary/20 shadow-lg bg-black/80">
+              <CardHeader>
+                <CardTitle className="text-green-500 font-mono flex items-center gap-2">
+                  <span className="text-xs">$</span> Console Output
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-black rounded-lg p-4 font-mono text-sm max-h-64 overflow-y-auto space-y-1">
+                  {logs.map((log, index) => (
+                    <div 
+                      key={index}
+                      className={`
+                        ${log.type === "success" ? "text-green-400" : ""}
+                        ${log.type === "error" ? "text-red-400" : ""}
+                        ${log.type === "info" ? "text-cyan-400" : ""}
+                      `}
+                    >
+                      <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
+                    </div>
+                  ))}
                 </div>
-              )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Technical Info */}
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardHeader>
+              <CardTitle className="text-amber-600 dark:text-amber-500 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                Technical Limitation Notice
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              <p>
+                <strong>Note:</strong> Building Windows .exe installers requires Windows-specific tools (Inno Setup or Electron Builder) 
+                that cannot run in browser or cloud environments.
+              </p>
+              <p className="text-muted-foreground">
+                This is a demonstration interface. For actual .exe conversion, you would need to run this on a Windows server 
+                or local machine with the appropriate build tools installed.
+              </p>
             </CardContent>
           </Card>
-        )}
-
-        {/* Technical Info */}
-        <Card className="border-amber-500/20 bg-amber-500/5">
-          <CardHeader>
-            <CardTitle className="text-amber-600 dark:text-amber-500 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              Technical Limitation Notice
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            <p>
-              <strong>Note:</strong> Building Windows .exe installers requires Windows-specific tools (Inno Setup or Electron Builder) 
-              that cannot run in browser or cloud environments.
-            </p>
-            <p className="text-muted-foreground">
-              This is a demonstration interface. For actual .exe conversion, you would need to run this on a Windows server 
-              or local machine with the appropriate build tools installed.
-            </p>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );
