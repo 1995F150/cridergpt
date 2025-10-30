@@ -30,7 +30,8 @@ import {
   Box,
   Cuboid,
   Wrench,
-  Package
+  Package,
+  Eye
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
@@ -41,6 +42,7 @@ interface NavigationSidebarProps {
 
 const navigationItems = [
   { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'vision-memory', label: 'Vision Memory', icon: Eye },
   { id: 'calculators', label: 'Calculators', icon: Calculator },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'invoices', label: 'Invoices', icon: FileText },

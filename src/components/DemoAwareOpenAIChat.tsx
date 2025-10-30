@@ -11,6 +11,7 @@ import { useModelSelection } from "@/hooks/useModelSelection";
 import { useAILearning } from "@/hooks/useAILearning";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { DemoExhaustedModal } from "./DemoExhaustedModal";
+import { useVisionMemory } from "@/hooks/useVisionMemory";
 
 function DemoAwareOpenAIChat() {
   const [input, setInput] = useState("");
@@ -30,6 +31,7 @@ function DemoAwareOpenAIChat() {
   const { selectedModel, setSelectedModel } = useModelSelection();
   const { generateSmartResponse, getKnowledgeStats, isLoading } = useAILearning();
   const { demoUsage, canSendMessage, incrementDemoUsage } = useDemoMode();
+  const { saveVisionMemory } = useVisionMemory();
 
   useEffect(() => {
     // Load knowledge stats on component mount (only for authenticated users)
@@ -94,13 +96,24 @@ function DemoAwareOpenAIChat() {
     }
 
     try {
-      const response = await generateSmartResponse(
+      const result = await generateSmartResponse(
         input || "Analyze this image", 
         selectedModel, 
         'chat',
         uploadedImage || undefined
       );
-      setReply(response);
+      setReply(result.response);
+      
+      // Save to vision memory if image was analyzed
+      if (uploadedImage && user && result.imageUrl) {
+        try {
+          await saveVisionMemory(result.imageUrl, result.response, input);
+        } catch (error) {
+          console.error('Failed to save vision memory:', error);
+          // Don't fail the whole operation if memory save fails
+        }
+      }
+      
       clearImage();
       
       // Update knowledge stats after new interaction (only for authenticated users)

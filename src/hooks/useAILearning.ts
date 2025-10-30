@@ -102,13 +102,13 @@ export function useAILearning() {
     selectedModel: string = 'gpt-4o-mini',
     category?: string,
     imageData?: string
-  ): Promise<string> => {
+  ): Promise<{ response: string; imageUrl?: string }> => {
     // Handle demo mode for non-authenticated users
     if (!user) {
       if (imageData) {
         throw new Error('Image analysis requires sign-in');
       }
-      return generateDemoResponse(input);
+      return { response: await generateDemoResponse(input) };
     }
 
     setIsLoading(true);
@@ -140,7 +140,7 @@ export function useAILearning() {
       
       await storeInteraction(input || "Image analysis", response, category, undefined, contextTags);
       
-      return response;
+      return { response, imageUrl: imageData };
     } catch (error) {
       console.error('Error generating smart response:', error);
       throw error;

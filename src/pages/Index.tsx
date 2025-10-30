@@ -7,6 +7,7 @@ import { SystemChecker } from '@/components/SystemChecker';
 import ChatPanel from '@/components/panels/ChatPanel';
 import { CalculatorPanel } from '@/components/panels/CalculatorPanel';
 import { CalendarPanel } from '@/components/panels/CalendarPanel';
+import { VisionMemoryPanel } from '@/components/panels/VisionMemoryPanel';
 import { InvoicePanel } from '@/components/panels/InvoicePanel';
 import { FilesPanel } from '@/components/panels/FilesPanel';
 import { GalleryPanel } from '@/components/panels/GalleryPanel';
@@ -41,6 +42,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export type PanelType = 
   | 'chat' 
+  | 'vision-memory'
   | 'calculators' 
   | 'calendar'
   | 'invoices'
@@ -131,6 +133,7 @@ export default function Index() {
         <main className="flex-1 overflow-auto bg-background">
           <div className="h-full">
             {activePanel === 'chat' && <ChatPanel />}
+            {activePanel === 'vision-memory' && <VisionMemoryPanel />}
             {activePanel === 'calculators' && <CalculatorPanel />}
             {activePanel === 'calendar' && <CalendarPanel />}
             {activePanel === 'invoices' && <InvoicePanel />}

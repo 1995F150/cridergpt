@@ -38,8 +38,8 @@ function OpenAIChat() {
     }
 
     try {
-      const response = await generateSmartResponse(input, selectedModel, 'chat');
-      setReply(response);
+      const result = await generateSmartResponse(input, selectedModel, 'chat');
+      setReply(typeof result === 'string' ? result : result.response);
       
       // Update knowledge stats after new interaction
       const updatedStats = await getKnowledgeStats();

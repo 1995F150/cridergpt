@@ -2863,6 +2863,45 @@ export type Database = {
         }
         Relationships: []
       }
+      vision_memory: {
+        Row: {
+          ai_response: string
+          category: string
+          created_at: string
+          id: string
+          image_url: string
+          metadata: Json | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_response: string
+          category?: string
+          created_at?: string
+          id?: string
+          image_url: string
+          metadata?: Json | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_response?: string
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          metadata?: Json | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       writing_samples: {
         Row: {
           category: string | null
