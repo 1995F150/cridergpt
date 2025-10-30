@@ -113,7 +113,12 @@ export function DocumentAIPanel() {
 
       if (error) throw error;
 
-      setAnalysisResult(data.analysis);
+      const result = data?.analysis || data?.output_text;
+      if (!result) {
+        throw new Error('No valid AI response');
+      }
+
+      setAnalysisResult(result);
       
       toast({
         title: "Analysis Complete",
@@ -121,9 +126,11 @@ export function DocumentAIPanel() {
       });
     } catch (error) {
       console.error('Error analyzing document:', error);
+      const errorMessage = error?.message || 'Failed to analyze document. Please try again.';
+      setAnalysisResult('⚠️ Unable to analyze document. Please try again.');
       toast({
         title: "Analysis Failed",
-        description: "Failed to analyze document. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

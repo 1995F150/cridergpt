@@ -99,13 +99,14 @@ serve(async (req) => {
   );
 
   try {
-    const { message } = await req.json();
+    const { message, imageData } = await req.json();
 
-    if (!message) {
-      throw new Error('Message is required');
+    if (!message && !imageData) {
+      throw new Error('Message or image is required');
     }
 
     console.log('Received message:', message);
+    console.log('Has image:', !!imageData);
     console.log('OpenAI API Key available:', !!openAIApiKey);
 
     if (!openAIApiKey) {
@@ -221,7 +222,19 @@ serve(async (req) => {
       });
     }
 
-    // Make OpenAI API call
+    // Make OpenAI API call with vision support
+    const modelToUse = imageData ? 'gpt-4o' : 'gpt-3.5-turbo';
+    
+    const userMessage: any = imageData 
+      ? {
+          role: 'user',
+          content: [
+            { type: 'text', text: message || 'Analyze this image' },
+            { type: 'image_url', image_url: { url: imageData } }
+          ]
+        }
+      : { role: 'user', content: message };
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -229,10 +242,10 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: modelToUse,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText) },
-          { role: 'user', content: message }
+          userMessage
         ],
         max_tokens: 1000,
         temperature: 0.7,

@@ -100,50 +100,45 @@ export function useAILearning() {
   const generateSmartResponse = useCallback(async (
     input: string,
     selectedModel: string = 'gpt-4o-mini',
-    category?: string
+    category?: string,
+    imageData?: string
   ): Promise<string> => {
     // Handle demo mode for non-authenticated users
     if (!user) {
+      if (imageData) {
+        throw new Error('Image analysis requires sign-in');
+      }
       return generateDemoResponse(input);
     }
 
     setIsLoading(true);
     try {
-      // First, search for past relevant interactions
-      const pastInteractions = await searchPastInteractions(input);
-      
-      let response: string;
-      
-      if (pastInteractions.length > 0) {
-        // If we have relevant past interactions, use them to enhance the response
-        const relevantContext = pastInteractions
-          .map(interaction => `Previous Q: ${interaction.user_input}\nPrevious A: ${interaction.ai_response}`)
-          .join('\n\n');
-        
-        const enhancedPrompt = `Based on our previous conversations:
-${relevantContext}
+      // Use chat-with-ai function which now supports images
+      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+        body: { 
+          message: input || "Analyze this image",
+          model: selectedModel,
+          imageData: imageData
+        }
+      });
 
-Current question: ${input}
+      if (error) throw error;
 
-Please provide a response that builds upon our previous interactions and maintains consistency with past answers while addressing the current question.`;
-
-        response = await getOpenAIResponse(enhancedPrompt, selectedModel);
-        
-        // Add context about using past knowledge
-        response = `${response}\n\n*[Response enhanced using past conversation knowledge]*`;
-      } else {
-        // No past interactions found, use OpenAI directly
-        response = await getOpenAIResponse(input, selectedModel);
+      // Check if we hit the rate limit
+      if (data.error && data.usage) {
+        throw new Error(`${data.error} (Used: ${data.usage.used}/${data.usage.limit})`);
       }
 
+      const response = data.response;
+      
       // Store this new interaction for future learning
       const contextTags = [
         category || 'general',
         'crider-gpt',
-        pastInteractions.length > 0 ? 'enhanced-with-memory' : 'new-knowledge'
+        imageData ? 'vision-analysis' : 'text-interaction'
       ];
       
-      await storeInteraction(input, response, category, undefined, contextTags);
+      await storeInteraction(input || "Image analysis", response, category, undefined, contextTags);
       
       return response;
     } catch (error) {
@@ -152,7 +147,7 @@ Please provide a response that builds upon our previous interactions and maintai
     } finally {
       setIsLoading(false);
     }
-  }, [user, searchPastInteractions, storeInteraction]);
+  }, [user, storeInteraction]);
 
   const getKnowledgeStats = useCallback(async (): Promise<{
     totalInteractions: number;

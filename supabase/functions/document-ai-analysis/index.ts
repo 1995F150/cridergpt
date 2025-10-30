@@ -12,15 +12,17 @@ serve(async (req) => {
   }
 
   try {
-    const { documentText, question, analysisType = "general" } = await req.json();
+    const { fileContent, fileName, analysisMode = "general", customPrompt } = await req.json();
     
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
+    console.log('Analyzing file:', fileName, 'Mode:', analysisMode);
+
     let systemPrompt = "";
-    switch (analysisType) {
+    switch (analysisMode) {
       case "agricultural":
         systemPrompt = "You are an expert agricultural consultant and FFA advisor. Analyze documents related to farming, livestock, crop management, and agricultural business. Provide detailed, actionable insights.";
         break;
@@ -34,7 +36,20 @@ serve(async (req) => {
         systemPrompt = "You are a helpful AI assistant that analyzes documents thoroughly and answers questions accurately.";
     }
 
-    console.log('Analyzing document with type:', analysisType);
+    // Extract text from base64 file (simplified for text-based files)
+    let documentText = "";
+    try {
+      // Remove data URL prefix if present
+      const base64Data = fileContent.includes(',') ? fileContent.split(',')[1] : fileContent;
+      documentText = atob(base64Data);
+    } catch (error) {
+      console.error('Error decoding file:', error);
+      throw new Error('Unable to read document content. Please ensure the file is in a supported format.');
+    }
+
+    const userPrompt = customPrompt 
+      ? `Please analyze this document with the following instructions: ${customPrompt}\n\nDocument content:\n${documentText}`
+      : `Please provide a comprehensive analysis of this document.\n\nDocument content:\n${documentText}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -51,7 +66,7 @@ serve(async (req) => {
           },
           { 
             role: 'user', 
-            content: `Please analyze the following document and answer the question: "${question}"\n\nDocument content:\n${documentText}` 
+            content: userPrompt
           }
         ],
         max_completion_tokens: 2000,
@@ -66,10 +81,16 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Document analysis completed');
+    const analysisResult = data.choices?.[0]?.message?.content || data.output_text;
+    
+    if (!analysisResult) {
+      throw new Error('No valid AI response received');
+    }
+
+    console.log('Document analysis completed successfully');
 
     return new Response(JSON.stringify({ 
-      analysis: data.choices[0].message.content,
+      analysis: analysisResult,
       usage: data.usage
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -78,6 +99,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in document-ai-analysis function:', error);
     return new Response(JSON.stringify({ 
+      analysis: '⚠️ Unable to analyze document. Please try again.',
       error: (error as Error).message || 'Failed to analyze document',
       details: (error as Error).toString()
     }), {
