@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from './use-toast';
+import { useAIMemory } from './useAIMemory';
 
 export interface VisionMemoryEntry {
   id: string;
@@ -62,6 +64,8 @@ function categorizeImage(text: string, response: string): { category: string; ta
 
 export function useVisionMemory() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { storeMemory } = useAIMemory();
   const [isLoading, setIsLoading] = useState(false);
 
   const saveVisionMemory = useCallback(async (
@@ -88,13 +92,36 @@ export function useVisionMemory() {
 
       if (error) {
         console.error('Error saving vision memory:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save to vision memory",
+          variant: "destructive",
+        });
         throw error;
       }
+
+      // Also store to ai_memory for integrated memory system
+      await storeMemory(
+        `Vision analysis: ${category}`,
+        aiResponse,
+        'image',
+        {
+          category,
+          tags,
+          imageUrl,
+          thumbnailUrl: imageUrl
+        }
+      );
+
+      toast({
+        title: "Success",
+        description: "Image analysis saved to memory",
+      });
     } catch (error) {
       console.error('Failed to save vision memory:', error);
       throw error;
     }
-  }, [user]);
+  }, [user, toast, storeMemory]);
 
   const getRecentMemories = useCallback(async (limit = 10): Promise<VisionMemoryEntry[]> => {
     if (!user) return [];

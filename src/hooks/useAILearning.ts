@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOpenAIResponse } from '@/utils/openai';
 import { useToast } from '@/hooks/use-toast';
+import { useAIMemory } from './useAIMemory';
 
 interface AIInteraction {
   id: string;
@@ -18,6 +19,7 @@ interface AIInteraction {
 export function useAILearning() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { storeMemory } = useAIMemory();
   const [isLoading, setIsLoading] = useState(false);
 
   const searchPastInteractions = useCallback(async (input: string, limit = 3): Promise<AIInteraction[]> => {
@@ -139,6 +141,18 @@ export function useAILearning() {
       ];
       
       await storeInteraction(input || "Image analysis", response, category, undefined, contextTags);
+      
+      // Store to ai_memory for CriderGPT v3.4 memory system
+      await storeMemory(
+        input || "Image analysis", 
+        response,
+        imageData ? 'image' : 'conversation',
+        {
+          category: category || 'general',
+          imageUrl: imageData,
+          model: selectedModel
+        }
+      );
       
       return { response, imageUrl: imageData };
     } catch (error) {

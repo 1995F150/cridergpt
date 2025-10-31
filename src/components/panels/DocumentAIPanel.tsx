@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FeatureGate, UsageLimitGate } from '@/components/FeatureGate';
 import { useFeatureGating } from '@/hooks/useFeatureGating';
 import { useToast } from "@/hooks/use-toast";
+import { useAIMemory } from "@/hooks/useAIMemory";
 
 const ANALYSIS_MODES = [
   {
@@ -41,6 +42,7 @@ const ANALYSIS_MODES = [
 
 export function DocumentAIPanel() {
   const { toast } = useToast();
+  const { storeMemory } = useAIMemory();
   const { hasFeatureAccess, canUseFeature, getFeatureLimitInfo } = useFeatureGating();
   const [analysisMode, setAnalysisMode] = useState("general");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -120,9 +122,22 @@ export function DocumentAIPanel() {
 
       setAnalysisResult(result);
       
+      // Store to ai_memory for CriderGPT v3.4 memory system
+      await storeMemory(
+        'Document analysis request',
+        result,
+        'document',
+        {
+          fileName: uploadedFile.name,
+          analysisMode,
+          documentSize: uploadedFile.size,
+          customPrompt: customPrompt || ''
+        }
+      );
+      
       toast({
         title: "Analysis Complete",
-        description: "Your document has been analyzed successfully!",
+        description: "Your document has been analyzed and stored in memory!",
       });
     } catch (error) {
       console.error('Error analyzing document:', error);

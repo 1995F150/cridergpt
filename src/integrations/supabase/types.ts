@@ -116,6 +116,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_memory: {
+        Row: {
+          category: string
+          created_at: string | null
+          details: string
+          id: string
+          metadata: Json | null
+          source: string
+          topic: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          details: string
+          id?: string
+          metadata?: Json | null
+          source?: string
+          topic: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          details?: string
+          id?: string
+          metadata?: Json | null
+          source?: string
+          topic?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_requests: {
         Row: {
           created_at: string
