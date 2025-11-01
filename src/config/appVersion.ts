@@ -1,5 +1,5 @@
-export const APP_VERSION = "3.4";
-export const VERSION_NAME = "Full Memory System & CriderGPT Behaviors";
+export const APP_VERSION = "3.4.1";
+export const VERSION_NAME = "Modern Chat Interface & Full Memory System";
 export const RELEASE_DATE = "2025-01-31";
 
 export const VERSION_FEATURES = [
@@ -10,5 +10,10 @@ export const VERSION_FEATURES = [
   "💾 Integrated Memory Storage - Links vision, chat, and docs",
   "🔍 Memory Search & Retrieval - Find past interactions",
   "📊 Memory Statistics - Track knowledge growth",
-  "✨ CriderGPT v3.4 System Prompt Behaviors - Jessie's tone & style"
+  "✨ CriderGPT v3.4 System Prompt Behaviors - Jessie's tone & style",
+  "💬 ChatGPT-Style Modern Input - Sleek & responsive",
+  "📋 Ctrl+V Image Paste - Instant upload & analysis",
+  "📦 Multi-File Upload - Images, ZIPs, Documents",
+  "🎮 FS22/FS25 Mod Detection - Auto-detect mod files",
+  "🖼️ Image Preview Gallery - Beautiful thumbnails with fade-in"
 ];

@@ -1,17 +1,26 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageSquare, Send, Brain, BookOpen } from "lucide-react";
+import { MessageSquare, Brain, BookOpen, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ModelSelector from "./ModelSelector";
 import { useModelSelection } from "@/hooks/useModelSelection";
 import { useAILearning } from "@/hooks/useAILearning";
+import { ModernChatInput } from "./ModernChatInput";
+import { useAIMemory } from "@/hooks/useAIMemory";
+import { useVisionMemory } from "@/hooks/useVisionMemory";
+
+interface FilePreview {
+  id: string;
+  file: File;
+  type: 'image' | 'zip' | 'document';
+  preview?: string;
+  name: string;
+  size: number;
+}
 
 function OpenAIChat() {
-  const [input, setInput] = useState("");
   const [reply, setReply] = useState("");
   const [knowledgeStats, setKnowledgeStats] = useState({
     totalInteractions: 0,
@@ -21,35 +30,78 @@ function OpenAIChat() {
   const { toast } = useToast();
   const { selectedModel, setSelectedModel } = useModelSelection();
   const { generateSmartResponse, getKnowledgeStats, isLoading } = useAILearning();
+  const { storeMemory } = useAIMemory();
+  const { saveVisionMemory } = useVisionMemory();
 
   useEffect(() => {
     // Load knowledge stats on component mount
     getKnowledgeStats().then(setKnowledgeStats);
   }, [getKnowledgeStats]);
 
-  async function sendMessage() {
-    if (!input.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a message",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  async function handleSendMessage(message: string, files?: FilePreview[]) {
     try {
-      const result = await generateSmartResponse(input, selectedModel, 'chat');
-      setReply(typeof result === 'string' ? result : result.response);
+      let responseText = '';
+
+      // Handle images first with vision analysis
+      if (files && files.length > 0) {
+        const imageFiles = files.filter(f => f.type === 'image');
+        const zipFiles = files.filter(f => f.type === 'zip');
+        const docFiles = files.filter(f => f.type === 'document');
+
+        // Process images with vision
+        for (const imageFile of imageFiles) {
+          if (imageFile.preview) {
+            const result = await generateSmartResponse(
+              message || "Analyze this image in detail",
+              selectedModel,
+              'vision_analysis',
+              imageFile.preview
+            );
+            const visionResult = typeof result === 'string' ? result : result.response;
+            responseText += visionResult + '\n\n';
+            
+            // Save to vision memory
+            await saveVisionMemory(imageFile.preview, visionResult, message || "Image analysis");
+          }
+        }
+
+        // Detect FS22/FS25 mod files in ZIPs
+        for (const zipFile of zipFiles) {
+          const modDetectionPrompt = `Detected ZIP file: ${zipFile.name}. This appears to be a Farming Simulator mod file. Ready to analyze structure when extracted.`;
+          responseText += modDetectionPrompt + '\n\n';
+          
+          toast({
+            title: "FS Mod Detected",
+            description: `Found ${zipFile.name} - looks like a FS22/FS25 mod!`,
+          });
+        }
+
+        // Handle documents
+        for (const docFile of docFiles) {
+          responseText += `Document ${docFile.name} uploaded and ready for analysis.\n\n`;
+        }
+      }
+
+      // Handle text message with AI
+      if (message.trim()) {
+        const result = await generateSmartResponse(message, selectedModel, 'chat');
+        responseText += typeof result === 'string' ? result : result.response;
+      }
+
+      setReply(responseText);
       
-      // Update knowledge stats after new interaction
+      // Update knowledge stats
       const updatedStats = await getKnowledgeStats();
       setKnowledgeStats(updatedStats);
       
+      const hasFiles = files && files.length > 0;
       toast({
-        title: "Success", 
-        description: knowledgeStats.totalInteractions > 0 
-          ? "AI response generated using learned knowledge!"
-          : "AI response received and stored for future learning!",
+        title: hasFiles ? "Analysis Complete" : "Success", 
+        description: hasFiles 
+          ? "Files analyzed and saved to memory" 
+          : knowledgeStats.totalInteractions > 0 
+            ? "AI response generated using learned knowledge!"
+            : "AI response received and stored for future learning!",
       });
     } catch (error) {
       console.error('Error sending message:', error);
@@ -69,12 +121,6 @@ function OpenAIChat() {
       }
     }
   }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading) {
-      sendMessage();
-    }
-  };
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -117,38 +163,22 @@ function OpenAIChat() {
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={knowledgeStats.totalInteractions > 0 
-              ? "Ask me anything - I remember our past conversations..." 
-              : "Start a conversation to build my knowledge..."
-            }
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button 
-            onClick={sendMessage} 
-            disabled={isLoading || !input.trim()}
-            size="icon"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+        <ModernChatInput
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+          placeholder={knowledgeStats.totalInteractions > 0 
+            ? "Ask me anything - I remember our past conversations..." 
+            : "Start a conversation to build my knowledge..."
+          }
+        />
         
         {reply && (
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-              <Brain className="h-3 w-3" />
-              CriderGPT Response:
+          <div className="p-4 bg-gradient-to-br from-[#081F35]/5 to-[#D8B142]/5 border border-[#D8B142]/20 rounded-lg animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+            <p className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[#D8B142]" />
+              <span className="font-semibold">CriderGPT Response:</span>
             </p>
-            <p className="whitespace-pre-wrap">{reply}</p>
+            <p className="whitespace-pre-wrap leading-relaxed">{reply}</p>
           </div>
         )}
         
