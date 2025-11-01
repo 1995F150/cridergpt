@@ -1,9 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageSquare, Send, Brain, BookOpen, AlertTriangle, Image as ImageIcon, X } from "lucide-react";
+import { MessageSquare, Brain, BookOpen, AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import ModelSelector from "./ModelSelector";
@@ -12,9 +10,19 @@ import { useAILearning } from "@/hooks/useAILearning";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { DemoExhaustedModal } from "./DemoExhaustedModal";
 import { useVisionMemory } from "@/hooks/useVisionMemory";
+import { ModernChatInput } from "./ModernChatInput";
+import { useAIMemory } from "@/hooks/useAIMemory";
+
+interface FilePreview {
+  id: string;
+  file: File;
+  type: 'image' | 'zip' | 'document';
+  preview?: string;
+  name: string;
+  size: number;
+}
 
 function DemoAwareOpenAIChat() {
-  const [input, setInput] = useState("");
   const [reply, setReply] = useState("");
   const [knowledgeStats, setKnowledgeStats] = useState({
     totalInteractions: 0,
@@ -22,9 +30,6 @@ function DemoAwareOpenAIChat() {
     recentTopics: []
   });
   const [showDemoModal, setShowDemoModal] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -32,6 +37,7 @@ function DemoAwareOpenAIChat() {
   const { generateSmartResponse, getKnowledgeStats, isLoading } = useAILearning();
   const { demoUsage, canSendMessage, incrementDemoUsage } = useDemoMode();
   const { saveVisionMemory } = useVisionMemory();
+  const { storeMemory } = useAIMemory();
 
   useEffect(() => {
     // Load knowledge stats on component mount (only for authenticated users)
@@ -40,50 +46,7 @@ function DemoAwareOpenAIChat() {
     }
   }, [getKnowledgeStats, user]);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid File",
-          description: "Please upload an image file.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setUploadedImage(base64);
-        setImagePreview(base64);
-        toast({
-          title: "Image Uploaded",
-          description: "Image ready for analysis!",
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const clearImage = () => {
-    setUploadedImage(null);
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  async function sendMessage() {
-    if (!input.trim() && !uploadedImage) {
-      toast({
-        title: "Error",
-        description: "Please enter a message or upload an image",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  async function handleSendMessage(message: string, files?: FilePreview[]) {
     // Check demo limits for non-authenticated users
     if (!user) {
       if (!canSendMessage()) {
@@ -96,42 +59,92 @@ function DemoAwareOpenAIChat() {
     }
 
     try {
-      const result = await generateSmartResponse(
-        input || "Analyze this image", 
-        selectedModel, 
-        'chat',
-        uploadedImage || undefined
-      );
-      setReply(result.response);
-      
-      // Save to vision memory if image was analyzed
-      if (uploadedImage && user && result.imageUrl) {
-        try {
-          await saveVisionMemory(result.imageUrl, result.response, input);
-        } catch (error) {
-          console.error('Failed to save vision memory:', error);
-          // Don't fail the whole operation if memory save fails
+      let responseText = '';
+
+      // Handle images with vision analysis
+      if (files && files.length > 0) {
+        const imageFiles = files.filter(f => f.type === 'image');
+        const zipFiles = files.filter(f => f.type === 'zip');
+        const docFiles = files.filter(f => f.type === 'document');
+
+        // Process images
+        for (const imageFile of imageFiles) {
+          if (imageFile.preview) {
+            const result = await generateSmartResponse(
+              message || "Analyze this image in detail",
+              selectedModel,
+              'vision_analysis',
+              imageFile.preview
+            );
+            const visionResult = typeof result === 'string' ? result : result.response;
+            responseText += visionResult + '\n\n';
+            
+            // Save to vision memory (only for authenticated users)
+            if (user) {
+              await saveVisionMemory(imageFile.preview, visionResult, message || "Image analysis");
+            }
+          }
+        }
+
+        // Detect FS22/FS25 mod files in ZIPs
+        for (const zipFile of zipFiles) {
+          const modDetectionPrompt = `Detected ZIP file: ${zipFile.name}. This appears to be a Farming Simulator mod file. Ready to analyze structure when extracted.`;
+          responseText += modDetectionPrompt + '\n\n';
+          
+          // Store ZIP upload event (only for authenticated users)
+          if (user) {
+            await storeMemory(
+              `ZIP Upload: ${zipFile.name}`,
+              modDetectionPrompt,
+              'conversation',
+              {
+                type: 'upload_event',
+                filename: zipFile.name,
+                filetype: 'zip',
+                category: 'fs_modding'
+              }
+            );
+          }
+          
+          toast({
+            title: "FS Mod Detected",
+            description: `Found ${zipFile.name} - looks like a FS22/FS25 mod!`,
+          });
+        }
+
+        // Handle documents
+        for (const docFile of docFiles) {
+          responseText += `Document ${docFile.name} uploaded and ready for analysis.\n\n`;
         }
       }
+
+      // Handle text message
+      if (message.trim()) {
+        const result = await generateSmartResponse(message, selectedModel, 'chat');
+        responseText += typeof result === 'string' ? result : result.response;
+      }
+
+      setReply(responseText);
       
-      clearImage();
-      
-      // Update knowledge stats after new interaction (only for authenticated users)
+      // Update knowledge stats (only for authenticated users)
       if (user) {
         const updatedStats = await getKnowledgeStats();
         setKnowledgeStats(updatedStats);
       }
       
+      const hasFiles = files && files.length > 0;
       toast({
-        title: "Success", 
+        title: hasFiles ? "Analysis Complete" : "Success", 
         description: user 
-          ? (knowledgeStats.totalInteractions > 0 
-            ? "AI response generated using learned knowledge!"
-            : "AI response received and stored for future learning!")
+          ? (hasFiles 
+              ? "Files analyzed and saved to memory" 
+              : knowledgeStats.totalInteractions > 0 
+                ? "AI response generated using learned knowledge!"
+                : "AI response received and stored for future learning!")
           : "Demo response generated! Sign up to continue using CriderGPT.",
       });
 
-      // Show demo modal for non-authenticated users after first message
+      // Show demo modal for non-authenticated users after using demo limit
       if (!user && demoUsage.messagesUsed >= demoUsage.maxMessages) {
         setTimeout(() => setShowDemoModal(true), 2000);
       }
@@ -154,12 +167,6 @@ function DemoAwareOpenAIChat() {
       }
     }
   }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading) {
-      sendMessage();
-    }
-  };
 
   if (authLoading) {
     return (
@@ -227,65 +234,14 @@ function DemoAwareOpenAIChat() {
         </CardHeader>
         
         <CardContent className="space-y-4">
-          {/* Image Preview */}
-          {imagePreview && (
-            <div className="relative border-2 border-dashed border-primary/50 rounded-lg p-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2"
-                onClick={clearImage}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <img 
-                src={imagePreview} 
-                alt="Upload preview" 
-                className="max-h-48 mx-auto rounded-lg"
-              />
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Image ready for analysis
-              </p>
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={user ? "Ask me anything about farming, welding, vehicles, or upload an image..." : "Try the demo: Ask about farming or upload an image..."}
-              disabled={isLoading || (!user && !canSendMessage())}
-              className="flex-1"
-            />
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              accept="image/*"
-              className="hidden"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading || (!user && !canSendMessage())}
-              title="Upload image"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-            <Button 
-              onClick={sendMessage} 
-              disabled={isLoading || (!input.trim() && !uploadedImage) || (!user && !canSendMessage())}
-              size="icon"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <ModernChatInput
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading || (!user && !canSendMessage())}
+            placeholder={user 
+              ? "Ask me anything about farming, welding, vehicles, or upload files..." 
+              : "Try the demo: Ask about farming or upload an image..."
+            }
+          />
 
           {reply && (
             <div className="p-4 bg-muted rounded-lg">

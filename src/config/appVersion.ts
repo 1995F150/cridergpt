@@ -1,5 +1,5 @@
-export const APP_VERSION = "3.4.1";
-export const VERSION_NAME = "Modern Chat Interface & Full Memory System";
+export const APP_VERSION = "3.4.2";
+export const VERSION_NAME = "Mobile-Optimized Multi-File Upload";
 export const RELEASE_DATE = "2025-01-31";
 
 export const VERSION_FEATURES = [
@@ -15,5 +15,6 @@ export const VERSION_FEATURES = [
   "📋 Ctrl+V Image Paste - Instant upload & analysis",
   "📦 Multi-File Upload - Images, ZIPs, Documents",
   "🎮 FS22/FS25 Mod Detection - Auto-detect mod files",
-  "🖼️ Image Preview Gallery - Beautiful thumbnails with fade-in"
+  "🖼️ Image Preview Gallery - Beautiful thumbnails with fade-in",
+  "➕ Plus Button Upload - Works on mobile & desktop"
 ];
