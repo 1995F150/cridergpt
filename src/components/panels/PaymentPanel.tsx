@@ -59,14 +59,15 @@ export function PaymentPanel() {
         return;
       }
 
+      // Use correct edge function based on plan type
+      const functionName = planName === "lifetime" ? "create-checkout" : "create-checkout";
+      
       const { data, error } = await supabase.functions.invoke(
-        "process-lifetime-payment",
+        functionName,
         {
           body: {
             priceId,
             planName,
-            userId: session.user.id,
-            userEmail: session.user.email,
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -76,7 +77,7 @@ export function PaymentPanel() {
 
       if (error) throw error;
       if (data?.url) {
-        window.open(data.url, "_blank");
+        window.location.href = data.url;
       } else {
         throw new Error("No checkout URL returned.");
       }
