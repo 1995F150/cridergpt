@@ -9,7 +9,8 @@ import {
   FileArchive, 
   FileText,
   Loader2,
-  Sparkles
+  Sparkles,
+  Video
 } from 'lucide-react';
 import {
   Dialog,
@@ -25,7 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 interface FilePreview {
   id: string;
   file: File;
-  type: 'image' | 'zip' | 'document';
+  type: 'image' | 'zip' | 'document' | 'video';
   preview?: string;
   name: string;
   size: number;
@@ -140,7 +141,23 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
     setFiles(prev => [...prev, newFile]);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'zip' | 'document') => {
+  const addVideoFile = async (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const newFile: FilePreview = {
+        id: Math.random().toString(36).substr(2, 9),
+        file,
+        type: 'video',
+        preview: reader.result as string,
+        name: file.name,
+        size: file.size
+      };
+      setFiles(prev => [...prev, newFile]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'zip' | 'document' | 'video') => {
     const selectedFiles = e.target.files;
     if (!selectedFiles) return;
 
@@ -149,6 +166,8 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
         addImageFile(file);
       } else if (type === 'zip') {
         addZipFile(file);
+      } else if (type === 'video') {
+        addVideoFile(file);
       } else {
         addDocumentFile(file);
       }
@@ -214,6 +233,11 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
               {file.type === 'document' && (
                 <div className="w-12 h-12 bg-blue-500/10 rounded flex items-center justify-center">
                   <FileText className="w-6 h-6 text-blue-500" />
+                </div>
+              )}
+              {file.type === 'video' && file.preview && (
+                <div className="relative w-12 h-12 bg-purple-500/10 rounded flex items-center justify-center">
+                  <Video className="w-6 h-6 text-purple-500" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -358,6 +382,31 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
                 <div className="text-left">
                   <div className="font-semibold">Upload Document</div>
                   <div className="text-xs text-muted-foreground">PDF, DOCX, TXT</div>
+                </div>
+              </div>
+            </Button>
+
+            {/* Video Upload */}
+            <Button
+              variant="outline"
+              className="h-auto p-4 justify-start hover:bg-purple-500/5 hover:border-purple-500/50 transition-all"
+              onClick={() => document.getElementById('video-input')?.click()}
+            >
+              <input
+                id="video-input"
+                type="file"
+                accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska"
+                multiple
+                className="hidden"
+                onChange={(e) => handleFileSelect(e, 'video')}
+              />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Video className="h-5 w-5 text-purple-500" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold">Upload Video</div>
+                  <div className="text-xs text-muted-foreground">MP4, MOV, AVI, MKV</div>
                 </div>
               </div>
             </Button>

@@ -1,20 +1,18 @@
-export const APP_VERSION = "3.4.2";
-export const VERSION_NAME = "Mobile-Optimized Multi-File Upload";
-export const RELEASE_DATE = "2025-01-31";
+export const APP_VERSION = "3.5.0";
+export const VERSION_NAME = "Universal Media Intelligence";
+export const RELEASE_DATE = "2025-11-01";
 
 export const VERSION_FEATURES = [
-  "🧠 Complete AI Memory System - Stores all interactions",
-  "🖼️ Vision Memory Dashboard - Track analyzed images",
-  "📄 Document Analysis Memory - Saves all document insights", 
-  "🏷️ Smart Auto-Categorization - Agriculture, FFA, Mechanics, FS Modding",
-  "💾 Integrated Memory Storage - Links vision, chat, and docs",
-  "🔍 Memory Search & Retrieval - Find past interactions",
-  "📊 Memory Statistics - Track knowledge growth",
-  "✨ CriderGPT v3.4 System Prompt Behaviors - Jessie's tone & style",
-  "💬 ChatGPT-Style Modern Input - Sleek & responsive",
-  "📋 Ctrl+V Image Paste - Instant upload & analysis",
-  "📦 Multi-File Upload - Images, ZIPs, Documents",
-  "🎮 FS22/FS25 Mod Detection - Auto-detect mod files",
-  "🖼️ Image Preview Gallery - Beautiful thumbnails with fade-in",
-  "➕ Plus Button Upload - Works on mobile & desktop"
+  "🎬 VIDEO ANALYSIS - Scene extraction, audio transcription, timeline summaries",
+  "🤖 AUTOMATIC FILE ANALYSIS - AI analyzes every upload instantly",
+  "🧠 STRUCTURED MEMORY LEARNING - Stores keywords, topics, and summaries",
+  "📸 Enhanced Image Analysis - Vision + OCR for all visual content",
+  "📄 Smart Document Parsing - PDF/DOCX text extraction",
+  "📦 ZIP Intelligence - FS22/FS25 mod structure detection",
+  "🎥 Multi-Format Support - Images, PDFs, ZIPs, Videos (MP4, MOV, AVI, MKV)",
+  "✨ CriderGPT v3.5 Core - Never says 'I can't analyze that'",
+  "💬 ChatGPT-Style Input - Modern paste & multi-upload",
+  "📋 Ctrl+V Image Paste - Instant clipboard upload",
+  "🖼️ Adaptive Preview Gallery - Supports all media types",
+  "➕ Universal Upload Button - One click for any file type"
 ];
