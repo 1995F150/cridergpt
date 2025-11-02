@@ -1,5 +1,5 @@
-export const APP_VERSION = "3.5.1";
-export const VERSION_NAME = "Universal Media Intelligence";
+export const APP_VERSION = "3.6.0";
+export const VERSION_NAME = "Call Mode v1.1";
 export const RELEASE_DATE = "2025-11-01";
 
 export const VERSION_FEATURES = [

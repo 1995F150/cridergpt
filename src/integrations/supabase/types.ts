@@ -212,6 +212,33 @@ export type Database = {
         }
         Relationships: []
       }
+      analysis_logs: {
+        Row: {
+          analysis_summary: Json
+          created_at: string
+          file_name: string
+          file_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          analysis_summary: Json
+          created_at?: string
+          file_name: string
+          file_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          analysis_summary?: Json
+          created_at?: string
+          file_name?: string
+          file_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -513,6 +540,36 @@ export type Database = {
           start_time?: string
           title?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      call_logs: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          end_time: string | null
+          id: string
+          mute_count: number | null
+          start_time: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          end_time?: string | null
+          id?: string
+          mute_count?: number | null
+          start_time?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          end_time?: string | null
+          id?: string
+          mute_count?: number | null
+          start_time?: string
           user_id?: string
         }
         Relationships: []

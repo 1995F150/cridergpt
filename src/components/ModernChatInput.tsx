@@ -10,8 +10,10 @@ import {
   FileText,
   Loader2,
   Sparkles,
-  Video
+  Video,
+  Phone
 } from 'lucide-react';
+import { CallModeInterface } from '@/components/CallModeInterface';
 import {
   Dialog,
   DialogContent,
@@ -46,6 +48,7 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
   const [message, setMessage] = useState('');
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showCallMode, setShowCallMode] = useState(false);
   const [processingPaste, setProcessingPaste] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -210,6 +213,11 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
 
   return (
     <div className="w-full space-y-2">
+      {/* Call Mode Interface */}
+      {showCallMode && (
+        <CallModeInterface onClose={() => setShowCallMode(false)} />
+      )}
+      
       {/* File Preview Gallery */}
       {files.length > 0 && (
         <div className="flex flex-wrap gap-2 p-2 bg-muted/30 rounded-lg animate-in fade-in-50 duration-300">
@@ -282,6 +290,17 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
           className="min-h-[44px] max-h-[200px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
           rows={1}
         />
+
+        {/* Call Button */}
+        <Button
+          size="icon"
+          variant="ghost"
+          className="shrink-0 h-10 w-10 rounded-lg hover:bg-green-500/10 hover:text-green-500 transition-all duration-200"
+          onClick={() => setShowCallMode(!showCallMode)}
+          disabled={isLoading}
+        >
+          <Phone className="h-5 w-5" />
+        </Button>
 
         {/* Send Button */}
         <Button
