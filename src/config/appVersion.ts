@@ -1,6 +1,6 @@
-export const APP_VERSION = "3.6.0";
-export const VERSION_NAME = "Call Mode v1.1";
-export const RELEASE_DATE = "2025-11-01";
+export const APP_VERSION = "3.6.1";
+export const VERSION_NAME = "Memory Manager";
+export const RELEASE_DATE = "2025-11-03";
 
 export const VERSION_FEATURES = [
   "🎬 VIDEO ANALYSIS - Scene extraction, audio transcription, timeline summaries",

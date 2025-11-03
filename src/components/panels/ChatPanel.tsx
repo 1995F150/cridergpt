@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Brain, BookOpen, HelpCircle } from "lucide-react";
+import { MessageSquare, Brain, BookOpen, HelpCircle, Trash2 } from "lucide-react";
 import DemoAwareOpenAIChat from "@/components/DemoAwareOpenAIChat";
 import { KnowledgeViewer } from "@/components/KnowledgeViewer";
 import { TrainingDataManager } from "@/components/TrainingDataManager";
+import { MemoryManager } from "@/components/MemoryManager";
 
 export default function ChatPanel() {
   return (
@@ -18,7 +19,7 @@ export default function ChatPanel() {
       </CardHeader>
       <CardContent className="h-full">
         <Tabs defaultValue="chat" className="h-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="chat" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               CriderGPT
@@ -34,6 +35,10 @@ export default function ChatPanel() {
             <TabsTrigger value="training" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Training Data
+            </TabsTrigger>
+            <TabsTrigger value="memory" className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4" />
+              Memory Manager
             </TabsTrigger>
           </TabsList>
           
@@ -107,6 +112,10 @@ export default function ChatPanel() {
           
           <TabsContent value="training" className="h-full mt-4">
             <TrainingDataManager />
+          </TabsContent>
+          
+          <TabsContent value="memory" className="h-full mt-4">
+            <MemoryManager />
           </TabsContent>
         </Tabs>
       </CardContent>
