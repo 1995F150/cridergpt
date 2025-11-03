@@ -1,5 +1,5 @@
-export const APP_VERSION = "3.6.1";
-export const VERSION_NAME = "Memory Manager";
+export const APP_VERSION = "3.6.2";
+export const VERSION_NAME = "Call Mode CC";
 export const RELEASE_DATE = "2025-11-03";
 
 export const VERSION_FEATURES = [

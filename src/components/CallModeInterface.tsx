@@ -1,8 +1,9 @@
-import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, Monitor } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, Monitor, Subtitles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCallMode } from '@/hooks/useCallMode';
 
 interface CallModeInterfaceProps {
@@ -15,10 +16,13 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
     isMuted,
     callDuration,
     volume,
+    showCC,
+    transcripts,
     startCall,
     endCall,
     toggleMute,
     adjustVolume,
+    toggleCC,
     formatDuration,
   } = useCallMode();
 
@@ -133,9 +137,61 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
           </Button>
         </div>
 
-        {/* Future Features */}
+        {/* Closed Captions */}
+        {showCC && (
+          <div className="pt-4 border-t">
+            <ScrollArea className="h-48 w-full rounded-md border p-4">
+              {transcripts.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Captions will appear here...
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {transcripts.map((entry, idx) => (
+                    <div
+                      key={idx}
+                      className={`text-sm ${
+                        entry.speaker === 'user' 
+                          ? 'text-left' 
+                          : 'text-right'
+                      }`}
+                    >
+                      <Badge 
+                        variant={entry.speaker === 'user' ? 'outline' : 'default'}
+                        className="mb-1"
+                      >
+                        {entry.speaker === 'user' ? 'You' : 'CriderGPT'}
+                      </Badge>
+                      <p className={`${
+                        entry.speaker === 'user' 
+                          ? 'bg-muted' 
+                          : 'bg-primary/10'
+                      } rounded-lg p-2 inline-block max-w-[90%]`}>
+                        {entry.text}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {entry.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        )}
+
+        {/* Settings & Future Features */}
         <div className="pt-4 border-t">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              onClick={toggleCC}
+              variant={showCC ? "default" : "ghost"}
+              size="sm"
+              className="justify-start"
+            >
+              <Subtitles className="h-4 w-4 mr-2" />
+              CC
+            </Button>
             <Button
               disabled
               variant="ghost"
@@ -143,7 +199,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
               className="justify-start opacity-50"
             >
               <Monitor className="h-4 w-4 mr-2" />
-              Screen Share
+              Screen
               <Badge variant="secondary" className="ml-auto text-[10px]">Soon</Badge>
             </Button>
             <Button
@@ -153,7 +209,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
               className="justify-start opacity-50"
             >
               <Video className="h-4 w-4 mr-2" />
-              Video Call
+              Video
               <Badge variant="secondary" className="ml-auto text-[10px]">Soon</Badge>
             </Button>
           </div>

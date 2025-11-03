@@ -11,6 +11,12 @@ interface CallLog {
   mute_count: number;
 }
 
+export interface TranscriptEntry {
+  speaker: 'user' | 'ai';
+  text: string;
+  timestamp: Date;
+}
+
 export function useCallMode() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -20,6 +26,8 @@ export function useCallMode() {
   const [volume, setVolume] = useState(0.8);
   const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [muteCount, setMuteCount] = useState(0);
+  const [showCC, setShowCC] = useState(false);
+  const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -41,6 +49,13 @@ export function useCallMode() {
           .join('');
         
         if (event.results[0].isFinal) {
+          // Add user transcript to CC
+          setTranscripts(prev => [...prev, {
+            speaker: 'user',
+            text: transcript,
+            timestamp: new Date()
+          }]);
+          
           // Process complete transcript
           await processVoiceInput(transcript);
         }
@@ -66,8 +81,15 @@ export function useCallMode() {
 
       if (error) throw error;
       
-      // Speak the response
+      // Add AI response to CC
       if (data?.response) {
+        setTranscripts(prev => [...prev, {
+          speaker: 'ai',
+          text: data.response,
+          timestamp: new Date()
+        }]);
+        
+        // Speak the response
         speakResponse(data.response);
       }
     } catch (error) {
@@ -137,6 +159,7 @@ export function useCallMode() {
       setCurrentCallId(callLog.id);
       setIsCallActive(true);
       setMuteCount(0);
+      setTranscripts([]);
 
       // Start timer
       timerRef.current = setInterval(() => {
@@ -199,6 +222,7 @@ export function useCallMode() {
       setCallDuration(0);
       setCurrentCallId(null);
       setMuteCount(0);
+      setTranscripts([]);
 
       toast({
         title: "Call Ended",
@@ -253,15 +277,22 @@ export function useCallMode() {
     };
   }, []);
 
+  const toggleCC = useCallback(() => {
+    setShowCC(prev => !prev);
+  }, []);
+
   return {
     isCallActive,
     isMuted,
     callDuration,
     volume,
+    showCC,
+    transcripts,
     startCall,
     endCall,
     toggleMute,
     adjustVolume,
+    toggleCC,
     formatDuration: () => formatDuration(callDuration),
   };
 }
