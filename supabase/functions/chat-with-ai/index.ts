@@ -152,6 +152,25 @@ serve(async (req) => {
       console.error('Failed to load writing samples:', samplesError);
     }
 
+    // Fetch AI memories for context (learning over time)
+    let memoriesContext = '';
+    if (userId) {
+      const { data: memoriesData, error: memoriesError } = await supabase
+        .from('ai_memory')
+        .select('topic, details, category, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (!memoriesError && memoriesData && memoriesData.length > 0) {
+        memoriesContext = '\n\n📚 LEARNED KNOWLEDGE FROM PAST CONVERSATIONS:\n';
+        memoriesContext += memoriesData
+          .map(mem => `[${mem.category}] ${mem.topic}: ${mem.details.substring(0, 200)}...`)
+          .join('\n');
+        console.log('Loaded', memoriesData.length, 'memories for context');
+      }
+    }
+
     // Check/create usage record
     let { data: usage, error: usageError } = await supabase
       .from('ai_usage')
@@ -244,7 +263,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: modelToUse,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText) },
+          { role: 'system', content: SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText) + memoriesContext },
           userMessage
         ],
         max_tokens: 1000,
@@ -259,6 +278,35 @@ serve(async (req) => {
 
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
+
+    // Store interaction in ai_memory for learning over time
+    if (userId) {
+      const category = message.toLowerCase().includes('farm') ? 'farming' :
+                      message.toLowerCase().includes('weld') ? 'welding' :
+                      message.toLowerCase().includes('truck') || message.toLowerCase().includes('vehicle') ? 'vehicles' :
+                      message.toLowerCase().includes('ffa') ? 'ffa' : 'general';
+
+      const { error: memoryError } = await supabase
+        .from('ai_memory')
+        .insert({
+          user_id: userId,
+          category: category,
+          topic: message.substring(0, 100),
+          details: aiResponse,
+          source: imageData ? 'image' : 'conversation',
+          metadata: {
+            model: modelToUse,
+            timestamp: new Date().toISOString(),
+            userInput: message
+          }
+        });
+
+      if (memoryError) {
+        console.error('Failed to store memory:', memoryError);
+      } else {
+        console.log('Interaction stored in ai_memory for learning');
+      }
+    }
 
     // Increment usage count after successful response
     const { error: updateError } = await supabase

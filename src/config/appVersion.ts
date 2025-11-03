@@ -1,5 +1,5 @@
-export const APP_VERSION = "3.6.2";
-export const VERSION_NAME = "Call Mode CC";
+export const APP_VERSION = "3.7.0";
+export const VERSION_NAME = "AI Learning Integration";
 export const RELEASE_DATE = "2025-11-03";
 
 export const VERSION_FEATURES = [
