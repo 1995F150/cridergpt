@@ -34,11 +34,6 @@ serve(async (req) => {
       throw new Error('Text is required');
     }
 
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
-    if (!ELEVENLABS_API_KEY) {
-      throw new Error('ElevenLabs API key not configured');
-    }
-
     // Get user from auth header (required for TTS)
     let userId = null;
     let userEmail = null;
@@ -147,32 +142,22 @@ serve(async (req) => {
       });
     }
 
-    // Your custom voice ID
-    const VOICE_ID = 'DM5m1QntqMVnJ0y5FY4K';
-
-    // Generate speech using ElevenLabs API
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+    // Generate speech using local TTS engine
+    const response = await fetch('http://localhost:5000/tts', {
       method: 'POST',
       headers: {
-        'xi-api-key': ELEVENLABS_API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.8,
-          style: 0.0,
-          use_speaker_boost: true
-        }
+        voice_sample: 'crider-voice-sample.mp3'
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('ElevenLabs API error:', error);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      console.error('Local TTS engine error:', error);
+      throw new Error(`Local TTS engine error: ${response.status}`);
     }
 
     // Convert audio to base64
