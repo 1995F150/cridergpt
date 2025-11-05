@@ -1,1 +1,13 @@
 project_id = "udpldrrpebdyuiqdtqnq"
+
+[functions.calendar-events]
+verify_jwt = false
+
+[functions.chat-with-ai]
+verify_jwt = false
+
+[functions.text-to-speech]
+verify_jwt = false
+
+[functions.demo-chat]
+verify_jwt = false

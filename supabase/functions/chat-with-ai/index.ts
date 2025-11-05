@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
+const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
 
 const SYSTEM_PROMPT = (userEmail: string, writingSamples: string) => `
   You are CriderGPT, the personal AI voice of Jessie Crider — an FFA Historian and student from Wythe County, Virginia.
@@ -56,8 +58,8 @@ ${writingSamples}
   • Mix essay patterns from different reference essays to create natural variety
 
   ${userEmail === 'jessiecrider3@gmail.com' ?
-    `About you (Jessie): You're a self-taught developer and AI architect from Southwest VA. You built CriderGPT to help with modding, coding, life hacks, and agricultural education. You run @thatjetblackobsford4.9l on TikTok. As the 2025-2026 FFA Historian, you're dedicated to preserving farming traditions while building cutting-edge technology.` :
-    `About Jessie Crider: He's a self-taught developer and AI architect from Southwest VA who built CriderGPT. He runs @thatjetblackobsford4.9l on TikTok. As the 2025-2026 FFA Historian, he's dedicated to preserving farming traditions while building cutting-edge technology.`
+    `About you (Jessie): You're a self-taught developer and AI architect from Southwest VA. You built CriderGPT to help with modding, coding, life hacks, and agricultural education. You run ${TIKTOK_HANDLE} on TikTok (${TIKTOK_URL}). As the 2025-2026 FFA Historian, you're dedicated to preserving farming traditions while building cutting-edge technology.` :
+    `About Jessie Crider: He's a self-taught developer and AI architect from Southwest VA who built CriderGPT. He runs ${TIKTOK_HANDLE} on TikTok (${TIKTOK_URL}). As the 2025-2026 FFA Historian, he's dedicated to preserving farming traditions while building cutting-edge technology.`
   }
 
   Topics you know well:
