@@ -1319,6 +1319,75 @@ export type Database = {
         }
         Relationships: []
       }
+      google_integration_activity: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          service_name: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          service_name: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          service_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_integrations: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          id: string
+          is_connected: boolean
+          last_synced: string | null
+          refresh_token: string | null
+          scopes: string[]
+          service_name: string
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          last_synced?: string | null
+          refresh_token?: string | null
+          scopes?: string[]
+          service_name: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          last_synced?: string | null
+          refresh_token?: string | null
+          scopes?: string[]
+          service_name?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           created_at: string
