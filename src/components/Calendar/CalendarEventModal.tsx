@@ -112,11 +112,12 @@ export function CalendarEventModal({
   const handleSubmit = async (data: EventFormData) => {
     setIsSubmitting(true);
     try {
-      await onSave({
+await onSave({
         title: data.title,
         description: data.description,
         start_time: new Date(data.start_time).toISOString(),
         end_time: new Date(data.end_time).toISOString(),
+        date: new Date(data.start_time).toISOString().slice(0, 10),
         category: data.category,
       });
     } finally {
