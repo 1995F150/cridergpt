@@ -46,6 +46,7 @@ serve(async (req) => {
         .from('calendar_events')
         .select('*')
         .eq('user_id', user.id)
+        .order('date', { ascending: true })
         .order('start_time', { ascending: true });
 
       if (error) {

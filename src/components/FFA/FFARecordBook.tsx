@@ -27,9 +27,22 @@ export function FFARecordBook() {
     category: "SAE"
   });
 
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<Array<{
+    id: number;
+    title: string;
+    date: string;
+    hours: number;
+    description: string;
+    category: string;
+  }>>([]);
 
-  const [achievements, setAchievements] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<Array<{
+    id: number;
+    title: string;
+    date: string;
+    description: string;
+    year?: string;
+  }>>([]);
 
   const handleAddActivity = () => {
     if (newActivity.title && newActivity.date && newActivity.hours) {

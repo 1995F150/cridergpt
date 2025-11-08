@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAIMemory } from '@/hooks/useAIMemory';
+import { useAIMemory, type AIMemory } from '@/hooks/useAIMemory';
 import { useAuth } from '@/contexts/AuthContext';
 import { Trash2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function MemoryManager() {
-  const [memories, setMemories] = useState<any[]>([]);
+  const [memories, setMemories] = useState<AIMemory[]>([]);
   const { getRecentMemories, deleteMemory } = useAIMemory();
   const { user } = useAuth();
   const { toast } = useToast();

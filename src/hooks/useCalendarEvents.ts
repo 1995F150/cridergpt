@@ -26,16 +26,13 @@ export function useCalendarEvents() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      console.log('🗓️ Fetching calendar events...');
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.log('🗓️ No session found, cannot fetch events');
         setEvents([]);
         return;
       }
 
-console.log('🗓️ Session found, calling calendar-events function');
       const { data, error } = await supabase.functions.invoke('calendar-events', {
         body: { action: 'list' },
         headers: {
@@ -43,7 +40,6 @@ console.log('🗓️ Session found, calling calendar-events function');
         },
       });
 
-      console.log('🗓️ Calendar events response:', { data, error });
       if (error) throw error;
 
       setEvents(data.events || []);
@@ -61,14 +57,12 @@ console.log('🗓️ Session found, calling calendar-events function');
 
   const createEvent = async (eventData: Omit<CalendarEvent, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('🗓️ Creating calendar event:', eventData);
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         throw new Error('No authentication session found');
       }
 
-// Ensure date exists in payload
       const payload = {
         ...eventData,
         date: eventData.date || new Date(eventData.start_time).toISOString().slice(0, 10),
@@ -81,7 +75,6 @@ console.log('🗓️ Session found, calling calendar-events function');
         },
       });
 
-      console.log('🗓️ Create event response:', { data, error });
       if (error) throw error;
 
       setEvents(prev => [...prev, data.event]);

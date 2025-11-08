@@ -18,10 +18,42 @@ import {
   Plus
 } from "lucide-react";
 
+interface Equipment {
+  id: number;
+  name: string;
+  type: string;
+  model: string;
+  year: string;
+  hours: number;
+  purchasePrice: number;
+  status: string;
+}
+
+interface MaintenanceRecord {
+  id: number;
+  equipmentId: string;
+  type: string;
+  date: string;
+  cost: number;
+  description: string;
+  nextDue?: string;
+  hoursAtService?: number;
+}
+
+interface FuelRecord {
+  id: number;
+  equipmentId: string;
+  date: string;
+  gallons: number;
+  cost: number;
+  hours?: number;
+  operation?: string;
+}
+
 export function EquipmentTracker() {
-  const [equipment, setEquipment] = useState<any[]>([]);
-  const [maintenance, setMaintenance] = useState<any[]>([]);
-  const [fuelData, setFuelData] = useState<any[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [maintenance, setMaintenance] = useState<MaintenanceRecord[]>([]);
+  const [fuelData, setFuelData] = useState<FuelRecord[]>([]);
   
   const [newEquipment, setNewEquipment] = useState({
     name: "",
@@ -125,25 +157,28 @@ export function EquipmentTracker() {
     }
   };
 
-  const getEquipmentEfficiency = (equipmentId: string) => {
-    const fuelEntries = fuelData.filter(f => f.equipmentId === equipmentId);
+  const getEquipmentEfficiency = (equipmentId: number) => {
+    const equipmentIdStr = String(equipmentId);
+    const fuelEntries = fuelData.filter(f => f.equipmentId === equipmentIdStr);
     if (fuelEntries.length === 0) return null;
     
     const totalGallons = fuelEntries.reduce((sum, entry) => sum + entry.gallons, 0);
-    const totalHours = fuelEntries.reduce((sum, entry) => sum + entry.hours, 0);
+    const totalHours = fuelEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0);
     
     return totalHours > 0 ? (totalHours / totalGallons).toFixed(2) : null;
   };
 
-  const getMaintenanceCost = (equipmentId: string) => {
+  const getMaintenanceCost = (equipmentId: number) => {
+    const equipmentIdStr = String(equipmentId);
     return maintenance
-      .filter(m => m.equipmentId === equipmentId)
+      .filter(m => m.equipmentId === equipmentIdStr)
       .reduce((sum, m) => sum + m.cost, 0);
   };
 
-  const getOperatingCost = (equipmentId: string) => {
+  const getOperatingCost = (equipmentId: number) => {
+    const equipmentIdStr = String(equipmentId);
     const fuelCost = fuelData
-      .filter(f => f.equipmentId === equipmentId)
+      .filter(f => f.equipmentId === equipmentIdStr)
       .reduce((sum, f) => sum + f.cost, 0);
     const maintenanceCost = getMaintenanceCost(equipmentId);
     return fuelCost + maintenanceCost;
@@ -511,12 +546,12 @@ export function EquipmentTracker() {
                   <CardContent>
                     <div className="space-y-4">
                       {equipment.map((item) => {
-                        const maintenanceCost = getMaintenanceCost(item.id.toString());
+                        const maintenanceCost = getMaintenanceCost(item.id);
                         const fuelCost = fuelData
                           .filter(f => f.equipmentId === item.id.toString())
                           .reduce((sum, f) => sum + f.cost, 0);
                         const totalOperatingCost = maintenanceCost + fuelCost;
-                        const efficiency = getEquipmentEfficiency(item.id.toString());
+                        const efficiency = getEquipmentEfficiency(item.id);
 
                         return (
                           <div key={item.id} className="p-4 border rounded-lg">

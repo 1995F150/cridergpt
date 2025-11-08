@@ -2,13 +2,13 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface AIMemory {
+export interface AIMemory {
   id: string;
   category: string;
   topic: string;
   details: string;
   source: string;
-  metadata: any; // Changed from Record<string, any> to handle Supabase Json type
+  metadata: any;
   created_at: string;
 }
 

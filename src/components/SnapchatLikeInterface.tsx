@@ -8,9 +8,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { CameraSystem } from '@/components/CameraSystem';
 import { Camera, Video, Send, Users, MessageCircle } from 'lucide-react';
 
+interface Friend {
+  id: string;
+  user_id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+}
+
 export function SnapchatLikeInterface() {
   const [showCamera, setShowCamera] = useState(false);
-  const [friends, setFriends] = useState<any[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
   const [capturedMedia, setCapturedMedia] = useState<{
     type: 'photo' | 'video';
@@ -45,14 +53,22 @@ export function SnapchatLikeInterface() {
       if (error) throw error;
 
       // Extract friend data
-      const friendsList = friendships?.map(friendship => {
+      const friendsList: Friend[] = (friendships || []).map(friendship => {
         const isUser1 = friendship.user1_id === user.id;
-        const friendData = isUser1 
-          ? friendship.crider_chat_users[1] // user2 data
-          : friendship.crider_chat_users[0]; // user1 data
+        const friendData: any = isUser1 
+          ? friendship.crider_chat_users?.[1] // user2 data
+          : friendship.crider_chat_users?.[0]; // user1 data
         
-        return friendData;
-      }).filter(Boolean) || [];
+        if (!friendData) return null;
+        
+        return {
+          id: friendData.user_id || '',
+          user_id: friendData.user_id || '',
+          username: friendData.username || '',
+          display_name: friendData.display_name || '',
+          avatar_url: friendData.avatar_url || null
+        };
+      }).filter((f): f is Friend => f !== null && f.id !== '');
 
       setFriends(friendsList);
       console.log('👥 Loaded friends:', friendsList.length);

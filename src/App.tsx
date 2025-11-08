@@ -30,13 +30,7 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  console.log('🚀 App component mounting');
-
   useEffect(() => {
-    console.log('🎯 Current URL:', window.location.href);
-    console.log('🎯 Current pathname:', window.location.pathname);
-    
-    // Initialize Google Analytics
     initGA();
   }, []);
 
