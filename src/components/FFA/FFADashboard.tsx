@@ -10,96 +10,88 @@ import {
   Camera, 
   FileText,
   Wheat,
-  Tractor,
-  Leaf,
-  Award,
   Clock,
-  MapPin
+  MapPin,
+  Plus,
+  Settings
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useFFAProfile } from "@/hooks/useFFAProfile";
+import { useEvents } from "@/hooks/useEvents";
+import { useState } from "react";
+import { FFASetupModal } from "./FFASetupModal";
+import { EventModal } from "./EventModal";
+import { Loader2 } from "lucide-react";
 
 export function FFADashboard() {
-  const { user } = useAuth();
+  const { profile, chapter, loading: profileLoading, needsSetup, isOfficer, isAdvisor } = useFFAProfile();
+  const { events, loading: eventsLoading, getUpcomingEvents, getChapterEvents, createEvent } = useEvents(profile?.chapter_id);
+  
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
 
-  const upcomingEvents = [
-    {
-      title: "State FFA Convention",
-      date: "March 15, 2025",
-      location: "Richmond, VA",
-      type: "Convention"
-    },
-    {
-      title: "Livestock Judging Contest",
-      date: "April 2, 2025", 
-      location: "VT Campus",
-      type: "Competition"
-    },
-    {
-      title: "Agricultural Education Week",
-      date: "February 22-28, 2025",
-      location: "Statewide",
-      type: "Awareness"
-    }
-  ];
+  const upcomingEvents = getUpcomingEvents(5);
+  const chapterEvents = getChapterEvents();
 
-  const historianTasks = [
-    {
-      task: "Document State Convention",
-      priority: "High",
-      dueDate: "March 16, 2025",
-      status: "Pending"
-    },
-    {
-      task: "Create Chapter Newsletter",
-      priority: "Medium", 
-      dueDate: "February 1, 2025",
-      status: "In Progress"
-    },
-    {
-      task: "Update Photo Archive",
-      priority: "Medium",
-      dueDate: "January 31, 2025", 
-      status: "Completed"
-    }
-  ];
+  if (profileLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
-  const recentActivities = [
-    {
-      title: "Winter Leadership Conference Photos",
-      date: "January 10, 2025",
-      type: "Documentation"
-    },
-    {
-      title: "Chapter Meeting Minutes", 
-      date: "January 8, 2025",
-      type: "Records"
-    },
-    {
-      title: "Agricultural Career Fair Coverage",
-      date: "December 15, 2024",
-      type: "Event"
-    }
-  ];
+  if (needsSetup) {
+    return (
+      <div className="p-6 space-y-6">
+        <Card className="bg-gradient-to-r from-primary/20 to-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wheat className="h-6 w-6" />
+              Welcome to FFA Center
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Set up your FFA profile to access chapter features, events, and resources.
+            </p>
+            <Button onClick={() => setSetupOpen(true)}>
+              <Settings className="h-4 w-4 mr-2" />
+              Complete FFA Setup
+            </Button>
+          </CardContent>
+        </Card>
+        <FFASetupModal open={setupOpen} onOpenChange={setSetupOpen} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <Card className="bg-gradient-to-r from-ffa-blue to-ffa-gold text-white">
+      <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <CardTitle className="text-2xl font-bold flex items-center gap-2">
                 <Wheat className="h-6 w-6" />
                 FFA Chapter Dashboard
               </CardTitle>
-              <p className="text-blue-100 mt-2">
-                Jessie Crider - Chapter Historian 2025-2026
+              <p className="text-primary-foreground/80 mt-2">
+                {chapter?.name || 'Your Chapter'}
+                {profile?.officer_role && ` • ${profile.officer_role}`}
+                {profile?.is_advisor && ' • Advisor'}
               </p>
             </div>
-            <Badge variant="secondary" className="bg-white/20 text-white">
-              <Award className="h-4 w-4 mr-1" />
-              Officer
-            </Badge>
+            <div className="flex gap-2">
+              {(isOfficer || isAdvisor) && (
+                <Badge variant="secondary" className="bg-background/20 text-primary-foreground">
+                  {isAdvisor ? 'Advisor' : profile?.officer_role}
+                </Badge>
+              )}
+              <Button variant="secondary" size="sm" onClick={() => setSetupOpen(true)}>
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>
@@ -114,86 +106,97 @@ export function FFADashboard() {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Historian Tasks */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-ffa-navy">
-                  <FileText className="h-5 w-5" />
-                  Historian Tasks
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {historianTasks.map((task, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-ffa-sky/10 rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{task.task}</p>
-                        <p className="text-xs text-muted-foreground">Due: {task.dueDate}</p>
-                      </div>
-                      <Badge 
-                        variant={task.status === "Completed" ? "default" : "secondary"}
-                        className="text-xs"
-                      >
-                        {task.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Upcoming Events */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-ffa-navy">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <Calendar className="h-5 w-5" />
                   Upcoming Events
                 </CardTitle>
+                <Button size="sm" variant="ghost" onClick={() => setEventModalOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {upcomingEvents.map((event, index) => (
-                    <div key={index} className="p-2 border border-ffa-gold/20 rounded-lg">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="text-xs border-ffa-blue">
-                          {event.type}
-                        </Badge>
+                {eventsLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : upcomingEvents.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No upcoming events
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {upcomingEvents.map((event) => (
+                      <div key={event.id} className="p-2 border rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs">
+                            {event.visibility === 'chapter' ? 'Chapter' : 'Personal'}
+                          </Badge>
+                        </div>
+                        <p className="font-medium text-sm">{event.title}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {new Date(event.event_date).toLocaleDateString()}
+                          {event.event_time && ` at ${event.event_time}`}
+                        </div>
                       </div>
-                      <p className="font-medium text-sm">{event.title}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {event.date}
-                        <MapPin className="h-3 w-3 ml-2" />
-                        {event.location}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Chapter Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Users className="h-5 w-5" />
+                  Chapter Info
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="font-medium text-sm">{chapter?.name || 'Not set'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {chapter?.city && `${chapter.city}, `}{chapter?.state}
+                  </p>
+                </div>
+                {profile?.graduation_year && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground">Graduation Year</p>
+                    <p className="font-medium text-sm">{profile.graduation_year}</p>
+                  </div>
+                )}
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Chapter Events</p>
+                  <p className="font-medium text-sm">{chapterEvents.length} events</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Recent Activities */}
+            {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-ffa-navy">
-                  <Camera className="h-5 w-5" />
-                  Recent Activities
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileText className="h-5 w-5" />
+                  Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentActivities.map((activity, index) => (
-                    <div key={index} className="p-2 bg-ffa-field/10 rounded-lg">
-                      <p className="font-medium text-sm">{activity.title}</p>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {activity.type}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">{activity.date}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full justify-start" onClick={() => setEventModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Event
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Upload Photos
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <FileText className="h-4 w-4 mr-2" />
+                  View Documents
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -201,36 +204,51 @@ export function FFADashboard() {
 
         <TabsContent value="events" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                FFA Events Calendar
+                Chapter Events
               </CardTitle>
+              <Button onClick={() => setEventModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Event
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4">
-                {upcomingEvents.map((event, index) => (
-                  <div key={index} className="p-4 border border-ffa-gold/30 rounded-lg bg-gradient-to-r from-ffa-sky/5 to-ffa-corn/5">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-ffa-navy">{event.title}</h3>
-                      <Badge className="bg-ffa-blue text-white">{event.type}</Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {event.date}
+              {eventsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : chapterEvents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No chapter events yet</p>
+                  <Button className="mt-4" onClick={() => setEventModalOpen(true)}>
+                    Create First Event
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {chapterEvents.map((event) => (
+                    <div key={event.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold">{event.title}</h3>
+                        <Badge>{event.category}</Badge>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {event.location}
+                      {event.description && (
+                        <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
+                      )}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {new Date(event.event_date).toLocaleDateString()}
+                          {event.event_time && ` at ${event.event_time}`}
+                        </div>
                       </div>
                     </div>
-                    <Button size="sm" className="mt-3 bg-ffa-gold hover:bg-ffa-harvest text-white">
-                      View Details
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -248,20 +266,20 @@ export function FFADashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outline" className="h-20 flex-col border-ffa-blue hover:bg-ffa-sky/10">
-                  <Camera className="h-6 w-6 mb-2 text-ffa-blue" />
+                <Button variant="outline" className="h-20 flex-col">
+                  <Camera className="h-6 w-6 mb-2" />
                   Photo Archive
                 </Button>
-                <Button variant="outline" className="h-20 flex-col border-ffa-gold hover:bg-ffa-corn/10">
-                  <FileText className="h-6 w-6 mb-2 text-ffa-harvest" />
+                <Button variant="outline" className="h-20 flex-col">
+                  <FileText className="h-6 w-6 mb-2" />
                   Meeting Minutes
                 </Button>
-                <Button variant="outline" className="h-20 flex-col border-ffa-field hover:bg-ffa-field/10">
-                  <Trophy className="h-6 w-6 mb-2 text-ffa-field" />
+                <Button variant="outline" className="h-20 flex-col">
+                  <Trophy className="h-6 w-6 mb-2" />
                   Awards & Recognition
                 </Button>
-                <Button variant="outline" className="h-20 flex-col border-ffa-navy hover:bg-ffa-navy/10">
-                  <BookOpen className="h-6 w-6 mb-2 text-ffa-navy" />
+                <Button variant="outline" className="h-20 flex-col">
+                  <BookOpen className="h-6 w-6 mb-2" />
                   Chapter History
                 </Button>
               </div>
@@ -273,52 +291,60 @@ export function FFADashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-ffa-navy">
+                <CardTitle className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5" />
-                  Agricultural Resources
+                  Educational Resources
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Tractor className="h-4 w-4 mr-2" />
-                  Equipment Management
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Leaf className="h-4 w-4 mr-2" />
-                  Crop Planning
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Users className="h-4 w-4 mr-2" />
-                  Livestock Records
-                </Button>
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm">Agricultural Science</h4>
+                  <p className="text-xs text-muted-foreground">Crop science, soil health, plant biology</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm">Animal Science</h4>
+                  <p className="text-xs text-muted-foreground">Livestock management, nutrition, breeding</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm">Agricultural Business</h4>
+                  <p className="text-xs text-muted-foreground">Farm economics, marketing, management</p>
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-ffa-navy">
-                  <Award className="h-5 w-5" />
-                  FFA Tools
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  FFA Opportunities
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Trophy className="h-4 w-4 mr-2" />
-                  Competition Tracker
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Record Book
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Event Planner
-                </Button>
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm">Leadership Development</h4>
+                  <p className="text-xs text-muted-foreground">Officer training, public speaking, teamwork</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm">Career Exploration</h4>
+                  <p className="text-xs text-muted-foreground">Agricultural careers, internships, job shadowing</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm">Community Service</h4>
+                  <p className="text-xs text-muted-foreground">Service learning, community projects</p>
+                </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
+
+      <FFASetupModal open={setupOpen} onOpenChange={setSetupOpen} />
+      <EventModal 
+        open={eventModalOpen} 
+        onOpenChange={setEventModalOpen}
+        chapterId={profile?.chapter_id}
+        onSave={createEvent}
+      />
     </div>
   );
 }

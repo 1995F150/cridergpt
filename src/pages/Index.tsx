@@ -24,7 +24,6 @@ import { UpdatesPanel } from '@/components/panels/UpdatesPanel';
 import { TimelinePanel } from '@/components/panels/TimelinePanel';
 import { MemorialPanel } from '@/components/panels/MemorialPanel';
 import { FFAPanel } from '@/components/panels/FFAPanel';
-import { RadioPanel } from '@/components/panels/RadioPanel';
 import { AIImagePanel } from '@/components/panels/AIImagePanel';
 import { DocumentAIPanel } from '@/components/panels/DocumentAIPanel';
 import { PlanPanel } from '@/components/panels/PlanPanel';
@@ -62,7 +61,6 @@ export type PanelType =
   | 'memorial' 
   | 'ffa'
   | 'mod-tools'
-  | 'radio'
   | 'ai-image'
   | 'document-ai'
   | 'plan'
@@ -153,7 +151,6 @@ export default function Index() {
             {activePanel === 'memorial' && <MemorialPanel />}
             {activePanel === 'ffa' && <FFAPanel />}
             {activePanel === 'mod-tools' && <ModToolsPanel />}
-            {activePanel === 'radio' && <RadioPanel />}
             {activePanel === 'ai-image' && <AIImagePanel />}
             {activePanel === 'document-ai' && <DocumentAIPanel />}
             {activePanel === 'plan' && <PlanPanel />}

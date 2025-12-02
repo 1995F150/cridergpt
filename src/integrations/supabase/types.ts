@@ -625,6 +625,121 @@ export type Database = {
         }
         Relationships: []
       }
+      chapter_awards: {
+        Row: {
+          award_date: string | null
+          award_type: string | null
+          chapter_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          award_date?: string | null
+          award_type?: string | null
+          chapter_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          award_date?: string | null
+          award_type?: string | null
+          chapter_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_awards_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chapter_documents: {
+        Row: {
+          chapter_id: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          document_type: string
+          file_url: string | null
+          id: string
+          is_public: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          chapter_id?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          document_type?: string
+          file_url?: string | null
+          id?: string
+          is_public?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          chapter_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          document_type?: string
+          file_url?: string | null
+          id?: string
+          is_public?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_documents_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chapters: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          id: string
+          name: string
+          state: string
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          state: string
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          state?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string | null
@@ -1046,6 +1161,59 @@ export type Database = {
             columns: ["related_project_id"]
             isOneToOne: false
             referencedRelation: "ffa_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          category: string | null
+          chapter_id: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          end_time: string | null
+          event_date: string
+          event_time: string | null
+          id: string
+          title: string
+          updated_at: string | null
+          visibility: string
+        }
+        Insert: {
+          category?: string | null
+          chapter_id?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          end_time?: string | null
+          event_date: string
+          event_time?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+          visibility?: string
+        }
+        Update: {
+          category?: string | null
+          chapter_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          end_time?: string | null
+          event_date?: string
+          event_time?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
             referencedColumns: ["id"]
           },
         ]
@@ -2730,6 +2898,53 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      user_ffa_profiles: {
+        Row: {
+          chapter_id: string | null
+          created_at: string | null
+          graduation_year: number | null
+          id: string
+          is_advisor: boolean | null
+          officer_role: string | null
+          setup_completed: boolean | null
+          state: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chapter_id?: string | null
+          created_at?: string | null
+          graduation_year?: number | null
+          id?: string
+          is_advisor?: boolean | null
+          officer_role?: string | null
+          setup_completed?: boolean | null
+          state?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string | null
+          created_at?: string | null
+          graduation_year?: number | null
+          id?: string
+          is_advisor?: boolean | null
+          officer_role?: string | null
+          setup_completed?: boolean | null
+          state?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_ffa_profiles_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_follows: {
         Row: {
