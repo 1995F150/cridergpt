@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 
 export interface Event {
   id: string;
@@ -23,6 +24,7 @@ export type NewEvent = Omit<Event, 'id' | 'created_at' | 'updated_at' | 'created
 export function useEvents(chapterId?: string | null) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { sendEventNotification, canSendNotifications } = useBrowserNotifications();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -149,20 +151,54 @@ export function useEvents(chapterId?: string | null) {
     }
   };
 
-  const getUpcomingEvents = (limit: number = 5) => {
+  const getUpcomingEvents = useCallback((limit: number = 5) => {
     const today = new Date().toISOString().split('T')[0];
     return events
       .filter(e => e.event_date >= today)
       .slice(0, limit);
-  };
+  }, [events]);
 
-  const getChapterEvents = () => {
+  const getChapterEvents = useCallback(() => {
     return events.filter(e => e.visibility === 'chapter');
-  };
+  }, [events]);
 
-  const getPersonalEvents = () => {
+  const getPersonalEvents = useCallback(() => {
     return events.filter(e => e.visibility === 'personal' && e.created_by === user?.id);
-  };
+  }, [events, user?.id]);
+
+  // Check for upcoming events and send notifications
+  useEffect(() => {
+    if (!canSendNotifications) return;
+
+    const checkUpcomingEvents = () => {
+      const now = new Date();
+      const soon = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes from now
+      
+      events.forEach(event => {
+        if (!event.event_time) return;
+        
+        const eventDateTime = new Date(`${event.event_date}T${event.event_time}`);
+        
+        if (eventDateTime >= now && eventDateTime <= soon) {
+          const notificationKey = `event-notified-${event.id}`;
+          const alreadyNotified = sessionStorage.getItem(notificationKey);
+          
+          if (!alreadyNotified) {
+            sendEventNotification({
+              title: event.title,
+              category: event.category || 'General',
+              startTime: eventDateTime.toISOString(),
+            });
+            sessionStorage.setItem(notificationKey, 'true');
+          }
+        }
+      });
+    };
+
+    checkUpcomingEvents();
+    const interval = setInterval(checkUpcomingEvents, 60000);
+    return () => clearInterval(interval);
+  }, [events, canSendNotifications, sendEventNotification]);
 
   useEffect(() => {
     fetchEvents();

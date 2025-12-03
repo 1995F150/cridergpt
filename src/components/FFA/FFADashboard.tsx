@@ -11,23 +11,32 @@ import {
   FileText,
   Wheat,
   Clock,
-  MapPin,
   Plus,
-  Settings
+  Settings,
+  Bell
 } from "lucide-react";
 import { useFFAProfile } from "@/hooks/useFFAProfile";
 import { useEvents } from "@/hooks/useEvents";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FFASetupModal } from "./FFASetupModal";
 import { EventModal } from "./EventModal";
 import { Loader2 } from "lucide-react";
+import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 
 export function FFADashboard() {
   const { profile, chapter, loading: profileLoading, needsSetup, isOfficer, isAdvisor } = useFFAProfile();
   const { events, loading: eventsLoading, getUpcomingEvents, getChapterEvents, createEvent } = useEvents(profile?.chapter_id);
+  const { permission, requestPermission, canSendNotifications } = useBrowserNotifications();
   
-  const [setupOpen, setSetupOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(needsSetup);
   const [eventModalOpen, setEventModalOpen] = useState(false);
+
+  // Sync setupOpen with needsSetup
+  useEffect(() => {
+    if (needsSetup) {
+      setSetupOpen(true);
+    }
+  }, [needsSetup]);
 
   const upcomingEvents = getUpcomingEvents(5);
   const chapterEvents = getChapterEvents();
@@ -82,11 +91,21 @@ export function FFADashboard() {
                 {profile?.is_advisor && ' • Advisor'}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               {(isOfficer || isAdvisor) && (
                 <Badge variant="secondary" className="bg-background/20 text-primary-foreground">
                   {isAdvisor ? 'Advisor' : profile?.officer_role}
                 </Badge>
+              )}
+              {!canSendNotifications && (
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={requestPermission}
+                  title="Enable notifications for calendar events"
+                >
+                  <Bell className="h-4 w-4" />
+                </Button>
               )}
               <Button variant="secondary" size="sm" onClick={() => setSetupOpen(true)}>
                 <Settings className="h-4 w-4" />

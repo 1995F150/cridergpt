@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Event, useEvents } from '@/hooks/useEvents';
 import { useFFAProfile } from '@/hooks/useFFAProfile';
 import { EventModal } from '@/components/FFA/EventModal';
-import { Loader2, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Plus, Calendar as CalendarIcon, Bell, BellOff } from 'lucide-react';
+import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 const localizer = momentLocalizer(moment);
@@ -33,6 +34,7 @@ interface BigCalendarEvent {
 export function CalendarView() {
   const { profile } = useFFAProfile();
   const { events, loading, createEvent, updateEvent, deleteEvent } = useEvents(profile?.chapter_id);
+  const { permission, requestPermission, canSendNotifications, sendTestNotification } = useBrowserNotifications();
   
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState(new Date());
@@ -111,18 +113,31 @@ export function CalendarView() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <CalendarIcon className="h-6 w-6" />
           Calendar
         </h2>
-        <Button onClick={() => {
-          setSelectedEvent(null);
-          setModalOpen(true);
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Event
-        </Button>
+        <div className="flex items-center gap-2">
+          {canSendNotifications ? (
+            <Button variant="outline" size="sm" onClick={sendTestNotification} title="Test notifications">
+              <Bell className="h-4 w-4 mr-2" />
+              Notifications On
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={requestPermission} title="Enable event notifications">
+              <BellOff className="h-4 w-4 mr-2" />
+              Enable Notifications
+            </Button>
+          )}
+          <Button onClick={() => {
+            setSelectedEvent(null);
+            setModalOpen(true);
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Event
+          </Button>
+        </div>
       </div>
 
       <Card>
