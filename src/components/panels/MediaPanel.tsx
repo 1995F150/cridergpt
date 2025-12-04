@@ -72,9 +72,47 @@ export function MediaPanel() {
         };
         img.src = `data:image/png;base64,${data.imageData}`;
 
+        // Save to storage for gallery
+        try {
+          const base64Data = data.imageData;
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'image/png' });
+          
+          const fileName = `ai_generated_${Date.now()}.png`;
+          const filePath = `${user.id}/${fileName}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('user-files')
+            .upload(filePath, blob, {
+              contentType: 'image/png',
+              cacheControl: '3600'
+            });
+
+          if (uploadError) {
+            console.error('Error saving to gallery:', uploadError);
+          } else {
+            // Record in database
+            await supabase.from('uploaded_files').insert({
+              user_id: user.id,
+              file_name: fileName,
+              file_path: filePath,
+              file_size: blob.size,
+              file_type: 'image',
+              source: 'ai_generated'
+            });
+          }
+        } catch (saveError) {
+          console.error('Error saving to gallery:', saveError);
+        }
+
         toast({
           title: "Success",
-          description: "Image generated successfully!",
+          description: "Image generated and saved to gallery!",
         });
       }
     } catch (error) {
