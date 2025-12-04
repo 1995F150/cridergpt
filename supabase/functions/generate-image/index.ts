@@ -19,7 +19,6 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Create Supabase client using service role key for database operations
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -27,12 +26,13 @@ serve(async (req) => {
   );
 
   try {
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    const { prompt, size = '1024x1024', quality = 'standard', style = 'vivid', mode = 'generate', imageUrl } = await req.json();
+
+    if (!prompt) {
+      throw new Error('Prompt is required');
     }
 
-    // Get user from auth header (optional for anonymous usage)
+    // Get user from auth header
     let userId = null;
     let userEmail = null;
     const authHeader = req.headers.get('Authorization');
@@ -43,19 +43,15 @@ serve(async (req) => {
         const { data: { user } } = await supabase.auth.getUser(token);
         userId = user?.id;
         userEmail = user?.email;
-        console.log('Authenticated user:', userId, userEmail);
       } catch (error) {
-        console.log('Authentication failed, continuing as anonymous');
+        console.log('Auth failed, continuing as anonymous');
       }
     }
 
-    // For anonymous users, use IP-based tracking
     const clientIp = req.headers.get('x-forwarded-for') || 'anonymous';
     const trackingId = userId || userEmail || clientIp;
 
-    console.log('Tracking usage for:', trackingId);
-
-    // Check/create usage record
+    // Check usage limits
     let { data: usage, error: usageError } = await supabase
       .from('ai_usage')
       .select('*')
@@ -63,11 +59,9 @@ serve(async (req) => {
       .single();
 
     if (usageError && usageError.code !== 'PGRST116') {
-      console.error('Database error:', usageError);
       throw new Error('Failed to check usage limits');
     }
 
-    // Create new usage record if doesn't exist
     if (!usage) {
       const { data: newUsage, error: insertError } = await supabase
         .from('ai_usage')
@@ -79,93 +73,143 @@ serve(async (req) => {
         })
         .select()
         .single();
-
-      if (insertError) {
-        console.error('Failed to create usage record:', insertError);
-        throw new Error('Failed to initialize usage tracking');
-      }
+      if (insertError) throw new Error('Failed to initialize usage tracking');
       usage = newUsage;
     }
 
-    // Reset usage if it's a new month
-    const today = new Date().toISOString().split('T')[0];
-    const lastReset = usage.last_reset;
-    if (lastReset && lastReset < today) {
-      const { error: resetError } = await supabase
-        .from('ai_usage')
-        .update({ 
-          tokens_used: 0, 
-          last_reset: today,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', usage.id);
-      
-      if (!resetError) {
-        usage.tokens_used = 0;
-      }
-    }
-
-    // Check token limits based on user plan
     const userPlan = usage.user_plan || 'free';
     const tokenLimit = TOKEN_LIMITS[userPlan as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
-    
-    console.log(`User plan: ${userPlan}, Used: ${usage.tokens_used}, Limit: ${tokenLimit}`);
 
     if (usage.tokens_used >= tokenLimit) {
       return new Response(JSON.stringify({ 
-        error: "You've hit your plan's token limit! 🚫 Upgrade for more AI sauce.",
-        usage: {
-          used: usage.tokens_used,
-          limit: tokenLimit,
-          plan: userPlan
-        }
+        error: "You've hit your plan's limit! Upgrade for more.",
+        usage: { used: usage.tokens_used, limit: tokenLimit, plan: userPlan }
       }), {
         status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { prompt, size = '1024x1024', quality = 'standard', style = 'vivid' } = await req.json();
+    console.log(`Mode: ${mode}, Prompt: ${prompt}`);
 
-    if (!prompt) {
-      throw new Error('Prompt is required');
+    let responseData;
+
+    // Handle edit/creator modes with Lovable AI Gateway
+    if (mode === 'creator' || mode === 'edit') {
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+      if (!LOVABLE_API_KEY) {
+        throw new Error('LOVABLE_API_KEY is not configured');
+      }
+
+      const messageContent: any[] = [{ type: "text", text: prompt }];
+      
+      if (imageUrl) {
+        messageContent.push({
+          type: "image_url",
+          image_url: { url: imageUrl }
+        });
+      }
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-image-preview",
+          messages: [{ role: "user", content: messageContent }],
+          modalities: ["image", "text"]
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Lovable AI error:', response.status, errorText);
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ error: "AI credits exhausted" }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        throw new Error(`AI gateway error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const message = data.choices?.[0]?.message;
+      const images = message?.images || [];
+
+      if (images.length === 0) {
+        throw new Error('No image generated');
+      }
+
+      const imageData = images[0]?.image_url?.url;
+      if (!imageData) {
+        throw new Error('Invalid image data');
+      }
+
+      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+
+      responseData = {
+        success: true,
+        imageData: base64Data,
+        revisedPrompt: message?.content || prompt,
+        mode: mode
+      };
+
+    } else {
+      // Standard DALL-E generation
+      const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+      if (!openAIApiKey) {
+        throw new Error('OpenAI API key not configured');
+      }
+
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: prompt,
+          n: 1,
+          size: size,
+          quality: quality,
+          style: style,
+          response_format: 'b64_json'
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('OpenAI API error:', error);
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const imageData = data.data?.[0];
+
+      if (!imageData) {
+        throw new Error('No image data received');
+      }
+
+      responseData = {
+        success: true,
+        imageData: imageData.b64_image,
+        revisedPrompt: imageData.revised_prompt,
+        mode: 'generate'
+      };
     }
 
-    console.log(`Generating image for user ${userId || 'anonymous'} with prompt: ${prompt}`);
-
-    // Call OpenAI Image Generation API
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: prompt,
-        n: 1,
-        size: size,
-        quality: quality,
-        style: style,
-        response_format: 'b64_json'
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const imageData = data.data?.[0];
-
-    if (!imageData) {
-      throw new Error('No image data received from OpenAI');
-    }
-
-    // Increment usage count after successful response (same as chat function)
-    const { error: updateError } = await supabase
+    // Update usage
+    await supabase
       .from('ai_usage')
       .update({ 
         tokens_used: usage.tokens_used + 1,
@@ -173,24 +217,11 @@ serve(async (req) => {
       })
       .eq('id', usage.id);
 
-    if (updateError) {
-      console.error('Failed to update usage count:', updateError);
-    }
-
-    // Log the generation for analytics (same as chat function)
-    await supabase.from('ai_requests').insert({
-      user_id: userId,
-      prompt: prompt,
-      response: 'Image generated successfully'
-    });
-
-    console.log('Image generated successfully, usage updated');
+    console.log('Image generated successfully');
 
     return new Response(
       JSON.stringify({
-        success: true,
-        imageData: imageData.b64_image,
-        revisedPrompt: imageData.revised_prompt,
+        ...responseData,
         usage: {
           used: usage.tokens_used + 1,
           limit: tokenLimit,
@@ -198,19 +229,14 @@ serve(async (req) => {
           remaining: tokenLimit - (usage.tokens_used + 1)
         }
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in generate-image function:', error);
+    console.error('Error in generate-image:', error);
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
