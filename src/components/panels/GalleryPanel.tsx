@@ -45,35 +45,58 @@ export function GalleryPanel() {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase.storage
-        .from('user-files')
-        .list(user.id, {
-          limit: 100,
-          offset: 0,
-        });
+      // First try to load from uploaded_files database
+      const { data: dbFiles, error: dbError } = await supabase
+        .from('uploaded_files')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('uploaded_at', { ascending: false });
 
-      if (error) throw error;
-
-      // Filter for image files and get public URLs
-      const imageFiles = data?.filter(file => 
-        file.metadata?.mimetype?.startsWith('image/')
-      ) || [];
+      if (dbError) {
+        console.error('Error loading from database:', dbError);
+      }
 
       const imagesWithUrls: GalleryImage[] = [];
       
-      for (const file of imageFiles) {
-        const { data: urlData } = supabase.storage
+      if (dbFiles && dbFiles.length > 0) {
+        for (const file of dbFiles) {
+          const { data: urlData } = supabase.storage
+            .from('user-files')
+            .getPublicUrl(file.file_path);
+          
+          imagesWithUrls.push({
+            id: String(file.id),
+            name: file.file_name,
+            url: urlData.publicUrl,
+            size: file.file_size || 0,
+            uploadedAt: file.uploaded_at || new Date().toISOString(),
+            path: file.file_path
+          });
+        }
+      } else {
+        // Fallback to storage listing
+        const { data, error } = await supabase.storage
           .from('user-files')
-          .getPublicUrl(`${user.id}/${file.name}`);
-        
-        imagesWithUrls.push({
-          id: file.id || file.name,
-          name: file.name,
-          url: urlData.publicUrl,
-          size: file.metadata?.size || 0,
-          uploadedAt: file.created_at,
-          path: `${user.id}/${file.name}`
-        });
+          .list(user.id, { limit: 100 });
+
+        if (!error && data) {
+          for (const file of data) {
+            if (file.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)) {
+              const { data: urlData } = supabase.storage
+                .from('user-files')
+                .getPublicUrl(`${user.id}/${file.name}`);
+              
+              imagesWithUrls.push({
+                id: file.id || file.name,
+                name: file.name,
+                url: urlData.publicUrl,
+                size: file.metadata?.size || 0,
+                uploadedAt: file.created_at || new Date().toISOString(),
+                path: `${user.id}/${file.name}`
+              });
+            }
+          }
+        }
       }
 
       setImages(imagesWithUrls);
