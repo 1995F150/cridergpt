@@ -94,8 +94,8 @@ serve(async (req) => {
 
     let responseData;
 
-    // Handle edit/creator modes with Lovable AI Gateway
-    if (mode === 'creator' || mode === 'edit') {
+    // Handle edit/creator/character modes with Lovable AI Gateway
+    if (mode === 'creator' || mode === 'edit' || mode === 'character') {
       const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
       if (!LOVABLE_API_KEY) {
         throw new Error('LOVABLE_API_KEY is not configured');
