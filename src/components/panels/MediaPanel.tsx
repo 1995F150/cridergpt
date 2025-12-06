@@ -7,7 +7,6 @@ import { MediaGenerator } from '@/components/media/MediaGenerator';
 import { VideoGenerator } from '@/components/media/VideoGenerator';
 import { MediaUpload } from '@/components/media/MediaUpload';
 import { CharacterManager } from '@/components/media/CharacterManager';
-import { DEFAULT_CHARACTERS } from '@/hooks/useMediaSystem';
 
 export function MediaPanel() {
   const [activeTab, setActiveTab] = useState('generator');
@@ -78,32 +77,7 @@ export function MediaPanel() {
         </TabsContent>
 
         <TabsContent value="characters" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CharacterManager characters={DEFAULT_CHARACTERS} />
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Character Usage</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>
-                  <strong>Jessie Crider</strong> (Primary) - Used by default in all generations. 
-                  Mention "me" or "Jessie" in prompts to include.
-                </p>
-                <p>
-                  <strong>Dr. Harman</strong> - 3rd great-grandfather. Historical Western era. 
-                  Mention "Dr. Harman", "grandfather", or "ancestor" to include.
-                </p>
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="font-medium text-foreground mb-2">Adding Characters</p>
-                  <p>Upload photos in the Upload tab and enable "Add as Character Reference" to create new characters for generation.</p>
-                </div>
-                <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-                  <p className="font-medium text-foreground mb-2">Historical Photos</p>
-                  <p>Photos from Western/1900s era automatically apply vintage effects: film grain, faded colors, and vignette.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <CharacterManager />
         </TabsContent>
       </Tabs>
     </div>

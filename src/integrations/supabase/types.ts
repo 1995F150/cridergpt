@@ -407,6 +407,36 @@ export type Database = {
         }
         Relationships: []
       }
+      background_datasets: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          reference_url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          reference_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          reference_url?: string | null
+        }
+        Relationships: []
+      }
       blocked_users: {
         Row: {
           blocked_id: string
@@ -737,6 +767,66 @@ export type Database = {
           name?: string
           state?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      character_references: {
+        Row: {
+          context: string | null
+          created_at: string | null
+          description: string | null
+          era: string | null
+          generation_count: number | null
+          id: string
+          is_primary: boolean | null
+          is_system: boolean | null
+          metadata: Json | null
+          name: string
+          pronouns: string | null
+          reference_photo_path: string | null
+          reference_photo_url: string
+          slug: string
+          traits: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string | null
+          description?: string | null
+          era?: string | null
+          generation_count?: number | null
+          id?: string
+          is_primary?: boolean | null
+          is_system?: boolean | null
+          metadata?: Json | null
+          name: string
+          pronouns?: string | null
+          reference_photo_path?: string | null
+          reference_photo_url: string
+          slug: string
+          traits?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: string | null
+          created_at?: string | null
+          description?: string | null
+          era?: string | null
+          generation_count?: number | null
+          id?: string
+          is_primary?: boolean | null
+          is_system?: boolean | null
+          metadata?: Json | null
+          name?: string
+          pronouns?: string | null
+          reference_photo_path?: string | null
+          reference_photo_url?: string
+          slug?: string
+          traits?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1630,6 +1720,51 @@ export type Database = {
           max_lifetime_buyers?: number | null
           promotion_end_date?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      media_generations: {
+        Row: {
+          character_ids: string[] | null
+          created_at: string | null
+          id: string
+          output_path: string | null
+          output_type: string
+          output_url: string | null
+          prompt: string
+          status: string | null
+          style: string | null
+          unified_prompt: string | null
+          user_id: string
+          visual_settings: Json | null
+        }
+        Insert: {
+          character_ids?: string[] | null
+          created_at?: string | null
+          id?: string
+          output_path?: string | null
+          output_type?: string
+          output_url?: string | null
+          prompt: string
+          status?: string | null
+          style?: string | null
+          unified_prompt?: string | null
+          user_id: string
+          visual_settings?: Json | null
+        }
+        Update: {
+          character_ids?: string[] | null
+          created_at?: string | null
+          id?: string
+          output_path?: string | null
+          output_type?: string
+          output_url?: string | null
+          prompt?: string
+          status?: string | null
+          style?: string | null
+          unified_prompt?: string | null
+          user_id?: string
+          visual_settings?: Json | null
         }
         Relationships: []
       }
