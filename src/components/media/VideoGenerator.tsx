@@ -9,14 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMediaSystem, GenerationSettings } from '@/hooks/useMediaSystem';
 import { 
   Video, Play, Download, Loader2, Film, 
-  Volume2, Timer, Sparkles, AlertCircle
+  Volume2, Timer, Sparkles, AlertCircle, User
 } from 'lucide-react';
 
 export function VideoGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { characters, generateWithCharacters, getImageAsBase64 } = useMediaSystem();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   
@@ -24,14 +26,52 @@ export function VideoGenerator() {
   const [duration, setDuration] = useState([3]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  
+  // Character selection - same as image generator
+  const [selectedCharacters, setSelectedCharacters] = useState<string[]>(['jessie']);
   
   // Video settings
   const [includeAudio, setIncludeAudio] = useState(false);
   const [loop, setLoop] = useState(false);
   const [slowMotion, setSlowMotion] = useState(false);
   const [cinematicStyle, setCinematicStyle] = useState('standard');
+  const [blackAndWhite, setBlackAndWhite] = useState(false);
+  const [vintageTexture, setVintageTexture] = useState(false);
 
-  const handleGenerate = async () => {
+  const toggleCharacter = (slug: string) => {
+    setSelectedCharacters(prev => 
+      prev.includes(slug) ? prev.filter(c => c !== slug) : [...prev, slug]
+    );
+  };
+
+  // Auto-apply vintage for historical characters
+  React.useEffect(() => {
+    const hasHistorical = selectedCharacters.some(slug => {
+      const char = characters.find(c => c.slug === slug);
+      return char?.era?.includes('1900') || char?.era?.includes('Western');
+    });
+    if (hasHistorical) {
+      setVintageTexture(true);
+    }
+  }, [selectedCharacters, characters]);
+
+  const drawToCanvas = (base64: string) => {
+    const img = document.createElement('img');
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+      }
+    };
+    img.src = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+  };
+
+  const handleGenerateFrame = async () => {
     if (!user) {
       toast({ title: "Error", description: "Please sign in", variant: "destructive" });
       return;
@@ -41,17 +81,41 @@ export function VideoGenerator() {
       return;
     }
 
-    // Video generation is limited - show info
-    toast({
-      title: "Video Generation",
-      description: "Full video generation requires external APIs. Currently, you can create video exports from generated images.",
-    });
+    setIsGenerating(true);
+    try {
+      const settings: GenerationSettings = {
+        characters: selectedCharacters,
+        style: cinematicStyle === 'vintage' ? 'vintage' : 
+               cinematicStyle === 'blackwhite' ? 'vintage' : 
+               cinematicStyle === 'cinematic' ? 'cinematic' : 'realistic',
+        blackAndWhite: blackAndWhite || cinematicStyle === 'blackwhite',
+        vintageTexture,
+        filmGrain: vintageTexture,
+        outputType: 'video'
+      };
+
+      // Generate a frame using the same character references
+      const result = await generateWithCharacters(prompt, settings);
+      
+      if (result?.imageData) {
+        setGeneratedImage(result.imageData);
+        drawToCanvas(result.imageData);
+        toast({ title: "Frame Generated", description: "Now you can export as video" });
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  // Export canvas as video (static image to video)
+  // Export canvas as video
   const exportAsVideo = async () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      toast({ title: "Error", description: "Generate a frame first", variant: "destructive" });
+      return;
+    }
 
     try {
       setIsGenerating(true);
@@ -75,9 +139,10 @@ export function VideoGenerator() {
       };
 
       mediaRecorder.start();
-      setTimeout(() => mediaRecorder.stop(), duration[0] * 1000);
+      const recordDuration = slowMotion ? duration[0] * 2 : duration[0];
+      setTimeout(() => mediaRecorder.stop(), recordDuration * 1000);
       
-      toast({ title: "Recording", description: `Creating ${duration[0]}s video...` });
+      toast({ title: "Recording", description: `Creating ${recordDuration}s video...` });
     } catch (error) {
       toast({ title: "Error", description: "Video export failed", variant: "destructive" });
     } finally {
@@ -87,15 +152,15 @@ export function VideoGenerator() {
 
   return (
     <div className="space-y-6">
-      {/* Notice */}
+      {/* Info Banner */}
       <Card className="border-amber-500/30 bg-amber-500/5">
         <CardContent className="p-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
           <div>
-            <p className="font-medium text-amber-600 dark:text-amber-400">Video Generation Beta</p>
+            <p className="font-medium text-amber-600 dark:text-amber-400">Video Generation</p>
             <p className="text-sm text-muted-foreground">
-              Full AI video generation with motion, gestures, and dialogue is coming soon. 
-              Currently, you can export generated images as video clips.
+              Video uses the same character references as image generation. Generate a frame, then export as video.
+              Full AI motion video is coming soon.
             </p>
           </div>
         </CardContent>
@@ -111,19 +176,46 @@ export function VideoGenerator() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
+            {/* Character Selection */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Characters</Label>
+              <div className="flex flex-wrap gap-2">
+                {characters.map(char => (
+                  <Button
+                    key={char.id}
+                    variant={selectedCharacters.includes(char.slug) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleCharacter(char.slug)}
+                    className="gap-2"
+                  >
+                    <img 
+                      src={char.referenceUrl} 
+                      alt={char.name} 
+                      className="w-5 h-5 rounded-full object-cover" 
+                    />
+                    {char.name}
+                    {char.isPrimary && <Badge variant="secondary" className="text-[10px]">Primary</Badge>}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Same references as image generator for consistency
+              </p>
+            </div>
+
             <div>
               <Label className="text-sm font-medium mb-2 block">Scene Description</Label>
               <Textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe the video scene, motion, and any dialogue..."
+                placeholder="Describe the video scene, motion, setting..."
                 className="min-h-[100px]"
               />
             </div>
 
             <div>
               <Label className="text-sm font-medium mb-2 block">
-                Duration: {duration[0]}s
+                Duration: {duration[0]}s {slowMotion && '(slow-mo)'}
               </Label>
               <Slider
                 value={duration}
@@ -133,9 +225,11 @@ export function VideoGenerator() {
                 step={1}
                 className="w-full"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Max recommended: 10 seconds
-              </p>
+              {duration[0] > 5 && (
+                <p className="text-xs text-amber-500 mt-1">
+                  Longer videos may take more time to export
+                </p>
+              )}
             </div>
 
             <div>
@@ -180,24 +274,26 @@ export function VideoGenerator() {
               </div>
             </div>
 
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim()}
-              className="w-full"
-              size="lg"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Video (Coming Soon)
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGenerateFrame}
+                disabled={isGenerating || !prompt.trim()}
+                className="flex-1"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Frame
+                  </>
+                )}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -234,27 +330,14 @@ export function VideoGenerator() {
               onClick={exportAsVideo}
               variant="outline"
               className="w-full"
-              disabled={isGenerating}
+              disabled={isGenerating || !generatedImage}
             >
               <Download className="h-4 w-4 mr-2" />
-              Export as Video
+              Export as Video ({duration[0]}s)
             </Button>
           </CardContent>
         </Card>
       </div>
-
-      {/* Tips */}
-      <Card>
-        <CardContent className="p-4">
-          <h4 className="font-medium mb-2">Video Tips</h4>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Generate an image first in the Media Generator tab</li>
-            <li>• Export it as a video clip with the duration you want</li>
-            <li>• Use slow motion for dramatic effect</li>
-            <li>• Loop option creates seamless repeating videos</li>
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -8,11 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMediaSystem, DEFAULT_CHARACTERS, GenerationSettings } from '@/hooks/useMediaSystem';
+import { useMediaSystem, GenerationSettings } from '@/hooks/useMediaSystem';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Loader2, Image, Sparkles, User, Camera, 
-  Download, Palette, Sun, Moon, Film
+  Loader2, Image, Sparkles, Camera, 
+  Download, Moon, Film
 } from 'lucide-react';
 
 interface MediaGeneratorProps {
@@ -23,7 +23,7 @@ interface MediaGeneratorProps {
 export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { generateWithCharacters, saveToLibrary, getImageAsBase64 } = useMediaSystem();
+  const { characters, generateWithCharacters, saveToLibrary, getImageAsBase64 } = useMediaSystem();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const [prompt, setPrompt] = useState('');
@@ -47,11 +47,23 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
   const [quality, setQuality] = useState('standard');
   const [dalleStyle, setDalleStyle] = useState('vivid');
 
-  const toggleCharacter = (id: string) => {
+  const toggleCharacter = (slug: string) => {
     setSelectedCharacters(prev => 
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+      prev.includes(slug) ? prev.filter(c => c !== slug) : [...prev, slug]
     );
   };
+
+  // Auto-apply vintage settings for historical characters
+  React.useEffect(() => {
+    const hasHistorical = selectedCharacters.some(slug => {
+      const char = characters.find(c => c.slug === slug);
+      return char?.era?.includes('1900') || char?.era?.includes('Western');
+    });
+    if (hasHistorical && !blackAndWhite) {
+      setVintageTexture(true);
+      setFilmGrain(true);
+    }
+  }, [selectedCharacters, characters]);
 
   const drawToCanvas = (base64: string) => {
     const img = document.createElement('img');
@@ -169,7 +181,7 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
     link.click();
   };
 
-  // Auto-apply vintage settings for historical characters
+  // Auto-apply vintage settings for historical styles
   const handleStyleChange = (newStyle: GenerationSettings['style']) => {
     setStyle(newStyle);
     if (newStyle === 'rdr2' || newStyle === 'vintage') {
@@ -205,12 +217,12 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
           <div>
             <Label className="text-sm font-medium mb-2 block">Characters</Label>
             <div className="flex flex-wrap gap-2">
-              {DEFAULT_CHARACTERS.map(char => (
+              {characters.map(char => (
                 <Button
                   key={char.id}
-                  variant={selectedCharacters.includes(char.id) ? "default" : "outline"}
+                  variant={selectedCharacters.includes(char.slug) ? "default" : "outline"}
                   size="sm"
-                  onClick={() => toggleCharacter(char.id)}
+                  onClick={() => toggleCharacter(char.slug)}
                   className="gap-2"
                 >
                   <img src={char.referenceUrl} alt={char.name} className="w-5 h-5 rounded-full object-cover" />
@@ -220,7 +232,7 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Selected characters will be used as reference for generation
+              Selected characters use database references for accurate generation
             </p>
           </div>
 

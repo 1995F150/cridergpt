@@ -1,16 +1,21 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from './use-toast';
 
 export interface MediaCharacter {
   id: string;
+  slug: string;
   name: string;
   referenceUrl: string;
   pronouns: string;
   era?: string;
   description?: string;
+  traits?: string;
+  context?: string;
   isPrimary?: boolean;
+  isSystem?: boolean;
+  generationCount?: number;
 }
 
 export interface MediaItem {
@@ -40,25 +45,35 @@ export interface GenerationSettings {
   blackAndWhite?: boolean;
   vintageTexture?: boolean;
   filmGrain?: boolean;
+  outputType?: 'image' | 'video';
 }
 
-// Default characters
-export const DEFAULT_CHARACTERS: MediaCharacter[] = [
+// Fallback characters if database isn't available
+const FALLBACK_CHARACTERS: MediaCharacter[] = [
   {
-    id: 'jessie',
+    id: 'jessie-fallback',
+    slug: 'jessie',
     name: 'Jessie Crider',
     referenceUrl: '/creator-reference.png',
     pronouns: 'he/him',
     description: 'Primary character - creator of CriderGPT',
-    isPrimary: true
+    traits: 'Rural high school student, FFA member, tech enthusiast, farmer',
+    context: 'Creator and primary subject for all generations.',
+    isPrimary: true,
+    isSystem: true
   },
   {
-    id: 'dr-harman',
+    id: 'dr-harman-fallback',
+    slug: 'dr-harman',
     name: 'Dr. Harman',
     referenceUrl: '/dr-harman-reference.png',
     pronouns: 'he/him',
     era: '1900s Western',
-    description: '3rd great-grandfather - historical Western era'
+    description: '3rd great-grandfather - historical Western era',
+    traits: 'Historical figure, Western era, bearded, period-appropriate clothing',
+    context: 'Reference photo is from early 1900s. Apply vintage texture, film grain, B&W unless color explicitly requested.',
+    isPrimary: false,
+    isSystem: true
   }
 ];
 
@@ -66,27 +81,76 @@ export function useMediaSystem() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [characters, setCharacters] = useState<MediaCharacter[]>(DEFAULT_CHARACTERS);
+  const [characters, setCharacters] = useState<MediaCharacter[]>(FALLBACK_CHARACTERS);
+
+  // Fetch characters from database
+  const fetchCharacters = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('character_references')
+        .select('*')
+        .order('is_primary', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching characters:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const mappedCharacters: MediaCharacter[] = data.map(char => ({
+          id: char.id,
+          slug: char.slug,
+          name: char.name,
+          referenceUrl: char.reference_photo_url,
+          pronouns: char.pronouns || 'they/them',
+          era: char.era || undefined,
+          description: char.description || undefined,
+          traits: char.traits || undefined,
+          context: char.context || undefined,
+          isPrimary: char.is_primary || false,
+          isSystem: char.is_system || false,
+          generationCount: char.generation_count || 0
+        }));
+        setCharacters(mappedCharacters);
+      }
+    } catch (err) {
+      console.error('Error in fetchCharacters:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCharacters();
+  }, [fetchCharacters]);
 
   // Parse prompt for character mentions
   const parseCharacters = useCallback((prompt: string): string[] => {
     const detected: string[] = [];
     const lowerPrompt = prompt.toLowerCase();
     
-    if (lowerPrompt.includes('jessie') || lowerPrompt.includes('me') || lowerPrompt.includes('creator')) {
-      detected.push('jessie');
+    for (const char of characters) {
+      const nameParts = char.name.toLowerCase().split(' ');
+      if (nameParts.some(part => lowerPrompt.includes(part)) || 
+          lowerPrompt.includes(char.slug)) {
+        detected.push(char.slug);
+      }
     }
-    if (lowerPrompt.includes('harman') || lowerPrompt.includes('grandfather') || lowerPrompt.includes('ancestor')) {
-      detected.push('dr-harman');
+
+    // Check for keywords
+    if (lowerPrompt.includes('me') || lowerPrompt.includes('creator')) {
+      if (!detected.includes('jessie')) detected.push('jessie');
+    }
+    if (lowerPrompt.includes('grandfather') || lowerPrompt.includes('ancestor')) {
+      if (!detected.includes('dr-harman')) detected.push('dr-harman');
     }
     
-    // Default to Jessie if no character mentioned
+    // Default to primary character if none mentioned
     if (detected.length === 0) {
-      detected.push('jessie');
+      const primary = characters.find(c => c.isPrimary);
+      if (primary) detected.push(primary.slug);
     }
     
     return detected;
-  }, []);
+  }, [characters]);
 
   // Parse style hints from prompt
   const parseStyleHints = useCallback((prompt: string): Partial<GenerationSettings> => {
@@ -94,15 +158,18 @@ export function useMediaSystem() {
     const lowerPrompt = prompt.toLowerCase();
     
     // Era/style detection
-    if (lowerPrompt.includes('western') || lowerPrompt.includes('1900') || lowerPrompt.includes('old west') || lowerPrompt.includes('rdr2')) {
+    if (lowerPrompt.includes('western') || lowerPrompt.includes('1900') || 
+        lowerPrompt.includes('old west') || lowerPrompt.includes('rdr2')) {
       hints.era = 'Western 1900s';
       hints.style = 'rdr2';
       hints.vintageTexture = true;
+      hints.filmGrain = true;
     }
     if (lowerPrompt.includes('black and white') || lowerPrompt.includes('b&w')) {
       hints.blackAndWhite = true;
     }
-    if (lowerPrompt.includes('vintage') || lowerPrompt.includes('film grain') || lowerPrompt.includes('old photo')) {
+    if (lowerPrompt.includes('vintage') || lowerPrompt.includes('film grain') || 
+        lowerPrompt.includes('old photo') || lowerPrompt.includes('antique')) {
       hints.vintageTexture = true;
       hints.filmGrain = true;
     }
@@ -124,7 +191,7 @@ export function useMediaSystem() {
     return hints;
   }, []);
 
-  // Build unified prompt
+  // Build unified prompt with character context
   const buildPrompt = useCallback((
     basePrompt: string,
     settings: GenerationSettings,
@@ -132,14 +199,24 @@ export function useMediaSystem() {
   ): string => {
     const parts: string[] = [];
     
-    // Character descriptions
+    // Character descriptions with traits and context
     if (detectedChars.length > 0) {
       const charDescriptions = detectedChars.map(c => {
-        let desc = c.name;
-        if (c.era) desc += ` (${c.era} era)`;
+        let desc = `${c.name}`;
+        if (c.traits) desc += ` (${c.traits})`;
+        if (c.era) desc += ` from ${c.era} era`;
         return desc;
       }).join(' and ');
       parts.push(`Portrait of ${charDescriptions}`);
+      
+      // Add character context instructions
+      const contextInstructions = detectedChars
+        .filter(c => c.context)
+        .map(c => c.context)
+        .join('. ');
+      if (contextInstructions) {
+        parts.push(contextInstructions);
+      }
     }
     
     // Scene/prompt
@@ -147,13 +224,13 @@ export function useMediaSystem() {
     
     // Style modifiers
     if (settings.style === 'rdr2' || settings.era?.includes('Western')) {
-      parts.push('Red Dead Redemption 2 style portrait, old West aesthetic');
+      parts.push('Red Dead Redemption 2 style portrait, old West aesthetic, historically accurate');
     }
     if (settings.blackAndWhite) {
-      parts.push('black and white photograph');
+      parts.push('black and white photograph, no color');
     }
     if (settings.vintageTexture) {
-      parts.push('vintage film texture, slight vignette, faded tones');
+      parts.push('vintage film texture, slight vignette, faded tones, authentic period photograph');
     }
     if (settings.filmGrain) {
       parts.push('film grain overlay, authentic old photograph look');
@@ -166,6 +243,12 @@ export function useMediaSystem() {
     }
     if (settings.composition) {
       parts.push(`${settings.composition} composition`);
+    }
+    
+    // Safety: maintain historical accuracy
+    const hasHistorical = detectedChars.some(c => c.era?.includes('1900') || c.era?.includes('Western'));
+    if (hasHistorical) {
+      parts.push('Maintain exact facial features, beard, hair from reference. No artistic liberties, no modernizing, no smoothing.');
     }
     
     return parts.join('. ');
@@ -231,6 +314,51 @@ export function useMediaSystem() {
     }
   }, [user]);
 
+  // Log generation to database
+  const logGeneration = useCallback(async (
+    prompt: string,
+    unifiedPrompt: string,
+    characterIds: string[],
+    settings: GenerationSettings,
+    outputPath?: string
+  ) => {
+    if (!user) return;
+    
+    try {
+      await supabase.from('media_generations').insert({
+        user_id: user.id,
+        prompt,
+        unified_prompt: unifiedPrompt,
+        output_type: settings.outputType || 'image',
+        output_path: outputPath,
+        style: settings.style,
+        visual_settings: {
+          blackAndWhite: settings.blackAndWhite,
+          vintageTexture: settings.vintageTexture,
+          filmGrain: settings.filmGrain,
+          mood: settings.mood,
+          lighting: settings.lighting
+        },
+        status: outputPath ? 'completed' : 'pending'
+      });
+    } catch (err) {
+      console.error('Error logging generation:', err);
+    }
+  }, [user]);
+
+  // Increment character generation count
+  const incrementCharacterCount = useCallback(async (slugs: string[]) => {
+    for (const slug of slugs) {
+      const char = characters.find(c => c.slug === slug);
+      if (char && !char.isSystem) {
+        await supabase
+          .from('character_references')
+          .update({ generation_count: (char.generationCount || 0) + 1 })
+          .eq('slug', slug);
+      }
+    }
+  }, [characters]);
+
   // Generate image with character references
   const generateWithCharacters = useCallback(async (
     prompt: string,
@@ -243,13 +371,21 @@ export function useMediaSystem() {
 
     setIsLoading(true);
     try {
-      // Get character references
-      const charIds = settings.characters.length > 0 ? settings.characters : parseCharacters(prompt);
-      const detectedChars = characters.filter(c => charIds.includes(c.id));
+      // Get character slugs
+      const charSlugs = settings.characters.length > 0 ? settings.characters : parseCharacters(prompt);
+      const detectedChars = characters.filter(c => charSlugs.includes(c.slug));
       
       // Auto-detect style hints from prompt
       const styleHints = parseStyleHints(prompt);
       const mergedSettings = { ...settings, ...styleHints };
+      
+      // Apply era-specific defaults for historical characters
+      const hasHistorical = detectedChars.some(c => c.era?.includes('1900') || c.era?.includes('Western'));
+      if (hasHistorical && !mergedSettings.blackAndWhite && !prompt.toLowerCase().includes('color')) {
+        mergedSettings.blackAndWhite = true;
+        mergedSettings.vintageTexture = true;
+        mergedSettings.filmGrain = true;
+      }
       
       // Build unified prompt
       const unifiedPrompt = buildPrompt(prompt, mergedSettings, detectedChars);
@@ -271,7 +407,7 @@ export function useMediaSystem() {
           mode: referenceImages.length > 0 ? 'character' : 'generate',
           imageUrl: referenceImages[0],
           additionalImages: referenceImages.slice(1),
-          characters: charIds,
+          characters: charSlugs,
           settings: mergedSettings
         }
       });
@@ -279,12 +415,15 @@ export function useMediaSystem() {
       if (error) throw error;
 
       if (data?.imageData) {
-        await saveToLibrary(data.imageData, 'character_gen', {
-          characters: charIds,
+        const savedPath = await saveToLibrary(data.imageData, 'character_gen', {
+          characters: charSlugs,
           style: mergedSettings.style,
           era: mergedSettings.era,
           mood: mergedSettings.mood
         });
+        
+        await logGeneration(prompt, unifiedPrompt, charSlugs, mergedSettings, savedPath || undefined);
+        await incrementCharacterCount(charSlugs);
         
         toast({ title: "Success", description: "Image generated and saved!" });
         return data;
@@ -298,7 +437,7 @@ export function useMediaSystem() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, characters, parseCharacters, parseStyleHints, buildPrompt, getImageAsBase64, saveToLibrary, toast]);
+  }, [user, characters, parseCharacters, parseStyleHints, buildPrompt, getImageAsBase64, saveToLibrary, logGeneration, incrementCharacterCount, toast]);
 
   // Add new character from upload
   const addCharacter = useCallback(async (
@@ -306,7 +445,9 @@ export function useMediaSystem() {
     imageFile: File,
     pronouns: string = 'they/them',
     era?: string,
-    description?: string
+    description?: string,
+    traits?: string,
+    context?: string
   ) => {
     if (!user) return null;
     
@@ -314,23 +455,52 @@ export function useMediaSystem() {
       const fileName = `character_${Date.now()}.png`;
       const filePath = `${user.id}/characters/${fileName}`;
       
-      const { error } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('user-files')
         .upload(filePath, imageFile, { contentType: imageFile.type });
       
-      if (error) throw error;
+      if (uploadError) throw uploadError;
       
       const { data: urlData } = supabase.storage
         .from('user-files')
         .getPublicUrl(filePath);
       
+      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      
+      const { data: newCharData, error: insertError } = await supabase
+        .from('character_references')
+        .insert({
+          user_id: user.id,
+          name,
+          slug: `${slug}_${Date.now()}`,
+          pronouns,
+          era,
+          description,
+          traits,
+          context,
+          reference_photo_url: urlData.publicUrl,
+          reference_photo_path: filePath,
+          is_primary: false,
+          is_system: false
+        })
+        .select()
+        .single();
+      
+      if (insertError) throw insertError;
+      
       const newChar: MediaCharacter = {
-        id: `custom_${Date.now()}`,
-        name,
-        referenceUrl: urlData.publicUrl,
-        pronouns,
-        era,
-        description
+        id: newCharData.id,
+        slug: newCharData.slug,
+        name: newCharData.name,
+        referenceUrl: newCharData.reference_photo_url,
+        pronouns: newCharData.pronouns,
+        era: newCharData.era,
+        description: newCharData.description,
+        traits: newCharData.traits,
+        context: newCharData.context,
+        isPrimary: false,
+        isSystem: false,
+        generationCount: 0
       };
       
       setCharacters(prev => [...prev, newChar]);
@@ -338,20 +508,47 @@ export function useMediaSystem() {
       
       return newChar;
     } catch (error: any) {
+      console.error('Error adding character:', error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return null;
     }
   }, [user, toast]);
 
+  // Update character text placeholders
+  const updateCharacter = useCallback(async (
+    id: string,
+    updates: { traits?: string; context?: string; description?: string }
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('character_references')
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setCharacters(prev => prev.map(c => 
+        c.id === id ? { ...c, ...updates } : c
+      ));
+      
+      toast({ title: "Updated", description: "Character info saved" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  }, [toast]);
+
   return {
     characters,
     isLoading,
+    fetchCharacters,
     parseCharacters,
     parseStyleHints,
     buildPrompt,
     generateWithCharacters,
     saveToLibrary,
     addCharacter,
-    getImageAsBase64
+    updateCharacter,
+    getImageAsBase64,
+    logGeneration
   };
 }
