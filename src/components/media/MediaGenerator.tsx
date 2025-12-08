@@ -3,17 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMediaSystem, GenerationSettings } from '@/hooks/useMediaSystem';
+import { useMediaSystem } from '@/hooks/useMediaSystem';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Loader2, Image, Sparkles, Camera, 
-  Download, Moon, Film
-} from 'lucide-react';
+import { Loader2, Image, Sparkles, Download, Users } from 'lucide-react';
 
 interface MediaGeneratorProps {
   remixSource?: { url: string; path: string } | null;
@@ -23,47 +17,28 @@ interface MediaGeneratorProps {
 export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { characters, generateWithCharacters, saveToLibrary, getImageAsBase64 } = useMediaSystem();
+  const { characters, parseCharacters, parseStyleHints, buildPrompt, saveToLibrary, getImageAsBase64, logGeneration } = useMediaSystem();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const [prompt, setPrompt] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
-  const [revisedPrompt, setRevisedPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  
-  // Character selection
-  const [selectedCharacters, setSelectedCharacters] = useState<string[]>(['jessie']);
-  
-  // Style settings
-  const [style, setStyle] = useState<GenerationSettings['style']>('realistic');
-  const [blackAndWhite, setBlackAndWhite] = useState(false);
-  const [vintageTexture, setVintageTexture] = useState(false);
-  const [filmGrain, setFilmGrain] = useState(false);
-  const [mood, setMood] = useState('neutral');
-  const [lighting, setLighting] = useState('natural');
-  
-  // DALL-E settings for pure generation
-  const [size, setSize] = useState('1024x1024');
-  const [quality, setQuality] = useState('standard');
-  const [dalleStyle, setDalleStyle] = useState('vivid');
+  const [detectedChars, setDetectedChars] = useState<string[]>([]);
 
-  const toggleCharacter = (slug: string) => {
-    setSelectedCharacters(prev => 
-      prev.includes(slug) ? prev.filter(c => c !== slug) : [...prev, slug]
-    );
-  };
-
-  // Auto-apply vintage settings for historical characters
-  React.useEffect(() => {
-    const hasHistorical = selectedCharacters.some(slug => {
-      const char = characters.find(c => c.slug === slug);
-      return char?.era?.includes('1900') || char?.era?.includes('Western');
-    });
-    if (hasHistorical && !blackAndWhite) {
-      setVintageTexture(true);
-      setFilmGrain(true);
+  // Live detection of characters as user types
+  const handlePromptChange = (value: string) => {
+    setPrompt(value);
+    if (value.trim()) {
+      const detected = parseCharacters(value);
+      // Get character names for display
+      const detectedNames = detected.map(slug => 
+        characters.find(c => c.slug === slug)?.name || slug
+      );
+      setDetectedChars(detectedNames);
+    } else {
+      setDetectedChars([]);
     }
-  }, [selectedCharacters, characters]);
+  };
 
   const drawToCanvas = (base64: string) => {
     const img = document.createElement('img');
@@ -92,45 +67,68 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
 
     setIsGenerating(true);
     try {
-      const settings: GenerationSettings = {
-        characters: selectedCharacters,
-        style,
-        blackAndWhite,
-        vintageTexture,
-        filmGrain,
-        mood: mood !== 'neutral' ? mood : undefined,
-        lighting: lighting !== 'natural' ? lighting : undefined
+      // Auto-detect characters and style from prompt text
+      const charSlugs = parseCharacters(prompt);
+      const detectedChars = characters.filter(c => charSlugs.includes(c.slug));
+      const styleHints = parseStyleHints(prompt);
+      
+      // Auto-apply vintage settings for historical characters
+      const hasHistorical = detectedChars.some(c => c.era?.includes('1900') || c.era?.includes('Western'));
+      const settings = {
+        characters: charSlugs,
+        style: styleHints.style || 'realistic' as const,
+        blackAndWhite: styleHints.blackAndWhite || (hasHistorical && !prompt.toLowerCase().includes('color')),
+        vintageTexture: styleHints.vintageTexture || hasHistorical,
+        filmGrain: styleHints.filmGrain || hasHistorical,
+        mood: styleHints.mood,
+        lighting: undefined
       };
+      
+      // Build unified prompt with character context
+      const unifiedPrompt = buildPrompt(prompt, settings, detectedChars);
+      
+      console.log('Generating with detected characters:', charSlugs);
+      console.log('Unified prompt:', unifiedPrompt);
 
-      // If using character references, use the character generation
-      if (selectedCharacters.length > 0) {
-        const result = await generateWithCharacters(prompt, settings);
-        if (result?.imageData) {
-          setImageData(result.imageData);
-          setRevisedPrompt(result.revisedPrompt || prompt);
-          drawToCanvas(result.imageData);
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('generate-ai-image', {
+        body: {
+          prompt: unifiedPrompt,
+          characters: detectedChars.map(c => ({
+            name: c.name,
+            referenceUrl: c.referenceUrl,
+            traits: c.traits,
+            context: c.context
+          })),
+          settings
         }
-      } else {
-        // Pure DALL-E generation
-        const { data, error } = await supabase.functions.invoke('generate-image', {
-          body: { 
-            prompt: prompt.trim(), 
-            size, 
-            quality, 
-            style: dalleStyle,
-            mode: 'generate'
-          }
-        });
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (data?.imageData) {
-          setImageData(data.imageData);
-          setRevisedPrompt(data.revisedPrompt || prompt);
-          drawToCanvas(data.imageData);
-          await saveToLibrary(data.imageData, 'ai_generated', { style });
-          toast({ title: "Success", description: "Image generated!" });
+      if (data?.imageUrl || data?.image) {
+        const imageUrl = data.imageUrl || data.image;
+        
+        // Handle base64 or URL
+        if (imageUrl.startsWith('data:')) {
+          const base64Data = imageUrl.split(',')[1];
+          setImageData(base64Data);
+          drawToCanvas(base64Data);
+          await saveToLibrary(base64Data, 'ai_generated', {
+            characters: charSlugs,
+            style: settings.style
+          });
+        } else {
+          setImageData(imageUrl);
+          drawToCanvas(imageUrl);
         }
+        
+        // Log generation
+        await logGeneration(prompt, unifiedPrompt, charSlugs, settings);
+        
+        toast({ title: "Success", description: "Image generated!" });
+      } else if (data?.error) {
+        throw new Error(data.error);
       }
     } catch (error: any) {
       console.error('Generation error:', error);
@@ -146,23 +144,38 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
     setIsGenerating(true);
     try {
       const base64 = await getImageAsBase64(remixSource.url);
+      const charSlugs = parseCharacters(prompt);
+      const detectedChars = characters.filter(c => charSlugs.includes(c.slug));
+      const styleHints = parseStyleHints(prompt);
       
-      const { data, error } = await supabase.functions.invoke('generate-image', {
+      const { data, error } = await supabase.functions.invoke('generate-ai-image', {
         body: {
           prompt: prompt.trim(),
           mode: 'edit',
           imageUrl: base64,
-          settings: { style, blackAndWhite, vintageTexture, filmGrain }
+          characters: detectedChars.map(c => ({
+            name: c.name,
+            referenceUrl: c.referenceUrl,
+            traits: c.traits,
+            context: c.context
+          })),
+          settings: { style: styleHints.style || 'realistic', ...styleHints }
         }
       });
 
       if (error) throw error;
 
-      if (data?.imageData) {
-        setImageData(data.imageData);
-        setRevisedPrompt(data.revisedPrompt || prompt);
-        drawToCanvas(data.imageData);
-        await saveToLibrary(data.imageData, 'ai_edited', { style });
+      if (data?.imageUrl || data?.image) {
+        const imageUrl = data.imageUrl || data.image;
+        if (imageUrl.startsWith('data:')) {
+          const base64Data = imageUrl.split(',')[1];
+          setImageData(base64Data);
+          drawToCanvas(base64Data);
+          await saveToLibrary(base64Data, 'ai_edited', { style: styleHints.style || 'realistic' });
+        } else {
+          setImageData(imageUrl);
+          drawToCanvas(imageUrl);
+        }
         toast({ title: "Remixed!", description: "Image edited and saved" });
         onClearRemix?.();
       }
@@ -177,17 +190,8 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
     if (!imageData) return;
     const link = document.createElement('a');
     link.download = `cridergpt_${Date.now()}.png`;
-    link.href = `data:image/png;base64,${imageData}`;
+    link.href = imageData.startsWith('data:') ? imageData : `data:image/png;base64,${imageData}`;
     link.click();
-  };
-
-  // Auto-apply vintage settings for historical styles
-  const handleStyleChange = (newStyle: GenerationSettings['style']) => {
-    setStyle(newStyle);
-    if (newStyle === 'rdr2' || newStyle === 'vintage') {
-      setVintageTexture(true);
-      setFilmGrain(true);
-    }
   };
 
   return (
@@ -197,8 +201,11 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
-            Generation Settings
+            Image Generator
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Type what you want to generate. Mention character names (Dr. Harman, Savanna, etc.) or "me" to include them with accurate likeness.
+          </p>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Remix indicator */}
@@ -213,146 +220,44 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
             </div>
           )}
 
-          {/* Character Selection */}
+          {/* Prompt - No character selection UI, just text input */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Characters</Label>
-            <div className="flex flex-wrap gap-2">
-              {characters.map(char => (
-                <Button
-                  key={char.id}
-                  variant={selectedCharacters.includes(char.slug) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => toggleCharacter(char.slug)}
-                  className="gap-2"
-                >
-                  <img src={char.referenceUrl} alt={char.name} className="w-5 h-5 rounded-full object-cover" />
-                  {char.name}
-                  {char.isPrimary && <Badge variant="secondary" className="text-[10px]">Primary</Badge>}
-                </Button>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Selected characters use database references for accurate generation
-            </p>
-          </div>
-
-          {/* Prompt */}
-          <div>
-            <Label className="text-sm font-medium mb-2 block">
-              {remixSource ? 'Edit Instructions' : 'Scene Description'}
-            </Label>
             <Textarea
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => handlePromptChange(e.target.value)}
               placeholder={remixSource 
-                ? "Describe how to edit this image (e.g., 'make it black and white, add Dr. Harman')"
-                : "Describe the scene (e.g., 'standing on a farm at sunset, wearing overalls')"
+                ? "Describe how to edit this image (e.g., 'make it black and white, add Dr. Harman behind me')"
+                : "Describe what you want to generate... Mention character names to include them (e.g., 'me and Savanna at sunset', 'Dr. Harman portrait in Western style')"
               }
-              className="min-h-[100px]"
+              className="min-h-[120px]"
               maxLength={1000}
             />
-            <p className="text-xs text-muted-foreground mt-1">{prompt.length}/1000</p>
-          </div>
-
-          {/* Style */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Style</Label>
-              <Select value={style} onValueChange={(v) => handleStyleChange(v as any)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="realistic">Realistic</SelectItem>
-                  <SelectItem value="cinematic">Cinematic</SelectItem>
-                  <SelectItem value="vintage">Vintage Photo</SelectItem>
-                  <SelectItem value="rdr2">RDR2 Portrait</SelectItem>
-                  <SelectItem value="cartoon">Cartoon</SelectItem>
-                  <SelectItem value="anime">Anime</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Mood</Label>
-              <Select value={mood} onValueChange={setMood}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="neutral">Neutral</SelectItem>
-                  <SelectItem value="dramatic">Dramatic</SelectItem>
-                  <SelectItem value="warm">Warm & Cozy</SelectItem>
-                  <SelectItem value="moody">Dark & Moody</SelectItem>
-                  <SelectItem value="epic">Epic</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-muted-foreground">{prompt.length}/1000</p>
             </div>
           </div>
 
-          {/* Cinematic toggles */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Cinematic Effects</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Moon className="h-4 w-4" />
-                  <span className="text-sm">Black & White</span>
-                </div>
-                <Switch checked={blackAndWhite} onCheckedChange={setBlackAndWhite} />
-              </div>
-              <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  <span className="text-sm">Vintage Texture</span>
-                </div>
-                <Switch checked={vintageTexture} onCheckedChange={setVintageTexture} />
-              </div>
-              <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Film className="h-4 w-4" />
-                  <span className="text-sm">Film Grain</span>
-                </div>
-                <Switch checked={filmGrain} onCheckedChange={setFilmGrain} />
-              </div>
-            </div>
-          </div>
-
-          {/* Pure generation settings (when no characters) */}
-          {selectedCharacters.length === 0 && !remixSource && (
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs mb-1 block">Size</Label>
-                <Select value={size} onValueChange={setSize}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1024x1024">Square</SelectItem>
-                    <SelectItem value="1792x1024">Landscape</SelectItem>
-                    <SelectItem value="1024x1792">Portrait</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs mb-1 block">Quality</Label>
-                <Select value={quality} onValueChange={setQuality}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="hd">HD</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs mb-1 block">Style</Label>
-                <Select value={dalleStyle} onValueChange={setDalleStyle}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vivid">Vivid</SelectItem>
-                    <SelectItem value="natural">Natural</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          {/* Live character detection display */}
+          {detectedChars.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap p-3 bg-secondary/50 rounded-lg">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Detected:</span>
+              {detectedChars.map(name => (
+                <Badge key={name} variant="secondary" className="text-xs">
+                  {name}
+                </Badge>
+              ))}
+              <span className="text-xs text-muted-foreground ml-auto">
+                (will use reference photos)
+              </span>
             </div>
           )}
+
+          {/* Available characters hint */}
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium">Available characters:</span>{' '}
+            {characters.map(c => c.name).join(', ')}
+          </div>
 
           <Button
             onClick={remixSource ? handleRemix : handleGenerate}
@@ -382,11 +287,6 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
             <Image className="h-5 w-5" />
             Preview
           </CardTitle>
-          {revisedPrompt && revisedPrompt !== prompt && (
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              AI revised: {revisedPrompt}
-            </p>
-          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex justify-center">
