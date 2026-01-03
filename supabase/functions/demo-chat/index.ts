@@ -6,10 +6,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[DEMO-CHAT] ${step}${detailsStr}`);
-};
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+
+const DEMO_SYSTEM_PROMPT = `You are CriderGPT, a friendly AI assistant created by Jessie Crider, the FFA Historian for 2025-2026 from Southwest Virginia.
+
+Your personality:
+- Speak casually like a Gen Z country person - use "y'all", "ain't", "gonna", "kinda", "alot", "fr", "lowkey"
+- Be helpful but natural, not robotic
+- You're knowledgeable about farming, welding, trucks, FFA, and country life
+- Keep responses concise but informative
+- Use emojis occasionally
+
+This is a DEMO mode, so:
+1. Give helpful responses but remind users this is limited
+2. Mention that signing up unlocks unlimited access
+3. Show your capabilities but keep responses focused
+
+Topics you excel at: agriculture, welding, vehicles/trucks, FFA, coding, practical problem-solving.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -17,7 +30,7 @@ serve(async (req) => {
   }
 
   try {
-    logStep("Demo chat function started");
+    console.log("[DEMO-CHAT] Function started");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -25,14 +38,14 @@ serve(async (req) => {
     );
 
     const { message, sessionId } = await req.json();
-    logStep("Request parsed", { sessionId, messageLength: message?.length });
+    console.log("[DEMO-CHAT] Request:", { sessionId, messageLength: message?.length });
 
     if (!message || !sessionId) {
       throw new Error("Message and sessionId are required");
     }
 
     // Get client IP and user agent for tracking
-    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
     const userAgent = req.headers.get("user-agent") || "unknown";
 
     // Check demo usage
@@ -42,14 +55,14 @@ serve(async (req) => {
       .eq('session_id', sessionId)
       .single();
 
-    if (usageError && usageError.code !== 'PGRST116') { // PGRST116 is "not found"
+    if (usageError && usageError.code !== 'PGRST116') {
       throw usageError;
     }
 
     let currentUsage = demoUsage;
     
     if (!currentUsage) {
-      // Create new demo usage record
+      // Create new demo usage record - allow 3 messages for demo
       const { data: newUsage, error: createError } = await supabaseClient
         .from('demo_usage')
         .insert({
@@ -57,7 +70,7 @@ serve(async (req) => {
           ip_address: ip,
           user_agent: userAgent,
           messages_sent: 0,
-          max_messages: 1
+          max_messages: 3
         })
         .select()
         .single();
@@ -68,11 +81,11 @@ serve(async (req) => {
 
     // Check if user has exceeded demo limit
     if (currentUsage.messages_sent >= currentUsage.max_messages) {
-      logStep("Demo limit exceeded", { sessionId, messagesSent: currentUsage.messages_sent });
+      console.log("[DEMO-CHAT] Demo limit exceeded", { sessionId });
       return new Response(
         JSON.stringify({ 
           error: "Demo limit exceeded",
-          message: "You've used your free demo. Please sign up to continue using CriderGPT."
+          message: "You've used your free demo messages. Sign up to continue using CriderGPT with unlimited access! 🚀"
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -81,75 +94,72 @@ serve(async (req) => {
       );
     }
 
-    // Generate a simple demo response based on the message
     let demoResponse = "";
-    const lowerMessage = message.toLowerCase();
-    
-    if (lowerMessage.includes("farm") || lowerMessage.includes("crop") || lowerMessage.includes("agriculture")) {
-      demoResponse = `Good question about farming! 🚜 
 
-First off, CriderGPT can help you with alot of farming stuff. I mean like:
-• Soil health and what crops work best for your land
-• Planning when to plant and rotate crops
-• Keeping equipment running and fixing it when it breaks
-• Weather decisions for planting and harvest
-• Calculating livestock feed so you aint wasting money
-• Farm budgeting and financial planning
+    // Try to use Lovable AI for real responses
+    if (LOVABLE_API_KEY) {
+      try {
+        const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash-lite',
+            messages: [
+              { role: 'system', content: DEMO_SYSTEM_PROMPT },
+              { role: 'user', content: message }
+            ],
+            max_tokens: 500,
+          }),
+        });
 
-This is just a demo so you can see what CriderGPT does. When you sign up for full access you get the whole agriculture AI that learns from your specific farm operation and gives you recommendations based on your location, crops, and equipment you got.
+        if (response.ok) {
+          const data = await response.json();
+          demoResponse = data.choices?.[0]?.message?.content || "";
+          
+          // Add demo reminder
+          demoResponse += `\n\n---\n*This is a demo preview. Sign up for unlimited access to CriderGPT! 🌾*`;
+        }
+      } catch (aiError) {
+        console.error("[DEMO-CHAT] AI error, using fallback:", aiError);
+      }
+    }
 
-In the country you can farm and do better work that pays more. CriderGPT helps make sure youre doing it right. Ready to get started? 🌾`;
-    } else if (lowerMessage.includes("weld") || lowerMessage.includes("metal") || lowerMessage.includes("steel")) {
-      demoResponse = `Good welding question! ⚡
+    // Fallback response if AI fails
+    if (!demoResponse) {
+      const lowerMessage = message.toLowerCase();
+      
+      if (lowerMessage.includes("farm") || lowerMessage.includes("crop") || lowerMessage.includes("agriculture")) {
+        demoResponse = `Good question about farming! 🚜 
 
-In the country you can weld things and repair farm equipment. CriderGPT knows welding because thats important for fixing things that break. Well, like:
-• What electrode to use for different metals
-• Getting the right amperage and voltage settings
-• How to prep joints properly
-• Safety gear and protocols so you dont get hurt
-• Fixing weld defects when something dont look right
-• Keeping your equipment maintained
+CriderGPT can help with soil health, crop planning, equipment maintenance, and more. This is a demo preview - sign up for full access to the complete agriculture AI that learns from your specific farm operation!
 
-This demo gives you a preview of the welding knowledge base. With a full account you get access to the welding calculator, safety checklists, and recommendations for your specific projects.
+Ready to get started? 🌾`;
+      } else if (lowerMessage.includes("weld") || lowerMessage.includes("metal")) {
+        demoResponse = `Good welding question! ⚡
 
-Fixing things yourself saves alot of money instead of paying someone else to do it. I mean thats just smart. Ready to learn more? 🔥`;
-    } else if (lowerMessage.includes("truck") || lowerMessage.includes("engine") || lowerMessage.includes("vehicle")) {
-      demoResponse = `Good automotive question! 🚗
+CriderGPT knows welding - electrodes, settings, joint prep, safety, and more. This demo gives you a preview. With a full account you get the welding calculator and detailed recommendations.
 
-CriderGPT can help with trucks and vehicles. Like:
-• Figuring out whats wrong with your engine
-• Keeping up with maintenance schedules
-• Finding the right parts you need
-• Getting better fuel efficiency
-• Safety inspections
-• Estimating repair costs
+Ready to learn more? 🔥`;
+      } else if (lowerMessage.includes("code") || lowerMessage.includes("python") || lowerMessage.includes("program")) {
+        demoResponse = `Coding question, nice! 💻
 
-This is a preview of the automotive stuff. With full access you get detailed vehicle maintenance logs, diagnostic tools, and AI recommendations for your specific vehicles and how you use them.
+CriderGPT can help with Python, TypeScript, web development, and more. Code blocks with copy buttons work in full version. Sign up for unlimited coding assistance!
 
-In the country trucks are important for hauling equipment and getting work done. You gotta keep them running good, you know? Ready to get started? 🔧`;
-    } else {
-      demoResponse = `Thanks for trying CriderGPT! 🤖
+Ready to code? 🚀`;
+      } else {
+        demoResponse = `Thanks for trying CriderGPT! 🤖
 
-This demo shows you what the AI can do. I mean, with a full account you get:
+This demo shows what the AI can do. With full access you get unlimited conversations, calculators, guides, and AI that learns from your questions.
 
-✅ Unlimited AI conversations
-✅ Agriculture calculators and planning tools
-✅ Welding guides and safety stuff
-✅ Vehicle maintenance tracking
-✅ FFA project help
-✅ Financial planning tools
-✅ Document generation
-✅ And alot more!
-
-The AI learns from your questions to give you better answers for your farming, welding, and mechanical projects. Thats kinda the point.
-
-CriderGPT was built by Jessie Crider, FFA Historian for 2025-2026 from Southwest Virginia. Its designed to help people with real country life problems and FFA work.
-
-Ready to unlock the full version of CriderGPT? Sign up now! 🚀`;
+Built by Jessie Crider, FFA Historian 2025-2026. Ready to unlock full access? Sign up now! 🚀`;
+      }
     }
 
     // Update demo usage
-    const { error: updateError } = await supabaseClient
+    await supabaseClient
       .from('demo_usage')
       .update({
         messages_sent: currentUsage.messages_sent + 1,
@@ -157,11 +167,7 @@ Ready to unlock the full version of CriderGPT? Sign up now! 🚀`;
       })
       .eq('session_id', sessionId);
 
-    if (updateError) {
-      logStep("Warning: Failed to update demo usage", updateError);
-    }
-
-    logStep("Demo response generated successfully", { sessionId, responseLength: demoResponse.length });
+    console.log("[DEMO-CHAT] Response generated successfully");
 
     return new Response(
       JSON.stringify({ 
@@ -175,13 +181,12 @@ Ready to unlock the full version of CriderGPT? Sign up now! 🚀`;
     );
 
   } catch (error) {
-    logStep("Error in demo chat", error);
-    console.error("Demo chat error:", error);
+    console.error("[DEMO-CHAT] Error:", error);
     
     return new Response(
       JSON.stringify({ 
         error: "Demo service error",
-        message: "Sorry, there was an issue with the demo. Please try again or sign up for full access."
+        message: "Sorry, there was an issue. Please try again or sign up for full access."
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

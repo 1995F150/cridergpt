@@ -107,17 +107,36 @@ export function ChatMessage({
           <div className="relative group">
             <img
               src={imageUrl}
-              alt="Uploaded"
-              className="max-w-xs rounded-lg border border-border"
+              alt="Generated or uploaded image"
+              className="max-w-sm rounded-lg border border-border shadow-md"
+              onError={(e) => {
+                console.error('Image failed to load:', imageUrl.substring(0, 100));
+              }}
             />
-            <Button
-              size="icon"
-              variant="secondary"
-              className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => window.open(imageUrl, "_blank")}
-            >
-              <ExternalLink className="h-3 w-3" />
-            </Button>
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                size="icon"
+                variant="secondary"
+                className="h-7 w-7"
+                onClick={() => {
+                  // Download image
+                  const link = document.createElement('a');
+                  link.download = `cridergpt_${Date.now()}.png`;
+                  link.href = imageUrl;
+                  link.click();
+                }}
+              >
+                <Download className="h-3 w-3" />
+              </Button>
+              <Button
+                size="icon"
+                variant="secondary"
+                className="h-7 w-7"
+                onClick={() => window.open(imageUrl, "_blank")}
+              >
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         )}
 

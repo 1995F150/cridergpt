@@ -15,6 +15,7 @@ import { useAILearning } from "@/hooks/useAILearning";
 import { useModelSelection } from "@/hooks/useModelSelection";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
@@ -109,21 +110,31 @@ export default function ChatPanel() {
       await sendMessage(convId, message, "user", undefined, imageUrl);
 
       // Check if this is an image generation request
-      const isImageGeneration = /\b(generate|create|make|draw)\b.*\b(image|picture|photo|art)\b/i.test(message);
+      const isImageGeneration = /\b(generate|create|make|draw)\b.*\b(image|picture|photo|art|pic)\b/i.test(message);
 
       if (isImageGeneration) {
-        // Use image generation
+        // Use image generation edge function
         setIsStreaming(true);
         setStreamingMessage("🎨 Generating image...");
         
         try {
-          const result = await generateSmartResponse(message, selectedModel, "image_generation");
-          const response = typeof result === "string" ? result : result.response;
-          await sendMessage(convId, response, "assistant");
-          setStreamingMessage("");
-        } catch (error) {
+          const { data, error } = await supabase.functions.invoke('generate-ai-image', {
+            body: { prompt: message }
+          });
+
+          if (error) throw error;
+          
+          if (data?.imageUrl || data?.image) {
+            const imageUrl = data.imageUrl || data.image;
+            await sendMessage(convId, `Here's your generated image! 🎨`, "assistant", undefined, imageUrl);
+          } else if (data?.error) {
+            throw new Error(data.error);
+          } else {
+            throw new Error("No image generated");
+          }
+        } catch (error: any) {
           console.error("Image generation error:", error);
-          await sendMessage(convId, "Sorry, I couldn't generate that image. Please try again.", "assistant");
+          await sendMessage(convId, `Sorry, I couldn't generate that image: ${error.message}. Please try again.`, "assistant");
         } finally {
           setIsStreaming(false);
           setStreamingMessage("");
