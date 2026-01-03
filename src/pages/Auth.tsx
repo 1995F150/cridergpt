@@ -28,19 +28,19 @@ export default function Auth() {
 
     const initializeAuth = async () => {
       try {
-        // Check if environment variables are properly set
-        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
-          throw new Error('Supabase configuration is missing');
-        }
-
-        // Simple session check without complex connection testing
+        // Simple session check - supabase client has hardcoded config
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
         
         if (error) {
           console.error('❌ Session error:', error);
-          setAuthError('Unable to connect to authentication service');
+          // Only show error for actual connection issues, not missing session
+          if (error.message?.includes('network') || error.message?.includes('fetch')) {
+            setAuthError('Unable to connect to authentication service');
+          } else {
+            setAuthError(null);
+          }
         } else if (session) {
           console.log('✅ Session found, redirecting...');
           navigate('/', { replace: true });
@@ -51,8 +51,8 @@ export default function Auth() {
         }
       } catch (error: any) {
         console.error('💥 Auth initialization error:', error);
-        if (mounted) {
-          setAuthError('Configuration error. Please check your setup.');
+        if (mounted && (error.message?.includes('network') || error.message?.includes('fetch'))) {
+          setAuthError('Network error. Please check your connection.');
         }
       } finally {
         if (mounted) {

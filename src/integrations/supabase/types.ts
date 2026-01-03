@@ -3624,14 +3624,14 @@ export type Database = {
         Returns: Json
       }
       can_user_request_tts:
+        | { Args: never; Returns: boolean }
         | { Args: { uid: string }; Returns: boolean }
-        | { Args: never; Returns: boolean }
       check_plus_access:
+        | { Args: never; Returns: boolean }
         | { Args: { feature?: string }; Returns: boolean }
-        | { Args: never; Returns: boolean }
       check_tier_limit:
-        | { Args: { limit_type: string }; Returns: number }
         | { Args: never; Returns: boolean }
+        | { Args: { limit_type: string }; Returns: number }
       cleanup_expired_stories: { Args: never; Returns: undefined }
       compute_user_revenue_mapping: {
         Args: never
@@ -3699,8 +3699,8 @@ export type Database = {
         }[]
       }
       get_crideros_milestone:
-        | { Args: { milestone_name: string }; Returns: string }
         | { Args: never; Returns: Record<string, unknown>[] }
+        | { Args: { milestone_name: string }; Returns: string }
       get_crideros_start_date: { Args: never; Returns: string }
       get_crideros_timeline: {
         Args: never
@@ -3713,18 +3713,18 @@ export type Database = {
       }
       get_owner_details:
         | {
+            Args: never
+            Returns: {
+              contact_email: string
+              owner_name: string
+            }[]
+          }
+        | {
             Args: { check_email: string }
             Returns: {
               is_owner: boolean
               permissions: Json
               role: string
-            }[]
-          }
-        | {
-            Args: never
-            Returns: {
-              contact_email: string
-              owner_name: string
             }[]
           }
       get_plan_features: {
@@ -3823,24 +3823,24 @@ export type Database = {
       }
       has_tier_feature: { Args: { feature: string }; Returns: boolean }
       is_founder:
-        | { Args: { check_email: string }; Returns: boolean }
         | { Args: never; Returns: boolean }
+        | { Args: { check_email: string }; Returns: boolean }
       log_tier_upgrade:
-        | {
-            Args: {
-              p_new_tier?: string
-              p_old_tier?: string
-              p_stripe_event_id?: string
-              p_user_id: string
-            }
-            Returns: undefined
-          }
         | {
             Args: {
               p_new_tier: string
               p_old_tier: string
               p_stripe_event_id: string
               p_user_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_new_tier?: string
+              p_old_tier?: string
+              p_stripe_event_id?: string
+              p_user_id: string
             }
             Returns: undefined
           }
