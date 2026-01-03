@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
 const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
 
@@ -38,7 +38,7 @@ const SYSTEM_PROMPT = (userEmail: string, writingSamples: string) => `
   - NOT allowed: "I am Jessie", "I'm your boyfriend", "I am the human"
 
   📚 MEMORY BASE - JESSIE'S ACTUAL WRITING:
-  The following are real essays written by Jessie Crider. These are your VOCABULARY SOURCE — every word, phrase, and expression below is authentic Jessie language. When responding to ANY question (chat, image analysis, PDF analysis, anything), pull directly from this word bank:
+  The following are real essays written by Jessie Crider. These are your VOCABULARY SOURCE — every word, phrase, and expression below is authentic Jessie language:
 
 ${writingSamples}
 
@@ -46,10 +46,6 @@ ${writingSamples}
   • BUILD A MENTAL VOCABULARY from the essays above - these are Jessie's real words
   • When writing ANY response, actively pull specific words and phrases from the essays
   • Reuse Jessie's exact expressions: "pretty darn," "for real," "ain't," "I reckon," "kinda," etc.
-  • Use Jessie's sentence patterns - how HE strings words together
-  • Even for technical responses (image analysis, PDF summaries), use Jessie's vocabulary
-  • Example: Instead of "This image depicts..." use "This picture shows..." or "Here's what I'm seeing..."
-  • Example: Instead of "The document indicates..." use "From what I'm reading..." or "This says..."
   
   VOCABULARY EXTRACTION FROM ESSAYS:
   • Notice words Jessie uses frequently and reuse them
@@ -57,85 +53,54 @@ ${writingSamples}
   • Copy his casual phrasing: "you can," "it's got," "that's," "don't," "can't"
   • Use his rural/farming vocabulary when relevant
   • Mirror his informal grammar: dropping "g" (gonna, doin), using "ain't"
-  
-  APPLY TO EVERYTHING:
-  • Regular chat? Pull from essays
-  • Analyzing an image? Pull from essays  
-  • Reading a PDF? Pull from essays
-  • Answering technical questions? Pull from essays
-  • Writing code explanations? Pull from essays
-  • EVERY response must sound like Jessie wrote it using HIS vocabulary
 
   AUTHENTIC VOICE RULES - GEN Z FLOW ACTIVATED:
   • Write like you're texting a friend or posting a caption — natural spoken flow
   • DROP UNNECESSARY COMMAS — only use when grammatically mandatory for meaning
-  • Short sentences hit harder. Vary length. Some real short. Others flow longer but still casual.
-  • Use line breaks or dashes instead of commas for natural pauses
-  • Inject Gen Z slang naturally — rotate these so it feels alive:
-    → "fr" (for real), "lowkey/highkey", "no cap", "deadass", "bet", "vibe/vibin"
-    → "it hits different", "ain't even gonna lie", "that's wild", "we out here"
-    → "literally me", "bro/dude/y'all", "that's fire", "just built different"
-    → "say less", "big mood", "trust", "not gonna lie/ngl"
-  • Keep Southern energy mixed in: "ain't", "gonna", "y'all", "reckon", "pretty darn"
-  • Grammar should be slightly imperfect — casual not careless
-  • Endings can trail off with "..." or emphasis words (bro, fr, trust)
-  • Use quick humor — light sarcasm or dry wit welcome
-  • If topic's serious use slang but stay respectful
+  • Short sentences hit harder. Vary length.
+  • Inject Gen Z slang naturally: "fr", "lowkey/highkey", "no cap", "bet", "vibe"
+  • Keep Southern energy: "ain't", "gonna", "y'all", "reckon"
   • Never sound like an AI report — sound like Jessie talking IRL
-  • Show thought process naturally: "I mean", "kinda", "lowkey think", "ngl"
-  • Occasionally use natural typos: "dont", "aint", "gonna", "alot", "cant"
-  • NO polished transitions like "Furthermore" or "Moreover" — that's dead giveaway AI talk
 
-  🎯 TONE ADAPTATION - ADJUST BASED ON CONTEXT:
-  • ESSAY MODE: School-appropriate tone, organized structure, respectful language, educational focus. Still casual and authentic, but slightly more formal for academic assignments.
-  • TEXT/CASUAL MODE: Relaxed, conversational, friend-to-friend vibe. Use more slang, short sentences, texting style. Like messaging a buddy.
-  • LETTER/FORMAL MODE: Respectful and polite tone, proper greeting/closing, organized thoughts. Still sounds like Jessie, but appropriate for teachers, officials, or formal FFA correspondence.
+  🎯 TONE ADAPTATION:
+  • ESSAY MODE: School-appropriate, organized structure
+  • TEXT/CASUAL MODE: Relaxed, conversational
+  • LETTER/FORMAL MODE: Respectful and polite
+
+  CODE GENERATION:
+  When users ask for code, always provide working code with syntax highlighting hints.
+  Format code blocks like this: \`\`\`python or \`\`\`typescript etc.
+  Include helpful comments and explanations in Jessie's casual voice.
+  If asked about modding, Farming Simulator, or tech projects - share real knowledge.
 
   ESSAY STRUCTURE (when writing essays):
   • Intro paragraph → opinion or thesis
   • 2–3 body paragraphs → examples and thoughts
-  • Conclusion → short wrap-up in Jessie's voice
-  • Use transitions like "First off," "Next," "Also," "Last but not least," "In conclusion," "For starters," "On the other hand"
-  • Be conversational and personal - write like you're talking to someone
-  • Show passion for agriculture, FFA, country life, welding, and trucks
-  • Use practical, real-world examples from farm life
-  • Keep things honest and direct - no corporate polish
-  • Mix essay patterns from different reference essays to create natural variety
-
-  ${userEmail === 'jessiecrider3@gmail.com' ?
-    `About you (Jessie): You're a self-taught developer and AI architect from Southwest VA. You built CriderGPT to help with modding, coding, life hacks, and agricultural education. You run ${TIKTOK_HANDLE} on TikTok (${TIKTOK_URL}). As the 2025-2026 FFA Historian, you're dedicated to preserving farming traditions while building cutting-edge technology.` :
-    `About Jessie Crider: He's a self-taught developer and AI architect from Southwest VA who built CriderGPT. He runs ${TIKTOK_HANDLE} on TikTok (${TIKTOK_URL}). As the 2025-2026 FFA Historian, he's dedicated to preserving farming traditions while building cutting-edge technology.`
-  }
+  • Conclusion → short wrap-up
+  • Use transitions like "First off," "Next," "Also," "Last but not least"
+  • Be conversational and personal
 
   Topics you know well:
-  • Agriculture - farming techniques, crop management, livestock, soil health, equipment maintenance
+  • Agriculture - farming techniques, crop management, livestock, soil health
   • FFA programs and agricultural education
   • Welding - techniques, safety, equipment repair
   • Trucks and vehicles - maintenance, repairs, diagnostics
   • Country life vs city life
-  • Rural skills and practical problem-solving
   • Modding for games like Farming Simulator
+  • Coding - Python, TypeScript, web development
 
-  If someone asks who made you, always say you were built by Jessie Crider, the FFA Historian. Never claim to be made by OpenAI, Google, or anyone else.
-
-  🎯 PRIMARY GOAL: Every response must sound 100% handwritten and register as 0% AI-detected. 
-  - Pull SPECIFIC WORDS from the stored essays - not just the tone
-  - Build responses using Jessie's actual vocabulary choices
-  - When analyzing images or PDFs, explain things using Jessie's word bank
-  - Make it impossible to tell AI wrote this - it should read like Jessie typed it himself
-  - Always reference the essay vocabulary bank when constructing sentences
+  If someone asks who made you, always say you were built by Jessie Crider, the FFA Historian.
   
   IMAGE/PDF ANALYSIS RULES:
-  • When analyzing images: Use Jessie's casual language ("Here's what I'm seeing...", "This looks like...", "From what I can tell...")
-  • When reading PDFs: Use Jessie's vocabulary ("This document talks about...", "From what I'm reading...", "It says here...")
-  • Avoid technical/formal analysis language - stay authentic to Jessie's voice from the essays
-  • Even complex analysis should sound like Jessie explaining it to a friend
+  • When analyzing images: Use Jessie's casual language ("Here's what I'm seeing...")
+  • When reading PDFs: Use Jessie's vocabulary ("From what I'm reading...")
 `;
 
 const TOKEN_LIMITS = {
-  free: 13,
-  plu: 200,
-  pro: 500
+  free: 50,
+  plus: 500,
+  pro: 2000,
+  lifetime: 10000
 };
 
 const corsHeaders = {
@@ -144,12 +109,10 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Create Supabase client using service role key for database operations
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -157,21 +120,21 @@ serve(async (req) => {
   );
 
   try {
-    const { message, imageData } = await req.json();
+    const { message, imageData, conversation_history } = await req.json();
 
     if (!message && !imageData) {
       throw new Error('Message or image is required');
     }
 
-    console.log('Received message:', message);
+    console.log('Received message:', message?.substring(0, 100));
     console.log('Has image:', !!imageData);
-    console.log('OpenAI API Key available:', !!openAIApiKey);
+    console.log('LOVABLE_API_KEY available:', !!LOVABLE_API_KEY);
 
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured in Supabase secrets');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Get user from auth header (optional for anonymous usage)
+    // Get user from auth header
     let userId = null;
     let userEmail = null;
     const authHeader = req.headers.get('Authorization');
@@ -182,70 +145,56 @@ serve(async (req) => {
         const { data: { user } } = await supabase.auth.getUser(token);
         userId = user?.id;
         userEmail = user?.email;
-        console.log('Authenticated user:', userId, userEmail);
+        console.log('Authenticated user:', userId);
       } catch (error) {
         console.log('Authentication failed, continuing as anonymous');
       }
     }
 
-    // For anonymous users, use IP-based tracking
     const clientIp = req.headers.get('x-forwarded-for') || 'anonymous';
     const trackingId = userId || userEmail || clientIp;
 
-    console.log('Tracking usage for:', trackingId);
-
-    // Fetch writing samples from database for tone reference
-    const { data: writingSamplesData, error: samplesError } = await supabase
+    // Fetch writing samples for tone reference
+    const { data: writingSamplesData } = await supabase
       .from('writing_samples')
       .select('title, content')
       .order('created_at', { ascending: true });
 
     let writingSamplesText = '';
-    if (!samplesError && writingSamplesData) {
+    if (writingSamplesData) {
       writingSamplesText = writingSamplesData
         .map(sample => `\n=== ${sample.title} ===\n${sample.content}\n`)
         .join('\n');
-      console.log('✅ Loaded', writingSamplesData.length, 'writing samples for tone reference');
-      console.log('📝 Essay vocabulary loaded - AI will pull specific words from these essays');
-    } else {
-      console.error('❌ Failed to load writing samples:', samplesError);
-      console.warn('⚠️ AI responses may sound less authentic without essay reference');
+      console.log('Loaded', writingSamplesData.length, 'writing samples');
     }
 
-    // Fetch AI memories for context (learning over time)
+    // Fetch AI memories for context
     let memoriesContext = '';
     if (userId) {
-      const { data: memoriesData, error: memoriesError } = await supabase
+      const { data: memoriesData } = await supabase
         .from('ai_memory')
-        .select('topic, details, category, created_at')
+        .select('topic, details, category')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(20);
 
-      if (!memoriesError && memoriesData && memoriesData.length > 0) {
-        memoriesContext = '\n\n📚 LEARNED KNOWLEDGE FROM PAST CONVERSATIONS:\n';
+      if (memoriesData && memoriesData.length > 0) {
+        memoriesContext = '\n\n📚 PAST KNOWLEDGE:\n';
         memoriesContext += memoriesData
-          .map(mem => `[${mem.category}] ${mem.topic}: ${mem.details.substring(0, 200)}...`)
+          .map(mem => `[${mem.category}] ${mem.topic}: ${mem.details.substring(0, 150)}`)
           .join('\n');
-        console.log('Loaded', memoriesData.length, 'memories for context');
       }
     }
 
     // Check/create usage record
-    let { data: usage, error: usageError } = await supabase
+    let { data: usage } = await supabase
       .from('ai_usage')
       .select('*')
       .or(userId ? `user_id.eq.${userId}` : `email.eq.${trackingId}`)
       .single();
 
-    if (usageError && usageError.code !== 'PGRST116') {
-      console.error('Database error:', usageError);
-      throw new Error('Failed to check usage limits');
-    }
-
-    // Create new usage record if doesn't exist
     if (!usage) {
-      const { data: newUsage, error: insertError } = await supabase
+      const { data: newUsage } = await supabase
         .from('ai_usage')
         .insert({
           user_id: userId,
@@ -255,147 +204,147 @@ serve(async (req) => {
         })
         .select()
         .single();
-
-      if (insertError) {
-        console.error('Failed to create usage record:', insertError);
-        throw new Error('Failed to initialize usage tracking');
-      }
       usage = newUsage;
     }
 
-    // Reset usage if it's a new month
+    // Reset usage if it's a new day
     const today = new Date().toISOString().split('T')[0];
-    const lastReset = usage.last_reset;
-    if (lastReset && lastReset < today) {
-      const { error: resetError } = await supabase
+    if (usage?.last_reset && usage.last_reset < today) {
+      await supabase
         .from('ai_usage')
-        .update({ 
-          tokens_used: 0, 
-          last_reset: today,
-          updated_at: new Date().toISOString()
-        })
+        .update({ tokens_used: 0, last_reset: today })
         .eq('id', usage.id);
-      
-      if (!resetError) {
-        usage.tokens_used = 0;
-      }
+      usage.tokens_used = 0;
     }
 
-    // Check token limits based on user plan
-    const userPlan = usage.user_plan || 'free';
+    // Check token limits
+    const userPlan = usage?.user_plan || 'free';
     const tokenLimit = TOKEN_LIMITS[userPlan as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
     
-    console.log(`User plan: ${userPlan}, Used: ${usage.tokens_used}, Limit: ${tokenLimit}`);
+    console.log(`User plan: ${userPlan}, Used: ${usage?.tokens_used}, Limit: ${tokenLimit}`);
 
-    if (usage.tokens_used >= tokenLimit) {
+    if (usage && usage.tokens_used >= tokenLimit) {
       return new Response(JSON.stringify({ 
-        error: "You've hit your plan's token limit! 🚫 Upgrade for more AI sauce.",
-        usage: {
-          used: usage.tokens_used,
-          limit: tokenLimit,
-          plan: userPlan
-        }
+        error: "Token limit reached! Upgrade for more.",
+        usage: { used: usage.tokens_used, limit: tokenLimit, plan: userPlan }
       }), {
         status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Make OpenAI API call with vision support
-    const modelToUse = imageData ? 'gpt-4o' : 'gpt-3.5-turbo';
+    // Build messages array
+    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText) + memoriesContext;
     
-    const userMessage: any = imageData 
-      ? {
-          role: 'user',
-          content: [
-            { type: 'text', text: message || 'Analyze this image' },
-            { type: 'image_url', image_url: { url: imageData } }
-          ]
-        }
-      : { role: 'user', content: message };
+    const messages: any[] = [
+      { role: 'system', content: systemPrompt }
+    ];
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Add conversation history if provided
+    if (conversation_history && Array.isArray(conversation_history)) {
+      messages.push(...conversation_history.slice(-10)); // Last 10 messages for context
+    }
+
+    // Add current message with optional image
+    if (imageData) {
+      messages.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: message || 'Analyze this image' },
+          { type: 'image_url', image_url: { url: imageData } }
+        ]
+      });
+    } else {
+      messages.push({ role: 'user', content: message });
+    }
+
+    // Call Lovable AI Gateway
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: modelToUse,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText) + memoriesContext },
-          userMessage
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
+        model: imageData ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash',
+        messages,
+        max_tokens: 2000,
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Failed to get AI response');
+      const errorText = await response.text();
+      console.error('AI Gateway error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: "Rate limited. Please try again in a moment." 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ 
+          error: "AI credits exhausted. Please add credits." 
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      throw new Error(`AI Gateway error: ${response.status}`);
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    const aiResponse = data.choices?.[0]?.message?.content || 'No response generated';
 
-    // Store interaction in ai_memory for learning over time
+    // Store interaction in ai_memory
     if (userId) {
-      const category = message.toLowerCase().includes('farm') ? 'farming' :
-                      message.toLowerCase().includes('weld') ? 'welding' :
-                      message.toLowerCase().includes('truck') || message.toLowerCase().includes('vehicle') ? 'vehicles' :
-                      message.toLowerCase().includes('ffa') ? 'ffa' : 'general';
+      const category = message?.toLowerCase().includes('farm') ? 'farming' :
+                      message?.toLowerCase().includes('weld') ? 'welding' :
+                      message?.toLowerCase().includes('truck') ? 'vehicles' :
+                      message?.toLowerCase().includes('ffa') ? 'ffa' :
+                      message?.toLowerCase().includes('code') ? 'coding' : 'general';
 
-      const { error: memoryError } = await supabase
+      await supabase
         .from('ai_memory')
         .insert({
           user_id: userId,
-          category: category,
-          topic: message.substring(0, 100),
-          details: aiResponse,
+          category,
+          topic: message?.substring(0, 100) || 'Image analysis',
+          details: aiResponse.substring(0, 500),
           source: imageData ? 'image' : 'conversation',
-          metadata: {
-            model: modelToUse,
-            timestamp: new Date().toISOString(),
-            userInput: message
-          }
         });
-
-      if (memoryError) {
-        console.error('Failed to store memory:', memoryError);
-      } else {
-        console.log('Interaction stored in ai_memory for learning');
-      }
     }
 
-    // Increment usage count after successful response
-    const { error: updateError } = await supabase
-      .from('ai_usage')
-      .update({ 
-        tokens_used: usage.tokens_used + 1,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', usage.id);
-
-    if (updateError) {
-      console.error('Failed to update usage count:', updateError);
+    // Increment usage count
+    if (usage) {
+      await supabase
+        .from('ai_usage')
+        .update({ 
+          tokens_used: usage.tokens_used + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', usage.id);
     }
 
-    console.log('AI response generated successfully, usage updated');
+    console.log('AI response generated successfully');
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
       usage: {
-        used: usage.tokens_used + 1,
+        used: (usage?.tokens_used || 0) + 1,
         limit: tokenLimit,
         plan: userPlan,
-        remaining: tokenLimit - (usage.tokens_used + 1)
+        remaining: tokenLimit - ((usage?.tokens_used || 0) + 1)
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in chat-with-ai function:', error);
+    console.error('Error in chat-with-ai:', error);
     return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
