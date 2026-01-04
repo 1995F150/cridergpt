@@ -7,12 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Character detection keywords
+// Character detection keywords - maps to base character slugs
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
   'jessie': ['jessie', 'crider', 'me', 'myself', 'creator'],
   'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor'],
-  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna']
+  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna', 'girlfriend', 'her', 'she']
 };
+
+// Base character names for grouping references
+const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa'];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -71,56 +74,77 @@ serve(async (req) => {
       }
     }
 
-    // Also check character names directly from database
-    for (const char of characterRefs) {
-      const nameLower = char.name?.toLowerCase() || '';
-      const slugLower = char.slug?.toLowerCase() || '';
-      if (promptLower.includes(nameLower) || promptLower.includes(slugLower)) {
-        if (!detectedSlugs.includes(char.slug)) {
-          detectedSlugs.push(char.slug);
-        }
+  // Also check character names directly from database
+  for (const char of characterRefs) {
+    const nameLower = char.name?.toLowerCase() || '';
+    const slugLower = char.slug?.toLowerCase() || '';
+    // Check if prompt mentions this character
+    if (promptLower.includes(nameLower) || promptLower.includes(slugLower)) {
+      // Find the base slug (e.g., 'savanaa' from 'savanaa-2')
+      const baseSlug = CHARACTER_BASE_NAMES.find(base => slugLower.startsWith(base)) || slugLower;
+      if (!detectedSlugs.includes(baseSlug)) {
+        detectedSlugs.push(baseSlug);
       }
     }
+  }
 
-    console.log('Detected character slugs:', detectedSlugs);
+  console.log('Detected character slugs:', detectedSlugs);
 
-    // Get full character data for detected characters
-    let characters = providedCharacters || [];
-    
-    if (detectedSlugs.length > 0 && characters.length === 0) {
-      characters = characterRefs.filter(c => detectedSlugs.includes(c.slug));
-    }
-
-    console.log('Using characters:', characters.map((c: any) => c.name));
-
-    // Build enhanced prompt with character context
-    let enhancedPrompt = prompt;
-    
-    if (characters && characters.length > 0) {
-      const charDescriptions = characters.map((c: any) => {
-        let desc = `[Character: ${c.name}`;
-        if (c.pronouns) desc += ` (${c.pronouns})`;
-        if (c.traits) desc += ` - ${c.traits}`;
-        if (c.description) desc += `. ${c.description}`;
-        if (c.context) desc += `. ${c.context}`;
-        if (c.era) desc += `. Era: ${c.era}`;
-        desc += ']';
-        return desc;
-      }).join('\n');
-      
-      enhancedPrompt = `${charDescriptions}\n\nGenerate an image of: ${prompt}`;
-
-      // Apply era-specific defaults
-      const hasHistorical = characters.some((c: any) => 
-        c.era?.toLowerCase().includes('1900') || 
-        c.era?.toLowerCase().includes('western') ||
-        c.era?.toLowerCase().includes('historical')
+  // Get ALL character references for detected characters (includes multiple reference photos)
+  let characters = providedCharacters || [];
+  
+  if (detectedSlugs.length > 0 && characters.length === 0) {
+    // Get all references that match the base slug (e.g., savanaa, savanaa-2, savanaa-3, etc.)
+    characters = characterRefs.filter(c => {
+      const charSlug = c.slug?.toLowerCase() || '';
+      return detectedSlugs.some(detectedSlug => 
+        charSlug === detectedSlug || charSlug.startsWith(detectedSlug + '-')
       );
+    });
+  }
 
-      if (hasHistorical) {
-        enhancedPrompt += '\n\nHistorical accuracy required: Use period-appropriate clothing, settings, and aesthetics. Apply vintage photo texture and sepia/B&W tones unless color explicitly requested.';
-      }
+  console.log('Using characters:', characters.map((c: any) => `${c.name} (${c.slug})`));
+
+  // Group characters by name to consolidate reference info
+  const characterGroups: Record<string, any[]> = {};
+  for (const char of characters) {
+    const name = char.name || 'Unknown';
+    if (!characterGroups[name]) {
+      characterGroups[name] = [];
     }
+    characterGroups[name].push(char);
+  }
+
+  // Build enhanced prompt with character context (use primary entry for description)
+  let enhancedPrompt = prompt;
+  
+  if (Object.keys(characterGroups).length > 0) {
+    const charDescriptions = Object.entries(characterGroups).map(([name, refs]) => {
+      // Use the first/primary reference for description
+      const primary = refs.find((r: any) => r.is_primary) || refs[0];
+      let desc = `[Character: ${name}`;
+      if (primary.pronouns) desc += ` (${primary.pronouns})`;
+      if (primary.traits) desc += ` - ${primary.traits}`;
+      if (primary.description) desc += `. ${primary.description}`;
+      if (primary.context) desc += `. ${primary.context}`;
+      if (primary.era) desc += `. Era: ${primary.era}`;
+      desc += `. Reference photos available: ${refs.length}]`;
+      return desc;
+    }).join('\n');
+    
+    enhancedPrompt = `${charDescriptions}\n\nIMPORTANT: Generate the character(s) with EXACT likeness to the reference photos provided. Match facial features, hair, and overall appearance precisely.\n\nGenerate an image of: ${prompt}`;
+
+    // Apply era-specific defaults
+    const hasHistorical = characters.some((c: any) => 
+      c.era?.toLowerCase().includes('1900') || 
+      c.era?.toLowerCase().includes('western') ||
+      c.era?.toLowerCase().includes('historical')
+    );
+
+    if (hasHistorical) {
+      enhancedPrompt += '\n\nHistorical accuracy required: Use period-appropriate clothing, settings, and aesthetics. Apply vintage photo texture and sepia/B&W tones unless color explicitly requested.';
+    }
+  }
 
     // Add style modifiers
     const styleModifiers: string[] = [];
@@ -154,16 +178,21 @@ serve(async (req) => {
     }
 
     // Include character reference images for better accuracy
+    // Get the site URL for constructing absolute URLs to public folder images
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://crideros.lovable.app';
+    
     for (const char of characters) {
       if (char.reference_photo_url) {
-        // Convert relative URLs to absolute
+        // Convert relative URLs to absolute URLs pointing to the public folder
         let refUrl = char.reference_photo_url;
         if (refUrl.startsWith('/')) {
-          refUrl = `${Deno.env.get('SUPABASE_URL')?.replace('/supabase', '')}/storage/v1/object/public/character-references${refUrl}`;
-          // Fallback to project URL for public folder images
-          refUrl = char.reference_photo_url; // Keep relative, let AI handle it
+          refUrl = `${siteUrl}${refUrl}`;
         }
-        console.log(`Including reference for ${char.name}: ${refUrl}`);
+        console.log(`Adding reference image for ${char.name} (${char.slug}): ${refUrl}`);
+        messageContent.push({
+          type: 'image_url',
+          image_url: { url: refUrl }
+        });
       }
     }
 
