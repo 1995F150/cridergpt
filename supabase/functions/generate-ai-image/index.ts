@@ -1,9 +1,17 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Character detection keywords
+const CHARACTER_KEYWORDS: Record<string, string[]> = {
+  'jessie': ['jessie', 'crider', 'me', 'myself', 'creator'],
+  'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor'],
+  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna']
 };
 
 serve(async (req) => {
@@ -11,8 +19,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { persistSession: false } }
+  );
+
   try {
-    const { prompt, characters, settings, mode, imageUrl } = await req.json();
+    const { prompt, characters: providedCharacters, settings, mode, imageUrl } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -30,37 +44,101 @@ serve(async (req) => {
       );
     }
 
+    // Fetch all character references from database
+    const { data: allCharacters, error: charError } = await supabase
+      .from('character_references')
+      .select('*');
+
+    if (charError) {
+      console.error('Error fetching characters:', charError);
+    }
+
+    const characterRefs = allCharacters || [];
+    console.log('Loaded', characterRefs.length, 'character references');
+
+    // Auto-detect characters from prompt
+    const promptLower = prompt.toLowerCase();
+    const detectedSlugs: string[] = [];
+
+    for (const [slug, keywords] of Object.entries(CHARACTER_KEYWORDS)) {
+      for (const keyword of keywords) {
+        if (promptLower.includes(keyword)) {
+          if (!detectedSlugs.includes(slug)) {
+            detectedSlugs.push(slug);
+          }
+          break;
+        }
+      }
+    }
+
+    // Also check character names directly from database
+    for (const char of characterRefs) {
+      const nameLower = char.name?.toLowerCase() || '';
+      const slugLower = char.slug?.toLowerCase() || '';
+      if (promptLower.includes(nameLower) || promptLower.includes(slugLower)) {
+        if (!detectedSlugs.includes(char.slug)) {
+          detectedSlugs.push(char.slug);
+        }
+      }
+    }
+
+    console.log('Detected character slugs:', detectedSlugs);
+
+    // Get full character data for detected characters
+    let characters = providedCharacters || [];
+    
+    if (detectedSlugs.length > 0 && characters.length === 0) {
+      characters = characterRefs.filter(c => detectedSlugs.includes(c.slug));
+    }
+
+    console.log('Using characters:', characters.map((c: any) => c.name));
+
     // Build enhanced prompt with character context
     let enhancedPrompt = prompt;
     
     if (characters && characters.length > 0) {
       const charDescriptions = characters.map((c: any) => {
         let desc = `[Character: ${c.name}`;
+        if (c.pronouns) desc += ` (${c.pronouns})`;
         if (c.traits) desc += ` - ${c.traits}`;
+        if (c.description) desc += `. ${c.description}`;
         if (c.context) desc += `. ${c.context}`;
+        if (c.era) desc += `. Era: ${c.era}`;
         desc += ']';
         return desc;
       }).join('\n');
       
       enhancedPrompt = `${charDescriptions}\n\nGenerate an image of: ${prompt}`;
+
+      // Apply era-specific defaults
+      const hasHistorical = characters.some((c: any) => 
+        c.era?.toLowerCase().includes('1900') || 
+        c.era?.toLowerCase().includes('western') ||
+        c.era?.toLowerCase().includes('historical')
+      );
+
+      if (hasHistorical) {
+        enhancedPrompt += '\n\nHistorical accuracy required: Use period-appropriate clothing, settings, and aesthetics. Apply vintage photo texture and sepia/B&W tones unless color explicitly requested.';
+      }
     }
 
     // Add style modifiers
+    const styleModifiers: string[] = [];
     if (settings) {
-      const styleModifiers: string[] = [];
       if (settings.blackAndWhite) styleModifiers.push('black and white photograph');
       if (settings.vintageTexture) styleModifiers.push('vintage photo texture, slight vignette, faded tones');
       if (settings.filmGrain) styleModifiers.push('film grain overlay');
       if (settings.mood) styleModifiers.push(`${settings.mood} mood`);
       if (settings.style === 'rdr2') styleModifiers.push('Red Dead Redemption 2 portrait style, old West aesthetic');
       if (settings.style === 'cinematic') styleModifiers.push('cinematic lighting and composition');
-      
-      if (styleModifiers.length > 0) {
-        enhancedPrompt += `\n\nStyle: ${styleModifiers.join(', ')}`;
-      }
+      if (settings.era) styleModifiers.push(`${settings.era} era aesthetic`);
+    }
+    
+    if (styleModifiers.length > 0) {
+      enhancedPrompt += `\n\nStyle: ${styleModifiers.join(', ')}`;
     }
 
-    console.log('Generating image with prompt:', enhancedPrompt.substring(0, 300) + '...');
+    console.log('Generating image with prompt:', enhancedPrompt.substring(0, 500) + '...');
 
     // Build the message content
     const messageContent: any[] = [
@@ -73,6 +151,20 @@ serve(async (req) => {
         type: 'image_url',
         image_url: { url: imageUrl }
       });
+    }
+
+    // Include character reference images for better accuracy
+    for (const char of characters) {
+      if (char.reference_photo_url) {
+        // Convert relative URLs to absolute
+        let refUrl = char.reference_photo_url;
+        if (refUrl.startsWith('/')) {
+          refUrl = `${Deno.env.get('SUPABASE_URL')?.replace('/supabase', '')}/storage/v1/object/public/character-references${refUrl}`;
+          // Fallback to project URL for public folder images
+          refUrl = char.reference_photo_url; // Keep relative, let AI handle it
+        }
+        console.log(`Including reference for ${char.name}: ${refUrl}`);
+      }
     }
 
     // Use Gemini Flash for image generation via Lovable AI Gateway
@@ -97,6 +189,21 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('AI Gateway error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limited. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'AI credits exhausted. Please add credits.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: `Generation failed: ${response.status}. ${errorText}` }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -121,11 +228,37 @@ serve(async (req) => {
       );
     }
 
+    // Log generation to media_generations table
+    const authHeader = req.headers.get('Authorization');
+    let userId = null;
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id;
+      } catch {}
+    }
+
+    if (userId) {
+      await supabase.from('media_generations').insert({
+        user_id: userId,
+        prompt: prompt,
+        unified_prompt: enhancedPrompt,
+        character_ids: characters.map((c: any) => c.slug),
+        style: settings?.style || null,
+        visual_settings: settings || null,
+        output_type: 'image',
+        output_url: imageUrlResult,
+        status: 'completed'
+      });
+    }
+
     return new Response(
       JSON.stringify({ 
         imageUrl: imageUrlResult,
         image: imageUrlResult, // For backwards compatibility
-        message: data.choices?.[0]?.message?.content || 'Image generated successfully'
+        message: data.choices?.[0]?.message?.content || 'Image generated successfully',
+        detectedCharacters: characters.map((c: any) => c.name)
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
