@@ -11,11 +11,35 @@ const corsHeaders = {
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
   'jessie': ['jessie', 'crider', 'me', 'myself', 'creator'],
   'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor'],
-  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna', 'girlfriend', 'her', 'she']
+  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna', 'girlfriend', 'her', 'she', 'girl', 'woman']
 };
 
 // Base character names for grouping references
 const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa'];
+
+// Strict identity rules for character generation
+const IDENTITY_RULES = `
+CRITICAL CHARACTER IDENTITY RULES - MUST FOLLOW:
+
+1. FACIAL IDENTITY IS LOCKED: The facial features of each character MUST match the reference photos with 99% accuracy.
+   - Skin tone, facial structure, eye color, nose, mouth, and jawline must be EXACTLY as shown in references.
+   - Do NOT creatively reinterpret facial features - the reference photos DEFINE identity.
+
+2. MULTI-REFERENCE CONSOLIDATION: When multiple reference photos exist for a character (like Savanaa with 3 photos),
+   combine them into a single unified identity. Use the highest-quality facial features when discrepancies exist.
+
+3. CONSISTENCY ACROSS GENERATIONS: Use deterministic generation to ensure repeated prompts yield visually consistent results.
+   Orientation must be correct (faces upright and readable).
+
+4. SCENE FLEXIBILITY: Backgrounds, lighting, environments, clothing, and accessories may vary based on context.
+   Props and scenery are optional. BUT facial features must NEVER be altered to fit the scene.
+
+5. MULTI-CHARACTER SCENES: When generating multiple characters in one frame, EACH character must maintain
+   their reference-locked identity. No mixing of features between characters.
+
+6. VIDEO/FRAME CONSISTENCY: For video or multi-frame generation, apply the same accuracy rules frame-to-frame.
+   Character identity must remain locked throughout all frames.
+`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -57,7 +81,7 @@ serve(async (req) => {
     }
 
     const characterRefs = allCharacters || [];
-    console.log('Loaded', characterRefs.length, 'character references');
+    console.log('Loaded', characterRefs.length, 'character references from database');
 
     // Auto-detect characters from prompt
     const promptLower = prompt.toLowerCase();
@@ -74,77 +98,86 @@ serve(async (req) => {
       }
     }
 
-  // Also check character names directly from database
-  for (const char of characterRefs) {
-    const nameLower = char.name?.toLowerCase() || '';
-    const slugLower = char.slug?.toLowerCase() || '';
-    // Check if prompt mentions this character
-    if (promptLower.includes(nameLower) || promptLower.includes(slugLower)) {
-      // Find the base slug (e.g., 'savanaa' from 'savanaa-2')
-      const baseSlug = CHARACTER_BASE_NAMES.find(base => slugLower.startsWith(base)) || slugLower;
-      if (!detectedSlugs.includes(baseSlug)) {
-        detectedSlugs.push(baseSlug);
+    // Also check character names directly from database
+    for (const char of characterRefs) {
+      const nameLower = char.name?.toLowerCase() || '';
+      const slugLower = char.slug?.toLowerCase() || '';
+      if (promptLower.includes(nameLower) || promptLower.includes(slugLower)) {
+        const baseSlug = CHARACTER_BASE_NAMES.find(base => slugLower.startsWith(base)) || slugLower;
+        if (!detectedSlugs.includes(baseSlug)) {
+          detectedSlugs.push(baseSlug);
+        }
       }
     }
-  }
 
-  console.log('Detected character slugs:', detectedSlugs);
+    console.log('Detected character base slugs:', detectedSlugs);
 
-  // Get ALL character references for detected characters (includes multiple reference photos)
-  let characters = providedCharacters || [];
-  
-  if (detectedSlugs.length > 0 && characters.length === 0) {
-    // Get all references that match the base slug (e.g., savanaa, savanaa-2, savanaa-3, etc.)
-    characters = characterRefs.filter(c => {
-      const charSlug = c.slug?.toLowerCase() || '';
-      return detectedSlugs.some(detectedSlug => 
-        charSlug === detectedSlug || charSlug.startsWith(detectedSlug + '-')
-      );
-    });
-  }
-
-  console.log('Using characters:', characters.map((c: any) => `${c.name} (${c.slug})`));
-
-  // Group characters by name to consolidate reference info
-  const characterGroups: Record<string, any[]> = {};
-  for (const char of characters) {
-    const name = char.name || 'Unknown';
-    if (!characterGroups[name]) {
-      characterGroups[name] = [];
-    }
-    characterGroups[name].push(char);
-  }
-
-  // Build enhanced prompt with character context (use primary entry for description)
-  let enhancedPrompt = prompt;
-  
-  if (Object.keys(characterGroups).length > 0) {
-    const charDescriptions = Object.entries(characterGroups).map(([name, refs]) => {
-      // Use the first/primary reference for description
-      const primary = refs.find((r: any) => r.is_primary) || refs[0];
-      let desc = `[Character: ${name}`;
-      if (primary.pronouns) desc += ` (${primary.pronouns})`;
-      if (primary.traits) desc += ` - ${primary.traits}`;
-      if (primary.description) desc += `. ${primary.description}`;
-      if (primary.context) desc += `. ${primary.context}`;
-      if (primary.era) desc += `. Era: ${primary.era}`;
-      desc += `. Reference photos available: ${refs.length}]`;
-      return desc;
-    }).join('\n');
+    // Get ALL character references for detected characters (includes all reference photos)
+    let characters = providedCharacters || [];
     
-    enhancedPrompt = `${charDescriptions}\n\nIMPORTANT: Generate the character(s) with EXACT likeness to the reference photos provided. Match facial features, hair, and overall appearance precisely.\n\nGenerate an image of: ${prompt}`;
-
-    // Apply era-specific defaults
-    const hasHistorical = characters.some((c: any) => 
-      c.era?.toLowerCase().includes('1900') || 
-      c.era?.toLowerCase().includes('western') ||
-      c.era?.toLowerCase().includes('historical')
-    );
-
-    if (hasHistorical) {
-      enhancedPrompt += '\n\nHistorical accuracy required: Use period-appropriate clothing, settings, and aesthetics. Apply vintage photo texture and sepia/B&W tones unless color explicitly requested.';
+    if (detectedSlugs.length > 0 && characters.length === 0) {
+      characters = characterRefs.filter(c => {
+        const charSlug = c.slug?.toLowerCase() || '';
+        return detectedSlugs.some(detectedSlug => 
+          charSlug === detectedSlug || charSlug.startsWith(detectedSlug + '-')
+        );
+      });
     }
-  }
+
+    console.log('Using characters with references:', characters.map((c: any) => `${c.name} (${c.slug})`));
+
+    // Group characters by name to consolidate reference info
+    const characterGroups: Record<string, any[]> = {};
+    for (const char of characters) {
+      const name = char.name || 'Unknown';
+      if (!characterGroups[name]) {
+        characterGroups[name] = [];
+      }
+      characterGroups[name].push(char);
+    }
+
+    // Build enhanced prompt with strict identity rules
+    let enhancedPrompt = '';
+    
+    // Always include identity rules when characters are detected
+    if (Object.keys(characterGroups).length > 0) {
+      enhancedPrompt = IDENTITY_RULES + '\n\n';
+      
+      // Add detailed character descriptions
+      const charDescriptions = Object.entries(characterGroups).map(([name, refs]) => {
+        const primary = refs.find((r: any) => r.is_primary) || refs[0];
+        const refCount = refs.length;
+        
+        let desc = `CHARACTER: ${name.toUpperCase()}`;
+        desc += `\n- Reference Photos: ${refCount} (STUDY ALL REFERENCES to establish unified identity)`;
+        if (primary.pronouns) desc += `\n- Pronouns: ${primary.pronouns}`;
+        if (primary.description) desc += `\n- Physical Description: ${primary.description}`;
+        if (primary.traits) desc += `\n- Key Traits: ${primary.traits}`;
+        if (primary.context) desc += `\n- Character Context: ${primary.context}`;
+        if (primary.era) desc += `\n- Era/Period: ${primary.era}`;
+        desc += `\n- PRIORITY: Match facial features with 99% accuracy. Skin tone, facial structure, eye color, nose, mouth, and jawline MUST match references exactly.`;
+        
+        return desc;
+      }).join('\n\n');
+      
+      enhancedPrompt += `CHARACTERS TO GENERATE:\n${charDescriptions}\n\n`;
+      enhancedPrompt += `USER REQUEST: ${prompt}\n\n`;
+      enhancedPrompt += `EXECUTION: Generate the image with the character(s) having EXACT likeness to their reference photos. The faces are LOCKED to the references - do not creatively reinterpret them.`;
+
+      // Apply era-specific styling
+      const hasHistorical = characters.some((c: any) => 
+        c.era?.toLowerCase().includes('1900') || 
+        c.era?.toLowerCase().includes('western') ||
+        c.era?.toLowerCase().includes('historical')
+      );
+
+      if (hasHistorical) {
+        enhancedPrompt += '\n\nHISTORICAL ACCURACY: Use period-appropriate clothing, settings, and aesthetics for historical characters. Apply vintage photo texture and sepia/B&W tones unless color explicitly requested.';
+      }
+    } else {
+      // No characters detected - standard generation
+      enhancedPrompt = prompt;
+    }
 
     // Add style modifiers
     const styleModifiers: string[] = [];
@@ -159,42 +192,54 @@ serve(async (req) => {
     }
     
     if (styleModifiers.length > 0) {
-      enhancedPrompt += `\n\nStyle: ${styleModifiers.join(', ')}`;
+      enhancedPrompt += `\n\nSTYLE: ${styleModifiers.join(', ')}`;
     }
 
-    console.log('Generating image with prompt:', enhancedPrompt.substring(0, 500) + '...');
+    console.log('Final enhanced prompt length:', enhancedPrompt.length);
+    console.log('Prompt preview:', enhancedPrompt.substring(0, 800) + '...');
 
-    // Build the message content
+    // Build the message content with reference images
     const messageContent: any[] = [
       { type: 'text', text: enhancedPrompt }
     ];
 
     // If editing mode with image, include the source image
     if (mode === 'edit' && imageUrl) {
+      console.log('Edit mode: including source image');
       messageContent.push({
         type: 'image_url',
         image_url: { url: imageUrl }
       });
     }
 
-    // Include character reference images for better accuracy
-    // Get the site URL for constructing absolute URLs to public folder images
+    // Include ALL character reference images for accurate identity matching
     const siteUrl = Deno.env.get('SITE_URL') || 'https://crideros.lovable.app';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     
+    let refImagesAdded = 0;
     for (const char of characters) {
       if (char.reference_photo_url) {
-        // Convert relative URLs to absolute URLs pointing to the public folder
         let refUrl = char.reference_photo_url;
+        
+        // Handle different URL formats
         if (refUrl.startsWith('/')) {
+          // Relative URL - point to public folder
           refUrl = `${siteUrl}${refUrl}`;
+        } else if (refUrl.startsWith('character-references/')) {
+          // Storage path - construct full Supabase storage URL
+          refUrl = `${supabaseUrl}/storage/v1/object/public/${refUrl}`;
         }
-        console.log(`Adding reference image for ${char.name} (${char.slug}): ${refUrl}`);
+        
+        console.log(`Adding reference ${refImagesAdded + 1} for ${char.name} (${char.slug}): ${refUrl}`);
         messageContent.push({
           type: 'image_url',
           image_url: { url: refUrl }
         });
+        refImagesAdded++;
       }
     }
+    
+    console.log(`Total reference images included: ${refImagesAdded}`);
 
     // Use Gemini Flash for image generation via Lovable AI Gateway
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -247,7 +292,7 @@ serve(async (req) => {
     
     if (!imageUrlResult) {
       const textResponse = data.choices?.[0]?.message?.content || 'No response';
-      console.error('No image in response. Text response:', textResponse.substring(0, 200));
+      console.error('No image in response. Text response:', textResponse.substring(0, 300));
       return new Response(
         JSON.stringify({ 
           error: 'No image generated. The AI may not have been able to generate this image.', 
@@ -280,14 +325,16 @@ serve(async (req) => {
         output_url: imageUrlResult,
         status: 'completed'
       });
+      console.log('Generation logged for user:', userId);
     }
 
     return new Response(
       JSON.stringify({ 
         imageUrl: imageUrlResult,
-        image: imageUrlResult, // For backwards compatibility
-        message: data.choices?.[0]?.message?.content || 'Image generated successfully',
-        detectedCharacters: characters.map((c: any) => c.name)
+        image: imageUrlResult,
+        message: data.choices?.[0]?.message?.content || 'Image generated with reference-locked character identity',
+        detectedCharacters: Object.keys(characterGroups),
+        referencePhotosUsed: refImagesAdded
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
