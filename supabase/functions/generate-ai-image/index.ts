@@ -216,6 +216,11 @@ serve(async (req) => {
     }
 
     console.log(`Selected ${characters.length} character reference(s) for generation`);
+    
+    // Debug: log what characters we have
+    for (const char of characters) {
+      console.log(`Character found: slug=${char.slug}, name=${char.name}, url=${char.reference_photo_url}`);
+    }
 
     // Group by base character name
     const characterGroups: Record<string, any[]> = {};
@@ -227,6 +232,8 @@ serve(async (req) => {
       }
       characterGroups[baseName].push(char);
     }
+    
+    console.log(`Character groups: ${JSON.stringify(Object.keys(characterGroups))}`);
 
     const sortRefs = (a: any, b: any) => {
       const ap = a.is_primary ? 1 : 0;
@@ -245,7 +252,8 @@ serve(async (req) => {
     const MAX_REFS_PER_CHARACTER = 3;
 
     const selectedCharactersForRefs: any[] = [];
-    for (const refs of Object.values(characterGroups)) {
+    for (const [groupName, refs] of Object.entries(characterGroups)) {
+      console.log(`Processing group "${groupName}" with ${refs.length} refs`);
       const sorted = [...refs].sort(sortRefs);
       selectedCharactersForRefs.push(...sorted.slice(0, MAX_REFS_PER_CHARACTER));
     }
