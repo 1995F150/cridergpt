@@ -119,12 +119,12 @@ serve(async (req) => {
       characters = characterRefs.filter(c => {
         const charSlug = c.slug?.toLowerCase() || '';
         return detectedSlugs.some(detectedSlug => 
-          charSlug === detectedSlug || charSlug.startsWith(detectedSlug + '-')
+          charSlug === detectedSlug || charSlug.startsWith(detectedSlug + '-') || charSlug.startsWith(detectedSlug)
         );
       });
     }
 
-    console.log('Using characters with references:', characters.map((c: any) => `${c.name} (${c.slug})`));
+    console.log('Using characters with references:', characters.map((c: any) => `${c.name} (${c.slug}) - ref: ${c.reference_photo_url}`));
 
     // Group characters by name to consolidate reference info
     const characterGroups: Record<string, any[]> = {};
