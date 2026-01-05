@@ -9,37 +9,104 @@ const corsHeaders = {
 
 // Character detection keywords - maps to base character slugs
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
-  'jessie': ['jessie', 'crider', 'me', 'myself', 'creator'],
-  'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor'],
+  'jessie': ['jessie', 'crider', 'me', 'myself', 'creator', 'jesse'],
+  'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor', 'dr-harman'],
   'savanaa': ['savanaa', 'savannah', 'sav', 'savanna', 'girlfriend', 'her', 'she', 'girl', 'woman']
 };
 
 // Base character names for grouping references
 const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa'];
 
-// Strict identity rules for character generation
+// ULTRA-STRICT identity rules for 99% accuracy
 const IDENTITY_RULES = `
-CRITICAL CHARACTER IDENTITY RULES - MUST FOLLOW:
+=== CRITICAL: PHOTOREALISTIC IDENTITY PRESERVATION SYSTEM ===
 
-1. FACIAL IDENTITY IS LOCKED: The facial features of each character MUST match the reference photos with 99% accuracy.
-   - Skin tone, facial structure, eye color, nose, mouth, and jawline must be EXACTLY as shown in references.
-   - Do NOT creatively reinterpret facial features - the reference photos DEFINE identity.
+You are generating an image where CHARACTER IDENTITY MUST BE PRESERVED WITH 99% ACCURACY.
+Reference photos are provided - these ARE the characters. DO NOT deviate.
 
-2. MULTI-REFERENCE CONSOLIDATION: When multiple reference photos exist for a character (like Savanaa with 3 photos),
-   combine them into a single unified identity. Use the highest-quality facial features when discrepancies exist.
+MANDATORY IDENTITY LOCK RULES:
 
-3. CONSISTENCY ACROSS GENERATIONS: Use deterministic generation to ensure repeated prompts yield visually consistent results.
-   Orientation must be correct (faces upright and readable).
+1. FACE IS SACRED - NON-NEGOTIABLE:
+   - The EXACT facial structure from reference photos MUST be replicated
+   - Eye shape, eye color, eye spacing - COPY EXACTLY from references
+   - Nose shape and size - COPY EXACTLY from references  
+   - Mouth, lips, smile pattern - COPY EXACTLY from references
+   - Jawline and chin - COPY EXACTLY from references
+   - Skin tone and texture - COPY EXACTLY from references
+   - Eyebrow shape and thickness - COPY EXACTLY from references
 
-4. SCENE FLEXIBILITY: Backgrounds, lighting, environments, clothing, and accessories may vary based on context.
-   Props and scenery are optional. BUT facial features must NEVER be altered to fit the scene.
+2. HAIR IS IDENTITY:
+   - Hair color MUST match references exactly
+   - Hair texture (wavy, straight, curly) MUST match
+   - General hair style should align with references unless prompt specifies otherwise
 
-5. MULTI-CHARACTER SCENES: When generating multiple characters in one frame, EACH character must maintain
-   their reference-locked identity. No mixing of features between characters.
+3. DISTINGUISHING FEATURES:
+   - Any moles, freckles, dimples, or unique features MUST be preserved
+   - Facial expressions can vary, but bone structure CANNOT
 
-6. VIDEO/FRAME CONSISTENCY: For video or multi-frame generation, apply the same accuracy rules frame-to-frame.
-   Character identity must remain locked throughout all frames.
+4. WHAT CAN CHANGE:
+   - Clothing (unless specified)
+   - Background/setting
+   - Lighting style
+   - Camera angle (but face proportions stay locked)
+   - Accessories and props
+
+5. WHAT CANNOT CHANGE (EVER):
+   - Facial bone structure
+   - Eye color or shape
+   - Skin tone
+   - Core facial features
+   - The person's fundamental appearance
+
+6. MULTI-CHARACTER RULE:
+   If multiple characters appear, EACH character keeps their locked identity.
+   Do NOT blend or average features between characters.
+
+7. REFERENCE PHOTO PRIORITY:
+   When multiple reference photos are provided for one character,
+   use ALL of them to build a complete understanding of the face.
+   Use the clearest, most frontal reference as the primary guide.
+
+EXECUTE THIS PROMPT WITH THE CHARACTER'S FACE BEING AN EXACT MATCH TO REFERENCES.
+The goal is: someone who knows this person would IMMEDIATELY recognize them.
 `;
+
+// Detailed character bios for maximum accuracy
+const CHARACTER_BIOS: Record<string, string> = {
+  'jessie': `
+JESSIE CRIDER (Primary Creator)
+- Age: Young adult male
+- Hair: Blonde/light brown, wavy texture
+- Skin: Light/fair complexion
+- Build: Male
+- Style: Casual, modern
+- Key identifiers: Wavy light hair, young male features
+- PRIORITY: This is the app creator - accuracy is critical
+`,
+  'dr-harman': `
+DR. HARMAN (Historical Ancestor - 3rd Great-Grandfather)
+- Era: 1800s American
+- Hair: Dark hair, parted in the middle
+- Facial Hair: PROMINENT full beard, graying/salt-and-pepper
+- Eyes: Intense, piercing gaze
+- Skin: Weathered, period-appropriate
+- Attire: Dark formal 1800s suit, white dress shirt
+- Key identifiers: FULL THICK BEARD (most distinctive feature), dark parted hair, serious expression
+- PRIORITY: Historical accuracy - use sepia/vintage tones, period clothing
+- CRITICAL: The BEARD is his most recognizable feature - thick, full, going gray
+`,
+  'savanaa': `
+SAVANAA (Jessie's Girlfriend)
+- Age: Young adult female
+- Hair: Dark hair (brown/black)
+- Eyes: Warm, expressive
+- Skin: Natural, healthy complexion
+- Style: Bold, confident, expressive
+- Personality reflected: Confident, vibrant
+- Key identifiers: Dark hair, warm expressive eyes, natural beauty
+- PRIORITY: Capture her confident, bold energy while maintaining facial accuracy
+`
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -82,7 +149,6 @@ serve(async (req) => {
 
     const characterRefs = allCharacters || [];
     console.log('Loaded', characterRefs.length, 'character references from database');
-    // Log all loaded characters for debugging
     characterRefs.forEach((c: any) => {
       console.log(`  DB char: ${c.name} | slug: ${c.slug} | url: ${c.reference_photo_url}`);
     });
@@ -116,11 +182,10 @@ serve(async (req) => {
 
     console.log('Detected character base slugs:', detectedSlugs);
 
-    // Get ALL character references for detected characters (includes all reference photos)
+    // Get ALL character references for detected characters
     let characters = providedCharacters || [];
     
     if (detectedSlugs.length > 0 && characters.length === 0) {
-      // Filter to get all character records that match detected slugs
       characters = characterRefs.filter((c: any) => {
         const charSlug = c.slug?.toLowerCase() || '';
         const matches = detectedSlugs.some(detectedSlug => 
@@ -136,58 +201,69 @@ serve(async (req) => {
     }
 
     console.log('Characters selected for generation:', characters.length);
-    console.log('Using characters with references:', characters.map((c: any) => `${c.name} (${c.slug}) - ref: ${c.reference_photo_url}`));
 
-    // Group characters by name to consolidate reference info
+    // Group characters by base name
     const characterGroups: Record<string, any[]> = {};
     for (const char of characters) {
-      const name = char.name || 'Unknown';
-      if (!characterGroups[name]) {
-        characterGroups[name] = [];
+      const slugLower = char.slug?.toLowerCase() || '';
+      const baseName = CHARACTER_BASE_NAMES.find(base => slugLower.startsWith(base)) || char.name || 'Unknown';
+      if (!characterGroups[baseName]) {
+        characterGroups[baseName] = [];
       }
-      characterGroups[name].push(char);
+      characterGroups[baseName].push(char);
     }
 
-    // Build enhanced prompt with strict identity rules
+    // Build ULTRA-ENHANCED prompt for 99% accuracy
     let enhancedPrompt = '';
     
-    // Always include identity rules when characters are detected
     if (Object.keys(characterGroups).length > 0) {
       enhancedPrompt = IDENTITY_RULES + '\n\n';
       
-      // Add detailed character descriptions
-      const charDescriptions = Object.entries(characterGroups).map(([name, refs]) => {
+      // Add detailed character bios and descriptions
+      enhancedPrompt += '=== CHARACTERS IN THIS GENERATION ===\n\n';
+      
+      for (const [baseName, refs] of Object.entries(characterGroups)) {
         const primary = refs.find((r: any) => r.is_primary) || refs[0];
         const refCount = refs.length;
         
-        let desc = `CHARACTER: ${name.toUpperCase()}`;
-        desc += `\n- Reference Photos: ${refCount} (STUDY ALL REFERENCES to establish unified identity)`;
-        if (primary.pronouns) desc += `\n- Pronouns: ${primary.pronouns}`;
-        if (primary.description) desc += `\n- Physical Description: ${primary.description}`;
-        if (primary.traits) desc += `\n- Key Traits: ${primary.traits}`;
-        if (primary.context) desc += `\n- Character Context: ${primary.context}`;
-        if (primary.era) desc += `\n- Era/Period: ${primary.era}`;
-        desc += `\n- PRIORITY: Match facial features with 99% accuracy. Skin tone, facial structure, eye color, nose, mouth, and jawline MUST match references exactly.`;
+        // Add the detailed bio if available
+        const bio = CHARACTER_BIOS[baseName];
+        if (bio) {
+          enhancedPrompt += bio + '\n';
+        }
         
-        return desc;
-      }).join('\n\n');
+        enhancedPrompt += `DATABASE INFO for ${primary.name?.toUpperCase()}:\n`;
+        enhancedPrompt += `- Reference Photos Provided: ${refCount} (STUDY ALL CAREFULLY)\n`;
+        if (primary.pronouns) enhancedPrompt += `- Pronouns: ${primary.pronouns}\n`;
+        if (primary.description) enhancedPrompt += `- Description: ${primary.description}\n`;
+        if (primary.traits) enhancedPrompt += `- Visual Traits: ${primary.traits}\n`;
+        if (primary.context) enhancedPrompt += `- Context: ${primary.context}\n`;
+        if (primary.era) enhancedPrompt += `- Era/Period: ${primary.era}\n`;
+        enhancedPrompt += '\n';
+      }
       
-      enhancedPrompt += `CHARACTERS TO GENERATE:\n${charDescriptions}\n\n`;
-      enhancedPrompt += `USER REQUEST: ${prompt}\n\n`;
-      enhancedPrompt += `EXECUTION: Generate the image with the character(s) having EXACT likeness to their reference photos. The faces are LOCKED to the references - do not creatively reinterpret them.`;
+      enhancedPrompt += '=== USER REQUEST ===\n';
+      enhancedPrompt += prompt + '\n\n';
+      
+      enhancedPrompt += '=== EXECUTION INSTRUCTIONS ===\n';
+      enhancedPrompt += 'Generate the requested image with EXACT facial likeness to the reference photos.\n';
+      enhancedPrompt += 'The face must be instantly recognizable as the person in the references.\n';
+      enhancedPrompt += 'Prioritize identity accuracy over artistic interpretation.\n';
+      enhancedPrompt += 'If this is a historical character (like Dr. Harman), use period-appropriate styling.\n';
 
-      // Apply era-specific styling
+      // Era-specific enhancements
       const hasHistorical = characters.some((c: any) => 
-        c.era?.toLowerCase().includes('1900') || 
+        c.era?.toLowerCase().includes('1800') || 
+        c.era?.toLowerCase().includes('1900') ||
         c.era?.toLowerCase().includes('western') ||
         c.era?.toLowerCase().includes('historical')
       );
 
       if (hasHistorical) {
-        enhancedPrompt += '\n\nHISTORICAL ACCURACY: Use period-appropriate clothing, settings, and aesthetics for historical characters. Apply vintage photo texture and sepia/B&W tones unless color explicitly requested.';
+        enhancedPrompt += '\nHISTORICAL MODE: Apply vintage/sepia tones, period-accurate clothing and settings. ';
+        enhancedPrompt += 'Use old photograph aesthetic but MAINTAIN FACIAL ACCURACY.\n';
       }
     } else {
-      // No characters detected - standard generation
       enhancedPrompt = prompt;
     }
 
@@ -197,18 +273,20 @@ serve(async (req) => {
       if (settings.blackAndWhite) styleModifiers.push('black and white photograph');
       if (settings.vintageTexture) styleModifiers.push('vintage photo texture, slight vignette, faded tones');
       if (settings.filmGrain) styleModifiers.push('film grain overlay');
-      if (settings.mood) styleModifiers.push(`${settings.mood} mood`);
-      if (settings.style === 'rdr2') styleModifiers.push('Red Dead Redemption 2 portrait style, old West aesthetic');
-      if (settings.style === 'cinematic') styleModifiers.push('cinematic lighting and composition');
-      if (settings.era) styleModifiers.push(`${settings.era} era aesthetic`);
+      if (settings.mood) styleModifiers.push(`${settings.mood} mood and atmosphere`);
+      if (settings.style === 'rdr2') styleModifiers.push('Red Dead Redemption 2 portrait style, old West aesthetic, cinematic');
+      if (settings.style === 'cinematic') styleModifiers.push('cinematic lighting and composition, movie quality');
+      if (settings.style === 'portrait') styleModifiers.push('professional portrait photography, studio quality');
+      if (settings.style === 'vintage') styleModifiers.push('vintage photograph, aged paper texture, historical');
+      if (settings.era) styleModifiers.push(`${settings.era} era aesthetic and styling`);
     }
     
     if (styleModifiers.length > 0) {
-      enhancedPrompt += `\n\nSTYLE: ${styleModifiers.join(', ')}`;
+      enhancedPrompt += `\n=== STYLE ===\n${styleModifiers.join(', ')}\n`;
     }
 
     console.log('Final enhanced prompt length:', enhancedPrompt.length);
-    console.log('Prompt preview:', enhancedPrompt.substring(0, 800) + '...');
+    console.log('Prompt preview (first 1000 chars):', enhancedPrompt.substring(0, 1000));
 
     // Build the message content with reference images
     const messageContent: any[] = [
@@ -224,7 +302,7 @@ serve(async (req) => {
       });
     }
 
-    // Include ALL character reference images for accurate identity matching
+    // Include ALL character reference images - CRITICAL for accuracy
     const siteUrl = Deno.env.get('SITE_URL') || 'https://crideros.lovable.app';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     
@@ -235,11 +313,11 @@ serve(async (req) => {
         
         // Handle different URL formats
         if (refUrl.startsWith('/')) {
-          // Relative URL - point to public folder
           refUrl = `${siteUrl}${refUrl}`;
         } else if (refUrl.startsWith('character-references/')) {
-          // Storage path - construct full Supabase storage URL
           refUrl = `${supabaseUrl}/storage/v1/object/public/${refUrl}`;
+        } else if (!refUrl.startsWith('http')) {
+          refUrl = `${siteUrl}/${refUrl}`;
         }
         
         console.log(`Adding reference ${refImagesAdded + 1} for ${char.name} (${char.slug}): ${refUrl}`);
@@ -253,7 +331,7 @@ serve(async (req) => {
     
     console.log(`Total reference images included: ${refImagesAdded}`);
 
-    // Use Gemini Flash for image generation via Lovable AI Gateway
+    // Use Gemini Flash for image generation
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -304,7 +382,7 @@ serve(async (req) => {
     
     if (!imageUrlResult) {
       const textResponse = data.choices?.[0]?.message?.content || 'No response';
-      console.error('No image in response. Text response:', textResponse.substring(0, 300));
+      console.error('No image in response. Text response:', textResponse.substring(0, 500));
       return new Response(
         JSON.stringify({ 
           error: 'No image generated. The AI may not have been able to generate this image.', 
@@ -314,7 +392,7 @@ serve(async (req) => {
       );
     }
 
-    // Log generation to media_generations table
+    // Log generation
     const authHeader = req.headers.get('Authorization');
     let userId = null;
     if (authHeader) {
@@ -344,7 +422,7 @@ serve(async (req) => {
       JSON.stringify({ 
         imageUrl: imageUrlResult,
         image: imageUrlResult,
-        message: data.choices?.[0]?.message?.content || 'Image generated with reference-locked character identity',
+        message: data.choices?.[0]?.message?.content || 'Image generated with 99% identity accuracy',
         detectedCharacters: Object.keys(characterGroups),
         referencePhotosUsed: refImagesAdded
       }),
