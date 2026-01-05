@@ -1,13 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMediaSystem } from '@/hooks/useMediaSystem';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Image, Sparkles, Download, Users } from 'lucide-react';
+import { Download, Image, Loader2, ShieldCheck, Sparkles, Users } from 'lucide-react';
 
 interface MediaGeneratorProps {
   remixSource?: { url: string; path: string } | null;
@@ -19,11 +21,39 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
   const { toast } = useToast();
   const { characters, parseCharacters, parseStyleHints, buildPrompt, saveToLibrary, getImageAsBase64, logGeneration } = useMediaSystem();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   const [prompt, setPrompt] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [detectedChars, setDetectedChars] = useState<string[]>([]);
+  const [identityLock, setIdentityLock] = useState(true);
+
+  const characterIndex = useMemo(() => {
+    const map = new Map<string, (typeof characters)[number][]>();
+    for (const c of characters) {
+      const base = c.slug.split('-')[0];
+      const key = base === 'dr' ? 'dr-harman' : base; // defensive fallback
+      const list = map.get(key) ?? [];
+      list.push(c);
+      map.set(key, list);
+    }
+    return map;
+  }, [characters]);
+
+  const getBestAnchorFor = (baseSlug: string) => {
+    const group = characterIndex.get(baseSlug) ?? characters.filter(c => c.slug === baseSlug || c.slug.startsWith(baseSlug));
+    if (!group.length) return undefined;
+    const primary = group.find(c => c.isPrimary);
+    return primary ?? group[0];
+  };
+
+  const pickAnchorSlug = (slugs: string[]) => {
+    const lower = slugs.map(s => s.toLowerCase());
+    if (lower.includes('savanaa')) return 'savanaa';
+    if (lower.includes('jessie')) return 'jessie';
+    if (lower.includes('dr-harman')) return 'dr-harman';
+    return slugs[0];
+  };
 
   // Live detection of characters as user types
   const handlePromptChange = (value: string) => {
@@ -31,7 +61,7 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
     if (value.trim()) {
       const detected = parseCharacters(value);
       // Get character names for display
-      const detectedNames = detected.map(slug => 
+      const detectedNames = detected.map(slug =>
         characters.find(c => c.slug === slug)?.name || slug
       );
       setDetectedChars(detectedNames);
@@ -40,7 +70,7 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
     }
   };
 
-  const drawToCanvas = (base64: string) => {
+  const drawToCanvas = (base64OrDataUrl: string) => {
     const img = document.createElement('img');
     img.onload = () => {
       const canvas = canvasRef.current;
@@ -52,7 +82,7 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
         }
       }
     };
-    img.src = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+    img.src = base64OrDataUrl.startsWith('data:') ? base64OrDataUrl : `data:image/png;base64,${base64OrDataUrl}`;
   };
 
   const handleGenerate = async () => {
@@ -71,22 +101,36 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
       const charSlugs = parseCharacters(prompt);
       const detectedChars = characters.filter(c => charSlugs.includes(c.slug));
       const styleHints = parseStyleHints(prompt);
-      
+
       // Auto-apply vintage settings for historical characters
       const hasHistorical = detectedChars.some(c => c.era?.includes('1900') || c.era?.includes('Western'));
       const settings = {
         characters: charSlugs,
-        style: styleHints.style || 'realistic' as const,
+        style: (styleHints.style || 'realistic') as 'realistic' | 'cinematic' | 'vintage' | 'rdr2' | 'cartoon' | 'anime',
         blackAndWhite: styleHints.blackAndWhite || (hasHistorical && !prompt.toLowerCase().includes('color')),
         vintageTexture: styleHints.vintageTexture || hasHistorical,
         filmGrain: styleHints.filmGrain || hasHistorical,
         mood: styleHints.mood,
         lighting: undefined
       };
-      
+
       // Build unified prompt with character context
       const unifiedPrompt = buildPrompt(prompt, settings, detectedChars);
-      
+
+      // If identity lock is on, we anchor generation from the primary reference image.
+      // This is more reliable than text-only "likeness" constraints.
+      let mode: 'edit' | undefined;
+      let imageUrl: string | undefined;
+
+      if (!remixSource && identityLock && charSlugs.length > 0) {
+        const anchorSlug = pickAnchorSlug(charSlugs);
+        const anchor = getBestAnchorFor(anchorSlug);
+        if (anchor?.referenceUrl) {
+          mode = 'edit';
+          imageUrl = await getImageAsBase64(anchor.referenceUrl);
+        }
+      }
+
       console.log('Generating with detected characters:', charSlugs);
       console.log('Unified prompt:', unifiedPrompt);
 
@@ -94,6 +138,9 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
       const { data, error } = await supabase.functions.invoke('generate-ai-image', {
         body: {
           prompt: unifiedPrompt,
+          mode,
+          imageUrl,
+          // NOTE: edge function uses DB references; we still pass detected list for future compatibility
           characters: detectedChars.map(c => ({
             name: c.name,
             referenceUrl: c.referenceUrl,
@@ -107,26 +154,24 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
       if (error) throw error;
 
       if (data?.imageUrl || data?.image) {
-        const imageUrl = data.imageUrl || data.image;
-        
+        const resultUrl = data.imageUrl || data.image;
+
         // Handle base64 or URL
-        if (imageUrl.startsWith('data:')) {
-          const base64Data = imageUrl.split(',')[1];
+        if (resultUrl.startsWith('data:')) {
+          const base64Data = resultUrl.split(',')[1];
           setImageData(base64Data);
           drawToCanvas(base64Data);
-          await saveToLibrary(base64Data, 'ai_generated', {
+          await saveToLibrary(base64Data, mode === 'edit' ? 'ai_edited' : 'ai_generated', {
             characters: charSlugs,
             style: settings.style
           });
         } else {
-          setImageData(imageUrl);
-          drawToCanvas(imageUrl);
+          setImageData(resultUrl);
+          drawToCanvas(resultUrl);
         }
-        
-        // Log generation
+
         await logGeneration(prompt, unifiedPrompt, charSlugs, settings);
-        
-        toast({ title: "Success", description: "Image generated!" });
+        toast({ title: "Success", description: identityLock ? "Generated (Identity Lock on)" : "Image generated!" });
       } else if (data?.error) {
         throw new Error(data.error);
       }
@@ -140,14 +185,14 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
 
   const handleRemix = async () => {
     if (!remixSource || !prompt.trim()) return;
-    
+
     setIsGenerating(true);
     try {
       const base64 = await getImageAsBase64(remixSource.url);
       const charSlugs = parseCharacters(prompt);
       const detectedChars = characters.filter(c => charSlugs.includes(c.slug));
       const styleHints = parseStyleHints(prompt);
-      
+
       const { data, error } = await supabase.functions.invoke('generate-ai-image', {
         body: {
           prompt: prompt.trim(),
@@ -204,7 +249,7 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
             Image Generator
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Type what you want to generate. Mention character names (Dr. Harman, Savanna, etc.) or "me" to include them with accurate likeness.
+            Mention character names (Savanaa, Jessie, Dr. Harman). Turn on Identity Lock for best likeness.
           </p>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -220,14 +265,30 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
             </div>
           )}
 
-          {/* Prompt - No character selection UI, just text input */}
+          {/* Identity Lock */}
+          {!remixSource && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <Label className="text-sm">Identity Lock (best match)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Anchors the generation from the primary reference photo to keep Savanaa consistent.
+                  </p>
+                </div>
+              </div>
+              <Switch checked={identityLock} onCheckedChange={setIdentityLock} />
+            </div>
+          )}
+
+          {/* Prompt */}
           <div>
             <Textarea
               value={prompt}
               onChange={(e) => handlePromptChange(e.target.value)}
-              placeholder={remixSource 
+              placeholder={remixSource
                 ? "Describe how to edit this image (e.g., 'make it black and white, add Dr. Harman behind me')"
-                : "Describe what you want to generate... Mention character names to include them (e.g., 'me and Savanna at sunset', 'Dr. Harman portrait in Western style')"
+                : "Describe what you want to generate... (e.g., 'Savanaa at sunset', 'me and Savanaa at the fair')"
               }
               className="min-h-[120px]"
               maxLength={1000}
@@ -247,9 +308,7 @@ export function MediaGenerator({ remixSource, onClearRemix }: MediaGeneratorProp
                   {name}
                 </Badge>
               ))}
-              <span className="text-xs text-muted-foreground ml-auto">
-                (will use reference photos)
-              </span>
+              <span className="text-xs text-muted-foreground ml-auto">(will use reference photos)</span>
             </div>
           )}
 

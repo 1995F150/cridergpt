@@ -203,13 +203,13 @@ serve(async (req) => {
 
     // Get ALL references for detected characters
     let characters = providedCharacters || [];
-    
+
     if (detectedSlugs.length > 0 && characters.length === 0) {
       characters = characterRefs.filter((c: any) => {
         const charSlug = c.slug?.toLowerCase() || '';
-        return detectedSlugs.some(detectedSlug => 
-          charSlug === detectedSlug || 
-          charSlug.startsWith(detectedSlug + '-') || 
+        return detectedSlugs.some(detectedSlug =>
+          charSlug === detectedSlug ||
+          charSlug.startsWith(detectedSlug + '-') ||
           charSlug.startsWith(detectedSlug)
         );
       });
@@ -228,35 +228,60 @@ serve(async (req) => {
       characterGroups[baseName].push(char);
     }
 
+    const sortRefs = (a: any, b: any) => {
+      const ap = a.is_primary ? 1 : 0;
+      const bp = b.is_primary ? 1 : 0;
+      if (ap !== bp) return bp - ap;
+      const ag = a.generation_count ?? 0;
+      const bg = b.generation_count ?? 0;
+      if (ag !== bg) return bg - ag;
+      const au = new Date(a.updated_at || a.created_at || 0).getTime();
+      const bu = new Date(b.updated_at || b.created_at || 0).getTime();
+      return bu - au;
+    };
+
+    // IMPORTANT: Too many/low-quality refs can "average" faces and reduce likeness.
+    // We cap per-character refs to keep identity stable.
+    const MAX_REFS_PER_CHARACTER = 3;
+
+    const selectedCharactersForRefs: any[] = [];
+    for (const refs of Object.values(characterGroups)) {
+      const sorted = [...refs].sort(sortRefs);
+      selectedCharactersForRefs.push(...sorted.slice(0, MAX_REFS_PER_CHARACTER));
+    }
+
+    console.log(`Reference selection: using ${selectedCharactersForRefs.length} ref(s) after capping`);
+
     // Build the master prompt
     let masterPrompt = '';
-    
+
     if (Object.keys(characterGroups).length > 0) {
       // Add the reference copy rules
       masterPrompt = REFERENCE_COPY_RULES + '\n\n';
-      
+
       // Add specific character profiles
       masterPrompt += '=== CHARACTER PROFILES FOR THIS GENERATION ===\n\n';
-      
+
       for (const [baseName, refs] of Object.entries(characterGroups)) {
         const profile = CHARACTER_PROFILES[baseName];
         if (profile) {
           masterPrompt += profile + '\n';
         }
-        
+
         const primary = refs.find((r: any) => r.is_primary) || refs[0];
         masterPrompt += `Database Info:\n`;
-        masterPrompt += `- Reference Photos: ${refs.length}\n`;
+        masterPrompt += `- Reference Photos (available): ${refs.length}\n`;
+        masterPrompt += `- Reference Photos (used): ${Math.min(refs.length, MAX_REFS_PER_CHARACTER)}\n`;
         if (primary.description) masterPrompt += `- Description: ${primary.description}\n`;
         if (primary.traits) masterPrompt += `- Traits: ${primary.traits}\n`;
         if (primary.era) masterPrompt += `- Era: ${primary.era}\n`;
         masterPrompt += '\n';
       }
-      
+
       // Add user's actual request
       masterPrompt += '=== USER REQUEST ===\n';
       masterPrompt += prompt + '\n\n';
-      
+
       // Final execution reminder
       masterPrompt += '=== EXECUTE ===\n';
       masterPrompt += 'Generate the image with characters that are EXACT COPIES of their reference photos.\n';
@@ -264,8 +289,8 @@ serve(async (req) => {
       masterPrompt += 'Copy the references - do not invent or creatively reinterpret.\n';
 
       // Era-specific styling
-      const hasHistorical = characters.some((c: any) => 
-        c.era?.toLowerCase()?.includes('1800') || 
+      const hasHistorical = characters.some((c: any) =>
+        c.era?.toLowerCase()?.includes('1800') ||
         c.era?.toLowerCase()?.includes('western') ||
         c.slug?.includes('dr-harman')
       );
@@ -288,7 +313,7 @@ serve(async (req) => {
       if (settings.style === 'cinematic') styles.push('cinematic');
       if (settings.style === 'portrait') styles.push('portrait photography');
       if (settings.era) styles.push(`${settings.era} era`);
-      
+
       if (styles.length > 0) {
         masterPrompt += `\nSTYLE: ${styles.join(', ')}\n`;
       }
@@ -301,7 +326,7 @@ serve(async (req) => {
       { type: 'text', text: masterPrompt }
     ];
 
-    // Edit mode source image
+    // Edit mode source image (identity anchor)
     if (mode === 'edit' && imageUrl) {
       messageContent.push({
         type: 'image_url',
@@ -309,15 +334,15 @@ serve(async (req) => {
       });
     }
 
-    // Add ALL reference images
+    // Add ALL selected reference images (capped)
     const siteUrl = Deno.env.get('SITE_URL') || 'https://crideros.lovable.app';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    
+
     let refCount = 0;
-    for (const char of characters) {
+    for (const char of selectedCharactersForRefs.sort(sortRefs)) {
       if (char.reference_photo_url) {
         let refUrl = char.reference_photo_url;
-        
+
         if (refUrl.startsWith('/')) {
           refUrl = `${siteUrl}${refUrl}`;
         } else if (refUrl.startsWith('character-references/')) {
@@ -325,7 +350,7 @@ serve(async (req) => {
         } else if (!refUrl.startsWith('http')) {
           refUrl = `${siteUrl}/${refUrl}`;
         }
-        
+
         console.log(`Reference ${refCount + 1}: ${char.name} -> ${refUrl}`);
         messageContent.push({
           type: 'image_url',
@@ -334,7 +359,7 @@ serve(async (req) => {
         refCount++;
       }
     }
-    
+
     console.log(`Total references included: ${refCount}`);
 
     // Generate with Gemini Flash
@@ -347,8 +372,11 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash-image-preview',
         messages: [{ role: 'user', content: messageContent }],
-        modalities: ['image', 'text']
-      }),
+        modalities: ['image', 'text'],
+        // Reduce randomness for repeatability / identity consistency
+        temperature: 0,
+        top_p: 0.1
+      })
     });
 
     if (!response.ok) {
