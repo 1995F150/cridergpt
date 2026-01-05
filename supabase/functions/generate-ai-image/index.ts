@@ -82,6 +82,10 @@ serve(async (req) => {
 
     const characterRefs = allCharacters || [];
     console.log('Loaded', characterRefs.length, 'character references from database');
+    // Log all loaded characters for debugging
+    characterRefs.forEach((c: any) => {
+      console.log(`  DB char: ${c.name} | slug: ${c.slug} | url: ${c.reference_photo_url}`);
+    });
 
     // Auto-detect characters from prompt
     const promptLower = prompt.toLowerCase();
@@ -116,14 +120,22 @@ serve(async (req) => {
     let characters = providedCharacters || [];
     
     if (detectedSlugs.length > 0 && characters.length === 0) {
-      characters = characterRefs.filter(c => {
+      // Filter to get all character records that match detected slugs
+      characters = characterRefs.filter((c: any) => {
         const charSlug = c.slug?.toLowerCase() || '';
-        return detectedSlugs.some(detectedSlug => 
-          charSlug === detectedSlug || charSlug.startsWith(detectedSlug + '-') || charSlug.startsWith(detectedSlug)
+        const matches = detectedSlugs.some(detectedSlug => 
+          charSlug === detectedSlug || 
+          charSlug.startsWith(detectedSlug + '-') || 
+          charSlug.startsWith(detectedSlug)
         );
+        if (matches) {
+          console.log(`  Matched: ${c.name} (${c.slug}) -> ${c.reference_photo_url}`);
+        }
+        return matches;
       });
     }
 
+    console.log('Characters selected for generation:', characters.length);
     console.log('Using characters with references:', characters.map((c: any) => `${c.name} (${c.slug}) - ref: ${c.reference_photo_url}`));
 
     // Group characters by name to consolidate reference info
