@@ -105,10 +105,11 @@ const corsHeaders = {
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
   'jessie': ['jessie', 'crider', 'me', 'myself', 'creator', 'jesse'],
   'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor', 'dr-harman'],
-  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna', 'girlfriend', 'her', 'she', 'girl', 'woman']
+  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna', 'girlfriend', 'her', 'she', 'girl', 'woman'],
+  'jr-hoback': ['jr hoback', 'jr-hoback', 'j.r. hoback', 'jr', 'hoback', 'j.r.']
 };
 
-const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa'];
+const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback'];
 
 // USER-SPECIFIED REFERENCE COPY RULES - 100% ACCURACY REQUIRED
 const REFERENCE_COPY_RULES = `
@@ -237,6 +238,21 @@ Reference Photos: MULTIPLE provided (3+) - COMBINE ALL INTO ONE CONSISTENT IDENT
 CRITICAL: Use the clearest facial features from ALL references to build complete identity
 Study ALL reference photos to understand her face completely
 The combined identity must be INSTANTLY RECOGNIZABLE as Savanaa
+`,
+  'jr-hoback': `
+CHARACTER: JR HOBACK
+Role: Friend/Family Member
+Gender: Male (DO NOT CHANGE)
+Age: Middle-aged adult (DO NOT CHANGE)
+Hair: Gray/white, short curly hair - COPY FROM REFERENCES
+Eyes: Light colored, kind expression - COPY FROM REFERENCES  
+Skin: Fair complexion with natural weathering - COPY FROM REFERENCES
+Key Features: Distinctive gray curly hair, friendly smile, warm demeanor
+Build: Average/stocky build
+Reference Photos: MULTIPLE provided (3) - USE ALL FOR COMPLETE IDENTITY
+CRITICAL: Copy the gray curly hair, facial structure, and friendly expression EXACTLY
+Study ALL reference photos to understand his face completely
+The identity must be INSTANTLY RECOGNIZABLE as JR Hoback
 `
 };
 
