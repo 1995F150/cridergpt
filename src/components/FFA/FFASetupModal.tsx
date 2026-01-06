@@ -60,7 +60,7 @@ export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
       await createProfile({
         chapter_id: selectedChapter,
         state: selectedState,
-        officer_role: officerRole || undefined,
+        officer_role: officerRole && officerRole !== 'none' ? officerRole : undefined,
         is_advisor: isAdvisor,
         graduation_year: graduationYear ? parseInt(graduationYear) : undefined,
       });
@@ -114,11 +114,13 @@ export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
                     <SelectValue placeholder="Select your chapter" />
                   </SelectTrigger>
                   <SelectContent>
-                    {filteredChapters.map(chapter => (
-                      <SelectItem key={chapter.id} value={chapter.id}>
-                        {chapter.name} {chapter.city && `- ${chapter.city}`}
-                      </SelectItem>
-                    ))}
+                    {filteredChapters
+                      .filter(chapter => chapter.id)
+                      .map(chapter => (
+                        <SelectItem key={chapter.id} value={chapter.id}>
+                          {chapter.name} {chapter.city && `- ${chapter.city}`}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {filteredChapters.length === 0 && (
@@ -135,7 +137,7 @@ export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
                     <SelectValue placeholder="Select if you're an officer" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Not an officer</SelectItem>
+                    <SelectItem value="none">Not an officer</SelectItem>
                     {OFFICER_ROLES.map(role => (
                       <SelectItem key={role} value={role}>{role}</SelectItem>
                     ))}
