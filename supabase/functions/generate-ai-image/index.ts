@@ -2,94 +2,76 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 import { decode as base64Decode, encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { ImageMagick, initialize, MagickFormat } from "https://deno.land/x/imagemagick_deno@0.0.31/mod.ts";
+
+// Initialize ImageMagick
+await initialize();
 
 // Watermark configuration
 const WATERMARK_URL = 'https://crideros.lovable.app/cridergpt-watermark.png';
-const WATERMARK_OPACITY = 0.7;
-const WATERMARK_SCALE = 0.15; // 15% of image width
-const WATERMARK_POSITION = 'bottom-right'; // Position of watermark
-const WATERMARK_MARGIN = 20; // Pixels from edge
 
-// Function to add watermark to base64 image
+// Function to add watermark to base64 image using ImageMagick
 async function addWatermark(base64Image: string): Promise<string> {
   try {
+    console.log('Starting watermark process...');
+    
     // Extract the base64 data (remove data:image/png;base64, prefix if present)
     const base64Data = base64Image.includes(',') 
       ? base64Image.split(',')[1] 
       : base64Image;
     
-    // Get the image format from prefix
-    const formatMatch = base64Image.match(/data:image\/(\w+);base64/);
-    const format = formatMatch ? formatMatch[1] : 'png';
+    // Decode the main image
+    const imageBytes = base64Decode(base64Data);
+    console.log('Main image decoded, size:', imageBytes.length);
     
     // Fetch the watermark image
     const watermarkResponse = await fetch(WATERMARK_URL);
     if (!watermarkResponse.ok) {
       console.error('Failed to fetch watermark:', watermarkResponse.status);
-      return base64Image; // Return original if watermark fails
+      return base64Image;
     }
     
     const watermarkBuffer = await watermarkResponse.arrayBuffer();
-    const watermarkBase64 = base64Encode(new Uint8Array(watermarkBuffer));
+    const watermarkBytes = new Uint8Array(watermarkBuffer);
+    console.log('Watermark fetched, size:', watermarkBytes.length);
     
-    // Use the AI to composite the watermark onto the image
-    // This approach ensures proper transparency and scaling
-    const compositePrompt = `
-Take this image and add the provided watermark logo to the ${WATERMARK_POSITION.replace('-', ' ')} corner.
-The watermark should be:
-- Scaled to approximately ${WATERMARK_SCALE * 100}% of the image width
-- Positioned ${WATERMARK_MARGIN}px from the edges
-- Semi-transparent (about ${WATERMARK_OPACITY * 100}% opacity)
-- DO NOT modify any other part of the image
-- Keep the original image EXACTLY as is, only add the watermark overlay
-- The watermark should be clearly visible but not distracting
-Return ONLY the watermarked image.
-`;
-
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    // Use ImageMagick to composite the watermark
+    let resultBase64 = base64Image;
     
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: compositePrompt },
-            { 
-              type: 'image_url', 
-              image_url: { url: `data:image/${format};base64,${base64Data}` }
-            },
-            { 
-              type: 'image_url', 
-              image_url: { url: `data:image/png;base64,${watermarkBase64}` }
-            }
-          ]
-        }],
-        modalities: ['image', 'text'],
-        temperature: 0
-      })
+    await ImageMagick.read(imageBytes, async (mainImg) => {
+      const imgWidth = mainImg.width;
+      const imgHeight = mainImg.height;
+      console.log('Main image dimensions:', imgWidth, 'x', imgHeight);
+      
+      await ImageMagick.read(watermarkBytes, async (watermarkImg) => {
+        // Scale watermark to 15% of main image width
+        const watermarkScale = 0.15;
+        const newWatermarkWidth = Math.floor(imgWidth * watermarkScale);
+        const aspectRatio = watermarkImg.height / watermarkImg.width;
+        const newWatermarkHeight = Math.floor(newWatermarkWidth * aspectRatio);
+        
+        watermarkImg.resize(newWatermarkWidth, newWatermarkHeight);
+        console.log('Watermark resized to:', newWatermarkWidth, 'x', newWatermarkHeight);
+        
+        // Position in bottom-right corner with 20px margin
+        const margin = 20;
+        const x = imgWidth - newWatermarkWidth - margin;
+        const y = imgHeight - newWatermarkHeight - margin;
+        
+        // Composite the watermark onto the main image
+        mainImg.composite(watermarkImg, x, y);
+        console.log('Watermark composited at position:', x, y);
+        
+        // Write to PNG format
+        mainImg.write(MagickFormat.Png, (data) => {
+          const watermarkedBase64 = base64Encode(data);
+          resultBase64 = `data:image/png;base64,${watermarkedBase64}`;
+          console.log('Watermark applied successfully!');
+        });
+      });
     });
-
-    if (!response.ok) {
-      console.error('Watermark compositing failed:', response.status);
-      return base64Image; // Return original if compositing fails
-    }
-
-    const data = await response.json();
-    const watermarkedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
-    if (watermarkedImage) {
-      console.log('Watermark applied successfully');
-      return watermarkedImage;
-    }
-    
-    console.warn('No watermarked image returned, using original');
-    return base64Image;
+    return resultBase64;
   } catch (error) {
     console.error('Error adding watermark:', error);
     return base64Image; // Return original on error
