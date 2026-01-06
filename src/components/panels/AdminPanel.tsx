@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
@@ -10,10 +11,34 @@ import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { ChapterRequestAdmin } from '@/components/FFA/ChapterRequestAdmin';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
+  const [pendingReports, setPendingReports] = useState(0);
+  const [pendingChapters, setPendingChapters] = useState(0);
+
+  useEffect(() => {
+    async function fetchPendingCounts() {
+      if (!isAdmin) return;
+      
+      try {
+        const [reportsRes, chaptersRes] = await Promise.all([
+          supabase.from('user_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+          supabase.from('chapter_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending')
+        ]);
+        
+        setPendingReports(reportsRes.count || 0);
+        setPendingChapters(chaptersRes.count || 0);
+      } catch (error) {
+        console.error('Error fetching pending counts:', error);
+      }
+    }
+    
+    fetchPendingCounts();
+  }, [isAdmin]);
 
   if (loading) {
     return (
@@ -39,45 +64,86 @@ export function AdminPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Shield className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold">Admin Panel</h1>
-          <p className="text-muted-foreground">Manage users, content, and system settings</p>
+      {/* Gradient Header */}
+      <div className="rounded-xl bg-gradient-to-r from-destructive/20 via-orange-500/20 to-amber-500/20 border border-destructive/20 p-6">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-destructive to-orange-500 flex items-center justify-center shadow-lg">
+            <Shield className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-destructive to-orange-500 bg-clip-text text-transparent">
+              Admin Control Center
+            </h1>
+            <p className="text-muted-foreground">Manage users, content, and system settings</p>
+          </div>
         </div>
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="flex flex-wrap h-auto gap-1 p-1">
-          <TabsTrigger value="dashboard" className="gap-2">
+        <TabsList className="flex flex-wrap h-auto gap-1.5 p-1.5 bg-muted/50 rounded-xl">
+          <TabsTrigger 
+            value="dashboard" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             <BarChart3 className="h-4 w-4" />
             Dashboard
           </TabsTrigger>
-          <TabsTrigger value="users" className="gap-2">
+          <TabsTrigger 
+            value="users" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             <Users className="h-4 w-4" />
             Users
           </TabsTrigger>
-          <TabsTrigger value="subscriptions" className="gap-2">
+          <TabsTrigger 
+            value="subscriptions" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             <CreditCard className="h-4 w-4" />
             Subscriptions
           </TabsTrigger>
-          <TabsTrigger value="moderation" className="gap-2">
+          <TabsTrigger 
+            value="moderation" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm relative"
+          >
             <Flag className="h-4 w-4" />
             Moderation
+            {pendingReports > 0 && (
+              <Badge variant="destructive" className="ml-1.5 h-5 min-w-5 flex items-center justify-center text-xs px-1.5">
+                {pendingReports}
+              </Badge>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="chapters" className="gap-2">
+          <TabsTrigger 
+            value="chapters" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm relative"
+          >
             <BookOpen className="h-4 w-4" />
             Chapters
+            {pendingChapters > 0 && (
+              <Badge variant="destructive" className="ml-1.5 h-5 min-w-5 flex items-center justify-center text-xs px-1.5">
+                {pendingChapters}
+              </Badge>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-2">
+          <TabsTrigger 
+            value="analytics" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             <BarChart3 className="h-4 w-4" />
             Analytics
           </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-2">
+          <TabsTrigger 
+            value="logs" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             <FileText className="h-4 w-4" />
             Logs
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-2">
+          <TabsTrigger 
+            value="settings" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             <Settings className="h-4 w-4" />
             Settings
           </TabsTrigger>
