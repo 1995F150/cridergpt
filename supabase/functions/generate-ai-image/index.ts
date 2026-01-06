@@ -16,115 +16,133 @@ const CHARACTER_KEYWORDS: Record<string, string[]> = {
 
 const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa'];
 
-// USER-SPECIFIED REFERENCE COPY RULES - 99% ACCURACY REQUIRED
+// USER-SPECIFIED REFERENCE COPY RULES - 100% ACCURACY REQUIRED
 const REFERENCE_COPY_RULES = `
-=== REFERENCE PHOTO GENERATION SYSTEM ===
+=== REFERENCE PHOTO GENERATION SYSTEM - 100% FACIAL ACCURACY ===
 
 Generate images or video using the reference photos provided for each character.
-COPY the reference photos as ACCURATELY as possible. Follow these rules:
+Use EVERY reference photo provided for each character.
+COPY the reference photos with 100% FACIAL ACCURACY. Follow these rules:
 
 CHARACTERS:
-- Savanaa (multiple reference photos provided)
+- Savanaa (multiple reference photos - COMBINE ALL for clearest identity)
 - Jessie Crider (reference photo provided)  
 - Dr Harman (reference photo provided)
 
-=== REFERENCE COPY RULES ===
+=== REFERENCE PHOTO USAGE RULES ===
 
-1. FACIAL FEATURES MUST MATCH THE REFERENCE PHOTOS EXACTLY
-   - Eye shape, eye color, eye spacing - COPY EXACTLY
-   - Nose shape and size - COPY EXACTLY
-   - Mouth, lips, smile pattern - COPY EXACTLY
-   - Jawline and chin - COPY EXACTLY
-   - Eyebrow shape and thickness - COPY EXACTLY
-   - Skin tone and texture - COPY EXACTLY
-   - Any moles, freckles, dimples - COPY EXACTLY
+1. USE EVERY REFERENCE PHOTO PROVIDED
+   - If multiple reference photos exist for one character, COMBINE them intelligently
+   - The final image must reflect the CLEAREST and MOST CONSISTENT facial features
+   - Prioritize: eyes, nose, mouth, facial shape, and hair from the clearest reference
 
-2. MULTI-REFERENCE CONSOLIDATION
-   - Combine multiple reference photos for a single character (e.g., Savanaa) into ONE CONSISTENT IDENTITY
+2. FACIAL FEATURES MUST MATCH REFERENCES 100%
+   - Eye shape, eye color, eye spacing - COPY EXACTLY from references
+   - Nose shape and size - COPY EXACTLY from references
+   - Mouth, lips, smile pattern - COPY EXACTLY from references
+   - Jawline and chin - COPY EXACTLY from references
+   - Eyebrow shape and thickness - COPY EXACTLY from references
+   - Skin tone and texture - COPY EXACTLY from references
+   - Any moles, freckles, dimples - COPY EXACTLY from references
+   - DO NOT ALTER facial features from reference photos
+
+3. MULTI-REFERENCE CONSOLIDATION
+   - Combine multiple reference photos for a single character into ONE CONSISTENT IDENTITY
    - If features differ between references, use the MOST DETAILED/CLEAR version
-   - Study ALL reference photos to build complete understanding of the face
+   - Study ALL reference photos to build COMPLETE understanding of the face
+   - The consolidated identity must be INSTANTLY RECOGNIZABLE
 
-3. DO NOT MODIFY:
+4. DO NOT MODIFY:
    - Facial features
    - Skin tone
    - Eye color
    - Hair color or texture
+   - Gender, ethnicity, or age (unless explicitly instructed)
    
-4. MAY VARY SLIGHTLY (only if necessary for scene context):
+5. MAY VARY SLIGHTLY (only if necessary for scene context):
    - Jewelry
-   - Clothing
+   - Clothing (can vary)
    - Minor accessories
-   - BUT the FACE MUST REMAIN IDENTICAL
+   - BUT the FACE MUST REMAIN IDENTICAL TO REFERENCES
 
-5. ORIENTATION AND PERSPECTIVE:
+6. ORIENTATION AND PERSPECTIVE:
    - Must preserve recognizability
    - Faces should be UPRIGHT and CLEAR
    - No distorted angles that obscure identity
 
-=== MULTI-CHARACTER & SCENE RULES ===
+=== MULTI-CHARACTER SCENE RULES ===
 
 1. Support multiple characters in the same frame
-2. EACH character must remain IDENTICAL to their reference photos
-3. Do NOT blend or mix features between characters
-4. Backgrounds, objects, or props can vary
-5. Must NOT distort or alter the characters' faces
+2. EACH character's face must match their references INDEPENDENTLY
+3. Do NOT blend or mix features between different characters
+4. Maintain relative scale, position, and orientation so characters appear NATURALLY together
+5. Backgrounds, objects, or props can vary
+6. Must NOT distort or alter ANY character's face
 
-=== OUTPUT REQUIREMENTS ===
+=== OUTPUT CONSISTENCY REQUIREMENTS ===
 
 1. CONSISTENCY: For repeated generations of the same prompt, characters must look THE SAME every time
 2. VIDEO: For video generation, ensure frame-to-frame identity consistency
-3. CHAT: For chat interface generation, replicate the same reference-photo accuracy rules
+3. CHAT: For chat interface generation, apply the SAME reference-photo accuracy rules
+4. MULTI-CHAR: When generating multiple characters, EACH must match their individual references
 
 === EXECUTION PRIORITY ===
 
 1. ALWAYS prioritize reference-photo fidelity over creativity
-2. Treat reference photos as EXACT COPIES of the character identity
+2. Treat reference photos as THE EXACT IDENTITY of each character
 3. Do NOT invent or extrapolate facial features
-4. Every output must CLEARLY MATCH the reference images 99% of the time
+4. Every output must CLEARLY MATCH the reference images 99-100% of the time
 5. Someone who knows this person should IMMEDIATELY recognize them
+6. Use the CLEAREST reference photo features when combining multiple refs
 
 === CRITICAL REMINDER ===
-The reference photos ARE the characters. Copy them exactly.
+The reference photos ARE the characters. COPY THEM EXACTLY.
 Do not creatively reinterpret. Do not stylize the face.
-The face is LOCKED to the reference photos.
+The face is LOCKED to the reference photos - 100% accuracy required.
+Anyone who knows these people must INSTANTLY recognize them.
 `;
 
-// Detailed character profiles
+// Detailed character profiles with 100% accuracy instructions
 const CHARACTER_PROFILES: Record<string, string> = {
   'jessie': `
 CHARACTER: JESSIE CRIDER
 Role: Primary Creator / App Owner
-Gender: Male
-Age: Young adult
-Hair: Blonde/light brown, wavy texture
-Skin: Light/fair complexion
+Gender: Male (DO NOT CHANGE)
+Age: Young adult (DO NOT CHANGE)
+Hair: Blonde/light brown, wavy texture - COPY FROM REFERENCE
+Skin: Light/fair complexion - COPY FROM REFERENCE
 Key Features: Wavy light hair, young male features, casual modern style
-Reference Photo: 1 provided - COPY THIS FACE EXACTLY
+Reference Photo: 1 provided - COPY THIS FACE WITH 100% ACCURACY
+CRITICAL: Every facial feature must match the reference photo exactly
 `,
   'dr-harman': `
 CHARACTER: DR. HARMAN  
 Role: Historical Ancestor (3rd Great-Grandfather)
 Era: 1800s American
-Hair: Dark hair, parted in the middle
-DISTINCTIVE FEATURE: FULL THICK BEARD - graying/salt-and-pepper (THIS IS HIS MOST RECOGNIZABLE TRAIT)
-Eyes: Intense, piercing gaze
+Gender: Male (DO NOT CHANGE)
+Hair: Dark hair, parted in the middle - COPY FROM REFERENCE
+DISTINCTIVE FEATURE: FULL THICK BEARD - graying/salt-and-pepper (THIS IS HIS MOST RECOGNIZABLE TRAIT - MUST BE PRESENT)
+Eyes: Intense, piercing gaze - COPY FROM REFERENCE
 Attire: Dark formal 1800s suit, white dress shirt
-Skin: Weathered, period-appropriate complexion
-Reference Photo: 1 provided - COPY THIS FACE EXACTLY, especially the beard
+Skin: Weathered, period-appropriate complexion - COPY FROM REFERENCE
+Reference Photo: 1 provided - COPY THIS FACE WITH 100% ACCURACY, especially the beard
 Historical Note: Use sepia/vintage tones, period-accurate styling
+CRITICAL: The beard is his defining feature - MUST match reference exactly
 `,
   'savanaa': `
 CHARACTER: SAVANAA
 Role: Jessie's Girlfriend
-Gender: Female
-Age: Young adult
-Hair: Dark hair (brown/black)
-Eyes: Warm, expressive
-Skin: Natural, healthy complexion  
+Gender: Female (DO NOT CHANGE)
+Age: Young adult (DO NOT CHANGE)
+Hair: Dark hair (brown/black) - COPY FROM REFERENCES
+Eyes: Warm, expressive - COPY FROM REFERENCES
+Skin: Natural, healthy complexion - COPY FROM REFERENCES
 Personality: Confident, bold, vibrant
 Key Features: Dark hair, warm expressive eyes, natural beauty
-Reference Photos: Multiple provided - COMBINE INTO ONE CONSISTENT IDENTITY
-Use the clearest facial features when references differ
+Reference Photos: MULTIPLE provided (3+) - COMBINE ALL INTO ONE CONSISTENT IDENTITY
+CRITICAL: Use the clearest facial features from ALL references to build complete identity
+Study ALL reference photos to understand her face completely
+The combined identity must be INSTANTLY RECOGNIZABLE as Savanaa
 `
 };
 
@@ -248,18 +266,45 @@ serve(async (req) => {
       return bu - au;
     };
 
-    // IMPORTANT: Too many/low-quality refs can "average" faces and reduce likeness.
-    // We cap per-character refs to keep identity stable.
-    const MAX_REFS_PER_CHARACTER = 3;
+    // Use ALL references for maximum accuracy - the model should combine them intelligently
+    // For Savanaa with 3 refs, use all 3. For single-ref characters, use the 1.
+    const MAX_REFS_PER_CHARACTER = 5; // Increased to ensure all refs are used
 
     const selectedCharactersForRefs: any[] = [];
+    const validationErrors: string[] = [];
+    
     for (const [groupName, refs] of Object.entries(characterGroups)) {
       console.log(`Processing group "${groupName}" with ${refs.length} refs`);
-      const sorted = [...refs].sort(sortRefs);
-      selectedCharactersForRefs.push(...sorted.slice(0, MAX_REFS_PER_CHARACTER));
+      
+      // Validate each reference photo exists and is accessible
+      const validRefs: any[] = [];
+      for (const ref of refs) {
+        if (!ref.reference_photo_url) {
+          console.warn(`Missing reference_photo_url for ${ref.slug || ref.name}`);
+          validationErrors.push(`Missing photo URL for ${ref.name || ref.slug}`);
+          continue;
+        }
+        validRefs.push(ref);
+      }
+      
+      if (validRefs.length === 0) {
+        validationErrors.push(`No valid reference photos found for ${groupName}`);
+        continue;
+      }
+      
+      const sorted = [...validRefs].sort(sortRefs);
+      // Use all available refs up to the cap
+      const selectedRefs = sorted.slice(0, MAX_REFS_PER_CHARACTER);
+      selectedCharactersForRefs.push(...selectedRefs);
+      console.log(`Selected ${selectedRefs.length} of ${refs.length} refs for ${groupName}`);
     }
 
-    console.log(`Reference selection: using ${selectedCharactersForRefs.length} ref(s) after capping`);
+    // If validation found missing refs, log but continue with available ones
+    if (validationErrors.length > 0) {
+      console.warn('Reference validation warnings:', validationErrors);
+    }
+
+    console.log(`Reference selection: using ${selectedCharactersForRefs.length} ref(s) total`);
 
     // Build the master prompt
     let masterPrompt = '';
@@ -291,11 +336,13 @@ serve(async (req) => {
       masterPrompt += '=== USER REQUEST ===\n';
       masterPrompt += prompt + '\n\n';
 
-      // Final execution reminder
-      masterPrompt += '=== EXECUTE ===\n';
+      // Final execution reminder - 100% accuracy
+      masterPrompt += '=== EXECUTE WITH 100% FACIAL ACCURACY ===\n';
       masterPrompt += 'Generate the image with characters that are EXACT COPIES of their reference photos.\n';
-      masterPrompt += 'The faces must be instantly recognizable. 99% accuracy required.\n';
-      masterPrompt += 'Copy the references - do not invent or creatively reinterpret.\n';
+      masterPrompt += 'The faces must be INSTANTLY RECOGNIZABLE. 100% accuracy required.\n';
+      masterPrompt += 'Copy the references EXACTLY - do not invent or creatively reinterpret.\n';
+      masterPrompt += 'Use ALL provided reference photos to build the most accurate representation.\n';
+      masterPrompt += 'Anyone who knows these people must IMMEDIATELY recognize them in the output.\n';
 
       // Era-specific styling
       const hasHistorical = characters.some((c: any) =>
