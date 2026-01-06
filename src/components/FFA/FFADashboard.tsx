@@ -13,23 +13,43 @@ import {
   Clock,
   Plus,
   Settings,
-  Bell
+  Bell,
+  ShieldCheck
 } from "lucide-react";
 import { useFFAProfile } from "@/hooks/useFFAProfile";
 import { useEvents } from "@/hooks/useEvents";
 import { useState, useEffect } from "react";
 import { FFASetupModal } from "./FFASetupModal";
 import { EventModal } from "./EventModal";
+import { ChapterRequestAdmin } from "./ChapterRequestAdmin";
 import { Loader2 } from "lucide-react";
 import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export function FFADashboard() {
+  const { user } = useAuth();
   const { profile, chapter, loading: profileLoading, needsSetup, isOfficer, isAdvisor } = useFFAProfile();
   const { events, loading: eventsLoading, getUpcomingEvents, getChapterEvents, createEvent } = useEvents(profile?.chapter_id);
   const { permission, requestPermission, canSendNotifications } = useBrowserNotifications();
   
   const [setupOpen, setSetupOpen] = useState(needsSetup);
   const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user is an admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      setIsAdmin(data?.role === 'admin');
+    };
+    checkAdmin();
+  }, [user]);
 
   // Sync setupOpen with needsSetup
   useEffect(() => {
@@ -116,11 +136,17 @@ export function FFADashboard() {
       </Card>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={`grid w-full ${isAdmin || isAdvisor ? 'grid-cols-5' : 'grid-cols-4'}`}>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="documentation">Documentation</TabsTrigger>
+          <TabsTrigger value="documentation">Docs</TabsTrigger>
           <TabsTrigger value="resources">Resources</TabsTrigger>
+          {(isAdmin || isAdvisor) && (
+            <TabsTrigger value="admin" className="flex items-center gap-1">
+              <ShieldCheck className="h-4 w-4" />
+              Admin
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -355,6 +381,25 @@ export function FFADashboard() {
             </Card>
           </div>
         </TabsContent>
+
+        {(isAdmin || isAdvisor) && (
+          <TabsContent value="admin" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5" />
+                  Admin Panel
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Review and approve chapter requests from members
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ChapterRequestAdmin />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
 
       <FFASetupModal open={setupOpen} onOpenChange={setSetupOpen} />
