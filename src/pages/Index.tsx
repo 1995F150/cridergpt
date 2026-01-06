@@ -38,7 +38,8 @@ import FixxyBotTrigger from '@/components/FixxyBotTrigger';
 import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 import { useAuth } from '@/contexts/AuthContext';
-
+import { useAdmin } from '@/hooks/useAdmin';
+import { AdminPanel } from '@/components/panels/AdminPanel';
 export type PanelType = 
   | 'chat' 
   | 'vision-memory'
@@ -68,15 +69,18 @@ export type PanelType =
   | 'cloud-gaming'
   | '3d-converter'
   | 'studio'
-  | 'zip-to-exe';
+  | 'zip-to-exe'
+  | 'admin';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const { isSupported, permission } = useBrowserNotifications();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   
-  const isDeveloper = user?.email === 'jessiecrider3@gmail.com';
+  // Developer access based on admin role or specific email
+  const isDeveloper = isAdmin || user?.email === 'jessiecrider3@gmail.com';
 
   useEffect(() => {
     const savedPanel = localStorage.getItem('activePanel') as PanelType;
@@ -159,6 +163,7 @@ export default function Index() {
             {activePanel === '3d-converter' && isDeveloper && <Model3DConverterPanel />}
             {activePanel === 'studio' && <StudioPanel />}
             {activePanel === 'zip-to-exe' && <ZipToExePanel />}
+            {activePanel === 'admin' && isAdmin && <AdminPanel />}
           </div>
         </main>
         <Footer />

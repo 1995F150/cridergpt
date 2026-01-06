@@ -30,8 +30,10 @@ import {
   Cuboid,
   Wrench,
   Package,
-  Eye
+  Eye,
+  Shield
 } from 'lucide-react';
+import { useAdmin } from '@/hooks/useAdmin';
 
 interface NavigationSidebarProps {
   activeTab: string;
@@ -69,10 +71,13 @@ const navigationItems = [
   { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
   { id: 'studio', label: '3D Studio', icon: Cuboid },
   { id: 'zip-to-exe', label: 'ZIP-to-EXE Builder', icon: Package },
+  { id: 'admin', label: 'Admin Panel', icon: Shield, adminOnly: true },
   { id: 'farming-simulator', label: 'Farming Simulator', icon: Wheat, external: true, url: 'https://farmgenie-studio.lovable.app/' }
 ];
 
 export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false }: NavigationSidebarProps) {
+  const { isAdmin } = useAdmin();
+  
   return (
     <div className="w-64 bg-card border-r border-border">
       <div className="p-6">
@@ -84,6 +89,10 @@ export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false 
           {navigationItems.map((item) => {
             // Hide developer-only items from non-developers
             if ((item as any).developerOnly && !isDeveloper) {
+              return null;
+            }
+            // Hide admin-only items from non-admins
+            if ((item as any).adminOnly && !isAdmin) {
               return null;
             }
             
