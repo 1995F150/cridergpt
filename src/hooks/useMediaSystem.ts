@@ -401,7 +401,7 @@ export function useMediaSystem() {
         }
       }
 
-      const { data, error } = await supabase.functions.invoke('generate-image', {
+      const { data, error } = await supabase.functions.invoke('generate-ai-image', {
         body: {
           prompt: unifiedPrompt,
           mode: referenceImages.length > 0 ? 'character' : 'generate',
@@ -414,8 +414,9 @@ export function useMediaSystem() {
 
       if (error) throw error;
 
-      if (data?.imageData) {
-        const savedPath = await saveToLibrary(data.imageData, 'character_gen', {
+      const imageData = data?.imageUrl || data?.image || data?.imageData;
+      if (imageData) {
+        const savedPath = await saveToLibrary(imageData, 'character_gen', {
           characters: charSlugs,
           style: mergedSettings.style,
           era: mergedSettings.era,
