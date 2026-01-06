@@ -285,7 +285,7 @@ serve(async (req) => {
 
     // Use ALL references for maximum accuracy - the model should combine them intelligently
     // For Savanaa with 3 refs, use all 3. For single-ref characters, use the 1.
-  const MAX_REFS_PER_CHARACTER = 5; // Increased to ensure all refs are used
+  const MAX_REFS_PER_CHARACTER = 10; // Increased to use all 10 Savanaa refs
 
   const selectedCharactersForRefs: any[] = [];
   const validationErrors: string[] = [];
@@ -492,32 +492,41 @@ serve(async (req) => {
         }
       }
       
-      // Now try to find additional numbered reference photos (e.g., jr-hoback-reference-2.jpg, jr-hoback-reference-3.jpg)
+      // Now try to find additional numbered reference photos (e.g., jr-hoback-reference-2.jpg, savanaa-reference-3.png)
       const slug = char.slug.replace(/-\d+$/, ''); // Remove trailing number if any
       const extensions = ['jpg', 'jpeg', 'png', 'webp'];
       
-      for (let i = 2; i <= 5; i++) {
+      // Try both spellings for Savanaa/Savanna to handle any remaining misspellings
+      const slugVariants = [slug];
+      if (slug.includes('savanaa')) {
+        slugVariants.push(slug.replace('savanaa', 'savanna'));
+      } else if (slug.includes('savanna') && !slug.includes('savanaa')) {
+        slugVariants.push(slug.replace('savanna', 'savanaa'));
+      }
+      
+      for (let i = 2; i <= 12; i++) {
         let foundAdditional = false;
-        for (const ext of extensions) {
-          const additionalUrl = `${siteUrl}/${slug}-reference-${i}.${ext}`;
-          
-          try {
-            const checkResponse = await fetch(additionalUrl, { method: 'HEAD' });
-            if (checkResponse.ok) {
-              console.log(`Checking additional reference ${i} for ${char.name}: ${additionalUrl}`);
-              if (await addReferenceImage(additionalUrl, char.name, refCount + 1, 'additional')) {
-                refCount++;
-                foundAdditional = true;
-                break; // Found this numbered reference, move to next number
+        for (const slugVar of slugVariants) {
+          if (foundAdditional) break;
+          for (const ext of extensions) {
+            const additionalUrl = `${siteUrl}/${slugVar}-reference-${i}.${ext}`;
+            
+            try {
+              const checkResponse = await fetch(additionalUrl, { method: 'HEAD' });
+              if (checkResponse.ok) {
+                console.log(`Checking additional reference ${i} for ${char.name}: ${additionalUrl}`);
+                if (await addReferenceImage(additionalUrl, char.name, refCount + 1, 'additional')) {
+                  refCount++;
+                  foundAdditional = true;
+                  break; // Found this numbered reference, move to next number
+                }
               }
+            } catch {
+              // File doesn't exist, continue
             }
-          } catch {
-            // File doesn't exist, continue
           }
         }
-        if (!foundAdditional) {
-          break; // No more sequential references found
-        }
+        // Don't break early - continue searching all numbers up to 12
       }
     }
 
