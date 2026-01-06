@@ -22,6 +22,7 @@ import { useState, useEffect } from "react";
 import { FFASetupModal } from "./FFASetupModal";
 import { EventModal } from "./EventModal";
 import { ChapterRequestAdmin } from "./ChapterRequestAdmin";
+import { DocumentationCenter } from "./DocumentationCenter";
 import { Loader2 } from "lucide-react";
 import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 import { useAuth } from "@/contexts/AuthContext";
@@ -299,37 +300,7 @@ export function FFADashboard() {
         </TabsContent>
 
         <TabsContent value="documentation" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Documentation Center
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Manage chapter records, photos, and historical documents
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outline" className="h-20 flex-col">
-                  <Camera className="h-6 w-6 mb-2" />
-                  Photo Archive
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <FileText className="h-6 w-6 mb-2" />
-                  Meeting Minutes
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <Trophy className="h-6 w-6 mb-2" />
-                  Awards & Recognition
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <BookOpen className="h-6 w-6 mb-2" />
-                  Chapter History
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <DocumentationCenter />
         </TabsContent>
 
         <TabsContent value="resources" className="space-y-4">
