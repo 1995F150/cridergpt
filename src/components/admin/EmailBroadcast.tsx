@@ -126,23 +126,30 @@ export function EmailBroadcast() {
   };
 
   const fetchHistory = async () => {
-    // Simulated history - would come from a real table
-    setHistory([
-      {
-        id: '1',
-        subject: 'Welcome to CriderGPT!',
-        recipients: 150,
-        sent_at: new Date(Date.now() - 86400000).toISOString(),
-        status: 'sent'
-      },
-      {
-        id: '2',
-        subject: 'New Features Available!',
-        recipients: 200,
-        sent_at: new Date(Date.now() - 172800000).toISOString(),
-        status: 'sent'
+    try {
+      const { data, error } = await supabase
+        .from('broadcast_history')
+        .select('*')
+        .order('sent_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Error fetching broadcast history:', error);
+        return;
       }
-    ]);
+
+      if (data) {
+        setHistory(data.map(item => ({
+          id: item.id,
+          subject: item.subject,
+          recipients: item.recipients_count,
+          sent_at: item.sent_at,
+          status: item.status as 'sent' | 'failed' | 'pending'
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching history:', error);
+    }
   };
 
   const handleSendBroadcast = async () => {

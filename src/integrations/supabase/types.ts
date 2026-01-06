@@ -491,6 +491,42 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_history: {
+        Row: {
+          body: string
+          created_at: string | null
+          id: string
+          recipients_count: number
+          sent_at: string | null
+          sent_by: string | null
+          status: string | null
+          subject: string
+          target_audience: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          id?: string
+          recipients_count?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          subject: string
+          target_audience: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          id?: string
+          recipients_count?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          subject?: string
+          target_audience?: string
+        }
+        Relationships: []
+      }
       buyers: {
         Row: {
           created_at: string | null
@@ -2791,6 +2827,39 @@ export type Database = {
           last_login_at?: string | null
           permissions?: Json | null
           role?: string | null
+        }
+        Relationships: []
+      }
+      system_status: {
+        Row: {
+          estimated_duration: string | null
+          id: string
+          maintenance_mode: boolean | null
+          message: string | null
+          scheduled_end: string | null
+          updated_at: string | null
+          updated_by: string | null
+          whitelist_ips: string[] | null
+        }
+        Insert: {
+          estimated_duration?: string | null
+          id?: string
+          maintenance_mode?: boolean | null
+          message?: string | null
+          scheduled_end?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          whitelist_ips?: string[] | null
+        }
+        Update: {
+          estimated_duration?: string | null
+          id?: string
+          maintenance_mode?: boolean | null
+          message?: string | null
+          scheduled_end?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          whitelist_ips?: string[] | null
         }
         Relationships: []
       }

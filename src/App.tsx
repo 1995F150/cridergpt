@@ -10,6 +10,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { MaintenanceGuard } from "@/components/MaintenanceGuard";
 import { initGA } from './utils/analytics';
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -44,6 +45,7 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <AuthProvider>
+              <MaintenanceGuard>
               <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                 <Routes>
                   {/* Public routes */}
@@ -64,6 +66,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
+              </MaintenanceGuard>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>

@@ -41,10 +41,10 @@ const COLORS = ['#22c55e', '#3b82f6', '#a855f7', '#f59e0b'];
 export function RevenueDashboard() {
   const [stats, setStats] = useState<RevenueStats>({
     mrr: 0,
-    mrrChange: 5.2,
+    mrrChange: 0, // Will show as estimate
     totalRevenue: 0,
     activeSubscribers: 0,
-    churnRate: 2.1,
+    churnRate: 0, // Will show as estimate
     ltv: 0
   });
   const [tierDistribution, setTierDistribution] = useState<TierDistribution[]>([]);
@@ -145,30 +145,34 @@ export function RevenueDashboard() {
     {
       title: 'Monthly Recurring Revenue',
       value: `$${stats.mrr.toFixed(2)}`,
-      change: stats.mrrChange,
+      change: null, // Real calculation not available
       icon: DollarSign,
-      gradient: 'from-green-500 to-emerald-500'
+      gradient: 'from-green-500 to-emerald-500',
+      isEstimate: false
     },
     {
       title: 'Active Subscribers',
       value: stats.activeSubscribers.toString(),
-      change: 12.5,
+      change: null, // Real calculation not available
       icon: Users,
-      gradient: 'from-blue-500 to-cyan-500'
+      gradient: 'from-blue-500 to-cyan-500',
+      isEstimate: false
     },
     {
       title: 'Churn Rate',
-      value: `${stats.churnRate}%`,
-      change: -0.3,
+      value: 'N/A',
+      change: null,
       icon: TrendingUp,
-      gradient: 'from-purple-500 to-pink-500'
+      gradient: 'from-purple-500 to-pink-500',
+      isEstimate: true
     },
     {
       title: 'Est. Lifetime Value',
       value: `$${stats.ltv.toFixed(2)}`,
-      change: 8.1,
+      change: null,
       icon: CreditCard,
-      gradient: 'from-orange-500 to-amber-500'
+      gradient: 'from-orange-500 to-amber-500',
+      isEstimate: true
     }
   ];
 
@@ -193,10 +197,17 @@ export function RevenueDashboard() {
                 <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
                   <stat.icon className="h-5 w-5 text-white" />
                 </div>
-                <div className={`flex items-center gap-1 text-sm ${stat.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {stat.change >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                  {Math.abs(stat.change)}%
-                </div>
+                {stat.isEstimate && (
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                    Est.
+                  </span>
+                )}
+                {stat.change !== null && (
+                  <div className={`flex items-center gap-1 text-sm ${stat.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {stat.change >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                    {Math.abs(stat.change)}%
+                  </div>
+                )}
               </div>
               <div className="mt-3">
                 <p className="text-2xl font-bold">{stat.value}</p>

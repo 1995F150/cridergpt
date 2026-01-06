@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.chapter-request-email]
 verify_jwt = false
+
+[functions.send-broadcast]
+verify_jwt = false

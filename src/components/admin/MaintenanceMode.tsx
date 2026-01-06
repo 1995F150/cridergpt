@@ -11,6 +11,7 @@ import { AlertTriangle, Shield, Clock, Plus, X, Loader2, CheckCircle } from 'luc
 import { toast } from 'sonner';
 
 interface MaintenanceConfig {
+  id?: string;
   enabled: boolean;
   message: string;
   estimatedDuration: string;
@@ -28,6 +29,7 @@ export function MaintenanceMode() {
   });
   const [newIp, setNewIp] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
@@ -36,21 +38,51 @@ export function MaintenanceMode() {
 
   const loadConfig = async () => {
     try {
-      // Try to load from localStorage for now (could be moved to database)
-      const saved = localStorage.getItem('maintenance_config');
-      if (saved) {
-        setConfig(JSON.parse(saved));
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('system_status')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Error loading maintenance config:', error);
+        return;
+      }
+
+      if (data) {
+        setConfig({
+          id: data.id,
+          enabled: data.maintenance_mode || false,
+          message: data.message || 'We are currently performing scheduled maintenance. Please check back soon!',
+          estimatedDuration: data.estimated_duration || '1 hour',
+          whitelistIps: data.whitelist_ips || [],
+          scheduledEnd: data.scheduled_end
+        });
       }
     } catch (error) {
       console.error('Error loading maintenance config:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const saveConfig = async () => {
     setSaving(true);
     try {
-      // Save to localStorage (maintenance mode is stored client-side for simplicity)
-      localStorage.setItem('maintenance_config', JSON.stringify(config));
+      const { error } = await supabase
+        .from('system_status')
+        .update({
+          maintenance_mode: config.enabled,
+          message: config.message,
+          estimated_duration: config.estimatedDuration,
+          whitelist_ips: config.whitelistIps,
+          scheduled_end: config.scheduledEnd,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', config.id);
+
+      if (error) throw error;
 
       toast.success('Maintenance settings saved');
       setHasChanges(false);
@@ -102,6 +134,14 @@ export function MaintenanceMode() {
     setConfig(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
