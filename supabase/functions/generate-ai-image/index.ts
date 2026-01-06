@@ -1,6 +1,100 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
+import { decode as base64Decode, encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+
+// Watermark configuration
+const WATERMARK_URL = 'https://crideros.lovable.app/cridergpt-watermark.png';
+const WATERMARK_OPACITY = 0.7;
+const WATERMARK_SCALE = 0.15; // 15% of image width
+const WATERMARK_POSITION = 'bottom-right'; // Position of watermark
+const WATERMARK_MARGIN = 20; // Pixels from edge
+
+// Function to add watermark to base64 image
+async function addWatermark(base64Image: string): Promise<string> {
+  try {
+    // Extract the base64 data (remove data:image/png;base64, prefix if present)
+    const base64Data = base64Image.includes(',') 
+      ? base64Image.split(',')[1] 
+      : base64Image;
+    
+    // Get the image format from prefix
+    const formatMatch = base64Image.match(/data:image\/(\w+);base64/);
+    const format = formatMatch ? formatMatch[1] : 'png';
+    
+    // Fetch the watermark image
+    const watermarkResponse = await fetch(WATERMARK_URL);
+    if (!watermarkResponse.ok) {
+      console.error('Failed to fetch watermark:', watermarkResponse.status);
+      return base64Image; // Return original if watermark fails
+    }
+    
+    const watermarkBuffer = await watermarkResponse.arrayBuffer();
+    const watermarkBase64 = base64Encode(new Uint8Array(watermarkBuffer));
+    
+    // Use the AI to composite the watermark onto the image
+    // This approach ensures proper transparency and scaling
+    const compositePrompt = `
+Take this image and add the provided watermark logo to the ${WATERMARK_POSITION.replace('-', ' ')} corner.
+The watermark should be:
+- Scaled to approximately ${WATERMARK_SCALE * 100}% of the image width
+- Positioned ${WATERMARK_MARGIN}px from the edges
+- Semi-transparent (about ${WATERMARK_OPACITY * 100}% opacity)
+- DO NOT modify any other part of the image
+- Keep the original image EXACTLY as is, only add the watermark overlay
+- The watermark should be clearly visible but not distracting
+Return ONLY the watermarked image.
+`;
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash-image-preview',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: compositePrompt },
+            { 
+              type: 'image_url', 
+              image_url: { url: `data:image/${format};base64,${base64Data}` }
+            },
+            { 
+              type: 'image_url', 
+              image_url: { url: `data:image/png;base64,${watermarkBase64}` }
+            }
+          ]
+        }],
+        modalities: ['image', 'text'],
+        temperature: 0
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Watermark compositing failed:', response.status);
+      return base64Image; // Return original if compositing fails
+    }
+
+    const data = await response.json();
+    const watermarkedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    
+    if (watermarkedImage) {
+      console.log('Watermark applied successfully');
+      return watermarkedImage;
+    }
+    
+    console.warn('No watermarked image returned, using original');
+    return base64Image;
+  } catch (error) {
+    console.error('Error adding watermark:', error);
+    return base64Image; // Return original on error
+  }
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -453,7 +547,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const imageResult = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    let imageResult = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
     if (!imageResult) {
       const textResponse = data.choices?.[0]?.message?.content || 'No response';
@@ -463,6 +557,10 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Apply watermark to the generated image
+    console.log('Applying CriderGPT watermark...');
+    imageResult = await addWatermark(imageResult);
 
     // Log generation
     const authHeader = req.headers.get('Authorization');
