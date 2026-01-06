@@ -10,7 +10,7 @@ const corsHeaders = {
 
 // Character detection keywords
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
-  'jessie': ['jessie', 'crider', 'creator', 'jesse'],
+  'jessie': ['jessie', 'crider', 'creator', 'jesse', 'ffa jacket', 'historian jacket', 'ffa blue jacket', 'his jacket', 'ffa officer'],
   'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor', 'dr-harman'],
   'savanaa': ['savanaa', 'savannah', 'sav', 'savanna'],
   'jr-hoback': ['jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback']
@@ -108,7 +108,7 @@ Anyone who knows these people must INSTANTLY recognize them.
 const CHARACTER_PROFILES: Record<string, string> = {
   'jessie': `
 CHARACTER: JESSIE CRIDER
-Role: Primary Creator / App Owner
+Role: Primary Creator / App Owner / FFA Historian 2025-2026
 Gender: Male (DO NOT CHANGE)
 Age: Young adult (DO NOT CHANGE)
 Hair: Blonde/light brown, wavy texture - COPY FROM REFERENCE
@@ -116,6 +116,27 @@ Skin: Light/fair complexion - COPY FROM REFERENCE
 Key Features: Wavy light hair, young male features, casual modern style
 Reference Photo: 1 provided - COPY THIS FACE WITH 100% ACCURACY
 CRITICAL: Every facial feature must match the reference photo exactly
+
+🎽 FFA JACKET IDENTITY (PERMANENT - Use when contextually appropriate):
+When generating Jessie in formal, agricultural, leadership, ceremony, FFA events, or public appearance contexts:
+- Official FFA Blue Corduroy Jacket with visible ribbing texture
+- Gold embroidered "Jessie Crider" on front left chest
+- Gold embroidered "Historian" title below name
+- Gold embroidered "2025-2026" year below title
+- Official FFA emblem patch on front right chest (eagle, owl, plow, rising sun design)
+- Gold/yellow accent trim on collar
+- Officer pins on front left
+- Traditional structured, waist-length fit
+
+FFA JACKET GENERATION RULES:
+- When explicitly requested ("FFA jacket", "in his FFA jacket", "historian jacket") → ALWAYS include jacket with exact specifications
+- Color: Deep navy blue corduroy ONLY - no alterations permitted
+- Embroidery: Gold/yellow thread ONLY
+- Layout: Name/title on left, FFA emblem on right - NEVER swap
+- DO NOT feminize, stylize incorrectly, or merge with non-FFA uniforms
+- The jacket is SYMBOLIC, EARNED, and OFFICIAL - represent it with accuracy
+
+FFA Jacket Reference Photo: /ffa-jacket-reference-1.jpg - COPY THIS EXACTLY
 `,
   'dr-harman': `
 CHARACTER: DR. HARMAN  
