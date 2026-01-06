@@ -201,10 +201,11 @@ serve(async (req) => {
 
     console.log('Final detected slugs:', detectedSlugs);
 
-    // Get ALL references for detected characters
-    let characters = providedCharacters || [];
+    // Get ALL references for detected characters from the DATABASE (not provided chars)
+    // This ensures we always have the correct reference_photo_url
+    let characters: any[] = [];
 
-    if (detectedSlugs.length > 0 && characters.length === 0) {
+    if (detectedSlugs.length > 0) {
       characters = characterRefs.filter((c: any) => {
         const charSlug = c.slug?.toLowerCase() || '';
         return detectedSlugs.some(detectedSlug =>
