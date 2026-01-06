@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MessageSquare, CreditCard, AlertTriangle, Activity, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, MessageSquare, CreditCard, AlertTriangle, Activity, TrendingUp, ArrowRight, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardStats {
   totalUsers: number;
@@ -12,7 +14,12 @@ interface DashboardStats {
   totalTokensUsed: number;
 }
 
-export function AdminDashboard() {
+interface AdminDashboardProps {
+  onNavigateToTab?: (tab: string) => void;
+}
+
+export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeSubscriptions: 0,
@@ -82,66 +89,171 @@ export function AdminDashboard() {
   }, []);
 
   const statCards = [
-    { title: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-500' },
-    { title: 'Active Subscriptions', value: stats.activeSubscriptions, icon: CreditCard, color: 'text-green-500' },
-    { title: 'Pending Reports', value: stats.pendingReports, icon: AlertTriangle, color: 'text-yellow-500' },
-    { title: 'Total Messages', value: stats.totalMessages.toLocaleString(), icon: MessageSquare, color: 'text-purple-500' },
-    { title: "Today's Signups", value: stats.todaySignups, icon: TrendingUp, color: 'text-cyan-500' },
-    { title: 'Total Tokens Used', value: stats.totalTokensUsed.toLocaleString(), icon: Activity, color: 'text-orange-500' },
+    { 
+      title: 'Total Users', 
+      value: stats.totalUsers, 
+      icon: Users, 
+      gradient: 'from-blue-500 to-cyan-500',
+      bgGradient: 'from-blue-500/10 to-cyan-500/10'
+    },
+    { 
+      title: 'Active Subscriptions', 
+      value: stats.activeSubscriptions, 
+      icon: CreditCard, 
+      gradient: 'from-green-500 to-emerald-500',
+      bgGradient: 'from-green-500/10 to-emerald-500/10'
+    },
+    { 
+      title: 'Pending Reports', 
+      value: stats.pendingReports, 
+      icon: AlertTriangle, 
+      gradient: 'from-yellow-500 to-orange-500',
+      bgGradient: 'from-yellow-500/10 to-orange-500/10',
+      urgent: stats.pendingReports > 0
+    },
+    { 
+      title: 'Total Messages', 
+      value: stats.totalMessages.toLocaleString(), 
+      icon: MessageSquare, 
+      gradient: 'from-purple-500 to-pink-500',
+      bgGradient: 'from-purple-500/10 to-pink-500/10'
+    },
+    { 
+      title: "Today's Signups", 
+      value: stats.todaySignups, 
+      icon: TrendingUp, 
+      gradient: 'from-cyan-500 to-blue-500',
+      bgGradient: 'from-cyan-500/10 to-blue-500/10'
+    },
+    { 
+      title: 'Total Tokens Used', 
+      value: stats.totalTokensUsed.toLocaleString(), 
+      icon: Activity, 
+      gradient: 'from-orange-500 to-red-500',
+      bgGradient: 'from-orange-500/10 to-red-500/10'
+    },
   ];
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="pb-2">
-              <div className="h-4 bg-muted rounded w-24" />
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 bg-muted rounded w-16" />
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        {/* Welcome skeleton */}
+        <div className="h-20 rounded-xl bg-muted animate-pulse" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="pb-2">
+                <div className="h-4 bg-muted rounded w-24" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-muted rounded w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Welcome Banner */}
+      <Card className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-primary/20">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Shield className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold">Welcome back, Admin</h2>
+              <p className="text-muted-foreground">
+                {stats.pendingReports > 0 
+                  ? `You have ${stats.pendingReports} pending report${stats.pendingReports > 1 ? 's' : ''} to review.`
+                  : 'All systems running smoothly. No pending reports.'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {statCards.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Card 
+            key={stat.title} 
+            className={`relative overflow-hidden transition-all hover:shadow-lg ${stat.urgent ? 'ring-2 ring-yellow-500/50' : ''}`}
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-50`} />
+            <CardHeader className="relative flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <div className={`h-9 w-9 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}>
+                <stat.icon className="h-4 w-4 text-white" />
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+            <CardContent className="relative">
+              <div className="text-3xl font-bold">{stat.value}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
+      {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Quick Actions
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <button className="p-3 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium transition-colors">
-            View All Users
-          </button>
-          <button className="p-3 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 text-sm font-medium transition-colors">
-            Review Reports
-          </button>
-          <button className="p-3 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-500 text-sm font-medium transition-colors">
-            Create Announcement
-          </button>
-          <button className="p-3 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 text-sm font-medium transition-colors">
-            View Logs
-          </button>
+        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Button 
+            variant="outline" 
+            className="h-auto py-4 flex flex-col items-center gap-2 bg-blue-500/5 hover:bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+            onClick={() => {
+              // Find the tabs and click the users tab
+              const usersTab = document.querySelector('[value="users"]') as HTMLElement;
+              usersTab?.click();
+            }}
+          >
+            <Users className="h-5 w-5" />
+            <span className="text-sm font-medium">View All Users</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-auto py-4 flex flex-col items-center gap-2 bg-yellow-500/5 hover:bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+            onClick={() => {
+              const modTab = document.querySelector('[value="moderation"]') as HTMLElement;
+              modTab?.click();
+            }}
+          >
+            <AlertTriangle className="h-5 w-5" />
+            <span className="text-sm font-medium">Review Reports</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-auto py-4 flex flex-col items-center gap-2 bg-green-500/5 hover:bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400"
+            onClick={() => {
+              const settingsTab = document.querySelector('[value="settings"]') as HTMLElement;
+              settingsTab?.click();
+            }}
+          >
+            <MessageSquare className="h-5 w-5" />
+            <span className="text-sm font-medium">Create Announcement</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-auto py-4 flex flex-col items-center gap-2 bg-purple-500/5 hover:bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400"
+            onClick={() => {
+              const logsTab = document.querySelector('[value="logs"]') as HTMLElement;
+              logsTab?.click();
+            }}
+          >
+            <Activity className="h-5 w-5" />
+            <span className="text-sm font-medium">View Logs</span>
+          </Button>
         </CardContent>
       </Card>
     </div>

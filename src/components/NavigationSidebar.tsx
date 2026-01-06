@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
   MessageSquare, 
   Calculator, 
@@ -31,9 +33,12 @@ import {
   Wrench,
   Package,
   Eye,
-  Shield
+  Shield,
+  Users,
+  Gamepad2
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NavigationSidebarProps {
   activeTab: string;
@@ -41,93 +46,224 @@ interface NavigationSidebarProps {
   isDeveloper?: boolean;
 }
 
-const navigationItems = [
-  { id: 'chat', label: 'Chat', icon: MessageSquare },
-  { id: 'vision-memory', label: 'Vision Memory', icon: Eye },
-  { id: 'ffa', label: 'FFA Center', icon: Wheat },
-  { id: 'calendar', label: 'Calendar', icon: Calendar },
-  { id: 'calculators', label: 'Calculators', icon: Calculator },
-  { id: 'invoices', label: 'Invoices', icon: FileText },
-  { id: 'files', label: 'Files', icon: Folder },
-  { id: 'gallery', label: 'Gallery', icon: Images },
-  { id: 'code', label: 'Code', icon: Code },
-  { id: 'maps', label: 'Maps', icon: Map },
-  { id: 'media', label: 'Media', icon: Play },
-  { id: 'projects', label: 'Projects', icon: Folder },
-  { id: 'contact', label: 'Contact', icon: Mail },
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'social', label: 'Community Chat', icon: MessageSquare },
-  { id: 'payment', label: 'Payment', icon: DollarSign },
-  { id: 'plan', label: 'Plan', icon: Layers },
-  { id: 'reviews', label: 'Reviews', icon: Star },
-  { id: 'updates', label: 'Updates', icon: Bell },
-  { id: 'timeline', label: 'Timeline', icon: Clock },
-  { id: 'memorial', label: 'Memorial', icon: Heart },
-  { id: 'mod-tools', label: 'Mod Creation Tools', icon: Wrench },
-  { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
-  { id: 'document-ai', label: 'Document AI', icon: Brain },
-  { id: 'app-converter', label: 'App Converter', icon: Smartphone },
-  { id: 'cloud-gaming', label: 'Cloud Gaming', icon: Cloud },
-  { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
-  { id: 'studio', label: '3D Studio', icon: Cuboid },
-  { id: 'zip-to-exe', label: 'ZIP-to-EXE Builder', icon: Package },
-  { id: 'admin', label: 'Admin Panel', icon: Shield, adminOnly: true },
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  developerOnly?: boolean;
+  adminOnly?: boolean;
+  external?: boolean;
+  url?: string;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navigationGroups: NavGroup[] = [
+  {
+    label: 'MAIN',
+    items: [
+      { id: 'chat', label: 'Chat', icon: MessageSquare },
+      { id: 'vision-memory', label: 'Vision Memory', icon: Eye },
+    ]
+  },
+  {
+    label: 'PRODUCTIVITY',
+    items: [
+      { id: 'ffa', label: 'FFA Center', icon: Wheat },
+      { id: 'calendar', label: 'Calendar', icon: Calendar },
+      { id: 'calculators', label: 'Calculators', icon: Calculator },
+      { id: 'invoices', label: 'Invoices', icon: FileText },
+      { id: 'files', label: 'Files', icon: Folder },
+      { id: 'gallery', label: 'Gallery', icon: Images },
+      { id: 'projects', label: 'Projects', icon: Folder },
+    ]
+  },
+  {
+    label: 'CREATIVE',
+    items: [
+      { id: 'code', label: 'Code', icon: Code },
+      { id: 'maps', label: 'Maps', icon: Map },
+      { id: 'media', label: 'Media', icon: Play },
+      { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
+      { id: 'document-ai', label: 'Document AI', icon: Brain },
+      { id: 'studio', label: '3D Studio', icon: Cuboid },
+    ]
+  },
+  {
+    label: 'COMMUNITY',
+    items: [
+      { id: 'social', label: 'Community Chat', icon: Users },
+      { id: 'reviews', label: 'Reviews', icon: Star },
+    ]
+  },
+  {
+    label: 'ACCOUNT',
+    items: [
+      { id: 'profile', label: 'Profile', icon: User },
+      { id: 'plan', label: 'Plan', icon: Layers },
+      { id: 'payment', label: 'Payment', icon: DollarSign },
+    ]
+  },
+  {
+    label: 'TOOLS',
+    items: [
+      { id: 'app-converter', label: 'App Converter', icon: Smartphone },
+      { id: 'zip-to-exe', label: 'ZIP-to-EXE Builder', icon: Package },
+      { id: 'mod-tools', label: 'Mod Creation Tools', icon: Wrench },
+      { id: 'cloud-gaming', label: 'Cloud Gaming', icon: Gamepad2 },
+      { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
+    ]
+  },
+  {
+    label: 'INFO',
+    items: [
+      { id: 'updates', label: 'Updates', icon: Bell },
+      { id: 'timeline', label: 'Timeline', icon: Clock },
+      { id: 'memorial', label: 'Memorial', icon: Heart },
+      { id: 'contact', label: 'Contact', icon: Mail },
+    ]
+  }
+];
+
+const externalLinks: NavItem[] = [
   { id: 'farming-simulator', label: 'Farming Simulator', icon: Wheat, external: true, url: 'https://farmgenie-studio.lovable.app/' }
 ];
 
 export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false }: NavigationSidebarProps) {
   const { isAdmin } = useAdmin();
+  const [pendingCount, setPendingCount] = useState(0);
+  
+  // Fetch pending reports and chapter requests count for admin badge
+  useEffect(() => {
+    async function fetchPendingCounts() {
+      if (!isAdmin) return;
+      
+      try {
+        const [reportsRes, chaptersRes] = await Promise.all([
+          supabase.from('user_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+          supabase.from('chapter_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending')
+        ]);
+        
+        const total = (reportsRes.count || 0) + (chaptersRes.count || 0);
+        setPendingCount(total);
+      } catch (error) {
+        console.error('Error fetching pending counts:', error);
+      }
+    }
+    
+    fetchPendingCounts();
+  }, [isAdmin]);
+
+  const renderNavItem = (item: NavItem) => {
+    // Hide developer-only items from non-developers
+    if (item.developerOnly && !isDeveloper) {
+      return null;
+    }
+    // Hide admin-only items from non-admins
+    if (item.adminOnly && !isAdmin) {
+      return null;
+    }
+    
+    const Icon = item.icon;
+    
+    if (item.external) {
+      return (
+        <Button
+          key={item.id}
+          variant="ghost"
+          className="w-full justify-start gap-3 h-9 text-sm"
+          onClick={() => window.open(item.url, '_blank')}
+        >
+          <Icon className="h-4 w-4" />
+          {item.label}
+          <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+        </Button>
+      );
+    }
+    
+    return (
+      <Button
+        key={item.id}
+        variant={activeTab === item.id ? "secondary" : "ghost"}
+        className={cn(
+          "w-full justify-start gap-3 h-9 text-sm",
+          activeTab === item.id && "bg-primary/10 text-primary font-medium"
+        )}
+        onClick={() => onTabChange(item.id)}
+      >
+        <Icon className="h-4 w-4" />
+        {item.label}
+      </Button>
+    );
+  };
   
   return (
-    <div className="w-64 bg-card border-r border-border">
-      <div className="p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">CriderGPT Dashboard</h2>
+    <div className="w-64 bg-card border-r border-border flex flex-col">
+      <div className="p-6 pb-4">
+        <h2 className="text-lg font-semibold text-foreground">CriderGPT Dashboard</h2>
       </div>
       
-      <ScrollArea className="h-[calc(100vh-100px)]">
-        <div className="space-y-1 p-3">
-          {navigationItems.map((item) => {
-            // Hide developer-only items from non-developers
-            if ((item as any).developerOnly && !isDeveloper) {
-              return null;
-            }
-            // Hide admin-only items from non-admins
-            if ((item as any).adminOnly && !isAdmin) {
-              return null;
-            }
-            
-            const Icon = item.icon;
-            
-            if (item.external) {
-              return (
+      <ScrollArea className="flex-1">
+        <div className="px-3 pb-4">
+          {navigationGroups.map((group, groupIndex) => (
+            <div key={group.label} className="mb-4">
+              <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground tracking-wider">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map(renderNavItem)}
+              </div>
+            </div>
+          ))}
+          
+          {/* External Links */}
+          {externalLinks.length > 0 && (
+            <div className="mb-4">
+              <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground tracking-wider">
+                EXTERNAL
+              </p>
+              <div className="space-y-0.5">
+                {externalLinks.map(renderNavItem)}
+              </div>
+            </div>
+          )}
+          
+          {/* Admin Section - Only visible to admins */}
+          {isAdmin && (
+            <>
+              <Separator className="my-4" />
+              <div className="rounded-lg bg-gradient-to-r from-destructive/10 to-orange-500/10 border border-destructive/20 p-3">
+                <p className="px-1 mb-2 text-xs font-bold text-destructive tracking-wider flex items-center gap-2">
+                  <Shield className="h-3 w-3" />
+                  ADMIN
+                </p>
                 <Button
-                  key={item.id}
-                  variant="ghost"
-                  className="w-full justify-start gap-3 h-10"
-                  onClick={() => window.open(item.url, '_blank')}
+                  variant={activeTab === 'admin' ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 h-10 text-sm",
+                    activeTab === 'admin' 
+                      ? "bg-destructive/20 text-destructive font-medium border border-destructive/30" 
+                      : "hover:bg-destructive/10 hover:text-destructive"
+                  )}
+                  onClick={() => onTabChange('admin')}
                 >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                  <ExternalLink className="h-3 w-3 ml-auto" />
+                  <Shield className="h-4 w-4" />
+                  Admin Panel
+                  {pendingCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="ml-auto h-5 min-w-5 flex items-center justify-center text-xs px-1.5"
+                    >
+                      {pendingCount}
+                    </Badge>
+                  )}
                 </Button>
-              );
-            }
-            
-            return (
-              <Button
-                key={item.id}
-                variant={activeTab === item.id ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start gap-3 h-10",
-                  activeTab === item.id && "bg-primary/10 text-primary"
-                )}
-                onClick={() => onTabChange(item.id)}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Button>
-            );
-          })}
+              </div>
+            </>
+          )}
         </div>
       </ScrollArea>
     </div>
