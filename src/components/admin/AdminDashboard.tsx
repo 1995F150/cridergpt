@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Users, MessageSquare, CreditCard, AlertTriangle, Activity, TrendingUp, ArrowRight, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { ActivityFeed } from './ActivityFeed';
 
 interface DashboardStats {
   totalUsers: number;
@@ -200,62 +201,67 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Quick Actions
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2 bg-blue-500/5 hover:bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
-            onClick={() => {
-              // Find the tabs and click the users tab
-              const usersTab = document.querySelector('[value="users"]') as HTMLElement;
-              usersTab?.click();
-            }}
-          >
-            <Users className="h-5 w-5" />
-            <span className="text-sm font-medium">View All Users</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2 bg-yellow-500/5 hover:bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-            onClick={() => {
-              const modTab = document.querySelector('[value="moderation"]') as HTMLElement;
-              modTab?.click();
-            }}
-          >
-            <AlertTriangle className="h-5 w-5" />
-            <span className="text-sm font-medium">Review Reports</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2 bg-green-500/5 hover:bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400"
-            onClick={() => {
-              const settingsTab = document.querySelector('[value="settings"]') as HTMLElement;
-              settingsTab?.click();
-            }}
-          >
-            <MessageSquare className="h-5 w-5" />
-            <span className="text-sm font-medium">Create Announcement</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2 bg-purple-500/5 hover:bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400"
-            onClick={() => {
-              const logsTab = document.querySelector('[value="logs"]') as HTMLElement;
-              logsTab?.click();
-            }}
-          >
-            <Activity className="h-5 w-5" />
-            <span className="text-sm font-medium">View Logs</span>
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Activity Feed & Quick Actions */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Real-Time Activity Feed */}
+        <ActivityFeed />
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Quick Actions
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-3">
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center gap-2 bg-blue-500/5 hover:bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+              onClick={() => {
+                const usersTab = document.querySelector('[value="users"]') as HTMLElement;
+                usersTab?.click();
+              }}
+            >
+              <Users className="h-5 w-5" />
+              <span className="text-sm font-medium">View All Users</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center gap-2 bg-yellow-500/5 hover:bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+              onClick={() => {
+                const modTab = document.querySelector('[value="moderation"]') as HTMLElement;
+                modTab?.click();
+              }}
+            >
+              <AlertTriangle className="h-5 w-5" />
+              <span className="text-sm font-medium">Review Reports</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center gap-2 bg-green-500/5 hover:bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400"
+              onClick={() => {
+                const settingsTab = document.querySelector('[value="settings"]') as HTMLElement;
+                settingsTab?.click();
+              }}
+            >
+              <MessageSquare className="h-5 w-5" />
+              <span className="text-sm font-medium">Create Announcement</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center gap-2 bg-purple-500/5 hover:bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400"
+              onClick={() => {
+                const logsTab = document.querySelector('[value="logs"]') as HTMLElement;
+                logsTab?.click();
+              }}
+            >
+              <Activity className="h-5 w-5" />
+              <span className="text-sm font-medium">View Logs</span>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
@@ -9,6 +9,9 @@ import { SystemLogs } from '@/components/admin/SystemLogs';
 import { SystemSettings } from '@/components/admin/SystemSettings';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { ChapterRequestAdmin } from '@/components/FFA/ChapterRequestAdmin';
+import { EmailBroadcast } from '@/components/admin/EmailBroadcast';
+import { RevenueDashboard } from '@/components/admin/RevenueDashboard';
+import { MaintenanceMode } from '@/components/admin/MaintenanceMode';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -141,6 +144,27 @@ export function AdminPanel() {
             Logs
           </TabsTrigger>
           <TabsTrigger 
+            value="broadcast" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Mail className="h-4 w-4" />
+            Broadcast
+          </TabsTrigger>
+          <TabsTrigger 
+            value="revenue" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <DollarSign className="h-4 w-4" />
+            Revenue
+          </TabsTrigger>
+          <TabsTrigger 
+            value="maintenance" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Maintenance
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
@@ -175,6 +199,18 @@ export function AdminPanel() {
 
         <TabsContent value="logs">
           <SystemLogs />
+        </TabsContent>
+
+        <TabsContent value="broadcast">
+          <EmailBroadcast />
+        </TabsContent>
+
+        <TabsContent value="revenue">
+          <RevenueDashboard />
+        </TabsContent>
+
+        <TabsContent value="maintenance">
+          <MaintenanceMode />
         </TabsContent>
 
         <TabsContent value="settings">
