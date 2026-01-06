@@ -34,7 +34,7 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
         .from('system_status')
         .select('*')
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching system status:', error);

@@ -143,7 +143,7 @@ export const SocialChatInterface: React.FC = () => {
               .from('crider_chat_users')
               .select('user_id, display_name, email, avatar_url, status')
               .eq('user_id', friendId)
-              .single();
+              .maybeSingle();
 
             return {
               ...friendship,
@@ -188,7 +188,7 @@ export const SocialChatInterface: React.FC = () => {
               .from('crider_chat_users')
               .select('user_id, display_name, email, avatar_url')
               .eq('user_id', otherUserId)
-              .single();
+              .maybeSingle();
 
             return {
               ...request,
@@ -301,7 +301,7 @@ export const SocialChatInterface: React.FC = () => {
               .from('crider_chat_users')
               .select('user_id, display_name, email, avatar_url, status')
               .eq('user_id', friendId)
-              .single();
+              .maybeSingle();
 
             // Get last message
             const { data: lastMessage } = await supabase
@@ -310,7 +310,7 @@ export const SocialChatInterface: React.FC = () => {
               .eq('conversation_id', conv.id)
               .order('created_at', { ascending: false })
               .limit(1)
-              .single();
+              .maybeSingle();
 
             return {
               ...conv,
@@ -343,7 +343,7 @@ export const SocialChatInterface: React.FC = () => {
         .from('direct_conversations')
         .select('id')
         .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${friendId}),and(participant1_id.eq.${friendId},participant2_id.eq.${user.id})`)
-        .single();
+        .maybeSingle();
 
       if (existingConv) {
         setCurrentConversation(existingConv.id);
