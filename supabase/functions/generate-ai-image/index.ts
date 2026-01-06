@@ -10,10 +10,10 @@ const corsHeaders = {
 
 // Character detection keywords
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
-  'jessie': ['jessie', 'crider', 'me', 'myself', 'creator', 'jesse'],
+  'jessie': ['jessie', 'crider', 'creator', 'jesse'],
   'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor', 'dr-harman'],
-  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna', 'girlfriend', 'her', 'she', 'girl', 'woman'],
-  'jr-hoback': ['jr hoback', 'jr-hoback', 'j.r. hoback', 'jr', 'hoback', 'j.r.']
+  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna'],
+  'jr-hoback': ['jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback']
 };
 
 const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback'];
