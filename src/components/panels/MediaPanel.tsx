@@ -9,7 +9,7 @@ import { MediaUpload } from '@/components/media/MediaUpload';
 import { CharacterManager } from '@/components/media/CharacterManager';
 
 export function MediaPanel() {
-  const [activeTab, setActiveTab] = useState('generator');
+  const [activeTab, setActiveTab] = useState('library');
   const [remixSource, setRemixSource] = useState<{ url: string; path: string } | null>(null);
 
   const handleRemix = (item: { url: string; path: string }) => {

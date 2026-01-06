@@ -38,6 +38,7 @@ import {
   Gamepad2
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface NavigationSidebarProps {
@@ -52,6 +53,7 @@ interface NavItem {
   icon: React.ElementType;
   developerOnly?: boolean;
   adminOnly?: boolean;
+  emailRestricted?: string[];
   external?: boolean;
   url?: string;
 }
@@ -86,7 +88,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { id: 'code', label: 'Code', icon: Code },
       { id: 'maps', label: 'Maps', icon: Map },
-      { id: 'media', label: 'Media', icon: Play },
+      { id: 'media', label: 'Media', icon: Play, emailRestricted: ['jessiecrider3@gmail.com'] },
       { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
       { id: 'document-ai', label: 'Document AI', icon: Brain },
       { id: 'studio', label: '3D Studio', icon: Cuboid },
@@ -134,6 +136,7 @@ const externalLinks: NavItem[] = [
 
 export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false }: NavigationSidebarProps) {
   const { isAdmin } = useAdmin();
+  const { user } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
   
   // Fetch pending reports and chapter requests count for admin badge
@@ -165,6 +168,14 @@ export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false 
     // Hide admin-only items from non-admins
     if (item.adminOnly && !isAdmin) {
       return null;
+    }
+    // Hide email-restricted items from users not in the allowed list
+    if (item.emailRestricted && item.emailRestricted.length > 0) {
+      const userEmail = user?.email?.toLowerCase();
+      const allowedEmails = item.emailRestricted.map(e => e.toLowerCase());
+      if (!userEmail || !allowedEmails.includes(userEmail)) {
+        return null;
+      }
     }
     
     const Icon = item.icon;
