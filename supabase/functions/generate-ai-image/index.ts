@@ -285,10 +285,21 @@ serve(async (req) => {
 
     // Use ALL references for maximum accuracy - the model should combine them intelligently
     // For Savanaa with 3 refs, use all 3. For single-ref characters, use the 1.
-    const MAX_REFS_PER_CHARACTER = 5; // Increased to ensure all refs are used
+  const MAX_REFS_PER_CHARACTER = 5; // Increased to ensure all refs are used
 
-    const selectedCharactersForRefs: any[] = [];
-    const validationErrors: string[] = [];
+  const selectedCharactersForRefs: any[] = [];
+  const validationErrors: string[] = [];
+  
+  // Reference loading tracker for detailed logging
+  const referenceLoadingLog: {
+    attempted: { charName: string; url: string; type: 'primary' | 'additional' }[];
+    success: { charName: string; url: string; type: 'primary' | 'additional' }[];
+    failed: { charName: string; url: string; type: 'primary' | 'additional'; reason: string }[];
+  } = {
+    attempted: [],
+    success: [],
+    failed: []
+  };
     
     for (const [groupName, refs] of Object.entries(characterGroups)) {
       console.log(`Processing group "${groupName}" with ${refs.length} refs`);
@@ -412,8 +423,15 @@ serve(async (req) => {
     const siteUrl = 'https://crideros.lovable.app';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 
-    // Helper to fetch and add reference image
-    const addReferenceImage = async (url: string, charName: string, refNum: number): Promise<boolean> => {
+    // Helper to fetch and add reference image with detailed logging
+    const addReferenceImage = async (
+      url: string, 
+      charName: string, 
+      refNum: number,
+      refType: 'primary' | 'additional'
+    ): Promise<boolean> => {
+      referenceLoadingLog.attempted.push({ charName, url, type: refType });
+      
       try {
         const imageResponse = await fetch(url);
         if (imageResponse.ok) {
@@ -426,11 +444,19 @@ serve(async (req) => {
             type: 'image_url',
             image_url: { url: dataUrl }
           });
-          console.log(`Successfully loaded reference ${refNum} for ${charName} as base64`);
+          
+          referenceLoadingLog.success.push({ charName, url, type: refType });
+          console.log(`✅ LOADED [${refType}] ref #${refNum} for "${charName}": ${url}`);
           return true;
+        } else {
+          const reason = `HTTP ${imageResponse.status} - ${imageResponse.statusText}`;
+          referenceLoadingLog.failed.push({ charName, url, type: refType, reason });
+          console.error(`❌ FAILED [${refType}] ref for "${charName}": ${url} - ${reason}`);
         }
       } catch (fetchError) {
-        console.error(`Error fetching reference for ${charName}:`, fetchError);
+        const reason = (fetchError as Error).message || 'Unknown fetch error';
+        referenceLoadingLog.failed.push({ charName, url, type: refType, reason });
+        console.error(`❌ FAILED [${refType}] ref for "${charName}": ${url} - ${reason}`);
       }
       return false;
     };
@@ -460,8 +486,8 @@ serve(async (req) => {
           refUrl = `${siteUrl}/${refUrl}`;
         }
 
-        console.log(`Primary reference for ${char.name}: ${refUrl}`);
-        if (await addReferenceImage(refUrl, char.name, refCount + 1)) {
+        console.log(`Attempting primary reference for ${char.name}: ${refUrl}`);
+        if (await addReferenceImage(refUrl, char.name, refCount + 1, 'primary')) {
           refCount++;
         }
       }
@@ -478,8 +504,8 @@ serve(async (req) => {
           try {
             const checkResponse = await fetch(additionalUrl, { method: 'HEAD' });
             if (checkResponse.ok) {
-              console.log(`Found additional reference ${i} for ${char.name}: ${additionalUrl}`);
-              if (await addReferenceImage(additionalUrl, char.name, refCount + 1)) {
+              console.log(`Checking additional reference ${i} for ${char.name}: ${additionalUrl}`);
+              if (await addReferenceImage(additionalUrl, char.name, refCount + 1, 'additional')) {
                 refCount++;
                 foundAdditional = true;
                 break; // Found this numbered reference, move to next number
@@ -495,7 +521,32 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Total references included: ${refCount}`);
+    // ========== REFERENCE PHOTO LOADING SUMMARY ==========
+    console.log('\n========================================');
+    console.log('📸 REFERENCE PHOTO LOADING SUMMARY');
+    console.log('========================================');
+    console.log(`Total attempted: ${referenceLoadingLog.attempted.length}`);
+    console.log(`✅ Successfully loaded: ${referenceLoadingLog.success.length}`);
+    console.log(`❌ Failed to load: ${referenceLoadingLog.failed.length}`);
+
+    if (referenceLoadingLog.success.length > 0) {
+      console.log('\n✅ SUCCESSFUL LOADS:');
+      referenceLoadingLog.success.forEach((item, i) => {
+        console.log(`  ${i + 1}. [${item.type}] ${item.charName}: ${item.url}`);
+      });
+    }
+
+    if (referenceLoadingLog.failed.length > 0) {
+      console.log('\n❌ FAILED LOADS:');
+      referenceLoadingLog.failed.forEach((item, i) => {
+        console.log(`  ${i + 1}. [${item.type}] ${item.charName}: ${item.url}`);
+        console.log(`     Reason: ${item.reason}`);
+      });
+    }
+
+    console.log('\n========================================');
+    console.log(`Proceeding with ${refCount} reference photo(s)`);
+    console.log('========================================\n');
 
     // Generate with Gemini Flash
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -578,7 +629,13 @@ serve(async (req) => {
         image: imageResult,
         message: data.choices?.[0]?.message?.content || 'Generated with 99% reference accuracy',
         detectedCharacters: Object.keys(characterGroups),
-        referencePhotosUsed: refCount
+        referencePhotosUsed: refCount,
+        referenceLoadingDetails: {
+          attempted: referenceLoadingLog.attempted.length,
+          success: referenceLoadingLog.success.length,
+          failed: referenceLoadingLog.failed.length,
+          failedItems: referenceLoadingLog.failed
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
