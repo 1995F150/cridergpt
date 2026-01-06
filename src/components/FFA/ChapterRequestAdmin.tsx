@@ -88,6 +88,22 @@ export function ChapterRequestAdmin() {
 
       if (updateError) throw updateError;
 
+      // Send approval email to user
+      try {
+        await supabase.functions.invoke('chapter-request-email', {
+          body: {
+            type: 'approved',
+            chapter_name: request.chapter_name,
+            state: request.state,
+            city: request.city,
+            user_id: request.user_id,
+            admin_notes: adminNotes[request.id] || null,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+      }
+
       toast({
         title: 'Chapter Approved!',
         description: `${request.chapter_name} has been added to the database.`,
@@ -129,6 +145,22 @@ export function ChapterRequestAdmin() {
         .eq('id', request.id);
 
       if (error) throw error;
+
+      // Send rejection email to user
+      try {
+        await supabase.functions.invoke('chapter-request-email', {
+          body: {
+            type: 'rejected',
+            chapter_name: request.chapter_name,
+            state: request.state,
+            city: request.city,
+            user_id: request.user_id,
+            admin_notes: adminNotes[request.id],
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
+      }
 
       toast({
         title: 'Request Rejected',
