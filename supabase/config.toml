@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.migrate-character-photos]
 verify_jwt = false
+
+[functions.document-ai-analysis]
+verify_jwt = false

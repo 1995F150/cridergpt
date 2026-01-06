@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,7 @@ import { useAILearning } from "@/hooks/useAILearning";
 import { ModernChatInput } from "./ModernChatInput";
 import { useAIMemory } from "@/hooks/useAIMemory";
 import { useVisionMemory } from "@/hooks/useVisionMemory";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FilePreview {
   id: string;
@@ -38,31 +38,71 @@ function OpenAIChat() {
     getKnowledgeStats().then(setKnowledgeStats);
   }, [getKnowledgeStats]);
 
+  // Convert file to base64 for AI processing
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Analyze document using document-ai-analysis edge function
+  const analyzeDocument = async (file: File): Promise<string> => {
+    const base64Content = await fileToBase64(file);
+    
+    toast({
+      title: "Processing Document",
+      description: `Analyzing ${file.name}...`,
+    });
+
+    const { data, error } = await supabase.functions.invoke('document-ai-analysis', {
+      body: {
+        fileContent: base64Content,
+        fileName: file.name,
+        analysisMode: 'general'
+      }
+    });
+
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
+    
+    return data.analysis;
+  };
+
   async function handleSendMessage(message: string, files?: FilePreview[]) {
     try {
       let responseText = '';
+      let processedDocContent = '';
 
-      // Handle images first with vision analysis
+      // Handle files
       if (files && files.length > 0) {
         const imageFiles = files.filter(f => f.type === 'image');
         const zipFiles = files.filter(f => f.type === 'zip');
         const docFiles = files.filter(f => f.type === 'document');
 
-        // Process images with vision
+        // Process images with vision - convert to base64 first
         for (const imageFile of imageFiles) {
-          if (imageFile.preview) {
-            const result = await generateSmartResponse(
-              message || "Analyze this image in detail",
-              selectedModel,
-              'vision_analysis',
-              imageFile.preview
-            );
-            const visionResult = typeof result === 'string' ? result : result.response;
-            responseText += visionResult + '\n\n';
-            
-            // Save to vision memory
-            await saveVisionMemory(imageFile.preview, visionResult, message || "Image analysis");
-          }
+          toast({
+            title: "Processing Image",
+            description: `Analyzing ${imageFile.name}...`,
+          });
+          
+          // Convert image file to base64 (not the blob URL)
+          const imageBase64 = await fileToBase64(imageFile.file);
+          
+          const result = await generateSmartResponse(
+            message || "Analyze this image in detail",
+            selectedModel,
+            'vision_analysis',
+            imageBase64
+          );
+          const visionResult = typeof result === 'string' ? result : result.response;
+          responseText += visionResult + '\n\n';
+          
+          // Save to vision memory with base64
+          await saveVisionMemory(imageBase64, visionResult, message || "Image analysis");
         }
 
         // Detect FS22/FS25 mod files in ZIPs
@@ -76,15 +116,26 @@ function OpenAIChat() {
           });
         }
 
-        // Handle documents
+        // Process and analyze documents (PDF, DOCX, TXT)
         for (const docFile of docFiles) {
-          responseText += `Document ${docFile.name} uploaded and ready for analysis.\n\n`;
+          try {
+            const analysis = await analyzeDocument(docFile.file);
+            processedDocContent += `\n[Document: ${docFile.name}]\n${analysis}\n`;
+            responseText += `📄 **${docFile.name} Analysis:**\n${analysis}\n\n`;
+          } catch (docError) {
+            console.error('Error analyzing document:', docError);
+            responseText += `⚠️ Could not analyze ${docFile.name}: ${docError.message}\n\n`;
+          }
         }
       }
 
-      // Handle text message with AI
+      // Handle text message with AI (include document context if available)
       if (message.trim()) {
-        const result = await generateSmartResponse(message, selectedModel, 'chat');
+        const contextMessage = processedDocContent 
+          ? `${processedDocContent}\n\nUser question: ${message}`
+          : message;
+        
+        const result = await generateSmartResponse(contextMessage, selectedModel, 'chat');
         responseText += typeof result === 'string' ? result : result.response;
       }
 
