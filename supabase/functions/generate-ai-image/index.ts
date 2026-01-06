@@ -484,16 +484,47 @@ serve(async (req) => {
       });
     }
 
-    // Add ALL selected reference images (capped)
+    // Add ALL selected reference images (capped at 5 per character)
     // Use the production URL that's publicly accessible
     const siteUrl = 'https://crideros.lovable.app';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 
+    // Helper to fetch and add reference image
+    const addReferenceImage = async (url: string, charName: string, refNum: number): Promise<boolean> => {
+      try {
+        const imageResponse = await fetch(url);
+        if (imageResponse.ok) {
+          const arrayBuffer = await imageResponse.arrayBuffer();
+          const base64 = base64Encode(new Uint8Array(arrayBuffer));
+          const contentType = imageResponse.headers.get('content-type') || 'image/png';
+          const dataUrl = `data:${contentType};base64,${base64}`;
+          
+          messageContent.push({
+            type: 'image_url',
+            image_url: { url: dataUrl }
+          });
+          console.log(`Successfully loaded reference ${refNum} for ${charName} as base64`);
+          return true;
+        }
+      } catch (fetchError) {
+        console.error(`Error fetching reference for ${charName}:`, fetchError);
+      }
+      return false;
+    };
+
     // Fetch reference images and convert to base64 for more reliable delivery
     let refCount = 0;
     const sortedRefs = [...selectedCharactersForRefs].sort(sortRefs);
+    const processedCharNames = new Set<string>();
     
     for (const char of sortedRefs) {
+      // Skip if we already processed this character name (dedup)
+      if (processedCharNames.has(char.name.toLowerCase())) {
+        continue;
+      }
+      processedCharNames.add(char.name.toLowerCase());
+      
+      // First add the primary reference from the database
       if (char.reference_photo_url) {
         let refUrl = char.reference_photo_url;
 
@@ -506,34 +537,37 @@ serve(async (req) => {
           refUrl = `${siteUrl}/${refUrl}`;
         }
 
-        console.log(`Reference ${refCount + 1}: ${char.name} (${char.slug}) -> ${refUrl}`);
-        
-        // Try to fetch and convert to base64 for more reliable image delivery
-        try {
-          const imageResponse = await fetch(refUrl);
-          if (imageResponse.ok) {
-            const arrayBuffer = await imageResponse.arrayBuffer();
-            const base64 = base64Encode(new Uint8Array(arrayBuffer));
-            const contentType = imageResponse.headers.get('content-type') || 'image/png';
-            const dataUrl = `data:${contentType};base64,${base64}`;
-            
-            messageContent.push({
-              type: 'image_url',
-              image_url: { url: dataUrl }
-            });
-            console.log(`Successfully loaded reference ${refCount + 1} as base64`);
-            refCount++;
-          } else {
-            console.error(`Failed to fetch reference ${char.slug}: ${imageResponse.status}`);
-          }
-        } catch (fetchError) {
-          console.error(`Error fetching reference ${char.slug}:`, fetchError);
-          // Fallback to URL if fetch fails
-          messageContent.push({
-            type: 'image_url',
-            image_url: { url: refUrl }
-          });
+        console.log(`Primary reference for ${char.name}: ${refUrl}`);
+        if (await addReferenceImage(refUrl, char.name, refCount + 1)) {
           refCount++;
+        }
+      }
+      
+      // Now try to find additional numbered reference photos (e.g., jr-hoback-reference-2.jpg, jr-hoback-reference-3.jpg)
+      const slug = char.slug.replace(/-\d+$/, ''); // Remove trailing number if any
+      const extensions = ['jpg', 'jpeg', 'png', 'webp'];
+      
+      for (let i = 2; i <= 5; i++) {
+        let foundAdditional = false;
+        for (const ext of extensions) {
+          const additionalUrl = `${siteUrl}/${slug}-reference-${i}.${ext}`;
+          
+          try {
+            const checkResponse = await fetch(additionalUrl, { method: 'HEAD' });
+            if (checkResponse.ok) {
+              console.log(`Found additional reference ${i} for ${char.name}: ${additionalUrl}`);
+              if (await addReferenceImage(additionalUrl, char.name, refCount + 1)) {
+                refCount++;
+                foundAdditional = true;
+                break; // Found this numbered reference, move to next number
+              }
+            }
+          } catch {
+            // File doesn't exist, continue
+          }
+        }
+        if (!foundAdditional) {
+          break; // No more sequential references found
         }
       }
     }
