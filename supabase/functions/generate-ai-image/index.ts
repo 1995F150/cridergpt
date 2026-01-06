@@ -1,82 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
-import { decode as base64Decode, encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
-import { ImageMagick, initialize, MagickFormat } from "https://deno.land/x/imagemagick_deno@0.0.31/mod.ts";
-
-// Initialize ImageMagick
-await initialize();
-
-// Watermark configuration
-const WATERMARK_URL = 'https://crideros.lovable.app/cridergpt-watermark.png';
-
-// Function to add watermark to base64 image using ImageMagick
-async function addWatermark(base64Image: string): Promise<string> {
-  try {
-    console.log('Starting watermark process...');
-    
-    // Extract the base64 data (remove data:image/png;base64, prefix if present)
-    const base64Data = base64Image.includes(',') 
-      ? base64Image.split(',')[1] 
-      : base64Image;
-    
-    // Decode the main image
-    const imageBytes = base64Decode(base64Data);
-    console.log('Main image decoded, size:', imageBytes.length);
-    
-    // Fetch the watermark image
-    const watermarkResponse = await fetch(WATERMARK_URL);
-    if (!watermarkResponse.ok) {
-      console.error('Failed to fetch watermark:', watermarkResponse.status);
-      return base64Image;
-    }
-    
-    const watermarkBuffer = await watermarkResponse.arrayBuffer();
-    const watermarkBytes = new Uint8Array(watermarkBuffer);
-    console.log('Watermark fetched, size:', watermarkBytes.length);
-    
-    // Use ImageMagick to composite the watermark
-    let resultBase64 = base64Image;
-    
-    await ImageMagick.read(imageBytes, async (mainImg) => {
-      const imgWidth = mainImg.width;
-      const imgHeight = mainImg.height;
-      console.log('Main image dimensions:', imgWidth, 'x', imgHeight);
-      
-      await ImageMagick.read(watermarkBytes, async (watermarkImg) => {
-        // Scale watermark to 15% of main image width
-        const watermarkScale = 0.15;
-        const newWatermarkWidth = Math.floor(imgWidth * watermarkScale);
-        const aspectRatio = watermarkImg.height / watermarkImg.width;
-        const newWatermarkHeight = Math.floor(newWatermarkWidth * aspectRatio);
-        
-        watermarkImg.resize(newWatermarkWidth, newWatermarkHeight);
-        console.log('Watermark resized to:', newWatermarkWidth, 'x', newWatermarkHeight);
-        
-        // Position in bottom-right corner with 20px margin
-        const margin = 20;
-        const x = imgWidth - newWatermarkWidth - margin;
-        const y = imgHeight - newWatermarkHeight - margin;
-        
-        // Composite the watermark onto the main image
-        mainImg.composite(watermarkImg, x, y);
-        console.log('Watermark composited at position:', x, y);
-        
-        // Write to PNG format
-        mainImg.write(MagickFormat.Png, (data) => {
-          const watermarkedBase64 = base64Encode(data);
-          resultBase64 = `data:image/png;base64,${watermarkedBase64}`;
-          console.log('Watermark applied successfully!');
-        });
-      });
-    });
-    
-    return resultBase64;
-  } catch (error) {
-    console.error('Error adding watermark:', error);
-    return base64Image; // Return original on error
-  }
-}
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -618,9 +543,9 @@ serve(async (req) => {
       );
     }
 
-    // Apply watermark to the generated image
-    console.log('Applying CriderGPT watermark...');
-    imageResult = await addWatermark(imageResult);
+    // Watermark note: ImageMagick not available in edge functions
+    // The watermark is added via prompt instruction instead
+    console.log('Image generated successfully');
 
     // Log generation
     const authHeader = req.headers.get('Authorization');
