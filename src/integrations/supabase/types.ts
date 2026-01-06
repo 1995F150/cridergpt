@@ -743,6 +743,51 @@ export type Database = {
           },
         ]
       }
+      chapter_requests: {
+        Row: {
+          admin_notes: string | null
+          chapter_name: string
+          city: string | null
+          created_at: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          school_name: string | null
+          state: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          chapter_name: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          school_name?: string | null
+          state: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          chapter_name?: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          school_name?: string | null
+          state?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chapters: {
         Row: {
           city: string | null

@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useFFAProfile, Chapter } from '@/hooks/useFFAProfile';
-import { Loader2, Wheat } from 'lucide-react';
-
+import { Loader2, Wheat, HelpCircle } from 'lucide-react';
+import { ChapterRequestForm } from './ChapterRequestForm';
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
   'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
@@ -46,6 +46,7 @@ export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
   const [officerRole, setOfficerRole] = useState('');
   const [isAdvisor, setIsAdvisor] = useState(false);
   const [graduationYear, setGraduationYear] = useState('');
+  const [showRequestForm, setShowRequestForm] = useState(false);
 
   const filteredChapters = chapters.filter(c => c.state === selectedState);
   
@@ -105,7 +106,7 @@ export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
             </div>
           )}
 
-          {step === 2 && (
+          {step === 2 && !showRequestForm && (
             <>
               <div className="space-y-2">
                 <Label htmlFor="chapter">Chapter</Label>
@@ -123,11 +124,16 @@ export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
                       ))}
                   </SelectContent>
                 </Select>
-                {filteredChapters.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    No chapters found for {selectedState}. Contact your advisor to add your chapter.
-                  </p>
-                )}
+                
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  className="p-0 h-auto text-sm"
+                  onClick={() => setShowRequestForm(true)}
+                >
+                  <HelpCircle className="h-3 w-3 mr-1" />
+                  Can't find your chapter? Request to add it
+                </Button>
               </div>
 
               <div className="space-y-2">
@@ -176,27 +182,40 @@ export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
               )}
             </>
           )}
+
+          {step === 2 && showRequestForm && (
+            <ChapterRequestForm
+              state={selectedState}
+              onBack={() => setShowRequestForm(false)}
+              onSuccess={() => {
+                setShowRequestForm(false);
+                onOpenChange(false);
+              }}
+            />
+          )}
         </div>
 
-        <div className="flex justify-between">
-          {step === 2 && (
-            <Button variant="outline" onClick={() => setStep(1)}>
-              Back
-            </Button>
-          )}
-          {step === 1 && <div />}
-          
-          {step === 1 ? (
-            <Button onClick={() => setStep(2)} disabled={!canProceed}>
-              Continue
-            </Button>
-          ) : (
-            <Button onClick={handleSubmit} disabled={!canProceed || loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Complete Setup
-            </Button>
-          )}
-        </div>
+        {!showRequestForm && (
+          <div className="flex justify-between">
+            {step === 2 && (
+              <Button variant="outline" onClick={() => setStep(1)}>
+                Back
+              </Button>
+            )}
+            {step === 1 && <div />}
+            
+            {step === 1 ? (
+              <Button onClick={() => setStep(2)} disabled={!canProceed}>
+                Continue
+              </Button>
+            ) : (
+              <Button onClick={handleSubmit} disabled={!canProceed || loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Complete Setup
+              </Button>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
