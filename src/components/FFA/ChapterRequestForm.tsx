@@ -74,6 +74,23 @@ export function ChapterRequestForm({ state, onBack, onSuccess }: ChapterRequestF
 
       if (error) throw error;
 
+      // Send email notification to admin
+      try {
+        await supabase.functions.invoke('chapter-request-email', {
+          body: {
+            type: 'submitted',
+            chapter_name: chapterName.trim(),
+            state,
+            city: city.trim() || null,
+            school_name: schoolName.trim() || null,
+            user_email: user.email,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError);
+        // Don't fail the request if email fails
+      }
+
       toast({
         title: 'Request Submitted!',
         description: 'Your chapter request has been submitted for admin review.',
