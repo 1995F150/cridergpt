@@ -40,8 +40,38 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [processingPaste, setProcessingPaste] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Handle paste events for images
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        setProcessingPaste(true);
+        
+        const file = item.getAsFile();
+        if (file) {
+          const preview: FilePreview = {
+            id: `${Date.now()}-${Math.random()}`,
+            file,
+            type: 'image',
+            name: file.name || 'pasted-image.png',
+            size: file.size,
+            preview: URL.createObjectURL(file),
+          };
+          setFiles((prev) => [...prev, preview]);
+        }
+        
+        setProcessingPaste(false);
+        break;
+      }
+    }
+  }, []);
 
   const handleFileSelect = useCallback(
     (selectedFiles: FileList | null, type?: string) => {
@@ -247,7 +277,9 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder || "Type a message... (Shift+Enter for new line)"}
+            onPaste={handlePaste}
+            placeholder={processingPaste ? "Processing image..." : (placeholder || "Type a message... (Shift+Enter for new line)")}
+            disabled={processingPaste}
             className="min-h-[44px] max-h-[200px] resize-none pr-12 bg-muted/50"
             rows={1}
           />
