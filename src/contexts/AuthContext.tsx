@@ -28,26 +28,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('🔄 AuthProvider: Initializing auth state');
-    
     const initializeAuth = async () => {
       try {
-        console.log('📡 Getting initial session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('❌ Error getting initial session:', error);
+          console.error('Auth error:', error.message);
           setConnectionError(`Authentication service error: ${error.message}`);
         } else {
-          console.log('✅ Initial session result:', session ? 'Session found' : 'No session');
           setConnectionError(null);
         }
 
         setSession(session);
         setUser(session?.user ?? null);
       } catch (error) {
-        console.error('💥 Fatal error in auth initialization:', error);
-        setConnectionError('Unable to connect to authentication service. Please check your connection.');
+        console.error('Fatal auth error:', error);
+        setConnectionError('Unable to connect to authentication service.');
         setSession(null);
         setUser(null);
       } finally {
@@ -55,47 +51,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Set up auth state listener
-    console.log('👂 Setting up auth listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('🔔 Auth state change:', event, session ? 'Session exists' : 'No session');
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Clear connection error on successful auth state change
         if (session) {
           setConnectionError(null);
         }
       }
     );
 
-    // Initialize auth
     initializeAuth();
 
     return () => {
-      console.log('🧹 AuthProvider: Cleaning up');
       subscription.unsubscribe();
     };
   }, []);
 
   const signOut = async () => {
     try {
-      console.log('🚪 Signing out user');
       setLoading(true);
       await supabase.auth.signOut({ scope: 'global' });
       window.location.href = '/auth';
     } catch (error) {
-      console.error('❌ Error signing out:', error);
-      // Force redirect even if signout fails
+      console.error('Sign out error:', error);
       window.location.href = '/auth';
     } finally {
       setLoading(false);
     }
   };
-
-  console.log('🎨 AuthProvider render - loading:', loading, 'user:', user ? 'exists' : 'null', 'error:', connectionError);
 
   const value = {
     user,

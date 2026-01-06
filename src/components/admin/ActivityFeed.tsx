@@ -112,11 +112,11 @@ export function ActivityFeed() {
 
   const fetchRecentActivities = async () => {
     try {
-      // Fetch recent profiles (signups) - profiles table doesn't have created_at, use id order
+      // Fetch recent profiles (signups) - now using created_at column
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, username, user_id')
-        .order('id', { ascending: false })
+        .select('id, username, user_id, created_at')
+        .order('created_at', { ascending: false })
         .limit(5);
 
       // Fetch recent chat messages
@@ -141,7 +141,7 @@ export function ActivityFeed() {
           id: p.id,
           type: 'signup',
           message: `User signed up: ${p.username || 'Anonymous'}`,
-          timestamp: new Date() // No created_at on profiles, use now as approximation
+          timestamp: new Date(p.created_at || Date.now())
         });
       });
 

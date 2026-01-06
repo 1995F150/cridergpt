@@ -83,7 +83,7 @@ export const FriendshipManager: React.FC<FriendshipManagerProps> = ({
               .from('crider_chat_users')
               .select('user_id, display_name, email, avatar_url')
               .eq('user_id', block.blocked_id)
-              .single();
+              .maybeSingle();
 
             return {
               ...block,
@@ -131,7 +131,7 @@ export const FriendshipManager: React.FC<FriendshipManagerProps> = ({
               .from('crider_chat_users')
               .select('user_id, display_name, email, avatar_url')
               .eq('user_id', follow.following_id)
-              .single();
+              .maybeSingle();
 
             return {
               ...follow,
@@ -154,7 +154,7 @@ export const FriendshipManager: React.FC<FriendshipManagerProps> = ({
               .from('crider_chat_users')
               .select('user_id, display_name, email, avatar_url')
               .eq('user_id', follow.follower_id)
-              .single();
+              .maybeSingle();
 
             return {
               ...follow,

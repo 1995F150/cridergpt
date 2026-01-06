@@ -2181,6 +2181,7 @@ export type Database = {
       profiles: {
         Row: {
           chat_tokens_limit: number | null
+          created_at: string | null
           current_plan: string | null
           file_upload_mb_limit: number | null
           id: string
@@ -2211,6 +2212,7 @@ export type Database = {
         }
         Insert: {
           chat_tokens_limit?: number | null
+          created_at?: string | null
           current_plan?: string | null
           file_upload_mb_limit?: number | null
           id?: string
@@ -2241,6 +2243,7 @@ export type Database = {
         }
         Update: {
           chat_tokens_limit?: number | null
+          created_at?: string | null
           current_plan?: string | null
           file_upload_mb_limit?: number | null
           id?: string

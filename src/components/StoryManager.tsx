@@ -72,7 +72,7 @@ export const StoryManager: React.FC<StoryManagerProps> = ({ friends }) => {
               .from('crider_chat_users')
               .select('user_id, display_name, email, avatar_url')
               .eq('user_id', story.user_id)
-              .single();
+              .maybeSingle();
 
             return {
               ...story,
