@@ -485,14 +485,19 @@ serve(async (req) => {
     }
 
     // Add ALL selected reference images (capped)
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://crideros.lovable.app';
+    // Use the production URL that's publicly accessible
+    const siteUrl = 'https://crideros.lovable.app';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 
+    // Fetch reference images and convert to base64 for more reliable delivery
     let refCount = 0;
-    for (const char of selectedCharactersForRefs.sort(sortRefs)) {
+    const sortedRefs = [...selectedCharactersForRefs].sort(sortRefs);
+    
+    for (const char of sortedRefs) {
       if (char.reference_photo_url) {
         let refUrl = char.reference_photo_url;
 
+        // Build full URL
         if (refUrl.startsWith('/')) {
           refUrl = `${siteUrl}${refUrl}`;
         } else if (refUrl.startsWith('character-references/')) {
@@ -501,12 +506,35 @@ serve(async (req) => {
           refUrl = `${siteUrl}/${refUrl}`;
         }
 
-        console.log(`Reference ${refCount + 1}: ${char.name} -> ${refUrl}`);
-        messageContent.push({
-          type: 'image_url',
-          image_url: { url: refUrl }
-        });
-        refCount++;
+        console.log(`Reference ${refCount + 1}: ${char.name} (${char.slug}) -> ${refUrl}`);
+        
+        // Try to fetch and convert to base64 for more reliable image delivery
+        try {
+          const imageResponse = await fetch(refUrl);
+          if (imageResponse.ok) {
+            const arrayBuffer = await imageResponse.arrayBuffer();
+            const base64 = base64Encode(new Uint8Array(arrayBuffer));
+            const contentType = imageResponse.headers.get('content-type') || 'image/png';
+            const dataUrl = `data:${contentType};base64,${base64}`;
+            
+            messageContent.push({
+              type: 'image_url',
+              image_url: { url: dataUrl }
+            });
+            console.log(`Successfully loaded reference ${refCount + 1} as base64`);
+            refCount++;
+          } else {
+            console.error(`Failed to fetch reference ${char.slug}: ${imageResponse.status}`);
+          }
+        } catch (fetchError) {
+          console.error(`Error fetching reference ${char.slug}:`, fetchError);
+          // Fallback to URL if fetch fails
+          messageContent.push({
+            type: 'image_url',
+            image_url: { url: refUrl }
+          });
+          refCount++;
+        }
       }
     }
 
