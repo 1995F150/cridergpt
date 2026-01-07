@@ -14,7 +14,8 @@ import {
   Plus,
   Settings,
   Bell,
-  ShieldCheck
+  ShieldCheck,
+  Edit
 } from "lucide-react";
 import { useFFAProfile } from "@/hooks/useFFAProfile";
 import { useEvents } from "@/hooks/useEvents";
@@ -23,6 +24,7 @@ import { FFASetupModal } from "./FFASetupModal";
 import { EventModal } from "./EventModal";
 import { ChapterRequestAdmin } from "./ChapterRequestAdmin";
 import { DocumentationCenter } from "./DocumentationCenter";
+import { ChangeChapterModal } from "./ChangeChapterModal";
 import { Loader2 } from "lucide-react";
 import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +38,7 @@ export function FFADashboard() {
   
   const [setupOpen, setSetupOpen] = useState(needsSetup);
   const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [changeChapterOpen, setChangeChapterOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Check if user is an admin
@@ -196,11 +199,14 @@ export function FFADashboard() {
 
             {/* Chapter Info */}
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Users className="h-5 w-5" />
                   Chapter Info
                 </CardTitle>
+                <Button size="sm" variant="ghost" onClick={() => setChangeChapterOpen(true)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="p-3 bg-muted/50 rounded-lg">
@@ -379,6 +385,10 @@ export function FFADashboard() {
         onOpenChange={setEventModalOpen}
         chapterId={profile?.chapter_id}
         onSave={createEvent}
+      />
+      <ChangeChapterModal 
+        open={changeChapterOpen} 
+        onOpenChange={setChangeChapterOpen}
       />
     </div>
   );
