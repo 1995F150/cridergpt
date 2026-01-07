@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
@@ -9,6 +9,7 @@ import { SystemLogs } from '@/components/admin/SystemLogs';
 import { SystemSettings } from '@/components/admin/SystemSettings';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { ChapterRequestAdmin } from '@/components/FFA/ChapterRequestAdmin';
+import { ChapterManagement } from '@/components/admin/ChapterManagement';
 import { EmailBroadcast } from '@/components/admin/EmailBroadcast';
 import { RevenueDashboard } from '@/components/admin/RevenueDashboard';
 import { MaintenanceMode } from '@/components/admin/MaintenanceMode';
@@ -190,7 +191,29 @@ export function AdminPanel() {
         </TabsContent>
 
         <TabsContent value="chapters">
-          <ChapterRequestAdmin />
+          <Tabs defaultValue="requests" className="space-y-4">
+            <TabsList className="bg-muted/50">
+              <TabsTrigger value="requests" className="gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Requests
+                {pendingChapters > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 min-w-5 flex items-center justify-center text-xs px-1">
+                    {pendingChapters}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="manage" className="gap-2">
+                <Database className="h-4 w-4" />
+                Manage Chapters
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="requests">
+              <ChapterRequestAdmin />
+            </TabsContent>
+            <TabsContent value="manage">
+              <ChapterManagement />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="analytics">
