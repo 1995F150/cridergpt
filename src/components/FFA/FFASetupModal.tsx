@@ -37,7 +37,7 @@ interface FFASetupModalProps {
 }
 
 export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
-  const { chapters, createProfile } = useFFAProfile();
+  const { chapters, createProfile, updateProfile, profile } = useFFAProfile();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   
@@ -58,13 +58,28 @@ export function FFASetupModal({ open, onOpenChange }: FFASetupModalProps) {
 
     setLoading(true);
     try {
-      await createProfile({
+      const profileData = {
         chapter_id: selectedChapter,
         state: selectedState,
-        officer_role: officerRole && officerRole !== 'none' ? officerRole : undefined,
+        officer_role: officerRole && officerRole !== 'none' ? officerRole : null,
         is_advisor: isAdvisor,
-        graduation_year: graduationYear ? parseInt(graduationYear) : undefined,
-      });
+        graduation_year: graduationYear ? parseInt(graduationYear) : null,
+        setup_completed: true,
+      };
+
+      if (profile) {
+        // Update existing profile
+        await updateProfile(profileData);
+      } else {
+        // Create new profile
+        await createProfile({
+          chapter_id: selectedChapter,
+          state: selectedState,
+          officer_role: officerRole && officerRole !== 'none' ? officerRole : undefined,
+          is_advisor: isAdvisor,
+          graduation_year: graduationYear ? parseInt(graduationYear) : undefined,
+        });
+      }
       onOpenChange(false);
     } finally {
       setLoading(false);
