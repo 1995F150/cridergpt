@@ -66,14 +66,30 @@ export function ChapterRequestAdmin() {
   const handleApprove = async (request: ChapterRequest) => {
     setProcessingId(request.id);
     try {
-      // First, create the chapter
-      const { error: chapterError } = await supabase.from('chapters').insert({
-        name: request.chapter_name,
-        state: request.state,
-        city: request.city,
-      });
+      // First, create the chapter and get its ID
+      const { data: newChapter, error: chapterError } = await supabase
+        .from('chapters')
+        .insert({
+          name: request.chapter_name,
+          state: request.state,
+          city: request.city,
+        })
+        .select('id')
+        .single();
 
       if (chapterError) throw chapterError;
+
+      // Update the requesting user's FFA profile to use the new chapter
+      if (newChapter?.id) {
+        const { error: profileError } = await supabase
+          .from('user_ffa_profiles')
+          .update({ chapter_id: newChapter.id })
+          .eq('user_id', request.user_id);
+
+        if (profileError) {
+          console.error('Failed to update user FFA profile:', profileError);
+        }
+      }
 
       // Then update the request status
       const { error: updateError } = await supabase
@@ -106,7 +122,7 @@ export function ChapterRequestAdmin() {
 
       toast({
         title: 'Chapter Approved!',
-        description: `${request.chapter_name} has been added to the database.`,
+        description: `${request.chapter_name} has been added and the user's profile updated.`,
       });
 
       fetchRequests();
