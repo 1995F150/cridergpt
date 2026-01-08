@@ -2187,6 +2187,7 @@ export type Database = {
           id: string
           max_api_keys: number | null
           max_projects: number | null
+          memory_enabled: boolean | null
           plus_access: boolean | null
           plus_features: Json | null
           plus_subscription_start_date: string | null
@@ -2218,6 +2219,7 @@ export type Database = {
           id?: string
           max_api_keys?: number | null
           max_projects?: number | null
+          memory_enabled?: boolean | null
           plus_access?: boolean | null
           plus_features?: Json | null
           plus_subscription_start_date?: string | null
@@ -2249,6 +2251,7 @@ export type Database = {
           id?: string
           max_api_keys?: number | null
           max_projects?: number | null
+          memory_enabled?: boolean | null
           plus_access?: boolean | null
           plus_features?: Json | null
           plus_subscription_start_date?: string | null
