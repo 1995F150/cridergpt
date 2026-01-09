@@ -318,6 +318,36 @@ serve(async (req) => {
       }
     }
 
+    // Get user plan and usage limits
+    let userPlan = 'free';
+    let tokenLimit = TOKEN_LIMITS.free;
+    let usage: { id: string; tokens_used: number } | null = null;
+
+    if (userId) {
+      // Check ai_usage for plan
+      const { data: usageData } = await supabase
+        .from('ai_usage')
+        .select('id, tokens_used, user_plan')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (usageData) {
+        usage = { id: usageData.id, tokens_used: usageData.tokens_used };
+        userPlan = usageData.user_plan || 'free';
+        tokenLimit = TOKEN_LIMITS[userPlan as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
+      } else {
+        // Create usage record if doesn't exist
+        const { data: newUsage } = await supabase
+          .from('ai_usage')
+          .insert({ user_id: userId, tokens_used: 0, user_plan: 'free' })
+          .select('id, tokens_used')
+          .single();
+        if (newUsage) {
+          usage = { id: newUsage.id, tokens_used: newUsage.tokens_used };
+        }
+      }
+    }
+
     // Build messages array
     const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext);
     
