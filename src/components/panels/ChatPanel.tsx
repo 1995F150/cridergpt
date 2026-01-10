@@ -110,7 +110,19 @@ export default function ChatPanel() {
       await sendMessage(convId, message, "user", undefined, imageUrl);
 
       // Check if this is an image generation request
-      const isImageGeneration = /\b(generate|create|make|draw)\b.*\b(image|picture|photo|art|pic)\b/i.test(message);
+      // Expanded detection to catch implicit requests like "generate a apple"
+      const imageKeywords = /\b(generate|create|make|draw|render|design|paint|sketch|illustrate)\b/i;
+      const imageContextWords = /\b(image|picture|photo|art|pic|illustration|portrait|scene|artwork|graphic)\b/i;
+      const implicitGeneration = /^(generate|create|make|draw|render|paint|sketch)\s+(a|an|the|me|some)\s+\w+/i;
+      
+      const isImageGeneration = (
+        // Explicit: "generate an image of X" or "create a picture of Y"
+        (imageKeywords.test(message) && imageContextWords.test(message)) ||
+        // Implicit: "generate a apple", "draw me a cat", "create a sunset"
+        implicitGeneration.test(message.trim()) ||
+        // Direct: "generate [noun]" patterns
+        /^(generate|create|draw|make|render)\s+(a|an|the)?\s*\w+(\s+\w+){0,5}$/i.test(message.trim())
+      );
 
       if (isImageGeneration) {
         // Use image generation edge function
