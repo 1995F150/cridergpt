@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SEO } from '@/components/SEO';
 import { trackPageView, trackFeatureUse } from '@/utils/analytics';
 import { NavigationSidebar } from '@/components/NavigationSidebar';
+import { MobileNavigation } from '@/components/MobileNavigation';
 import { Header } from '@/components/Header';
 import { SystemChecker } from '@/components/SystemChecker';
 import ChatPanel from '@/components/panels/ChatPanel';
@@ -39,7 +40,9 @@ import { NotificationPermissionModal } from '@/components/NotificationPermission
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminPanel } from '@/components/panels/AdminPanel';
+
 export type PanelType = 
   | 'chat' 
   | 'vision-memory'
@@ -75,9 +78,11 @@ export type PanelType =
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { isSupported, permission } = useBrowserNotifications();
   const { user } = useAuth();
   const { isAdmin } = useAdmin();
+  const isMobile = useIsMobile();
   
   // Developer access based on admin role or specific email
   const isDeveloper = isAdmin || user?.email === 'jessiecrider3@gmail.com';
@@ -123,63 +128,74 @@ export default function Index() {
     <>
       <SEO page={activePanel} />
       <div className="flex h-screen bg-background">
-      <NavigationSidebar
-        activeTab={activePanel}
-        onTabChange={handlePanelChange}
-        isDeveloper={isDeveloper}
-      />
+        {/* Desktop Navigation Sidebar - hidden on mobile */}
+        {!isMobile && (
+          <NavigationSidebar
+            activeTab={activePanel}
+            onTabChange={handlePanelChange}
+            isDeveloper={isDeveloper}
+          />
+        )}
 
-      <div className="flex-1 flex flex-col min-h-0">
-        <Header />
+        {/* Mobile Navigation Sheet */}
+        <MobileNavigation
+          open={mobileNavOpen}
+          onOpenChange={setMobileNavOpen}
+          activeTab={activePanel}
+          onTabChange={handlePanelChange}
+          isDeveloper={isDeveloper}
+        />
+
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+          <Header 
+            onMobileMenuClick={() => setMobileNavOpen(true)}
+            isMobile={isMobile}
+          />
+          
+          <main className="flex-1 overflow-auto bg-background">
+            <div className="h-full">
+              {activePanel === 'chat' && <ChatPanel />}
+              {activePanel === 'vision-memory' && <VisionMemoryPanel />}
+              {activePanel === 'calculators' && <CalculatorPanel />}
+              {activePanel === 'calendar' && <CalendarPanel />}
+              {activePanel === 'invoices' && <InvoicePanel />}
+              {activePanel === 'files' && <FilesPanel />}
+              {activePanel === 'gallery' && <GalleryPanel />}
+              {activePanel === 'code' && <CodePanel />}
+              {activePanel === 'maps' && <MapBuilderPanel />}
+              {activePanel === 'media' && <MediaPanel />}
+              {activePanel === 'projects' && <ProjectPanel />}
+              {activePanel === 'contact' && <ContactPanel />}
+              {activePanel === 'profile' && <ProfilePanel />}
+              {activePanel === 'social' && <SocialPanel />}
+              {activePanel === 'payment' && <PaymentPanel />}
+              {activePanel === 'reviews' && <ReviewsPanel />}
+              {activePanel === 'updates' && <UpdatesPanel />}
+              {activePanel === 'timeline' && <TimelinePanel />}
+              {activePanel === 'memorial' && <MemorialPanel />}
+              {activePanel === 'ffa' && <FFAPanel />}
+              {activePanel === 'mod-tools' && <ModToolsPanel />}
+              {activePanel === 'ai-image' && <AIImagePanel />}
+              {activePanel === 'document-ai' && <DocumentAIPanel />}
+              {activePanel === 'plan' && <PlanPanel />}
+              {activePanel === 'app-converter' && <AppConverterPanel />}
+              {activePanel === 'cloud-gaming' && <CloudGamingPanel />}
+              {activePanel === '3d-converter' && isDeveloper && <Model3DConverterPanel />}
+              {activePanel === 'studio' && <StudioPanel />}
+              {activePanel === 'zip-to-exe' && <ZipToExePanel />}
+              {activePanel === 'admin' && isAdmin && <AdminPanel />}
+            </div>
+          </main>
+          <Footer />
+        </div>
+        <FixxyBotTrigger />
         
-        <main className="flex-1 overflow-auto bg-background">
-          <div className="h-full">
-            {activePanel === 'chat' && <ChatPanel />}
-            {activePanel === 'vision-memory' && <VisionMemoryPanel />}
-            {activePanel === 'calculators' && <CalculatorPanel />}
-            {activePanel === 'calendar' && <CalendarPanel />}
-            {activePanel === 'invoices' && <InvoicePanel />}
-            {activePanel === 'files' && <FilesPanel />}
-            {activePanel === 'gallery' && <GalleryPanel />}
-            {activePanel === 'code' && <CodePanel />}
-            {activePanel === 'maps' && <MapBuilderPanel />}
-            {activePanel === 'media' && <MediaPanel />}
-            {activePanel === 'projects' && <ProjectPanel />}
-            {activePanel === 'contact' && <ContactPanel />}
-            {activePanel === 'profile' && <ProfilePanel />}
-            {activePanel === 'social' && <SocialPanel />}
-            {activePanel === 'payment' && <PaymentPanel />}
-            {activePanel === 'reviews' && <ReviewsPanel />}
-            {activePanel === 'updates' && <UpdatesPanel />}
-            {activePanel === 'timeline' && <TimelinePanel />}
-            {activePanel === 'memorial' && <MemorialPanel />}
-            {activePanel === 'ffa' && <FFAPanel />}
-            {activePanel === 'mod-tools' && <ModToolsPanel />}
-            {activePanel === 'ai-image' && <AIImagePanel />}
-            {activePanel === 'document-ai' && <DocumentAIPanel />}
-            {activePanel === 'plan' && <PlanPanel />}
-            {activePanel === 'app-converter' && <AppConverterPanel />}
-            {activePanel === 'cloud-gaming' && <CloudGamingPanel />}
-            {activePanel === '3d-converter' && isDeveloper && <Model3DConverterPanel />}
-            {activePanel === 'studio' && <StudioPanel />}
-            {activePanel === 'zip-to-exe' && <ZipToExePanel />}
-            {activePanel === 'admin' && isAdmin && <AdminPanel />}
-          </div>
-        </main>
-        <Footer />
-      </div>
-      <FixxyBotTrigger />
-      
-      <NotificationPermissionModal
-        open={showNotificationModal}
-        onOpenChange={setShowNotificationModal}
-        onPermissionGranted={() => setShowNotificationModal(false)}
-      />
+        <NotificationPermissionModal
+          open={showNotificationModal}
+          onOpenChange={setShowNotificationModal}
+          onPermissionGranted={() => setShowNotificationModal(false)}
+        />
       </div>
     </>
   );
 }
-
-
-
-

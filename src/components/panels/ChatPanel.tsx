@@ -2,12 +2,14 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   PanelLeftClose,
   PanelLeftOpen,
   Brain,
   Loader2,
   Sparkles,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat, type ChatMessage as ChatMessageType } from "@/hooks/useChat";
@@ -15,6 +17,7 @@ import { useAILearning } from "@/hooks/useAILearning";
 import { useModelSelection } from "@/hooks/useModelSelection";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -36,6 +39,7 @@ interface FilePreview {
 export default function ChatPanel() {
   const { user, connectionError } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const {
     conversations,
     currentConversation,
@@ -54,7 +58,9 @@ export default function ChatPanel() {
   const { selectedModel, setSelectedModel } = useModelSelection();
   const { canSendMessage, incrementDemoUsage, demoUsage } = useDemoMode();
   
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Auto-collapse sidebar on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<string>("");
@@ -62,6 +68,11 @@ export default function ChatPanel() {
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const isLoading = isChatLoading || isAILoading || isStreaming;
+
+  // Update sidebar state when screen size changes
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -74,8 +85,18 @@ export default function ChatPanel() {
     const conv = await createConversation("New Chat");
     if (conv) {
       setCurrentConversation(conv.id);
+      if (isMobile) {
+        setMobileSidebarOpen(false);
+      }
     }
-  }, [createConversation, setCurrentConversation]);
+  }, [createConversation, setCurrentConversation, isMobile]);
+
+  const handleSelectConversation = useCallback((id: string) => {
+    setCurrentConversation(id);
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
+  }, [setCurrentConversation, isMobile]);
 
   const handleSendMessage = useCallback(async (message: string, files?: FilePreview[]) => {
     // Check demo limits for non-authenticated users
@@ -226,7 +247,7 @@ export default function ChatPanel() {
   // Connection error state
   if (connectionError) {
     return (
-      <div className="h-full flex items-center justify-center p-8">
+      <div className="h-full flex items-center justify-center p-4 md:p-8">
         <div className="text-center max-w-md">
           <div className="text-destructive text-6xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold mb-2">Connection Error</h2>
@@ -239,51 +260,84 @@ export default function ChatPanel() {
     );
   }
 
+  // Mobile sidebar content
+  const sidebarContent = (
+    <ChatSidebar
+      conversations={conversations}
+      currentConversation={currentConversation}
+      onSelectConversation={handleSelectConversation}
+      onNewChat={handleNewChat}
+      onRenameConversation={updateConversationTitle}
+      onDeleteConversation={deleteConversation}
+      onOpenGallery={() => setGalleryOpen(true)}
+      isLoading={isLoadingConversations}
+    />
+  );
+
   return (
     <div className="h-full flex">
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-in-out",
-          sidebarOpen ? "w-72" : "w-0"
-        )}
-      >
-        {sidebarOpen && (
-          <ChatSidebar
-            conversations={conversations}
-            currentConversation={currentConversation}
-            onSelectConversation={setCurrentConversation}
-            onNewChat={handleNewChat}
-            onRenameConversation={updateConversationTitle}
-            onDeleteConversation={deleteConversation}
-            onOpenGallery={() => setGalleryOpen(true)}
-            isLoading={isLoadingConversations}
-          />
-        )}
-      </div>
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <div
+          className={cn(
+            "transition-all duration-300 ease-in-out",
+            sidebarOpen ? "w-72" : "w-0"
+          )}
+        >
+          {sidebarOpen && sidebarContent}
+        </div>
+      )}
+
+      {/* Mobile Sidebar Sheet */}
+      {isMobile && (
+        <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+          <SheetContent side="left" className="w-[280px] p-0">
+            <SheetHeader className="p-4 border-b border-border">
+              <SheetTitle>Chat History</SheetTitle>
+            </SheetHeader>
+            <div className="h-[calc(100vh-60px)]">
+              {sidebarContent}
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-background">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? (
-                <PanelLeftClose className="h-5 w-5" />
-              ) : (
-                <PanelLeftOpen className="h-5 w-5" />
-              )}
-            </Button>
+        <div className="flex items-center justify-between px-2 md:px-4 py-2 md:py-3 border-b border-border bg-card">
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Desktop sidebar toggle */}
+            {!isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? (
+                  <PanelLeftClose className="h-5 w-5" />
+                ) : (
+                  <PanelLeftOpen className="h-5 w-5" />
+                )}
+              </Button>
+            )}
+            
+            {/* Mobile history button */}
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileSidebarOpen(true)}
+              >
+                <History className="h-5 w-5" />
+              </Button>
+            )}
             
             <div className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-primary" />
-              <h1 className="font-semibold text-lg">CriderGPT</h1>
+              <Brain className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+              <h1 className="font-semibold text-base md:text-lg">CriderGPT</h1>
               {!user && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs hidden sm:flex">
                   Demo Mode
                 </Badge>
               )}
@@ -300,28 +354,27 @@ export default function ChatPanel() {
 
         {/* Demo Mode Banner */}
         {!user && (
-          <div className="bg-accent/10 border-b border-accent/20 px-4 py-2">
-            <p className="text-sm text-accent-foreground">
-              <Sparkles className="h-4 w-4 inline mr-1" />
-              Demo Mode: {demoUsage.maxMessages - demoUsage.messagesUsed} messages remaining.
-              <Button variant="link" className="text-primary p-0 ml-1 h-auto" onClick={() => window.location.href = "/auth"}>
-                Sign up for unlimited access
+          <div className="bg-accent/10 border-b border-accent/20 px-2 md:px-4 py-2">
+            <p className="text-xs md:text-sm text-accent-foreground">
+              <Sparkles className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
+              Demo: {demoUsage.maxMessages - demoUsage.messagesUsed} messages left.
+              <Button variant="link" className="text-primary p-0 ml-1 h-auto text-xs md:text-sm" onClick={() => window.location.href = "/auth"}>
+                Sign up free
               </Button>
             </p>
           </div>
         )}
 
         {/* Messages Area */}
-        <ScrollArea ref={scrollRef} className="flex-1 p-4">
+        <ScrollArea ref={scrollRef} className="flex-1 p-2 md:p-4">
           {messages.length === 0 && !currentConversation ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8">
-              <Brain className="h-16 w-16 text-primary/50 mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Welcome to CriderGPT</h2>
-              <p className="text-muted-foreground max-w-md mb-6">
+            <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
+              <Brain className="h-12 w-12 md:h-16 md:w-16 text-primary/50 mb-4" />
+              <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome to CriderGPT</h2>
+              <p className="text-muted-foreground max-w-md mb-6 text-sm md:text-base">
                 Your AI assistant for agriculture, mechanics, welding, and more.
-                Ask questions, upload images for analysis, or generate AI images.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full max-w-lg">
                 {[
                   "How do I troubleshoot a John Deere hydraulic issue?",
                   "What welding settings for 1/4 inch steel?",
@@ -331,10 +384,10 @@ export default function ChatPanel() {
                   <Button
                     key={i}
                     variant="outline"
-                    className="text-left h-auto py-3 px-4"
+                    className="text-left h-auto py-2 md:py-3 px-3 md:px-4"
                     onClick={() => handleSendMessage(prompt)}
                   >
-                    <span className="text-sm">{prompt}</span>
+                    <span className="text-xs md:text-sm line-clamp-2">{prompt}</span>
                   </Button>
                 ))}
               </div>
@@ -354,7 +407,7 @@ export default function ChatPanel() {
               
               {/* Streaming indicator */}
               {isStreaming && (
-                <div className="flex items-center gap-3 py-4 px-4">
+                <div className="flex items-center gap-3 py-4 px-2 md:px-4">
                   <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
                     <Brain className="h-4 w-4 text-accent-foreground" />
                   </div>
@@ -374,8 +427,12 @@ export default function ChatPanel() {
           isLoading={isLoading}
           placeholder={
             user
-              ? "Ask anything about farming, mechanics, or generate images..."
-              : "Try the demo: Ask about farming or welding..."
+              ? isMobile 
+                ? "Ask anything..." 
+                : "Ask anything about farming, mechanics, or generate images..."
+              : isMobile
+                ? "Try the demo..."
+                : "Try the demo: Ask about farming or welding..."
           }
         />
       </div>

@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto">
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="container mx-auto px-2 md:px-4 py-4 md:py-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4">
           <div className="text-center md:text-left">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs md:text-sm text-muted-foreground">
               © 2025 Jessie Crider — All Rights Reserved.
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-xs text-muted-foreground mt-1 hidden sm:block">
               This AI system (CriderGPT) is original work. Do not copy, modify, or redistribute without permission.
             </div>
           </div>
@@ -21,8 +21,8 @@ export function Footer() {
             >
               TTS Policy
             </Link>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground">Early Release Version</span>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
+            <span className="text-muted-foreground hidden sm:inline">Early Release Version</span>
           </div>
         </div>
       </div>
