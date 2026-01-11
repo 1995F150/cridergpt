@@ -1,0 +1,27 @@
+{
+  "name": "CriderGPT",
+  "short_name": "CriderGPT",
+  "description": "AI-powered farming assistant for FS22 and FS25 with calculators, tools, and more",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1f8b4c",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "education"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}
