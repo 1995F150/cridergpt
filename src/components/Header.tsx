@@ -6,6 +6,7 @@ import { Upload, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
+import { OfflineStatusBadge } from "@/components/OfflineIndicator";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
@@ -55,6 +56,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
         </div>
 
         <div className="flex items-center space-x-2 md:space-x-4">
+          <OfflineStatusBadge />
           <Button
             variant="ghost"
             size="sm"
