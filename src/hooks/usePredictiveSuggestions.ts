@@ -1,6 +1,18 @@
 import { useState, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePatternDetection, UserPattern } from "./usePatternDetection";
+
+export interface UserPattern {
+  id: string;
+  user_id: string;
+  pattern_type: "topic" | "tone" | "time" | "category";
+  pattern_key: string;
+  frequency: number;
+  confidence: number;
+  last_seen: string;
+  first_seen: string;
+  metadata: Record<string, any>;
+}
 
 export interface Suggestion {
   id: string;
@@ -90,9 +102,29 @@ const TIME_BASED_SUGGESTIONS: Record<string, Suggestion[]> = {
 
 export function usePredictiveSuggestions() {
   const { user } = useAuth();
-  const { getTopPatterns } = usePatternDetection();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch top patterns directly (avoid circular dependency)
+  const getTopPatterns = useCallback(async (limit: number = 5): Promise<UserPattern[]> => {
+    if (!user) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from("user_patterns")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("confidence", { ascending: false })
+        .order("frequency", { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return (data || []) as UserPattern[];
+    } catch (error) {
+      console.error("Error fetching patterns:", error);
+      return [];
+    }
+  }, [user]);
 
   // Get time of day for contextual suggestions
   const getTimeOfDay = useCallback((): "morning" | "afternoon" | "evening" => {
