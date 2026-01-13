@@ -16,6 +16,9 @@ import { useChat, type ChatMessage as ChatMessageType } from "@/hooks/useChat";
 import { useAILearning } from "@/hooks/useAILearning";
 import { useModelSelection } from "@/hooks/useModelSelection";
 import { useDemoMode } from "@/hooks/useDemoMode";
+import { usePatternDetection } from "@/hooks/usePatternDetection";
+import { usePredictiveSuggestions } from "@/hooks/usePredictiveSuggestions";
+import { usePendingTasks } from "@/hooks/usePendingTasks";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +27,9 @@ import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatGallery } from "@/components/chat/ChatGallery";
 import { DemoExhaustedModal } from "@/components/DemoExhaustedModal";
+import { SuggestionChips } from "@/components/chat/SuggestionChips";
+import { PendingTasksBanner } from "@/components/chat/PendingTasksBanner";
+import { PatternMemoryBadge } from "@/components/chat/PatternMemoryBadge";
 import ModelSelector from "@/components/ModelSelector";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +64,17 @@ export default function ChatPanel() {
   const { selectedModel, setSelectedModel } = useModelSelection();
   const { canSendMessage, incrementDemoUsage, demoUsage } = useDemoMode();
   
+  // CriderGPT Algorithm hooks
+  const { analyzeAndStorePatterns } = usePatternDetection();
+  const { suggestions, generateSuggestions, isLoading: isSuggestionsLoading } = usePredictiveSuggestions();
+  const { 
+    pendingTasks, 
+    getDueTasks, 
+    completeTask, 
+    dismissTask, 
+    analyzeAndCreateTask 
+  } = usePendingTasks();
+  
   // Auto-collapse sidebar on mobile
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -68,6 +85,7 @@ export default function ChatPanel() {
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const isLoading = isChatLoading || isAILoading || isStreaming;
+  const dueTasks = getDueTasks();
 
   // Update sidebar state when screen size changes
   useEffect(() => {
@@ -109,6 +127,12 @@ export default function ChatPanel() {
     }
 
     try {
+      // CriderGPT Algorithm: Analyze patterns and detect tasks
+      if (user) {
+        analyzeAndStorePatterns(message);
+        analyzeAndCreateTask(message, message.substring(0, 50));
+      }
+
       // Create conversation if none exists
       let convId = currentConversation;
       if (!convId) {
@@ -241,7 +265,8 @@ export default function ChatPanel() {
     user, currentConversation, messages, selectedModel,
     canSendMessage, incrementDemoUsage, demoUsage,
     createConversation, setCurrentConversation, sendMessage,
-    uploadImage, generateSmartResponse, updateConversationTitle, toast
+    uploadImage, generateSmartResponse, updateConversationTitle, toast,
+    analyzeAndStorePatterns, analyzeAndCreateTask
   ]);
 
   // Connection error state
@@ -345,6 +370,7 @@ export default function ChatPanel() {
           </div>
 
           <div className="flex items-center gap-2">
+            <PatternMemoryBadge className="hidden sm:flex" />
             <ModelSelector
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
@@ -365,15 +391,39 @@ export default function ChatPanel() {
           </div>
         )}
 
+        {/* Pending Tasks Banner */}
+        {user && dueTasks.length > 0 && (
+          <div className="px-2 md:px-4 py-2">
+            <PendingTasksBanner
+              tasks={dueTasks}
+              onComplete={completeTask}
+              onDismiss={dismissTask}
+              onContinue={(task) => handleSendMessage(`Continue with: ${task.task_description}`)}
+            />
+          </div>
+        )}
+
         {/* Messages Area */}
         <ScrollArea ref={scrollRef} className="flex-1 p-2 md:p-4">
           {messages.length === 0 && !currentConversation ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
               <Brain className="h-12 w-12 md:h-16 md:w-16 text-primary/50 mb-4" />
               <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome to CriderGPT</h2>
-              <p className="text-muted-foreground max-w-md mb-6 text-sm md:text-base">
+              <p className="text-muted-foreground max-w-md mb-4 text-sm md:text-base">
                 Your AI assistant for agriculture, mechanics, welding, and more.
               </p>
+              
+              {/* Personalized Suggestion Chips */}
+              <div className="w-full max-w-lg mb-4">
+                <SuggestionChips
+                  suggestions={suggestions}
+                  onSuggestionClick={handleSendMessage}
+                  onRefresh={generateSuggestions}
+                  isLoading={isSuggestionsLoading}
+                  className="justify-center"
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full max-w-lg">
                 {[
                   "How do I troubleshoot a John Deere hydraulic issue?",
