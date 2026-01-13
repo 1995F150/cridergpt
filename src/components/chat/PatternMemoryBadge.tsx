@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +14,20 @@ import {
 } from "@/components/ui/popover";
 import { Brain, Sparkles, TrendingUp, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePatternDetection, type UserPattern } from "@/hooks/usePatternDetection";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+
+interface UserPattern {
+  id: string;
+  user_id: string;
+  pattern_type: string;
+  pattern_key: string;
+  frequency: number;
+  confidence: number;
+  last_seen: string;
+  first_seen: string;
+  metadata: Record<string, unknown>;
+}
 
 interface PatternMemoryBadgeProps {
   className?: string;
@@ -23,26 +35,51 @@ interface PatternMemoryBadgeProps {
 
 export function PatternMemoryBadge({ className }: PatternMemoryBadgeProps) {
   const { user } = useAuth();
-  const { getTopPatterns, clearAllPatterns } = usePatternDetection();
   const [patterns, setPatterns] = useState<UserPattern[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const loadPatterns = useCallback(async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("user_patterns")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("confidence", { ascending: false })
+        .order("frequency", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setPatterns((data || []) as UserPattern[]);
+    } catch (error) {
+      console.error("Error fetching patterns:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
       loadPatterns();
     }
-  }, [user]);
-
-  const loadPatterns = async () => {
-    setIsLoading(true);
-    const topPatterns = await getTopPatterns(5);
-    setPatterns(topPatterns);
-    setIsLoading(false);
-  };
+  }, [user, loadPatterns]);
 
   const handleClearPatterns = async () => {
-    await clearAllPatterns();
-    setPatterns([]);
+    if (!user) return;
+    try {
+      await supabase
+        .from("user_patterns")
+        .delete()
+        .eq("user_id", user.id);
+      await supabase
+        .from("user_preferences")
+        .delete()
+        .eq("user_id", user.id);
+      setPatterns([]);
+    } catch (error) {
+      console.error("Error clearing patterns:", error);
+    }
   };
 
   if (!user) return null;
