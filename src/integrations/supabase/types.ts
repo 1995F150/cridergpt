@@ -1993,6 +1993,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_tasks: {
+        Row: {
+          created_at: string | null
+          detected_from: string | null
+          id: string
+          remind_after: string | null
+          status: string | null
+          task_description: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          detected_from?: string | null
+          id?: string
+          remind_after?: string | null
+          status?: string | null
+          task_description: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          detected_from?: string | null
+          id?: string
+          remind_after?: string | null
+          status?: string | null
+          task_description?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       plan_configurations: {
         Row: {
           created_at: string
@@ -3291,6 +3324,78 @@ export type Database = {
           follower_id?: string
           following_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      user_patterns: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          first_seen: string | null
+          frequency: number | null
+          id: string
+          last_seen: string | null
+          metadata: Json | null
+          pattern_key: string
+          pattern_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          first_seen?: string | null
+          frequency?: number | null
+          id?: string
+          last_seen?: string | null
+          metadata?: Json | null
+          pattern_key: string
+          pattern_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          first_seen?: string | null
+          frequency?: number | null
+          id?: string
+          last_seen?: string | null
+          metadata?: Json | null
+          pattern_key?: string
+          pattern_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          id: string
+          preference_type: string
+          preference_value: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          preference_type: string
+          preference_value: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          preference_type?: string
+          preference_value?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
