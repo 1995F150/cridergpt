@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Users, Send, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Users, Send, Clock, CheckCircle, AlertCircle, Loader2, Bell } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EmailTemplate {
   id: string;
@@ -89,6 +91,7 @@ interface BroadcastHistory {
 }
 
 export function EmailBroadcast() {
+  const { user } = useAuth();
   const [targetAudience, setTargetAudience] = useState<string>('all');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('custom');
   const [subject, setSubject] = useState('');
@@ -96,6 +99,7 @@ export function EmailBroadcast() {
   const [sending, setSending] = useState(false);
   const [recipientCount, setRecipientCount] = useState(0);
   const [history, setHistory] = useState<BroadcastHistory[]>([]);
+  const [sendPushNotification, setSendPushNotification] = useState(false);
 
   useEffect(() => {
     fetchRecipientCount();
@@ -165,16 +169,42 @@ export function EmailBroadcast() {
         body: {
           targetAudience,
           subject,
-          body
+          body,
+          sendPushNotification
         }
       });
 
       if (error) throw error;
 
-      toast.success(`Broadcast queued for ${recipientCount} recipients`);
+      // If push notifications are enabled, also insert into user_notifications table
+      if (sendPushNotification) {
+        // Get all user IDs based on target audience
+        let query = supabase.from('profiles').select('user_id');
+        if (targetAudience !== 'all') {
+          query = query.eq('current_plan', targetAudience);
+        }
+        
+        const { data: users } = await query;
+        
+        if (users && users.length > 0) {
+          // Insert notifications for all target users
+          const notifications = users.map(u => ({
+            user_id: u.user_id,
+            type: 'broadcast',
+            title: subject,
+            message: body.substring(0, 200),
+            data: { targetAudience, sentBy: user?.id }
+          }));
+          
+          await supabase.from('user_notifications').insert(notifications);
+        }
+      }
+
+      toast.success(`Broadcast queued for ${recipientCount} recipients${sendPushNotification ? ' (with push notifications)' : ''}`);
       setSubject('');
       setBody('');
       setSelectedTemplate('custom');
+      setSendPushNotification(false);
       fetchHistory();
     } catch (error) {
       console.error('Error sending broadcast:', error);
@@ -253,6 +283,24 @@ export function EmailBroadcast() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Push Notification Toggle */}
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <Label htmlFor="push-notification" className="font-medium">Push Notifications</Label>
+                        <p className="text-xs text-muted-foreground">Also send browser push notifications</p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="push-notification"
+                      checked={sendPushNotification}
+                      onCheckedChange={setSendPushNotification}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

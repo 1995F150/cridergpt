@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBrowserNotifications } from "./useBrowserNotifications";
 
 export interface PendingTask {
   id: string;
@@ -27,6 +28,8 @@ export function usePendingTasks() {
   const { user } = useAuth();
   const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { sendTaskNotification, canSendNotifications } = useBrowserNotifications();
+  const notifiedTasksRef = useRef<Set<string>>(new Set());
 
   // Detect if a message contains a task
   const detectTask = useCallback((message: string): { isTask: boolean; taskDescription: string | null } => {
@@ -180,6 +183,36 @@ export function usePendingTasks() {
       fetchPendingTasks();
     }
   }, [user]);
+
+  // Check and send notifications for due tasks
+  useEffect(() => {
+    if (!canSendNotifications || pendingTasks.length === 0) return;
+
+    const checkDueTasks = () => {
+      const now = new Date();
+      pendingTasks.forEach(task => {
+        // Skip if already notified in this session
+        if (notifiedTasksRef.current.has(task.id)) return;
+        
+        // Check if task is due
+        if (task.status === "pending") {
+          const isDue = !task.remind_after || new Date(task.remind_after) <= now;
+          
+          if (isDue) {
+            sendTaskNotification(task.task_description, task.id);
+            notifiedTasksRef.current.add(task.id);
+          }
+        }
+      });
+    };
+
+    // Check immediately
+    checkDueTasks();
+
+    // Check every minute
+    const interval = setInterval(checkDueTasks, 60000);
+    return () => clearInterval(interval);
+  }, [pendingTasks, canSendNotifications, sendTaskNotification]);
 
   return {
     pendingTasks,
