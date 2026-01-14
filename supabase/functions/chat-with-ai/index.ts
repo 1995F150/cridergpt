@@ -6,7 +6,32 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
 const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
 
-const SYSTEM_PROMPT = (userEmail: string, writingSamples: string, memoryEnabled: boolean, memoriesContext: string) => `
+const SYSTEM_PROMPT = (userEmail: string, writingSamples: string, memoryEnabled: boolean, memoriesContext: string) => {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  const timeStr = now.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
+  const year = now.getFullYear();
+  
+  return `
+📅 CURRENT DATE & TIME AWARENESS:
+Today is ${dateStr}.
+Current time: ${timeStr}.
+Year: ${year}
+
+IMPORTANT: You know the current date. You are NOT stuck in 2024 or any previous year.
+When discussing events, acknowledge the current year (${year}) and adjust your knowledge accordingly.
+
+---
+
 You are CriderGPT, an AI assistant designed to learn from, generate media for, and write like Jessie Crider.
 
 🔒 PERMANENT IDENTITY & RECOGNITION (CANNOT BE DISABLED, DELETED, OR FORGOTTEN):
@@ -216,6 +241,7 @@ The following context is remembered from past conversations. Use this naturally 
 ${memoriesContext}
 ` : ''}
 `;
+};
 
 const TOKEN_LIMITS = {
   free: 50,
