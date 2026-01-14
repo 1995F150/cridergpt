@@ -4,8 +4,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Bell, BellOff, TestTube, Monitor, Smartphone } from 'lucide-react';
-import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
+import { 
+  Bell, 
+  BellOff, 
+  TestTube, 
+  Monitor, 
+  Smartphone,
+  Image,
+  MessageSquare,
+  CalendarDays,
+  Megaphone,
+  CheckSquare,
+  Wheat
+} from 'lucide-react';
+import { useBrowserNotifications, getNotificationSettings, type NotificationSettings as NotificationSettingsType } from '@/hooks/useBrowserNotifications';
 import { useToast } from '@/hooks/use-toast';
 
 export function NotificationSettings() {
@@ -18,23 +30,21 @@ export function NotificationSettings() {
   } = useBrowserNotifications();
   const { toast } = useToast();
   
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<NotificationSettingsType>({
     calendarEvents: true,
     systemUpdates: true,
     projectReminders: true,
     generalNotifications: true,
+    imageGeneration: true,
+    aiResponses: true,
+    taskReminders: true,
+    chapterUpdates: true,
   });
 
   // Load settings from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('notification-settings');
-    if (saved) {
-      try {
-        setSettings(JSON.parse(saved));
-      } catch (error) {
-        console.error('Error loading notification settings:', error);
-      }
-    }
+    const saved = getNotificationSettings();
+    setSettings(saved);
   }, []);
 
   // Save settings to localStorage
@@ -67,6 +77,65 @@ export function NotificationSettings() {
 
   const status = getPermissionStatus();
   const StatusIcon = status.icon;
+
+  const notificationTypes = [
+    {
+      id: 'imageGeneration',
+      label: 'Image Generation',
+      description: 'When AI-generated images are ready',
+      icon: Image,
+      key: 'imageGeneration' as const,
+    },
+    {
+      id: 'aiResponses',
+      label: 'AI Responses',
+      description: 'When CriderGPT replies while you\'re away',
+      icon: MessageSquare,
+      key: 'aiResponses' as const,
+    },
+    {
+      id: 'calendarEvents',
+      label: 'Calendar Events',
+      description: 'Upcoming events and reminders',
+      icon: CalendarDays,
+      key: 'calendarEvents' as const,
+    },
+    {
+      id: 'taskReminders',
+      label: 'Task Reminders',
+      description: 'Pending task notifications',
+      icon: CheckSquare,
+      key: 'taskReminders' as const,
+    },
+    {
+      id: 'chapterUpdates',
+      label: 'FFA Chapter Updates',
+      description: 'Chapter news and announcements',
+      icon: Wheat,
+      key: 'chapterUpdates' as const,
+    },
+    {
+      id: 'systemUpdates',
+      label: 'System Updates',
+      description: 'Important CriderGPT announcements',
+      icon: Megaphone,
+      key: 'systemUpdates' as const,
+    },
+    {
+      id: 'projectReminders',
+      label: 'Project Reminders',
+      description: 'Deadlines and task completions',
+      icon: CheckSquare,
+      key: 'projectReminders' as const,
+    },
+    {
+      id: 'generalNotifications',
+      label: 'General Notifications',
+      description: 'Other important updates',
+      icon: Bell,
+      key: 'generalNotifications' as const,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -143,61 +212,27 @@ export function NotificationSettings() {
           <CardContent className="p-4">
             <h4 className="font-semibold mb-4">Notification Types</h4>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="calendar-events" className="font-medium">Calendar Events</Label>
-                  <p className="text-sm text-muted-foreground">Upcoming events and reminders</p>
-                </div>
-                <Switch
-                  id="calendar-events"
-                  checked={settings.calendarEvents}
-                  onCheckedChange={(checked) => 
-                    setSettings(prev => ({ ...prev, calendarEvents: checked }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="system-updates" className="font-medium">System Updates</Label>
-                  <p className="text-sm text-muted-foreground">Important CriderGPT announcements</p>
-                </div>
-                <Switch
-                  id="system-updates"
-                  checked={settings.systemUpdates}
-                  onCheckedChange={(checked) => 
-                    setSettings(prev => ({ ...prev, systemUpdates: checked }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="project-reminders" className="font-medium">Project Reminders</Label>
-                  <p className="text-sm text-muted-foreground">Deadlines and task completions</p>
-                </div>
-                <Switch
-                  id="project-reminders"
-                  checked={settings.projectReminders}
-                  onCheckedChange={(checked) => 
-                    setSettings(prev => ({ ...prev, projectReminders: checked }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="general-notifications" className="font-medium">General Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Other important updates</p>
-                </div>
-                <Switch
-                  id="general-notifications"
-                  checked={settings.generalNotifications}
-                  onCheckedChange={(checked) => 
-                    setSettings(prev => ({ ...prev, generalNotifications: checked }))
-                  }
-                />
-              </div>
+              {notificationTypes.map((type) => {
+                const Icon = type.icon;
+                return (
+                  <div key={type.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <Label htmlFor={type.id} className="font-medium">{type.label}</Label>
+                        <p className="text-sm text-muted-foreground">{type.description}</p>
+                      </div>
+                    </div>
+                    <Switch
+                      id={type.id}
+                      checked={settings[type.key]}
+                      onCheckedChange={(checked) => 
+                        setSettings(prev => ({ ...prev, [type.key]: checked }))
+                      }
+                    />
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -231,20 +266,5 @@ export function NotificationSettings() {
   );
 }
 
-export function getNotificationSettings() {
-  const saved = localStorage.getItem('notification-settings');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (error) {
-      console.error('Error loading notification settings:', error);
-    }
-  }
-  
-  return {
-    calendarEvents: true,
-    systemUpdates: true,
-    projectReminders: true,
-    generalNotifications: true,
-  };
-}
+// Re-export for backwards compatibility
+export { getNotificationSettings };

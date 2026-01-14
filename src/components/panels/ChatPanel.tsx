@@ -21,6 +21,7 @@ import { usePredictiveSuggestions } from "@/hooks/usePredictiveSuggestions";
 import { usePendingTasks } from "@/hooks/usePendingTasks";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -74,6 +75,13 @@ export default function ChatPanel() {
     dismissTask, 
     analyzeAndCreateTask 
   } = usePendingTasks();
+  
+  // Browser notifications
+  const { 
+    canSendNotifications, 
+    sendImageNotification, 
+    sendAIResponseNotification 
+  } = useBrowserNotifications();
   
   // Auto-collapse sidebar on mobile
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
@@ -184,6 +192,11 @@ export default function ChatPanel() {
           if (data?.imageUrl || data?.image) {
             const imageUrl = data.imageUrl || data.image;
             await sendMessage(convId, `Here's your generated image! 🎨`, "assistant", undefined, imageUrl);
+            
+            // Send browser notification if user is not on the page
+            if (document.hidden && canSendNotifications) {
+              sendImageNotification(message, imageUrl);
+            }
           } else if (data?.error) {
             throw new Error(data.error);
           } else {
@@ -220,6 +233,11 @@ export default function ChatPanel() {
             ? (result as { tokens_used?: number }).tokens_used 
             : undefined;
           await sendMessage(convId, response, "assistant", tokensUsed);
+
+          // Send browser notification if user is not on the page
+          if (document.hidden && canSendNotifications) {
+            sendAIResponseNotification(response);
+          }
 
           // Auto-rename conversation based on first message
           if (messages.length === 0 && message.length > 0) {
