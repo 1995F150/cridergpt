@@ -7,6 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { OfflineStatusBadge } from "@/components/OfflineIndicator";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
@@ -73,6 +74,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
           
           {user ? (
             <>
+              <NotificationCenter />
               <Button 
                 variant="ghost" 
                 size="sm"
