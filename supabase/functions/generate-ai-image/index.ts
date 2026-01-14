@@ -18,170 +18,156 @@ const CHARACTER_KEYWORDS: Record<string, string[]> = {
 
 const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback'];
 
-// USER-SPECIFIED REFERENCE COPY RULES - 100% ACCURACY REQUIRED
-const REFERENCE_COPY_RULES = `
-=== REFERENCE PHOTO GENERATION SYSTEM - 100% FACIAL ACCURACY ===
+// =====================================================
+// SMART KEYWORD EXTRACTION FOR LONG PROMPTS
+// =====================================================
+function extractImageKeywords(longPrompt: string): string {
+  const prompt = longPrompt.toLowerCase();
+  
+  // Visual style keywords to detect and preserve
+  const styleKeywords = [
+    'blueprint', 'diagram', 'schematic', 'wireframe', 'floor plan', 'layout',
+    'realistic', 'photorealistic', 'cinematic', 'artistic', 'cartoon', 'anime',
+    '3d', '2d', 'isometric', 'aerial view', 'birds eye', 'side view', 'front view',
+    'portrait', 'landscape', 'panoramic', 'close-up', 'wide shot',
+    'vintage', 'retro', 'modern', 'futuristic', 'sci-fi', 'fantasy',
+    'dark', 'bright', 'colorful', 'monochrome', 'black and white', 'sepia',
+    'minimalist', 'detailed', 'complex', 'simple', 'clean', 'professional',
+    'technical', 'architectural', 'engineering', 'industrial'
+  ];
+  
+  // Subject keywords
+  const subjectKeywords = [
+    'data center', 'datacenter', 'server', 'server room', 'server rack',
+    'building', 'office', 'house', 'room', 'interior', 'exterior',
+    'person', 'man', 'woman', 'people', 'group', 'portrait',
+    'landscape', 'nature', 'city', 'urban', 'rural',
+    'car', 'vehicle', 'machine', 'equipment', 'technology',
+    'logo', 'icon', 'symbol', 'graphic', 'illustration',
+    'farm', 'tractor', 'field', 'barn', 'agriculture', 'crop',
+    'animal', 'cow', 'horse', 'dog', 'cat', 'livestock'
+  ];
+  
+  // Size/scale keywords
+  const scaleKeywords = [
+    'large', 'small', 'huge', 'tiny', 'massive', 'compact',
+    'big', 'little', 'giant', 'mini', 'mega', 'micro'
+  ];
+  
+  // Quality/detail keywords
+  const qualityKeywords = [
+    'high quality', 'hd', '4k', '8k', 'ultra', 'premium',
+    'detailed', 'intricate', 'precise', 'accurate', 'professional'
+  ];
+  
+  // Extract found keywords
+  const foundStyles: string[] = [];
+  const foundSubjects: string[] = [];
+  const foundScales: string[] = [];
+  const foundQualities: string[] = [];
+  
+  // Find matches
+  for (const kw of styleKeywords) {
+    if (prompt.includes(kw)) foundStyles.push(kw);
+  }
+  for (const kw of subjectKeywords) {
+    if (prompt.includes(kw)) foundSubjects.push(kw);
+  }
+  for (const kw of scaleKeywords) {
+    if (prompt.includes(kw)) foundScales.push(kw);
+  }
+  for (const kw of qualityKeywords) {
+    if (prompt.includes(kw)) foundQualities.push(kw);
+  }
+  
+  // Extract any quoted phrases (user intentions)
+  const quotedPhrases = longPrompt.match(/"([^"]+)"/g)?.map(q => q.replace(/"/g, '')) || [];
+  
+  // Extract key nouns using simple pattern matching
+  const sentences = longPrompt.split(/[.!?]+/);
+  const keyPhrases: string[] = [];
+  
+  // Look for "generate/create/make X" patterns
+  for (const sentence of sentences) {
+    const genMatch = sentence.match(/(?:generate|create|make|draw|design|build|show)\s+(?:a|an|the)?\s*(.+?)(?:for|with|that|which|,|$)/i);
+    if (genMatch) {
+      keyPhrases.push(genMatch[1].trim().substring(0, 100));
+    }
+  }
+  
+  // Look for "X of Y" patterns (e.g., "blueprint of a data center")
+  const ofMatch = longPrompt.match(/(\w+(?:\s+\w+)?)\s+of\s+(?:a|an|the)?\s*(.+?)(?:\.|,|for|with|that|$)/i);
+  if (ofMatch) {
+    keyPhrases.push(`${ofMatch[1]} of ${ofMatch[2].substring(0, 50)}`);
+  }
+  
+  // Build condensed prompt
+  const parts: string[] = [];
+  
+  // Priority 1: Extracted key phrases from user intent
+  if (keyPhrases.length > 0) {
+    parts.push(keyPhrases.slice(0, 2).join(', '));
+  }
+  
+  // Priority 2: Found subjects
+  if (foundSubjects.length > 0) {
+    parts.push(foundSubjects.slice(0, 3).join(' '));
+  }
+  
+  // Priority 3: Styles
+  if (foundStyles.length > 0) {
+    parts.push(foundStyles.slice(0, 3).join(', '));
+  }
+  
+  // Priority 4: Scale
+  if (foundScales.length > 0) {
+    parts.push(foundScales[0]);
+  }
+  
+  // Priority 5: Quality
+  if (foundQualities.length > 0) {
+    parts.push(foundQualities[0]);
+  }
+  
+  // Priority 6: Quoted phrases (explicit user requests)
+  if (quotedPhrases.length > 0) {
+    parts.push(quotedPhrases.slice(0, 2).join(', '));
+  }
+  
+  // If we found nothing, just take the first 200 chars and clean it
+  if (parts.length === 0) {
+    return longPrompt
+      .substring(0, 300)
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  
+  const condensed = parts.join(', ');
+  console.log(`📝 Keyword extraction: "${condensed}" (from ${longPrompt.length} chars)`);
+  return condensed;
+}
 
-Generate images or video using the reference photos provided for each character.
-Use EVERY reference photo provided for each character.
-COPY the reference photos with 100% FACIAL ACCURACY. Follow these rules:
-
-CHARACTERS:
-- Savanaa (multiple reference photos - COMBINE ALL for clearest identity)
-- Jessie Crider (reference photo provided)  
-- Dr Harman (reference photo provided)
-
-=== REFERENCE PHOTO USAGE RULES ===
-
-1. USE EVERY REFERENCE PHOTO PROVIDED
-   - If multiple reference photos exist for one character, COMBINE them intelligently
-   - The final image must reflect the CLEAREST and MOST CONSISTENT facial features
-   - Prioritize: eyes, nose, mouth, facial shape, and hair from the clearest reference
-
-2. FACIAL FEATURES MUST MATCH REFERENCES 100%
-   - Eye shape, eye color, eye spacing - COPY EXACTLY from references
-   - Nose shape and size - COPY EXACTLY from references
-   - Mouth, lips, smile pattern - COPY EXACTLY from references
-   - Jawline and chin - COPY EXACTLY from references
-   - Eyebrow shape and thickness - COPY EXACTLY from references
-   - Skin tone and texture - COPY EXACTLY from references
-   - Any moles, freckles, dimples - COPY EXACTLY from references
-   - DO NOT ALTER facial features from reference photos
-
-3. MULTI-REFERENCE CONSOLIDATION
-   - Combine multiple reference photos for a single character into ONE CONSISTENT IDENTITY
-   - If features differ between references, use the MOST DETAILED/CLEAR version
-   - Study ALL reference photos to build COMPLETE understanding of the face
-   - The consolidated identity must be INSTANTLY RECOGNIZABLE
-
-4. DO NOT MODIFY:
-   - Facial features
-   - Skin tone
-   - Eye color
-   - Hair color or texture
-   - Gender, ethnicity, or age (unless explicitly instructed)
-   
-5. MAY VARY SLIGHTLY (only if necessary for scene context):
-   - Jewelry
-   - Clothing (can vary)
-   - Minor accessories
-   - BUT the FACE MUST REMAIN IDENTICAL TO REFERENCES
-
-6. ORIENTATION AND PERSPECTIVE:
-   - Must preserve recognizability
-   - Faces should be UPRIGHT and CLEAR
-   - No distorted angles that obscure identity
-
-=== MULTI-CHARACTER SCENE RULES ===
-
-1. Support multiple characters in the same frame
-2. EACH character's face must match their references INDEPENDENTLY
-3. Do NOT blend or mix features between different characters
-4. Maintain relative scale, position, and orientation so characters appear NATURALLY together
-5. Backgrounds, objects, or props can vary
-6. Must NOT distort or alter ANY character's face
-
-=== OUTPUT CONSISTENCY REQUIREMENTS ===
-
-1. CONSISTENCY: For repeated generations of the same prompt, characters must look THE SAME every time
-2. VIDEO: For video generation, ensure frame-to-frame identity consistency
-3. CHAT: For chat interface generation, apply the SAME reference-photo accuracy rules
-4. MULTI-CHAR: When generating multiple characters, EACH must match their individual references
-
-=== EXECUTION PRIORITY ===
-
-1. ALWAYS prioritize reference-photo fidelity over creativity
-2. Treat reference photos as THE EXACT IDENTITY of each character
-3. Do NOT invent or extrapolate facial features
-4. Every output must CLEARLY MATCH the reference images 99-100% of the time
-5. Someone who knows this person should IMMEDIATELY recognize them
-6. Use the CLEAREST reference photo features when combining multiple refs
-
-=== CRITICAL REMINDER ===
-The reference photos ARE the characters. COPY THEM EXACTLY.
-Do not creatively reinterpret. Do not stylize the face.
-The face is LOCKED to the reference photos - 100% accuracy required.
-Anyone who knows these people must INSTANTLY recognize them.
+// =====================================================
+// CONDENSED CHARACTER INSTRUCTIONS (for token efficiency)
+// =====================================================
+const COMPACT_REFERENCE_RULES = `
+IDENTITY LOCK: Copy faces from reference photos with 100% accuracy.
+RULES:
+- Eyes, nose, mouth, jawline, skin tone = EXACT match to reference
+- Hair color/style = EXACT match
+- Gender, age, ethnicity = DO NOT change
+- May vary: clothing, accessories, background
+- Multi-character: each face matches their own references ONLY
+- Consistency: same person must look identical across generations
+EXECUTE: Reference photos ARE the identity. Copy exactly.
 `;
 
-// Detailed character profiles with 100% accuracy instructions
-const CHARACTER_PROFILES: Record<string, string> = {
-  'jessie': `
-CHARACTER: JESSIE CRIDER
-Role: Primary Creator / App Owner / FFA Historian 2025-2026
-Gender: Male (DO NOT CHANGE)
-Age: Young adult (DO NOT CHANGE)
-Hair: Blonde/light brown, wavy texture - COPY FROM REFERENCE
-Skin: Light/fair complexion - COPY FROM REFERENCE
-Key Features: Wavy light hair, young male features, casual modern style
-Reference Photo: 1 provided - COPY THIS FACE WITH 100% ACCURACY
-CRITICAL: Every facial feature must match the reference photo exactly
-
-🎽 FFA JACKET IDENTITY (PERMANENT - Use when contextually appropriate):
-When generating Jessie in formal, agricultural, leadership, ceremony, FFA events, or public appearance contexts:
-- Official FFA Blue Corduroy Jacket with visible ribbing texture
-- Gold embroidered "Jessie Crider" on front left chest
-- Gold embroidered "Historian" title below name
-- Gold embroidered "2025-2026" year below title
-- Official FFA emblem patch on front right chest (eagle, owl, plow, rising sun design)
-- Gold/yellow accent trim on collar
-- Officer pins on front left
-- Traditional structured, waist-length fit
-
-FFA JACKET GENERATION RULES:
-- When explicitly requested ("FFA jacket", "in his FFA jacket", "historian jacket") → ALWAYS include jacket with exact specifications
-- Color: Deep navy blue corduroy ONLY - no alterations permitted
-- Embroidery: Gold/yellow thread ONLY
-- Layout: Name/title on left, FFA emblem on right - NEVER swap
-- DO NOT feminize, stylize incorrectly, or merge with non-FFA uniforms
-- The jacket is SYMBOLIC, EARNED, and OFFICIAL - represent it with accuracy
-
-FFA Jacket Reference Photo: /ffa-jacket-reference-1.jpg - COPY THIS EXACTLY
-`,
-  'dr-harman': `
-CHARACTER: DR. HARMAN  
-Role: Historical Ancestor (3rd Great-Grandfather)
-Era: 1800s American
-Gender: Male (DO NOT CHANGE)
-Hair: Dark hair, parted in the middle - COPY FROM REFERENCE
-DISTINCTIVE FEATURE: FULL THICK BEARD - graying/salt-and-pepper (THIS IS HIS MOST RECOGNIZABLE TRAIT - MUST BE PRESENT)
-Eyes: Intense, piercing gaze - COPY FROM REFERENCE
-Attire: Dark formal 1800s suit, white dress shirt
-Skin: Weathered, period-appropriate complexion - COPY FROM REFERENCE
-Reference Photo: 1 provided - COPY THIS FACE WITH 100% ACCURACY, especially the beard
-Historical Note: Use sepia/vintage tones, period-accurate styling
-CRITICAL: The beard is his defining feature - MUST match reference exactly
-`,
-  'savanaa': `
-CHARACTER: SAVANAA
-Role: Jessie's Girlfriend
-Gender: Female (DO NOT CHANGE)
-Age: Young adult (DO NOT CHANGE)
-Hair: Dark hair (brown/black) - COPY FROM REFERENCES
-Eyes: Warm, expressive - COPY FROM REFERENCES
-Skin: Natural, healthy complexion - COPY FROM REFERENCES
-Personality: Confident, bold, vibrant
-Key Features: Dark hair, warm expressive eyes, natural beauty
-Reference Photos: MULTIPLE provided (3+) - COMBINE ALL INTO ONE CONSISTENT IDENTITY
-CRITICAL: Use the clearest facial features from ALL references to build complete identity
-Study ALL reference photos to understand her face completely
-The combined identity must be INSTANTLY RECOGNIZABLE as Savanaa
-`,
-  'jr-hoback': `
-CHARACTER: JR HOBACK
-Role: Friend/Family Member
-Gender: Male (DO NOT CHANGE)
-Age: Middle-aged adult (DO NOT CHANGE)
-Hair: Gray/white, short curly hair - COPY FROM REFERENCES
-Eyes: Light colored, kind expression - COPY FROM REFERENCES  
-Skin: Fair complexion with natural weathering - COPY FROM REFERENCES
-Key Features: Distinctive gray curly hair, friendly smile, warm demeanor
-Build: Average/stocky build
-Reference Photos: MULTIPLE provided (3) - USE ALL FOR COMPLETE IDENTITY
-CRITICAL: Copy the gray curly hair, facial structure, and friendly expression EXACTLY
-Study ALL reference photos to understand his face completely
-The identity must be INSTANTLY RECOGNIZABLE as JR Hoback
-`
+// Compact character profiles
+const COMPACT_PROFILES: Record<string, string> = {
+  'jessie': 'JESSIE CRIDER: Male, young adult, blonde/light brown wavy hair, fair skin, FFA Historian 2025-2026. When FFA context: navy blue corduroy jacket, gold "Jessie Crider" + "Historian" + "2025-2026" embroidery, FFA emblem right chest.',
+  'dr-harman': 'DR. HARMAN: Male, 1800s ancestor, dark hair parted middle, FULL THICK SALT-AND-PEPPER BEARD (defining feature), intense eyes, weathered skin, formal 1800s suit. Use sepia/vintage tones.',
+  'savanaa': 'SAVANAA: Female, young adult, dark brown/black hair, warm expressive eyes, natural complexion, confident vibrant personality.',
+  'jr-hoback': 'JR HOBACK: Male, middle-aged, gray/white SHORT CURLY hair (defining feature), light eyes, fair weathered skin, friendly warm smile, stocky build.'
 };
 
 serve(async (req) => {
@@ -204,6 +190,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log(`📥 Received prompt (${prompt.length} chars): "${prompt.substring(0, 100)}..."`);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -257,8 +245,7 @@ serve(async (req) => {
 
     console.log('Final detected slugs:', detectedSlugs);
 
-    // Get ALL references for detected characters from the DATABASE (not provided chars)
-    // This ensures we always have the correct reference_photo_url
+    // Get ALL references for detected characters
     let characters: any[] = [];
 
     if (detectedSlugs.length > 0) {
@@ -273,11 +260,6 @@ serve(async (req) => {
     }
 
     console.log(`Selected ${characters.length} character reference(s) for generation`);
-    
-    // Debug: log what characters we have
-    for (const char of characters) {
-      console.log(`Character found: slug=${char.slug}, name=${char.name}, url=${char.reference_photo_url}`);
-    }
 
     // Group by base character name
     const characterGroups: Record<string, any[]> = {};
@@ -289,149 +271,88 @@ serve(async (req) => {
       }
       characterGroups[baseName].push(char);
     }
-    
+
     console.log(`Character groups: ${JSON.stringify(Object.keys(characterGroups))}`);
 
     const sortRefs = (a: any, b: any) => {
       const ap = a.is_primary ? 1 : 0;
       const bp = b.is_primary ? 1 : 0;
       if (ap !== bp) return bp - ap;
-      const ag = a.generation_count ?? 0;
-      const bg = b.generation_count ?? 0;
-      if (ag !== bg) return bg - ag;
-      const au = new Date(a.updated_at || a.created_at || 0).getTime();
-      const bu = new Date(b.updated_at || b.created_at || 0).getTime();
-      return bu - au;
+      return (b.generation_count ?? 0) - (a.generation_count ?? 0);
     };
 
-    // Use ALL references for maximum accuracy - the model should combine them intelligently
-    // For Savanaa with 3 refs, use all 3. For single-ref characters, use the 1.
-  const MAX_REFS_PER_CHARACTER = 10; // Increased to use all 10 Savanaa refs
+    // Select up to 5 refs per character (reduced from 10 for token efficiency)
+    const MAX_REFS_PER_CHARACTER = 5;
+    const selectedCharactersForRefs: any[] = [];
 
-  const selectedCharactersForRefs: any[] = [];
-  const validationErrors: string[] = [];
-  
-  // Reference loading tracker for detailed logging
-  const referenceLoadingLog: {
-    attempted: { charName: string; url: string; type: 'primary' | 'additional' }[];
-    success: { charName: string; url: string; type: 'primary' | 'additional' }[];
-    failed: { charName: string; url: string; type: 'primary' | 'additional'; reason: string }[];
-  } = {
-    attempted: [],
-    success: [],
-    failed: []
-  };
-    
     for (const [groupName, refs] of Object.entries(characterGroups)) {
-      console.log(`Processing group "${groupName}" with ${refs.length} refs`);
-      
-      // Validate each reference photo exists and is accessible
-      const validRefs: any[] = [];
-      for (const ref of refs) {
-        if (!ref.reference_photo_url) {
-          console.warn(`Missing reference_photo_url for ${ref.slug || ref.name}`);
-          validationErrors.push(`Missing photo URL for ${ref.name || ref.slug}`);
-          continue;
-        }
-        validRefs.push(ref);
-      }
-      
-      if (validRefs.length === 0) {
-        validationErrors.push(`No valid reference photos found for ${groupName}`);
-        continue;
-      }
+      const validRefs = refs.filter(r => r.reference_photo_url);
+      if (validRefs.length === 0) continue;
       
       const sorted = [...validRefs].sort(sortRefs);
-      // Use all available refs up to the cap
       const selectedRefs = sorted.slice(0, MAX_REFS_PER_CHARACTER);
       selectedCharactersForRefs.push(...selectedRefs);
       console.log(`Selected ${selectedRefs.length} of ${refs.length} refs for ${groupName}`);
     }
 
-    // If validation found missing refs, log but continue with available ones
-    if (validationErrors.length > 0) {
-      console.warn('Reference validation warnings:', validationErrors);
-    }
-
-    console.log(`Reference selection: using ${selectedCharactersForRefs.length} ref(s) total`);
-
-    // Build the master prompt
+    // =====================================================
+    // SMART PROMPT PROCESSING
+    // =====================================================
+    
+    // If prompt is too long (> 500 chars), extract keywords
+    const isLongPrompt = prompt.length > 500;
+    const processedPrompt = isLongPrompt ? extractImageKeywords(prompt) : prompt;
+    
+    // Build the master prompt (CONDENSED for token efficiency)
     let masterPrompt = '';
 
     if (Object.keys(characterGroups).length > 0) {
-      // Add the reference copy rules
-      masterPrompt = REFERENCE_COPY_RULES + '\n\n';
+      // Add compact reference rules
+      masterPrompt = COMPACT_REFERENCE_RULES + '\n\n';
 
-      // Add specific character profiles
-      masterPrompt += '=== CHARACTER PROFILES FOR THIS GENERATION ===\n\n';
-
-      for (const [baseName, refs] of Object.entries(characterGroups)) {
-        const profile = CHARACTER_PROFILES[baseName];
+      // Add compact character profiles
+      masterPrompt += 'CHARACTERS:\n';
+      for (const baseName of Object.keys(characterGroups)) {
+        const profile = COMPACT_PROFILES[baseName];
         if (profile) {
-          masterPrompt += profile + '\n';
+          masterPrompt += `• ${profile}\n`;
         }
-
-        const primary = refs.find((r: any) => r.is_primary) || refs[0];
-        masterPrompt += `Database Info:\n`;
-        masterPrompt += `- Reference Photos (available): ${refs.length}\n`;
-        masterPrompt += `- Reference Photos (used): ${Math.min(refs.length, MAX_REFS_PER_CHARACTER)}\n`;
-        if (primary.description) masterPrompt += `- Description: ${primary.description}\n`;
-        if (primary.traits) masterPrompt += `- Traits: ${primary.traits}\n`;
-        if (primary.era) masterPrompt += `- Era: ${primary.era}\n`;
-        masterPrompt += '\n';
       }
+      masterPrompt += '\n';
 
-      // Add user's actual request
-      masterPrompt += '=== USER REQUEST ===\n';
-      masterPrompt += prompt + '\n\n';
-
-      // Final execution reminder - 100% accuracy
-      masterPrompt += '=== EXECUTE WITH 100% FACIAL ACCURACY ===\n';
-      masterPrompt += 'Generate the image with characters that are EXACT COPIES of their reference photos.\n';
-      masterPrompt += 'The faces must be INSTANTLY RECOGNIZABLE. 100% accuracy required.\n';
-      masterPrompt += 'Copy the references EXACTLY - do not invent or creatively reinterpret.\n';
-      masterPrompt += 'Use ALL provided reference photos to build the most accurate representation.\n';
-      masterPrompt += 'Anyone who knows these people must IMMEDIATELY recognize them in the output.\n';
-
-      // Era-specific styling
-      const hasHistorical = characters.some((c: any) =>
-        c.era?.toLowerCase()?.includes('1800') ||
-        c.era?.toLowerCase()?.includes('western') ||
-        c.slug?.includes('dr-harman')
-      );
-
-      if (hasHistorical) {
-        masterPrompt += '\nHISTORICAL MODE: Use vintage/sepia aesthetic, period clothing. But FACE stays locked to reference.\n';
-      }
+      // Add the processed user request
+      masterPrompt += `REQUEST: ${processedPrompt}\n`;
+      masterPrompt += '\nGENERATE: High quality image matching request. Faces EXACTLY match references.';
     } else {
-      masterPrompt = prompt;
+      // No characters - just use processed prompt with quality boost
+      masterPrompt = `${processedPrompt}\n\nStyle: High quality, detailed, professional.`;
     }
 
-    // Style modifiers
+    // Add style modifiers
     if (settings) {
       const styles: string[] = [];
       if (settings.blackAndWhite) styles.push('black and white');
-      if (settings.vintageTexture) styles.push('vintage texture, aged photo');
+      if (settings.vintageTexture) styles.push('vintage texture');
       if (settings.filmGrain) styles.push('film grain');
       if (settings.mood) styles.push(`${settings.mood} mood`);
-      if (settings.style === 'rdr2') styles.push('Red Dead Redemption 2 style, Western');
+      if (settings.style === 'rdr2') styles.push('Red Dead Redemption 2 style');
       if (settings.style === 'cinematic') styles.push('cinematic');
       if (settings.style === 'portrait') styles.push('portrait photography');
       if (settings.era) styles.push(`${settings.era} era`);
 
       if (styles.length > 0) {
-        masterPrompt += `\nSTYLE: ${styles.join(', ')}\n`;
+        masterPrompt += `\nSTYLE: ${styles.join(', ')}`;
       }
     }
 
-    console.log('Master prompt length:', masterPrompt.length);
+    console.log(`📝 Final prompt (${masterPrompt.length} chars): "${masterPrompt.substring(0, 200)}..."`);
 
     // Build message with reference images
     const messageContent: any[] = [
       { type: 'text', text: masterPrompt }
     ];
 
-    // Edit mode source image (identity anchor)
+    // Edit mode source image
     if (mode === 'edit' && imageUrl) {
       messageContent.push({
         type: 'image_url',
@@ -439,22 +360,18 @@ serve(async (req) => {
       });
     }
 
-    // Add ALL selected reference images (capped at 5 per character)
-    // Use the production URL that's publicly accessible
-    const siteUrl = 'https://crideros.lovable.app';
+    // FIXED: Use correct production URL
+    const siteUrl = 'https://cridergpt.lovable.app';
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 
-    // Helper to fetch and add reference image with detailed logging
-    const addReferenceImage = async (
-      url: string, 
-      charName: string, 
-      refNum: number,
-      refType: 'primary' | 'additional'
-    ): Promise<boolean> => {
-      referenceLoadingLog.attempted.push({ charName, url, type: refType });
-      
+    // Helper to fetch and add reference image
+    const addReferenceImage = async (url: string, charName: string): Promise<boolean> => {
       try {
-        const imageResponse = await fetch(url);
+        const imageResponse = await fetch(url, { 
+          headers: { 'Accept': 'image/*' },
+          signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+        
         if (imageResponse.ok) {
           const arrayBuffer = await imageResponse.arrayBuffer();
           const base64 = base64Encode(new Uint8Array(arrayBuffer));
@@ -466,39 +383,29 @@ serve(async (req) => {
             image_url: { url: dataUrl }
           });
           
-          referenceLoadingLog.success.push({ charName, url, type: refType });
-          console.log(`✅ LOADED [${refType}] ref #${refNum} for "${charName}": ${url}`);
+          console.log(`✅ Loaded ref for "${charName}": ${url}`);
           return true;
         } else {
-          const reason = `HTTP ${imageResponse.status} - ${imageResponse.statusText}`;
-          referenceLoadingLog.failed.push({ charName, url, type: refType, reason });
-          console.error(`❌ FAILED [${refType}] ref for "${charName}": ${url} - ${reason}`);
+          console.error(`❌ Failed ref for "${charName}": ${url} - HTTP ${imageResponse.status}`);
         }
       } catch (fetchError) {
-        const reason = (fetchError as Error).message || 'Unknown fetch error';
-        referenceLoadingLog.failed.push({ charName, url, type: refType, reason });
-        console.error(`❌ FAILED [${refType}] ref for "${charName}": ${url} - ${reason}`);
+        console.error(`❌ Error loading ref for "${charName}": ${url} - ${(fetchError as Error).message}`);
       }
       return false;
     };
 
-    // Fetch reference images and convert to base64 for more reliable delivery
+    // Fetch reference images
     let refCount = 0;
-    const sortedRefs = [...selectedCharactersForRefs].sort(sortRefs);
     const processedCharNames = new Set<string>();
-    
-    for (const char of sortedRefs) {
-      // Skip if we already processed this character name (dedup)
-      if (processedCharNames.has(char.name.toLowerCase())) {
-        continue;
-      }
+
+    for (const char of selectedCharactersForRefs) {
+      if (processedCharNames.has(char.name.toLowerCase())) continue;
       processedCharNames.add(char.name.toLowerCase());
-      
-      // First add the primary reference from the database
+
+      // Build correct reference URL
       if (char.reference_photo_url) {
         let refUrl = char.reference_photo_url;
 
-        // Build full URL
         if (refUrl.startsWith('/')) {
           refUrl = `${siteUrl}${refUrl}`;
         } else if (refUrl.startsWith('character-references/')) {
@@ -507,76 +414,36 @@ serve(async (req) => {
           refUrl = `${siteUrl}/${refUrl}`;
         }
 
-        console.log(`Attempting primary reference for ${char.name}: ${refUrl}`);
-        if (await addReferenceImage(refUrl, char.name, refCount + 1, 'primary')) {
+        if (await addReferenceImage(refUrl, char.name)) {
           refCount++;
         }
       }
+
+      // Try numbered additional references (limited to 5 per char)
+      const slug = char.slug.replace(/-\d+$/, '');
+      const extensions = ['jpg', 'png'];
       
-      // Now try to find additional numbered reference photos (e.g., jr-hoback-reference-2.jpg, savanaa-reference-3.png)
-      const slug = char.slug.replace(/-\d+$/, ''); // Remove trailing number if any
-      const extensions = ['jpg', 'jpeg', 'png', 'webp'];
-      
-      // Try both spellings for Savanaa/Savanna to handle any remaining misspellings
-      const slugVariants = [slug];
-      if (slug.includes('savanaa')) {
-        slugVariants.push(slug.replace('savanaa', 'savanna'));
-      } else if (slug.includes('savanna') && !slug.includes('savanaa')) {
-        slugVariants.push(slug.replace('savanna', 'savanaa'));
-      }
-      
-      for (let i = 2; i <= 12; i++) {
-        let foundAdditional = false;
-        for (const slugVar of slugVariants) {
-          if (foundAdditional) break;
-          for (const ext of extensions) {
-            const additionalUrl = `${siteUrl}/${slugVar}-reference-${i}.${ext}`;
-            
-            try {
-              const checkResponse = await fetch(additionalUrl, { method: 'HEAD' });
-              if (checkResponse.ok) {
-                console.log(`Checking additional reference ${i} for ${char.name}: ${additionalUrl}`);
-                if (await addReferenceImage(additionalUrl, char.name, refCount + 1, 'additional')) {
-                  refCount++;
-                  foundAdditional = true;
-                  break; // Found this numbered reference, move to next number
-                }
+      for (let i = 2; i <= 5 && refCount < 15; i++) {
+        let found = false;
+        for (const ext of extensions) {
+          const additionalUrl = `${siteUrl}/${slug}-reference-${i}.${ext}`;
+          
+          try {
+            const checkResponse = await fetch(additionalUrl, { method: 'HEAD' });
+            if (checkResponse.ok) {
+              if (await addReferenceImage(additionalUrl, char.name)) {
+                refCount++;
+                found = true;
+                break;
               }
-            } catch {
-              // File doesn't exist, continue
             }
-          }
+          } catch { /* File doesn't exist */ }
         }
-        // Don't break early - continue searching all numbers up to 12
+        if (!found) break; // Stop if we can't find the next numbered reference
       }
     }
 
-    // ========== REFERENCE PHOTO LOADING SUMMARY ==========
-    console.log('\n========================================');
-    console.log('📸 REFERENCE PHOTO LOADING SUMMARY');
-    console.log('========================================');
-    console.log(`Total attempted: ${referenceLoadingLog.attempted.length}`);
-    console.log(`✅ Successfully loaded: ${referenceLoadingLog.success.length}`);
-    console.log(`❌ Failed to load: ${referenceLoadingLog.failed.length}`);
-
-    if (referenceLoadingLog.success.length > 0) {
-      console.log('\n✅ SUCCESSFUL LOADS:');
-      referenceLoadingLog.success.forEach((item, i) => {
-        console.log(`  ${i + 1}. [${item.type}] ${item.charName}: ${item.url}`);
-      });
-    }
-
-    if (referenceLoadingLog.failed.length > 0) {
-      console.log('\n❌ FAILED LOADS:');
-      referenceLoadingLog.failed.forEach((item, i) => {
-        console.log(`  ${i + 1}. [${item.type}] ${item.charName}: ${item.url}`);
-        console.log(`     Reason: ${item.reason}`);
-      });
-    }
-
-    console.log('\n========================================');
-    console.log(`Proceeding with ${refCount} reference photo(s)`);
-    console.log('========================================\n');
+    console.log(`📸 Total reference photos loaded: ${refCount}`);
 
     // Generate with Gemini Flash
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -589,7 +456,6 @@ serve(async (req) => {
         model: 'google/gemini-2.5-flash-image-preview',
         messages: [{ role: 'user', content: messageContent }],
         modalities: ['image', 'text'],
-        // Reduce randomness for repeatability / identity consistency
         temperature: 0,
         top_p: 0.1
       })
@@ -598,35 +464,40 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('AI Gateway error:', response.status, errorText);
-      
+
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: 'Rate limited. Try again shortly.' }),
+          JSON.stringify({ error: 'Rate limited. Try again in a few seconds.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
+
       return new Response(
-        JSON.stringify({ error: `Generation failed: ${response.status}` }),
+        JSON.stringify({ error: `Generation failed: ${response.status}`, details: errorText.substring(0, 200) }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const data = await response.json();
     let imageResult = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    
+
     if (!imageResult) {
       const textResponse = data.choices?.[0]?.message?.content || 'No response';
       console.error('No image generated:', textResponse.substring(0, 300));
+      
+      // Try to provide helpful feedback
+      let userMessage = 'Could not generate image.';
+      if (textResponse.includes('cannot generate') || textResponse.includes('unable to')) {
+        userMessage = 'The image request was rejected. Try rephrasing your prompt or removing specific person references.';
+      }
+      
       return new Response(
-        JSON.stringify({ error: 'No image generated', details: textResponse }),
+        JSON.stringify({ error: userMessage, details: textResponse.substring(0, 200) }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Watermark note: ImageMagick not available in edge functions
-    // The watermark is added via prompt instruction instead
-    console.log('Image generated successfully');
+    console.log('✅ Image generated successfully');
 
     // Log generation
     const authHeader = req.headers.get('Authorization');
@@ -636,7 +507,7 @@ serve(async (req) => {
         const token = authHeader.replace('Bearer ', '');
         const { data: { user } } = await supabase.auth.getUser(token);
         userId = user?.id;
-      } catch {}
+      } catch { /* ignore auth errors */ }
     }
 
     if (userId) {
@@ -654,18 +525,15 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         imageUrl: imageResult,
         image: imageResult,
-        message: data.choices?.[0]?.message?.content || 'Generated with 99% reference accuracy',
+        message: `Generated successfully (${refCount} references used)`,
         detectedCharacters: Object.keys(characterGroups),
         referencePhotosUsed: refCount,
-        referenceLoadingDetails: {
-          attempted: referenceLoadingLog.attempted.length,
-          success: referenceLoadingLog.success.length,
-          failed: referenceLoadingLog.failed.length,
-          failedItems: referenceLoadingLog.failed
-        }
+        promptProcessed: isLongPrompt,
+        originalPromptLength: prompt.length,
+        processedPromptLength: processedPrompt.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
