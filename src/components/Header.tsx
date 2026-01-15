@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Sun, Moon, Menu } from "lucide-react";
+import { Upload, Sun, Moon, Menu, Download } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { OfflineStatusBadge } from "@/components/OfflineIndicator";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
@@ -18,6 +19,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { isInstallable, promptInstall } = usePWAInstall();
 
   const handleAuthAction = () => {
     if (user) {
@@ -25,6 +27,10 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
     } else {
       navigate('/auth');
     }
+  };
+
+  const handleInstall = async () => {
+    await promptInstall();
   };
 
   return (
@@ -58,6 +64,20 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
 
         <div className="flex items-center space-x-2 md:space-x-4">
           <OfflineStatusBadge />
+          
+          {/* PWA Install Button */}
+          {isInstallable && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleInstall}
+              className="hidden sm:flex gap-2 border-primary/30 hover:bg-primary/10"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden md:inline">Install App</span>
+            </Button>
+          )}
+          
           <Button
             variant="ghost"
             size="sm"

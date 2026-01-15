@@ -7,7 +7,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { useUnifiedMemory } from "@/hooks/useUnifiedMemory";
-import { Brain, Loader2 } from "lucide-react";
+import { Brain, Loader2, Download, Smartphone, CheckCircle2 } from "lucide-react";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { APP_VERSION } from "@/config/appVersion";
 
 export function AppSettings() {
   const { theme, toggleTheme } = useTheme();
@@ -140,6 +142,32 @@ export function AppSettings() {
               id="auto-save"
               onCheckedChange={handleAutoSaveToggle}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* PWA Install Section */}
+      <PWAInstallPrompt variant="card" />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>App Information</CardTitle>
+          <CardDescription>
+            Version and platform details
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Version</span>
+            <span className="font-mono text-sm">v{APP_VERSION}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Platform</span>
+            <span className="text-sm">
+              {typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches 
+                ? 'Installed App' 
+                : 'Browser'}
+            </span>
           </div>
         </CardContent>
       </Card>

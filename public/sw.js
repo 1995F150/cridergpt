@@ -1,5 +1,5 @@
 // CriderGPT Service Worker for Offline Support
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v3.7.0';
 const STATIC_CACHE = `cridergpt-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `cridergpt-dynamic-${CACHE_VERSION}`;
 const OFFLINE_PAGE = '/offline.html';

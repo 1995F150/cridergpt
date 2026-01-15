@@ -3,7 +3,10 @@
   "short_name": "CriderGPT",
   "description": "AI-powered farming assistant for FS22 and FS25 with calculators, tools, and more",
   "start_url": "/",
+  "id": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#1a1a2e",
   "theme_color": "#1f8b4c",
   "orientation": "any",
@@ -23,5 +26,33 @@
   ],
   "categories": ["productivity", "utilities", "education"],
   "screenshots": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "shortcuts": [
+    {
+      "name": "AI Chat",
+      "short_name": "Chat",
+      "url": "/?panel=chat",
+      "description": "Open AI Chat Assistant",
+      "icons": [{ "src": "/favicon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Calculators",
+      "short_name": "Calc",
+      "url": "/?panel=calculator",
+      "description": "Open Calculators",
+      "icons": [{ "src": "/favicon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "FFA Tools",
+      "short_name": "FFA",
+      "url": "/?panel=ffa",
+      "description": "Open FFA Dashboard",
+      "icons": [{ "src": "/favicon.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "handle_links": "preferred"
 }
