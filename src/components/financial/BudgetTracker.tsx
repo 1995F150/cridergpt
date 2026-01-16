@@ -8,6 +8,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { Trash2, Download, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
+import { addPDFHeader, addPDFFooter, addCornerWatermark } from '@/utils/pdfWatermark';
 
 interface Expense {
   id: string;
@@ -137,19 +138,24 @@ export function BudgetTracker() {
     toast.success('Expense removed');
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     try {
       const doc = new jsPDF();
       
+      // Add CriderGPT branding header with logo
+      let yPosition = await addPDFHeader(doc);
+      
       // Add title
-      doc.setFontSize(20);
-      doc.text('Budget & Expense Report', 20, 30);
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Budget & Expense Report', 20, yPosition);
       
       // Add date
+      yPosition += 10;
       doc.setFontSize(12);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, yPosition);
       
-      let yPosition = 60;
+      yPosition += 15;
       
       // Budget overview
       doc.setFontSize(16);
@@ -190,7 +196,11 @@ export function BudgetTracker() {
         }
       });
       
-      doc.save('budget-report.pdf');
+      // Add footer and corner watermark with logo
+      addPDFFooter(doc);
+      await addCornerWatermark(doc);
+      
+      doc.save('CriderGPT_Budget_Report.pdf');
       toast.success('Budget report exported successfully');
     } catch (error) {
       console.error('PDF export error:', error);

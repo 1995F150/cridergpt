@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { jsPDF } from 'jspdf';
+import { addPDFHeader, addPDFFooter, addCornerWatermark } from './pdfWatermark';
 
 interface FileGenerationOptions {
   userId: string;
@@ -31,30 +32,34 @@ export class FileGenerator {
       // Create PDF
       const doc = new jsPDF();
       
+      // Add CriderGPT branding header with logo
+      let yPosition = await addPDFHeader(doc);
+      
       // Add title
-      doc.setFontSize(20);
-      doc.text(options.title, 20, 30);
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
+      doc.text(options.title, 20, yPosition);
+      yPosition += 10;
       
       // Add timestamp
       doc.setFontSize(10);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 45);
-      
-      // Add content based on type
-      let yPosition = 60;
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 20, yPosition);
+      yPosition += 15;
       
       if (options.content.results) {
         // Calculator results
         doc.setFontSize(14);
         doc.text('Results:', 20, yPosition);
-        yPosition += 20;
+        yPosition += 15;
         
+        doc.setFontSize(10);
         Object.entries(options.content.results).forEach(([key, value]: [string, any]) => {
           if (typeof value === 'object') {
             doc.text(`${key}: ${JSON.stringify(value)}`, 20, yPosition);
           } else {
             doc.text(`${key}: ${value}`, 20, yPosition);
           }
-          yPosition += 10;
+          yPosition += 8;
         });
       }
       
@@ -62,14 +67,18 @@ export class FileGenerator {
         yPosition += 10;
         doc.setFontSize(12);
         doc.text('Relevant Training Data:', 20, yPosition);
-        yPosition += 15;
+        yPosition += 12;
         
         options.content.trainingContext.forEach((training: any, index: number) => {
           doc.setFontSize(10);
           doc.text(`${index + 1}. ${training.content.substring(0, 100)}...`, 20, yPosition);
-          yPosition += 10;
+          yPosition += 8;
         });
       }
+
+      // Add footer and corner watermark with logo
+      addPDFFooter(doc);
+      await addCornerWatermark(doc);
 
       // Convert to blob
       const pdfBlob = doc.output('blob');
