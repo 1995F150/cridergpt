@@ -15,6 +15,7 @@ import {
   FileDown
 } from "lucide-react";
 import jsPDF from "jspdf";
+import { addPDFHeader, addPDFFooter, addCornerWatermark } from "@/utils/pdfWatermark";
 
 export function LivestockRationCalculator() {
   const [animalData, setAnimalData] = useState({
@@ -142,45 +143,71 @@ export function LivestockRationCalculator() {
     });
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (!rationPlan) return;
 
     const today = new Date();
-    const fileName = `${animalData.species || "ration"}_${today.toISOString().split("T")[0]}.pdf`;
+    const fileName = `CriderGPT_${animalData.species || "ration"}_${today.toISOString().split("T")[0]}.pdf`;
 
     const doc = new jsPDF();
 
+    // Add CriderGPT branding header with logo
+    let yPosition = await addPDFHeader(doc);
+
     doc.setFontSize(18);
-    doc.text("Livestock Feed Ration Report", 14, 20);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Livestock Feed Ration Report", 14, yPosition);
+    yPosition += 15;
 
     doc.setFontSize(12);
-    doc.text(`Species: ${animalData.species}`, 14, 30);
-    doc.text(`Production Stage: ${animalData.productionStage}`, 14, 36);
-    doc.text(`Weight: ${animalData.weight} lbs`, 14, 42);
-    doc.text(`Head Count: ${animalData.headCount}`, 14, 48);
-
-    doc.setFontSize(14);
-    doc.text("Daily Feed Ration (lbs)", 14, 60);
-    doc.setFontSize(12);
-    doc.text(`Corn (${rationPlan.cornPercent}%): ${rationPlan.corn}`, 14, 68);
-    doc.text(`Soybean Meal (${rationPlan.soybeanPercent}%): ${rationPlan.soybeanMeal}`, 14, 74);
-    doc.text(`Hay (${rationPlan.hayPercent}%): ${rationPlan.hay}`, 14, 80);
-    doc.text(`Mineral Mix (${rationPlan.mineralPercent}%): ${rationPlan.mineral}`, 14, 86);
-    doc.text(`Total DM Intake: ${rationPlan.totalDMIntake} lbs`, 14, 92);
+    doc.text(`Species: ${animalData.species}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Production Stage: ${animalData.productionStage}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Weight: ${animalData.weight} lbs`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Head Count: ${animalData.headCount}`, 14, yPosition);
+    yPosition += 15;
 
     doc.setFontSize(14);
-    doc.text("Nutritional Analysis", 14, 108);
+    doc.text("Daily Feed Ration (lbs)", 14, yPosition);
+    yPosition += 10;
     doc.setFontSize(12);
-    doc.text(`Crude Protein: ${rationPlan.totalProtein}% (Target: ${rationPlan.proteinTarget}%)`, 14, 116);
-    doc.text(`Energy: ${rationPlan.totalEnergy} (Target: ${rationPlan.energyTarget})`, 14, 122);
-    doc.text(`DM Intake per Head: ${rationPlan.dmIntakePerHead} lbs`, 14, 128);
+    doc.text(`Corn (${rationPlan.cornPercent}%): ${rationPlan.corn}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Soybean Meal (${rationPlan.soybeanPercent}%): ${rationPlan.soybeanMeal}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Hay (${rationPlan.hayPercent}%): ${rationPlan.hay}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Mineral Mix (${rationPlan.mineralPercent}%): ${rationPlan.mineral}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Total DM Intake: ${rationPlan.totalDMIntake} lbs`, 14, yPosition);
+    yPosition += 15;
 
     doc.setFontSize(14);
-    doc.text("Cost Analysis", 14, 144);
+    doc.text("Nutritional Analysis", 14, yPosition);
+    yPosition += 10;
     doc.setFontSize(12);
-    doc.text(`Daily Total: $${rationPlan.dailyCost}`, 14, 152);
-    doc.text(`Per Head/Day: $${rationPlan.costPerHead}`, 14, 158);
-    doc.text(`Monthly Total: $${rationPlan.monthlyCost}`, 14, 164);
+    doc.text(`Crude Protein: ${rationPlan.totalProtein}% (Target: ${rationPlan.proteinTarget}%)`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Energy: ${rationPlan.totalEnergy} (Target: ${rationPlan.energyTarget})`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`DM Intake per Head: ${rationPlan.dmIntakePerHead} lbs`, 14, yPosition);
+    yPosition += 15;
+
+    doc.setFontSize(14);
+    doc.text("Cost Analysis", 14, yPosition);
+    yPosition += 10;
+    doc.setFontSize(12);
+    doc.text(`Daily Total: $${rationPlan.dailyCost}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Per Head/Day: $${rationPlan.costPerHead}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Monthly Total: $${rationPlan.monthlyCost}`, 14, yPosition);
+
+    // Add footer and corner watermark with logo
+    addPDFFooter(doc);
+    await addCornerWatermark(doc);
 
     doc.save(fileName);
   };

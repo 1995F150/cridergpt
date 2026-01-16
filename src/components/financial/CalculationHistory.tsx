@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, Download, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
+import { addPDFHeader, addPDFFooter, addCornerWatermark } from '@/utils/pdfWatermark';
 
 interface HistoryEntry {
   id: string;
@@ -43,19 +44,24 @@ export function CalculationHistory() {
     toast.success('Copied to clipboard');
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     try {
       const doc = new jsPDF();
       
+      // Add CriderGPT branding header with logo
+      let yPosition = await addPDFHeader(doc);
+      
       // Add title
-      doc.setFontSize(20);
-      doc.text('Financial Calculation History', 20, 30);
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Financial Calculation History', 20, yPosition);
       
       // Add date
+      yPosition += 10;
       doc.setFontSize(12);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, yPosition);
       
-      let yPosition = 60;
+      yPosition += 15;
       
       // Add history entries
       history.forEach((entry, index) => {
@@ -75,7 +81,11 @@ export function CalculationHistory() {
         yPosition += lines.length * 4 + 10;
       });
       
-      doc.save('financial-calculations.pdf');
+      // Add footer and corner watermark with logo
+      addPDFFooter(doc);
+      await addCornerWatermark(doc);
+      
+      doc.save('CriderGPT_Financial_Calculations.pdf');
       toast.success('PDF exported successfully');
     } catch (error) {
       console.error('PDF export error:', error);

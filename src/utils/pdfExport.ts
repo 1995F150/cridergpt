@@ -1,5 +1,5 @@
-
 import jsPDF from 'jspdf';
+import { addPDFHeader, addPDFFooter, addCornerWatermark } from './pdfWatermark';
 
 export interface PDFExportData {
   title: string;
@@ -9,23 +9,13 @@ export interface PDFExportData {
   recommendations?: string[];
 }
 
-export function exportToPDF(exportData: PDFExportData): void {
+export async function exportToPDF(exportData: PDFExportData): Promise<void> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const margin = 20;
-  let yPosition = 20;
-
-  // Add CriderGPT branding/watermark
-  doc.setFontSize(24);
-  doc.setTextColor(0, 102, 204);
-  doc.text('CriderGPT', pageWidth / 2, yPosition, { align: 'center' });
   
-  yPosition += 10;
-  doc.setFontSize(12);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Professional Calculator Suite', pageWidth / 2, yPosition, { align: 'center' });
-  
-  yPosition += 20;
+  // Add CriderGPT branding header with logo
+  let yPosition = await addPDFHeader(doc);
 
   // Title and date
   doc.setFontSize(18);
@@ -99,15 +89,9 @@ export function exportToPDF(exportData: PDFExportData): void {
     });
   }
 
-  // Footer with branding
-  const pageCount = doc.internal.pages.length - 1;
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text('Powered by CriderGPT Calculator Suite', pageWidth / 2, 285, { align: 'center' });
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, 285, { align: 'right' });
-  }
+  // Add footer and corner watermark with logo
+  addPDFFooter(doc);
+  await addCornerWatermark(doc);
 
   // Generate filename with date
   const dateStr = new Date().toISOString().split('T')[0];
