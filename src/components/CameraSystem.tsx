@@ -33,11 +33,16 @@ export function CameraSystem({
   
   const { toast } = useToast();
 
-  // Request camera permissions
+  // Request camera permissions and start stream
   const requestPermissions = async () => {
     setIsLoading(true);
     try {
       console.log('📷 Requesting camera permissions...');
+      
+      // Stop any existing stream first
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
       
       const constraints = {
         video: {
@@ -50,14 +55,10 @@ export function CameraSystem({
 
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-      
       setStream(mediaStream);
       setHasPermission(true);
       
-      console.log('✅ Camera permissions granted');
+      console.log('✅ Camera permissions granted, stream ready');
       
       toast({
         title: "Camera Ready",
@@ -76,6 +77,8 @@ export function CameraSystem({
           errorMessage = 'No camera found on this device.';
         } else if (error.name === 'NotSupportedError') {
           errorMessage = 'Camera not supported in this browser.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = 'Camera is in use by another application.';
         }
       }
       
@@ -88,6 +91,43 @@ export function CameraSystem({
       setIsLoading(false);
     }
   };
+
+  // Attach stream to video element when stream changes
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && stream) {
+      video.srcObject = stream;
+      
+      // Explicitly play the video for mobile browsers
+      const playVideo = async () => {
+        try {
+          await video.play();
+          console.log('📹 Video playback started');
+        } catch (err) {
+          console.error('Video play error:', err);
+          // Try again with muted (required for autoplay on some browsers)
+          video.muted = true;
+          try {
+            await video.play();
+            console.log('📹 Video playback started (muted)');
+          } catch (e) {
+            console.error('Video still failed to play:', e);
+          }
+        }
+      };
+      
+      // Wait for metadata to load before playing
+      video.onloadedmetadata = () => {
+        console.log('📹 Video metadata loaded:', video.videoWidth, 'x', video.videoHeight);
+        playVideo();
+      };
+      
+      // If metadata is already loaded
+      if (video.readyState >= 1) {
+        playVideo();
+      }
+    }
+  }, [stream]);
 
   // Stop camera stream
   const stopCamera = () => {
