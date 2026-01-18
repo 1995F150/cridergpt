@@ -1,9 +1,10 @@
 import jsPDF from 'jspdf';
 
 // CriderGPT logo path - stored in public folder for easy loading
+// Using absolute URL to ensure it loads correctly in all contexts
 const LOGO_PATH = '/cridergpt-logo.png';
-const LOGO_WIDTH = 40;
-const LOGO_HEIGHT = 40;
+const LOGO_WIDTH = 30;
+const LOGO_HEIGHT = 30;
 
 // Cache for the loaded logo image
 let cachedLogo: string | null = null;
@@ -15,16 +16,31 @@ export async function loadLogoForPDF(): Promise<string | null> {
   if (cachedLogo) return cachedLogo;
   
   try {
-    const response = await fetch(LOGO_PATH);
+    // Build absolute URL to ensure it works in all contexts
+    const baseUrl = window.location.origin;
+    const logoUrl = `${baseUrl}${LOGO_PATH}`;
+    
+    console.log('📄 Loading PDF logo from:', logoUrl);
+    
+    const response = await fetch(logoUrl);
+    if (!response.ok) {
+      console.error('Failed to fetch logo:', response.status, response.statusText);
+      return null;
+    }
+    
     const blob = await response.blob();
     
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         cachedLogo = reader.result as string;
+        console.log('✅ Logo loaded successfully for PDF');
         resolve(cachedLogo);
       };
-      reader.onerror = () => resolve(null);
+      reader.onerror = () => {
+        console.error('Failed to read logo blob');
+        resolve(null);
+      };
       reader.readAsDataURL(blob);
     });
   } catch (error) {
