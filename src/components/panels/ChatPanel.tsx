@@ -6,7 +6,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import {
   PanelLeftClose,
   PanelLeftOpen,
-  Brain,
   Loader2,
   Sparkles,
   History,
@@ -377,7 +376,11 @@ export default function ChatPanel() {
             )}
             
             <div className="flex items-center gap-2">
-              <Brain className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+              <img 
+                src="/cridergpt-logo.png" 
+                alt="CriderGPT" 
+                className="h-5 w-5 md:h-6 md:w-6 object-contain"
+              />
               <h1 className="font-semibold text-base md:text-lg">CriderGPT</h1>
               {!user && (
                 <Badge variant="outline" className="text-xs hidden sm:flex">
@@ -425,7 +428,11 @@ export default function ChatPanel() {
         <ScrollArea ref={scrollRef} className="flex-1 p-2 md:p-4">
           {messages.length === 0 && !currentConversation ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
-              <Brain className="h-12 w-12 md:h-16 md:w-16 text-primary/50 mb-4" />
+              <img 
+                src="/cridergpt-logo.png" 
+                alt="CriderGPT" 
+                className="h-16 w-16 md:h-20 md:w-20 object-contain mb-4"
+              />
               <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome to CriderGPT</h2>
               <p className="text-muted-foreground max-w-md mb-4 text-sm md:text-base">
                 Your AI assistant for agriculture, mechanics, welding, and more.
@@ -476,8 +483,12 @@ export default function ChatPanel() {
               {/* Streaming indicator */}
               {isStreaming && (
                 <div className="flex items-center gap-3 py-4 px-2 md:px-4">
-                  <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
-                    <Brain className="h-4 w-4 text-accent-foreground" />
+                  <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center overflow-hidden">
+                    <img 
+                      src="/cridergpt-logo.png" 
+                      alt="CriderGPT" 
+                      className="h-5 w-5 object-contain"
+                    />
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
