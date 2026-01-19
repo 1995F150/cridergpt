@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Code, Download, ExternalLink } from "lucide-react";
+import { Copy, Check, Code, Download, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { parseTextWithLinks, TextPart } from "@/utils/linkParser";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
@@ -23,6 +24,7 @@ export function ChatMessage({
   userAvatar,
 }: ChatMessageProps) {
   const [copiedCode, setCopiedCode] = useState<number | null>(null);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   const isUser = role === "user";
 
@@ -56,6 +58,56 @@ export function ChatMessage({
     await navigator.clipboard.writeText(code);
     setCopiedCode(index);
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const handleCopyLink = async (url: string) => {
+    await navigator.clipboard.writeText(url);
+    setCopiedLink(url);
+    setTimeout(() => setCopiedLink(null), 2000);
+  };
+
+  // Render text with clickable links
+  const renderTextWithLinks = (text: string) => {
+    const parts = parseTextWithLinks(text);
+    
+    return parts.map((part: TextPart, index: number) => {
+      if (part.type === 'link' && part.url) {
+        return (
+          <span key={index} className="inline-flex items-center gap-1">
+            <a
+              href={part.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "inline-flex items-center gap-1 text-primary hover:underline font-medium",
+                isUser && "text-primary-foreground/90 hover:text-primary-foreground"
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <LinkIcon className="h-3 w-3 inline shrink-0" />
+              <span className="break-all">{part.content}</span>
+              <ExternalLink className="h-3 w-3 inline shrink-0 opacity-70" />
+            </a>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 inline-flex opacity-60 hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopyLink(part.url!);
+              }}
+            >
+              {copiedLink === part.url ? (
+                <Check className="h-3 w-3 text-green-500" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+            </Button>
+          </span>
+        );
+      }
+      return <span key={index}>{part.content}</span>;
+    });
   };
 
   const parts = parseContent(content);
@@ -184,7 +236,7 @@ export function ChatMessage({
               </div>
             ) : (
               <p key={index} className="text-sm whitespace-pre-wrap leading-relaxed">
-                {part.content}
+                {renderTextWithLinks(part.content)}
               </p>
             )
           )}
