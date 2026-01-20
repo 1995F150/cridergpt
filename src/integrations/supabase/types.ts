@@ -1048,6 +1048,39 @@ export type Database = {
         }
         Relationships: []
       }
+      child_activity_logs: {
+        Row: {
+          activity_content: string | null
+          activity_type: string
+          ai_flags: string[] | null
+          ai_safety_score: number | null
+          child_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          activity_content?: string | null
+          activity_type: string
+          ai_flags?: string[] | null
+          ai_safety_score?: number | null
+          child_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          activity_content?: string | null
+          activity_type?: string
+          ai_flags?: string[] | null
+          ai_safety_score?: number | null
+          child_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       creator_interactions: {
         Row: {
           answer: string
@@ -1759,6 +1792,145 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      guardian_alerts: {
+        Row: {
+          acknowledged: boolean | null
+          activity_log_id: string | null
+          alert_type: string
+          child_id: string
+          created_at: string | null
+          description: string | null
+          guardian_id: string
+          id: string
+          severity: string
+          title: string
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          activity_log_id?: string | null
+          alert_type: string
+          child_id: string
+          created_at?: string | null
+          description?: string | null
+          guardian_id: string
+          id?: string
+          severity?: string
+          title: string
+        }
+        Update: {
+          acknowledged?: boolean | null
+          activity_log_id?: string | null
+          alert_type?: string
+          child_id?: string
+          created_at?: string | null
+          description?: string | null
+          guardian_id?: string
+          id?: string
+          severity?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_alerts_activity_log_id_fkey"
+            columns: ["activity_log_id"]
+            isOneToOne: false
+            referencedRelation: "child_activity_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guardian_relationships: {
+        Row: {
+          child_email: string | null
+          child_id: string | null
+          child_phone: string | null
+          created_at: string | null
+          guardian_id: string
+          id: string
+          invite_code: string | null
+          monitoring_enabled: boolean | null
+          relationship_label: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          child_email?: string | null
+          child_id?: string | null
+          child_phone?: string | null
+          created_at?: string | null
+          guardian_id: string
+          id?: string
+          invite_code?: string | null
+          monitoring_enabled?: boolean | null
+          relationship_label?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          child_email?: string | null
+          child_id?: string | null
+          child_phone?: string | null
+          created_at?: string | null
+          guardian_id?: string
+          id?: string
+          invite_code?: string | null
+          monitoring_enabled?: boolean | null
+          relationship_label?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      guardian_settings: {
+        Row: {
+          created_at: string | null
+          email_daily_summary: boolean | null
+          id: string
+          monitor_chat_content: boolean | null
+          monitor_file_uploads: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          receive_real_time_notifications: boolean | null
+          relationship_id: string
+          updated_at: string | null
+          usage_time_alerts: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_daily_summary?: boolean | null
+          id?: string
+          monitor_chat_content?: boolean | null
+          monitor_file_uploads?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          receive_real_time_notifications?: boolean | null
+          relationship_id: string
+          updated_at?: string | null
+          usage_time_alerts?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          email_daily_summary?: boolean | null
+          id?: string
+          monitor_chat_content?: boolean | null
+          monitor_file_uploads?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          receive_real_time_notifications?: boolean | null
+          relationship_id?: string
+          updated_at?: string | null
+          usage_time_alerts?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_settings_relationship_id_fkey"
+            columns: ["relationship_id"]
+            isOneToOne: false
+            referencedRelation: "guardian_relationships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -4194,6 +4366,10 @@ export type Database = {
       is_founder:
         | { Args: never; Returns: boolean }
         | { Args: { check_email: string }; Returns: boolean }
+      is_guardian_of: {
+        Args: { child_uuid: string; guardian_uuid: string }
+        Returns: boolean
+      }
       log_tier_upgrade:
         | {
             Args: {
