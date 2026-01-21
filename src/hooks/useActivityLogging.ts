@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Json } from '@/integrations/supabase/types';
 
 type ActivityType = 'chat_message' | 'file_upload' | 'login' | 'feature_access' | 'ai_interaction';
 
@@ -40,7 +41,7 @@ export function useActivityLogging() {
           child_id: user.id,
           activity_type: activityType,
           activity_content: sanitizedContent,
-          metadata
+          metadata: metadata as Json
         }])
         .select()
         .single();
