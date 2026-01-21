@@ -42,6 +42,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminPanel } from '@/components/panels/AdminPanel';
+import { GuardianPanel } from '@/components/panels/GuardianPanel';
 
 export type PanelType = 
   | 'chat' 
@@ -73,7 +74,8 @@ export type PanelType =
   | '3d-converter'
   | 'studio'
   | 'zip-to-exe'
-  | 'admin';
+  | 'admin'
+  | 'guardian';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -184,6 +186,7 @@ export default function Index() {
               {activePanel === 'studio' && <StudioPanel />}
               {activePanel === 'zip-to-exe' && <ZipToExePanel />}
               {activePanel === 'admin' && isAdmin && <AdminPanel />}
+              {activePanel === 'guardian' && <GuardianPanel />}
             </div>
           </main>
           <Footer />

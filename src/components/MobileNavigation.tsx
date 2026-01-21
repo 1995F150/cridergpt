@@ -35,7 +35,8 @@ import {
   Eye,
   Shield,
   Users,
-  Gamepad2
+  Gamepad2,
+  ShieldCheck
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
@@ -105,6 +106,7 @@ const navigationGroups: NavGroup[] = [
   {
     label: 'ACCOUNT',
     items: [
+      { id: 'guardian', label: 'Guardian', icon: ShieldCheck },
       { id: 'profile', label: 'Profile', icon: User },
       { id: 'plan', label: 'Plan', icon: Layers },
       { id: 'payment', label: 'Payment', icon: DollarSign },
