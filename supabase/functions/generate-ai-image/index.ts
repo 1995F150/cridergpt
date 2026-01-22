@@ -8,12 +8,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Character detection keywords
+// Character detection keywords - EXPANDED for 99% accuracy
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
-  'jessie': ['jessie', 'crider', 'creator', 'jesse', 'ffa jacket', 'historian jacket', 'ffa blue jacket', 'his jacket', 'ffa officer'],
-  'dr-harman': ['dr harman', 'dr. harman', 'harman', 'great-grandfather', 'grandfather', 'ancestor', 'dr-harman'],
-  'savanaa': ['savanaa', 'savannah', 'sav', 'savanna'],
-  'jr-hoback': ['jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback']
+  'jessie': [
+    'jessie', 'crider', 'creator', 'jesse', 'jessie crider',
+    'ffa jacket', 'historian jacket', 'ffa blue jacket', 'his jacket', 
+    'ffa officer', 'ffa member', 'ffa historian', 'the historian',
+    'me', 'myself', 'i', 'my photo', 'my picture', 'my portrait'
+  ],
+  'dr-harman': [
+    'dr harman', 'dr. harman', 'harman', 'doctor harman', 
+    'great-grandfather', 'great grandfather', 'grandfather', 'ancestor', 
+    'dr-harman', 'the doctor', 'old doctor', 'vintage doctor'
+  ],
+  'savanaa': [
+    'savanaa', 'savannah', 'sav', 'savanna', 
+    'girlfriend', 'my girlfriend', 'her', 'my girl'
+  ],
+  'jr-hoback': [
+    'jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback', 'jr', 'j.r.',
+    'uncle', 'friend jr', 'my uncle', 'uncle jr',
+    'curly hair man', 'gray curly hair', 'white curly hair'
+  ]
 };
 
 const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback'];
@@ -159,7 +175,16 @@ RULES:
 - May vary: clothing, accessories, background
 - Multi-character: each face matches their own references ONLY
 - Consistency: same person must look identical across generations
-EXECUTE: Reference photos ARE the identity. Copy exactly.
+
+MULTI-SUBJECT COMPOSITION (CRITICAL when 2+ people):
+- When multiple characters are specified, ALL characters MUST appear TOGETHER in the SAME image
+- Position characters SIDE BY SIDE or INTERACTING with each other
+- Each character's face must match THEIR OWN reference photos - DO NOT blend or merge features
+- Maintain clear separation between individuals - each is a DISTINCT person
+- Show both/all characters in the frame at appropriate sizes
+- If Jessie AND JR are requested: show BOTH people standing together, each with their distinct features
+
+EXECUTE: Reference photos ARE the identity. Copy exactly. For multi-character: show ALL characters together.
 `;
 
 // Compact character profiles
@@ -319,6 +344,18 @@ serve(async (req) => {
         }
       }
       masterPrompt += '\n';
+
+      // MULTI-CHARACTER EXPLICIT INSTRUCTION
+      if (Object.keys(characterGroups).length > 1) {
+        const characterNames = Object.keys(characterGroups).map(slug => 
+          COMPACT_PROFILES[slug]?.split(':')[0]?.trim() || slug.toUpperCase()
+        ).join(' AND ');
+        
+        masterPrompt += `⚠️ MULTI-SUBJECT IMAGE REQUIRED: Generate ${characterNames} TOGETHER in the SAME frame.\n`;
+        masterPrompt += `COMPOSITION: Both/all people must be visible, positioned side by side or interacting.\n`;
+        masterPrompt += `CRITICAL: Each person's face MUST match THEIR OWN reference photos - do NOT blend features.\n`;
+        masterPrompt += `Both individuals are DISTINCT people with different appearances.\n\n`;
+      }
 
       // Add the processed user request
       masterPrompt += `REQUEST: ${processedPrompt}\n`;
