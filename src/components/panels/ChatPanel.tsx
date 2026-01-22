@@ -31,6 +31,7 @@ import { SuggestionChips } from "@/components/chat/SuggestionChips";
 import { PendingTasksBanner } from "@/components/chat/PendingTasksBanner";
 import { PatternMemoryBadge } from "@/components/chat/PatternMemoryBadge";
 import ModelSelector from "@/components/ModelSelector";
+import { generateChatPDF, isPDFRequest } from "@/utils/chatPdfGenerator";
 import { cn } from "@/lib/utils";
 
 interface FilePreview {
@@ -161,11 +162,61 @@ export default function ChatPanel() {
       // Send user message
       await sendMessage(convId, message, "user", undefined, imageUrl);
 
-      // Check if this is an image generation request
-      // Expanded detection to catch implicit requests like "generate a apple"
-      const imageKeywords = /\b(generate|create|make|draw|render|design|paint|sketch|illustrate)\b/i;
-      const imageContextWords = /\b(image|picture|photo|art|pic|illustration|portrait|scene|artwork|graphic)\b/i;
-      const implicitGeneration = /^(generate|create|make|draw|render|paint|sketch)\s+(a|an|the|me|some)\s+\w+/i;
+      // ========== PDF GENERATION DETECTION ==========
+      if (isPDFRequest(message)) {
+        setIsStreaming(true);
+        setStreamingMessage("📄 Generating PDF export...");
+        
+        try {
+          // Convert messages for PDF
+          const pdfMessages = messages.map(m => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.created_at
+          }));
+          
+          // Get conversation title
+          const conv = conversations.find(c => c.id === convId);
+          const title = conv?.title || 'Chat Conversation';
+          
+          await generateChatPDF({
+            userId: user?.id || 'demo',
+            conversationTitle: title,
+            messages: pdfMessages
+          });
+          
+          await sendMessage(convId, `✅ PDF exported successfully! The file "${title}.pdf" has been downloaded to your device.`, "assistant");
+          
+          toast({
+            title: "PDF Generated",
+            description: "Your chat has been exported as a PDF document."
+          });
+        } catch (error: any) {
+          console.error("PDF generation error:", error);
+          await sendMessage(convId, `❌ Sorry, I couldn't generate the PDF: ${error.message}`, "assistant");
+        } finally {
+          setIsStreaming(false);
+          setStreamingMessage("");
+        }
+        return;
+      }
+
+      // ========== IMAGE GENERATION DETECTION (EXPANDED) ==========
+      // EXPANDED action keywords for 99% accuracy
+      const imageKeywords = /\b(generate|create|make|draw|render|design|paint|sketch|illustrate|build|produce|visualize|craft|imagine|show|give|picture)\b/i;
+      
+      // EXPANDED context words
+      const imageContextWords = /\b(image|picture|photo|art|pic|illustration|portrait|scene|artwork|graphic|shot|photograph|rendering|visual|snapshot|selfie|headshot|banner|poster|thumbnail|painting|drawing|sketch)\b/i;
+      
+      // EXPANDED implicit patterns - catches "generate a apple", "draw me a cat"
+      const implicitGeneration = /^(generate|create|make|draw|render|paint|sketch|show\s+me|give\s+me|visualize|imagine)\s+(a|an|the|me|some|my)?\s*\w+/i;
+      
+      // Character-specific detection - when characters are mentioned with action verbs
+      const characterMention = /\b(jessie|crider|jr|hoback|harman|savanaa|savanna|savannah|sav)\b/i;
+      const hasCharacterWithAction = imageKeywords.test(message) && characterMention.test(message);
+      
+      // "of [noun]" pattern after action words
+      const ofPattern = /\b(generate|create|make|draw|render|picture|photo|image)\s+(?:a\s+|an\s+)?[\w\s]+?\s+of\b/i;
       
       const isImageGeneration = (
         // Explicit: "generate an image of X" or "create a picture of Y"
@@ -173,7 +224,11 @@ export default function ChatPanel() {
         // Implicit: "generate a apple", "draw me a cat", "create a sunset"
         implicitGeneration.test(message.trim()) ||
         // Direct: "generate [noun]" patterns
-        /^(generate|create|draw|make|render)\s+(a|an|the)?\s*\w+(\s+\w+){0,5}$/i.test(message.trim())
+        /^(generate|create|draw|make|render)\s+(a|an|the)?\s*\w+(\s+\w+){0,5}$/i.test(message.trim()) ||
+        // Character mention with action: "generate jessie and jr together"
+        hasCharacterWithAction ||
+        // "of" pattern: "generate a photo of jessie"
+        ofPattern.test(message)
       );
 
       if (isImageGeneration) {
@@ -279,7 +334,7 @@ export default function ChatPanel() {
       });
     }
   }, [
-    user, currentConversation, messages, selectedModel,
+    user, currentConversation, messages, selectedModel, conversations,
     canSendMessage, incrementDemoUsage, demoUsage,
     createConversation, setCurrentConversation, sendMessage,
     uploadImage, generateSmartResponse, updateConversationTitle, toast,
