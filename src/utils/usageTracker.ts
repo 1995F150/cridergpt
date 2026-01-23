@@ -1,20 +1,22 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface UsageLimits {
-  tokens: number;
+  messages: number;
   tts: number;
 }
 
+// Daily message limits per plan
 export const PLAN_LIMITS: Record<string, UsageLimits> = {
-  free: { tokens: 13, tts: 5 },
-  plus: { tokens: 200, tts: 100 },
-  plu: { tokens: 200, tts: 100 }, // Legacy format
-  pro: { tokens: 500, tts: 9999999 } // Unlimited for Pro
+  free: { messages: 15, tts: 5 },
+  plus: { messages: 100, tts: 100 },
+  plu: { messages: 100, tts: 100 }, // Legacy format
+  pro: { messages: 500, tts: 9999999 },
+  lifetime: { messages: 9999999, tts: 9999999 } // Unlimited for Lifetime
 };
 
 export interface UserUsage {
   plan: string;
-  tokensUsed: number;
+  messagesUsed: number;
   ttsUsed: number;
   limits: UsageLimits;
 }
@@ -41,7 +43,7 @@ export const getUserUsage = async (userId: string): Promise<UserUsage | null> =>
       
       return {
         plan: 'free',
-        tokensUsed: 0,
+        messagesUsed: 0,
         ttsUsed: 0,
         limits: PLAN_LIMITS.free
       };
@@ -52,7 +54,7 @@ export const getUserUsage = async (userId: string): Promise<UserUsage | null> =>
 
     return {
       plan,
-      tokensUsed: usageData.tokens_used || 0,
+      messagesUsed: usageData.tokens_used || 0, // tokens_used now represents messages
       ttsUsed: usageData.tts_requests || 0,
       limits
     };
@@ -62,23 +64,25 @@ export const getUserUsage = async (userId: string): Promise<UserUsage | null> =>
   }
 };
 
-export const checkTokenLimit = async (userId: string, tokensToUse: number): Promise<{ allowed: boolean; usage?: UserUsage; error?: string }> => {
+export const checkMessageLimit = async (userId: string): Promise<{ allowed: boolean; usage?: UserUsage; error?: string }> => {
   const usage = await getUserUsage(userId);
   if (!usage) {
     return { allowed: false, error: 'Unable to fetch usage data' };
   }
 
-  const newTokenCount = usage.tokensUsed + tokensToUse;
-  if (newTokenCount > usage.limits.tokens) {
+  if (usage.messagesUsed >= usage.limits.messages) {
     return { 
       allowed: false, 
       usage,
-      error: `Token limit exceeded. Used: ${usage.tokensUsed}/${usage.limits.tokens}. Requested: ${tokensToUse}` 
+      error: `Daily message limit reached. Used: ${usage.messagesUsed}/${usage.limits.messages}` 
     };
   }
 
   return { allowed: true, usage };
 };
+
+// Keep for backward compatibility
+export const checkTokenLimit = checkMessageLimit;
 
 export const checkTTSLimit = async (userId: string): Promise<{ allowed: boolean; usage?: UserUsage; error?: string }> => {
   const usage = await getUserUsage(userId);
@@ -97,6 +101,35 @@ export const checkTTSLimit = async (userId: string): Promise<{ allowed: boolean;
   return { allowed: true, usage };
 };
 
+export const updateMessageUsage = async (userId: string): Promise<boolean> => {
+  try {
+    // Get current usage first
+    const usage = await getUserUsage(userId);
+    if (!usage) return false;
+
+    const { error } = await supabase
+      .from('ai_usage')
+      .upsert({
+        user_id: userId,
+        tokens_used: usage.messagesUsed + 1, // Increment by 1 message
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (error) {
+      console.error('Error updating message usage:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error updating message usage:', error);
+    return false;
+  }
+};
+
+// Keep for backward compatibility
 export const updateTokenUsage = async (userId: string, tokensUsed: number): Promise<boolean> => {
   try {
     const { error } = await supabase
@@ -110,13 +143,13 @@ export const updateTokenUsage = async (userId: string, tokensUsed: number): Prom
       });
 
     if (error) {
-      console.error('Error updating token usage:', error);
+      console.error('Error updating usage:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error updating token usage:', error);
+    console.error('Error updating usage:', error);
     return false;
   }
 };

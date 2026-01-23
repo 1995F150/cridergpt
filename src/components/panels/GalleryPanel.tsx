@@ -329,6 +329,10 @@ export function GalleryPanel() {
                         alt={image.name}
                         className="w-full h-full object-cover rounded-lg border border-border cursor-pointer transition-all group-hover:scale-105"
                         onClick={() => setSelectedImage(image)}
+                        onError={(e) => {
+                          console.error('Failed to load image:', image.url);
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                         <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -345,6 +349,10 @@ export function GalleryPanel() {
                         alt={image.name}
                         className="w-16 h-16 object-cover rounded border border-border cursor-pointer"
                         onClick={() => setSelectedImage(image)}
+                        onError={(e) => {
+                          console.error('Failed to load image:', image.url);
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
                       />
                       <div className="flex-1">
                         <h3 className="font-semibold text-foreground truncate">{image.name}</h3>
@@ -417,6 +425,9 @@ export function GalleryPanel() {
                 src={selectedImage.url}
                 alt={selectedImage.name}
                 className="max-w-full max-h-[70vh] object-contain mx-auto"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.svg';
+                }}
               />
               <div className="mt-4 text-center text-sm text-muted-foreground">
                 {formatFileSize(selectedImage.size)} • Uploaded: {new Date(selectedImage.uploadedAt).toLocaleDateString()}

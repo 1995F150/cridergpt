@@ -164,6 +164,42 @@ export const useChat = () => {
     }
   }, [user, toast]);
 
+  // Upload any file to storage (PDFs, audio, video, etc.)
+  const uploadFile = useCallback(async (file: File, fileType: string) => {
+    if (!user) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}-${file.name}`;
+      
+      // Use user-files bucket for non-images
+      const bucket = fileType === 'image' ? 'chat-images' : 'user-files';
+
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Error",
+        description: `Failed to upload ${fileType}`,
+        variant: "destructive",
+      });
+      return null;
+    }
+  }, [user, toast]);
+
   // Send message
   const sendMessage = useCallback(async (
     conversationId: string,
@@ -422,5 +458,6 @@ export const useChat = () => {
     loadConversations,
     loadMessages,
     uploadImage,
+    uploadFile,
   };
 };

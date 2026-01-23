@@ -6,7 +6,7 @@ import { Loader2, Code, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { checkTokenLimit, updateTokenUsage } from "@/utils/usageTracker";
+import { checkMessageLimit, updateMessageUsage } from "@/utils/usageTracker";
 
 export function CodePanel() {
   const [prompt, setPrompt] = useState("");
@@ -37,12 +37,12 @@ export function CodePanel() {
     setLoading(true);
     
     try {
-      // Check token limit before proceeding
-      const tokenCheck = await checkTokenLimit(user.id, 1000); // Estimate tokens needed
-      if (!tokenCheck.allowed) {
+      // Check message limit before proceeding
+      const messageCheck = await checkMessageLimit(user.id);
+      if (!messageCheck.allowed) {
         toast({
-          title: "Token Limit Exceeded",
-          description: "You've reached your token limit for this period.",
+          title: "Message Limit Reached",
+          description: "You've reached your daily message limit for this period.",
           variant: "destructive",
         });
         setLoading(false);
@@ -57,9 +57,8 @@ export function CodePanel() {
 
       setGeneratedCode(data.reply);
       
-      // Update token usage (estimate based on response length)
-      const estimatedTokens = Math.ceil(data.reply.length / 4);
-      await updateTokenUsage(user.id, estimatedTokens);
+      // Update message usage
+      await updateMessageUsage(user.id);
 
       toast({
         title: "Code Generated",

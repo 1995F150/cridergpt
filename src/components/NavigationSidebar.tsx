@@ -10,8 +10,6 @@ import {
   FileText, 
   Folder,
   Images,
-  Code, 
-  Map, 
   Play, 
   Mail, 
   User, 
@@ -23,11 +21,9 @@ import {
   Layers,
   Wheat,
   ImageIcon,
-  Brain,
   Smartphone,
   ExternalLink,
   Calendar,
-  Cloud,
   Box,
   Cuboid,
   Wrench,
@@ -87,11 +83,8 @@ const navigationGroups: NavGroup[] = [
   {
     label: 'CREATIVE',
     items: [
-      { id: 'code', label: 'Code', icon: Code },
-      { id: 'maps', label: 'Maps', icon: Map },
       { id: 'media', label: 'Media', icon: Play, emailRestricted: ['jessiecrider3@gmail.com'] },
       { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
-      { id: 'document-ai', label: 'Document AI', icon: Brain },
       { id: 'studio', label: '3D Studio', icon: Cuboid },
     ]
   },
