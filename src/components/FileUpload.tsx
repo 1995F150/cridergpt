@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Trash2, Download, Loader2 } from "lucide-react";
+import { Upload, Trash2, Download, Loader2, FileText, FileImage, FileAudio, FileVideo, FileArchive, File } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -186,11 +186,28 @@ export function FileUpload() {
   };
 
   const getFileTypeColor = (type: string) => {
-    if (type.includes('image')) return 'bg-blue-500 text-white';
-    if (type.includes('text') || type.includes('javascript')) return 'bg-green-500 text-white';
-    if (type.includes('pdf')) return 'bg-red-500 text-white';
-    if (type.includes('zip') || type.includes('compressed')) return 'bg-purple-500 text-white';
-    return 'bg-gray-500 text-white';
+    if (type.includes('image')) return 'bg-blue-500/20 text-blue-500';
+    if (type.includes('text') || type.includes('javascript')) return 'bg-green-500/20 text-green-500';
+    if (type.includes('pdf')) return 'bg-red-500/20 text-red-500';
+    if (type.includes('audio')) return 'bg-yellow-500/20 text-yellow-500';
+    if (type.includes('video')) return 'bg-purple-500/20 text-purple-500';
+    if (type.includes('zip') || type.includes('compressed')) return 'bg-violet-500/20 text-violet-500';
+    return 'bg-muted text-muted-foreground';
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.includes('image')) return FileImage;
+    if (type.includes('pdf')) return FileText;
+    if (type.includes('audio')) return FileAudio;
+    if (type.includes('video')) return FileVideo;
+    if (type.includes('zip') || type.includes('compressed')) return FileArchive;
+    return File;
+  };
+
+  const getImagePreviewUrl = (file: UploadedFile) => {
+    if (!file.type.includes('image')) return null;
+    const { data } = supabase.storage.from('user-files').getPublicUrl(file.path);
+    return data.publicUrl;
   };
 
   return (
@@ -246,42 +263,71 @@ export function FileUpload() {
                 No files uploaded yet
               </div>
             ) : (
-              uploadedFiles.map((file) => (
-                <div key={file.id} className="p-4 rounded-lg bg-secondary/50 border border-border">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-foreground truncate">{file.name}</h3>
-                    <Badge className={getFileTypeColor(file.type)}>
-                      {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
-                    </Badge>
+              uploadedFiles.map((file) => {
+                const FileIcon = getFileIcon(file.type);
+                const previewUrl = getImagePreviewUrl(file);
+                
+                return (
+                  <div key={file.id} className="p-4 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex items-start gap-4">
+                      {/* File Preview/Icon */}
+                      <div className="flex-shrink-0">
+                        {previewUrl ? (
+                          <img 
+                            src={previewUrl} 
+                            alt={file.name}
+                            className="w-14 h-14 object-cover rounded-md border border-border"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-14 h-14 rounded-md flex items-center justify-center ${getFileTypeColor(file.type)} ${previewUrl ? 'hidden' : ''}`}>
+                          <FileIcon className="h-6 w-6" />
+                        </div>
+                      </div>
+                      
+                      {/* File Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground truncate">{file.name}</h3>
+                          <Badge className={getFileTypeColor(file.type)}>
+                            {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
+                          <span>{formatFileSize(file.size)}</span>
+                          <span>•</span>
+                          <span>{new Date(file.uploadedAt).toLocaleDateString()}</span>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleDownload(file)}
+                            className="border-primary/20 text-primary hover:bg-primary/10"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleDelete(file)}
+                            className="border-destructive/20 text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>{formatFileSize(file.size)}</span>
-                    <span>Uploaded: {new Date(file.uploadedAt).toLocaleDateString()}</span>
-                  </div>
-                  
-                  <div className="flex space-x-2 mt-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleDownload(file)}
-                      className="border-blue-500/20 text-blue-500 hover:bg-blue-500/10"
-                    >
-                      <Download className="h-3 w-3 mr-1" />
-                      Download
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleDelete(file)}
-                      className="border-red-500/20 text-red-500 hover:bg-red-500/10"
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}

@@ -59,6 +59,7 @@ export default function ChatPanel() {
     updateConversationTitle,
     deleteConversation,
     uploadImage,
+    uploadFile,
   } = useChat();
   
   const { generateSmartResponse, isLoading: isAILoading } = useAILearning();
@@ -150,12 +151,20 @@ export default function ChatPanel() {
         setCurrentConversation(convId);
       }
 
-      // Handle image uploads
+      // Handle file uploads - support ALL file types
       let imageUrl: string | undefined;
+      let fileAttachments: string[] = [];
+      
       if (files?.length) {
-        const imageFile = files.find(f => f.type === "image");
-        if (imageFile) {
-          imageUrl = await uploadImage(imageFile.file);
+        for (const filePreview of files) {
+          if (filePreview.type === "image") {
+            const url = await uploadImage(filePreview.file);
+            if (url) imageUrl = url;
+          } else {
+            // Handle PDFs, audio, video, etc.
+            const url = await uploadFile(filePreview.file, filePreview.type);
+            if (url) fileAttachments.push(url);
+          }
         }
       }
 
