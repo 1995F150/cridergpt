@@ -210,10 +210,11 @@ export function UsagePanel() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg text-primary">Total Tokens Used</CardTitle>
+            <CardTitle className="text-lg text-primary">Messages Sent Today</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-foreground">{totalTokens.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">Resets daily at midnight</p>
           </CardContent>
         </Card>
 
@@ -230,11 +231,11 @@ export function UsagePanel() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardHeader>
-            <CardTitle className="text-xl text-primary">Recent Token Usage</CardTitle>
+            <CardTitle className="text-xl text-primary">Recent Messages</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {tokenUsage.length === 0 ? (
-              <p className="text-muted-foreground">No token usage found</p>
+              <p className="text-muted-foreground">No messages found</p>
             ) : (
               tokenUsage.map((usage) => (
                 <div key={usage.id} className="border-b border-border pb-3 last:border-b-0">
@@ -243,7 +244,7 @@ export function UsagePanel() {
                       {usage.model}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      {usage.tokens_used} tokens
+                      1 message
                     </span>
                   </div>
                   <p className="text-sm text-foreground truncate" title={usage.query}>
@@ -300,7 +301,7 @@ export function UsagePanel() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tokens:</span>
+                      <span className="text-muted-foreground">Messages:</span>
                       <span className="text-foreground">{profile.total_tokens.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">

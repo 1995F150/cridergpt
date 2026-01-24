@@ -243,11 +243,12 @@ ${memoriesContext}
 `;
 };
 
-const TOKEN_LIMITS = {
-  free: 50,
-  plus: 500,
-  pro: 2000,
-  lifetime: 10000
+// DAILY MESSAGE LIMITS (not tokens)
+const MESSAGE_LIMITS = {
+  free: 15,
+  plus: 100,
+  pro: 500,
+  lifetime: 999999 // Unlimited
 };
 
 const corsHeaders = {
@@ -344,33 +345,63 @@ serve(async (req) => {
       }
     }
 
-    // Get user plan and usage limits
+    // Get user plan and daily message limits
     let userPlan = 'free';
-    let tokenLimit = TOKEN_LIMITS.free;
-    let usage: { id: string; tokens_used: number } | null = null;
+    let messageLimit = MESSAGE_LIMITS.free;
+    let usage: { id: string; messages_sent: number; last_reset: string | null } | null = null;
 
     if (userId) {
-      // Check ai_usage for plan
+      // Check ai_usage for plan and daily message count
       const { data: usageData } = await supabase
         .from('ai_usage')
-        .select('id, tokens_used, user_plan')
+        .select('id, tokens_used, user_plan, last_reset')
         .eq('user_id', userId)
         .maybeSingle();
 
       if (usageData) {
-        usage = { id: usageData.id, tokens_used: usageData.tokens_used };
+        // Check if we need to reset daily count (if last_reset is not today)
+        const today = new Date().toISOString().split('T')[0];
+        const lastReset = usageData.last_reset?.split('T')[0];
+        const messageCount = lastReset === today ? usageData.tokens_used : 0;
+        
+        usage = { id: usageData.id, messages_sent: messageCount, last_reset: usageData.last_reset };
         userPlan = usageData.user_plan || 'free';
-        tokenLimit = TOKEN_LIMITS[userPlan as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
+        messageLimit = MESSAGE_LIMITS[userPlan as keyof typeof MESSAGE_LIMITS] || MESSAGE_LIMITS.free;
+        
+        // Reset count if it's a new day
+        if (lastReset !== today) {
+          await supabase
+            .from('ai_usage')
+            .update({ tokens_used: 0, last_reset: new Date().toISOString() })
+            .eq('id', usageData.id);
+          usage.messages_sent = 0;
+        }
       } else {
         // Create usage record if doesn't exist
         const { data: newUsage } = await supabase
           .from('ai_usage')
-          .insert({ user_id: userId, tokens_used: 0, user_plan: 'free' })
-          .select('id, tokens_used')
+          .insert({ user_id: userId, tokens_used: 0, user_plan: 'free', last_reset: new Date().toISOString() })
+          .select('id, tokens_used, last_reset')
           .single();
         if (newUsage) {
-          usage = { id: newUsage.id, tokens_used: newUsage.tokens_used };
+          usage = { id: newUsage.id, messages_sent: newUsage.tokens_used, last_reset: newUsage.last_reset };
         }
+      }
+      
+      // Check if user has exceeded daily limit
+      if (usage && usage.messages_sent >= messageLimit && userPlan !== 'lifetime') {
+        return new Response(JSON.stringify({ 
+          error: `Daily message limit reached (${messageLimit} messages). Upgrade your plan or try again tomorrow.`,
+          usage: {
+            used: usage.messages_sent,
+            limit: messageLimit,
+            plan: userPlan,
+            remaining: 0
+          }
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
@@ -460,12 +491,12 @@ serve(async (req) => {
         });
     }
 
-    // Increment usage count
+    // Increment daily message count
     if (usage) {
       await supabase
         .from('ai_usage')
         .update({ 
-          tokens_used: usage.tokens_used + 1,
+          tokens_used: usage.messages_sent + 1,
           updated_at: new Date().toISOString()
         })
         .eq('id', usage.id);
@@ -476,10 +507,10 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       response: aiResponse,
       usage: {
-        used: (usage?.tokens_used || 0) + 1,
-        limit: tokenLimit,
+        used: (usage?.messages_sent || 0) + 1,
+        limit: messageLimit,
         plan: userPlan,
-        remaining: tokenLimit - ((usage?.tokens_used || 0) + 1)
+        remaining: Math.max(0, messageLimit - ((usage?.messages_sent || 0) + 1))
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

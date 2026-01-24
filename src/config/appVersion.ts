@@ -1,14 +1,14 @@
-export const APP_VERSION = "4.9.9";
-export const VERSION_NAME = "Message System & Platform Cleanup";
-export const RELEASE_DATE = "2025-01-23";
+export const APP_VERSION = "5.0.0";
+export const VERSION_NAME = "Message System & Admin Fixes";
+export const RELEASE_DATE = "2025-01-24";
 
 export const VERSION_FEATURES = [
-  "📨 MESSAGE-BASED LIMITS - Daily message limits replace token system",
-  "🖼️ AI METADATA REMOVAL - Cleaner AI-generated images",
-  "📤 FULL FILE UPLOAD SUPPORT - PDF, Audio, Video now work in chat",
-  "🖼️ GALLERY FIXES - Image previews now load correctly",
-  "📁 FILE MANAGER THUMBNAILS - Visual previews for uploaded images",
-  "🔄 INSTANT UPDATES - No more cookie clearing needed",
-  "🧹 STREAMLINED NAVIGATION - Removed redundant panels",
-  "📄 PDF GENERATION - Export chats and reports directly"
+  "📨 DAILY MESSAGE LIMITS - 15 free / 100 plus / 500 pro messages per day",
+  "🔧 ADMIN PLAN SYNC - Plan changes now sync across all tables",
+  "📄 SMART PDF GENERATION - Distinguishes chat export vs custom documents",
+  "🖼️ GALLERY SIGNED URLS - Fixed image loading with proper authentication",
+  "📤 FILE UPLOAD FIXES - PDF, Audio, Video uploads now work in chat",
+  "🔄 INSTANT UPDATES - No more cookie clearing needed (network-first caching)",
+  "🧹 STREAMLINED NAVIGATION - Removed redundant Code, Maps, Document AI panels",
+  "💬 MESSAGE UI - All UI updated from tokens to messages"
 ];

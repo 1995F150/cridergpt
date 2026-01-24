@@ -172,19 +172,26 @@ export default function ChatPanel() {
       await sendMessage(convId, message, "user", undefined, imageUrl);
 
       // ========== PDF GENERATION DETECTION ==========
-      if (isPDFRequest(message)) {
+      // Detect CHAT EXPORT requests (export this conversation as PDF)
+      const isChatExportRequest = /\b(export|download|save)\s+(this\s+)?(chat|conversation|history|messages?)\s*(as\s+)?(a\s+)?(pdf|document)/i.test(message) ||
+        /\b(pdf|document)\s+(this|of\s+this)\s+(chat|conversation)/i.test(message);
+      
+      // Detect CUSTOM DOCUMENT requests (create me a budget report PDF)
+      const isCustomDocumentRequest = /\b(create|make|generate|build|write)\s+(me\s+)?(a\s+)?(budget|report|invoice|summary|document|worksheet|template|plan|proposal|analysis)\s*(pdf)?/i.test(message) &&
+        !/\b(this\s+)?(chat|conversation|history)/i.test(message);
+      
+      if (isChatExportRequest) {
+        // Export the current chat as PDF
         setIsStreaming(true);
-        setStreamingMessage("📄 Generating PDF export...");
+        setStreamingMessage("📄 Exporting chat to PDF...");
         
         try {
-          // Convert messages for PDF
           const pdfMessages = messages.map(m => ({
             role: m.role,
             content: m.content,
             timestamp: m.created_at
           }));
           
-          // Get conversation title
           const conv = conversations.find(c => c.id === convId);
           const title = conv?.title || 'Chat Conversation';
           
@@ -194,15 +201,55 @@ export default function ChatPanel() {
             messages: pdfMessages
           });
           
-          await sendMessage(convId, `✅ PDF exported successfully! The file "${title}.pdf" has been downloaded to your device.`, "assistant");
+          await sendMessage(convId, `✅ Chat exported successfully! The file "${title}.pdf" has been downloaded to your device.`, "assistant");
           
           toast({
             title: "PDF Generated",
             description: "Your chat has been exported as a PDF document."
           });
         } catch (error: any) {
-          console.error("PDF generation error:", error);
-          await sendMessage(convId, `❌ Sorry, I couldn't generate the PDF: ${error.message}`, "assistant");
+          console.error("PDF export error:", error);
+          await sendMessage(convId, `❌ Sorry, I couldn't export the chat: ${error.message}`, "assistant");
+        } finally {
+          setIsStreaming(false);
+          setStreamingMessage("");
+        }
+        return;
+      }
+      
+      if (isCustomDocumentRequest) {
+        // Generate a custom document using AI
+        setIsStreaming(true);
+        setStreamingMessage("📄 Creating your document...");
+        
+        try {
+          // Ask AI to generate the document content
+          const documentPrompt = `Please generate a professional ${message.match(/budget|report|invoice|summary|document|worksheet|template|plan|proposal|analysis/i)?.[0] || 'document'} based on this request: "${message}". 
+          
+Format your response as a structured document with:
+- A clear title
+- Sections with headers
+- Bullet points or numbered lists where appropriate
+- Tables if data is involved
+- A professional conclusion
+
+Make it detailed and actionable.`;
+
+          const result = await generateSmartResponse(
+            documentPrompt,
+            selectedModel
+          );
+          
+          // Send the document content as a message
+          const responseText = typeof result === 'string' ? result : result.response;
+          await sendMessage(convId, responseText, "assistant");
+          
+          // Inform user they can export it
+          await sendMessage(convId, `📄 Your document is ready above! If you'd like to export it as a PDF, just say "export this chat as PDF".`, "assistant");
+          
+        } catch (error: any) {
+          console.error("Document generation error:", error);
+          await sendMessage(convId, `❌ Sorry, I couldn't generate the document: ${error.message}`, "assistant");
         } finally {
           setIsStreaming(false);
           setStreamingMessage("");
