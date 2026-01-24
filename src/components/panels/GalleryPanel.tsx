@@ -60,18 +60,21 @@ export function GalleryPanel() {
       
       if (dbFiles && dbFiles.length > 0) {
         for (const file of dbFiles) {
-          const { data: urlData } = supabase.storage
+          // Use signed URL for private bucket - valid for 1 hour
+          const { data: signedData, error: signError } = await supabase.storage
             .from('user-files')
-            .getPublicUrl(file.file_path);
+            .createSignedUrl(file.file_path, 3600);
           
-          imagesWithUrls.push({
-            id: String(file.id),
-            name: file.file_name,
-            url: urlData.publicUrl,
-            size: file.file_size || 0,
-            uploadedAt: file.uploaded_at || new Date().toISOString(),
-            path: file.file_path
-          });
+          if (!signError && signedData) {
+            imagesWithUrls.push({
+              id: String(file.id),
+              name: file.file_name,
+              url: signedData.signedUrl,
+              size: file.file_size || 0,
+              uploadedAt: file.uploaded_at || new Date().toISOString(),
+              path: file.file_path
+            });
+          }
         }
       } else {
         // Fallback to storage listing
@@ -82,19 +85,46 @@ export function GalleryPanel() {
         if (!error && data) {
           for (const file of data) {
             if (file.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)) {
-              const { data: urlData } = supabase.storage
+              // Use signed URL for private bucket
+              const { data: signedData, error: signError } = await supabase.storage
                 .from('user-files')
-                .getPublicUrl(`${user.id}/${file.name}`);
+                .createSignedUrl(`${user.id}/${file.name}`, 3600);
               
-              imagesWithUrls.push({
-                id: file.id || file.name,
-                name: file.name,
-                url: urlData.publicUrl,
-                size: file.metadata?.size || 0,
-                uploadedAt: file.created_at || new Date().toISOString(),
-                path: `${user.id}/${file.name}`
-              });
+              if (!signError && signedData) {
+                imagesWithUrls.push({
+                  id: file.id || file.name,
+                  name: file.name,
+                  url: signedData.signedUrl,
+                  size: file.metadata?.size || 0,
+                  uploadedAt: file.created_at || new Date().toISOString(),
+                  path: `${user.id}/${file.name}`
+                });
+              }
             }
+          }
+        }
+      }
+
+      // Also check chat-images bucket (which is public)
+      const { data: chatImages, error: chatError } = await supabase.storage
+        .from('chat-images')
+        .list(user.id, { limit: 100 });
+
+      if (!chatError && chatImages) {
+        for (const file of chatImages) {
+          if (file.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)) {
+            const { data: urlData } = supabase.storage
+              .from('chat-images')
+              .getPublicUrl(`${user.id}/${file.name}`);
+            
+            imagesWithUrls.push({
+              id: 'chat-' + (file.id || file.name),
+              name: file.name,
+              url: urlData.publicUrl,
+              size: file.metadata?.size || 0,
+              uploadedAt: file.created_at || new Date().toISOString(),
+              path: `${user.id}/${file.name}`
+            });
           }
         }
       }

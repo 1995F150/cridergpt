@@ -14,8 +14,8 @@ import { ManageSubscription } from '@/components/ManageSubscription';
 
 interface SubscriptionData {
   plan: string;
-  tokensUsed: number;
-  tokenLimit: number;
+  messagesUsed: number;
+  messageLimit: number;
   ttsRequests: number;
   ttsLimit: number;
 }
@@ -36,7 +36,7 @@ const featureRequirements: FeatureRequirement[] = [
     freeAccess: true,
     pluAccess: true,
     proAccess: true,
-    requirement: "13 tokens/month on Free, 200 tokens/month on Plu, Unlimited on Pro"
+    requirement: "15 messages/day on Free, 100 messages/day on Plus, 500 messages/day on Pro"
   },
   {
     feature: "AI Voice Chat", 
@@ -122,7 +122,7 @@ export function PlanPanel() {
     try {
       setLoading(true);
       
-      // Fetch current usage data
+      // Fetch current usage data - use messages_sent column
       const { data: usageData } = await supabase
         .from('ai_usage')
         .select('user_plan, tokens_used')
@@ -139,23 +139,25 @@ export function PlanPanel() {
         .single();
 
       const plan = usageData?.user_plan || 'free';
-      const tokensUsed = usageData?.tokens_used || 0;
+      // tokens_used now represents messages_sent (daily message count)
+      const messagesUsed = usageData?.tokens_used || 0;
       const ttsRequests = ttsData?.count || 0;
 
-      // Define limits based on plan - matching usageTracker.ts
+      // Define limits based on plan - DAILY MESSAGE LIMITS
       const limits = {
-        free: { tokens: 13, tts: 5 },
-        plu: { tokens: 200, tts: 100 },   // Legacy format
-        plus: { tokens: 200, tts: 100 },  // New format  
-        pro: { tokens: 500, tts: 9999999 } // Unlimited for Pro (large number)
+        free: { messages: 15, tts: 5 },
+        plu: { messages: 100, tts: 100 },   // Legacy format
+        plus: { messages: 100, tts: 100 },  // New format  
+        pro: { messages: 500, tts: 9999999 }, // High limit for Pro
+        lifetime: { messages: 9999999, tts: 9999999 } // Unlimited for Lifetime
       };
 
       const currentLimits = limits[plan as keyof typeof limits] || limits.free;
 
       setSubscriptionData({
         plan,
-        tokensUsed,
-        tokenLimit: currentLimits.tokens,
+        messagesUsed,
+        messageLimit: currentLimits.messages,
         ttsRequests,
         ttsLimit: currentLimits.tts
       });
@@ -203,7 +205,7 @@ export function PlanPanel() {
   const planColor = isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500';
   const PlanIcon = planIcon;
 
-  const tokenUsagePercent = subscriptionData ? (subscriptionData.tokensUsed / subscriptionData.tokenLimit) * 100 : 0;
+  const messageUsagePercent = subscriptionData ? Math.min((subscriptionData.messagesUsed / subscriptionData.messageLimit) * 100, 100) : 0;
   const ttsUsagePercent = subscriptionData ? (subscriptionData.ttsRequests / subscriptionData.ttsLimit) * 100 : 0;
 
   const getUserAccess = (feature: FeatureRequirement) => {
@@ -245,19 +247,19 @@ export function PlanPanel() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="h-5 w-5" />
-                Token Usage
+                Daily Message Usage
               </CardTitle>
             </CardHeader>
             <CardContent>
               {subscriptionData && (
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span>Used: {subscriptionData.tokensUsed.toLocaleString()}</span>
-                    <span>Limit: {subscriptionData.tokenLimit.toLocaleString()}</span>
+                    <span>Used Today: {subscriptionData.messagesUsed.toLocaleString()}</span>
+                    <span>Daily Limit: {subscriptionData.messageLimit === 9999999 ? 'Unlimited' : subscriptionData.messageLimit.toLocaleString()}</span>
                   </div>
-                  <Progress value={tokenUsagePercent} className="h-2" />
+                  <Progress value={subscriptionData.messageLimit === 9999999 ? 0 : messageUsagePercent} className="h-2" />
                   <p className="text-xs text-muted-foreground">
-                    {Math.round(tokenUsagePercent)}% of monthly limit used
+                    {subscriptionData.messageLimit === 9999999 ? 'Unlimited messages' : `${Math.round(messageUsagePercent)}% of daily limit used`}
                   </p>
                 </div>
               )}

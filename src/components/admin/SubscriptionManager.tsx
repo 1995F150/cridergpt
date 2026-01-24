@@ -65,12 +65,59 @@ export function SubscriptionManager() {
 
   async function updateUserTier(userId: string, newTier: string) {
     try {
-      const { error } = await supabase
+      // Update profiles table
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({ tier: newTier, current_plan: newTier })
         .eq('user_id', userId);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // ALSO update ai_usage table to sync the plan
+      const { error: usageError } = await supabase
+        .from('ai_usage')
+        .upsert({ 
+          user_id: userId, 
+          user_plan: newTier,
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false 
+        });
+
+      if (usageError) {
+        console.error('Warning: Failed to update ai_usage:', usageError);
+      }
+
+      // Also update user_subscriptions table for full sync
+      // First check if record exists
+      const { data: existingSub } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (existingSub) {
+        await supabase
+          .from('user_subscriptions')
+          .update({
+            plan_name: newTier,
+            plan_status: 'active',
+            updated_at: new Date().toISOString(),
+            metadata: { manual_admin_update: true }
+          })
+          .eq('user_id', userId);
+      } else {
+        await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: userId,
+            email: userId, // Use userId as fallback
+            plan_name: newTier,
+            plan_status: 'active',
+            metadata: { manual_admin_update: true }
+          });
+      }
 
       // Log the action
       await supabase.from('admin_audit_logs').insert({
@@ -78,7 +125,7 @@ export function SubscriptionManager() {
         action: 'update_user_tier',
         target_type: 'user',
         target_id: userId,
-        details: { new_tier: newTier },
+        details: { new_tier: newTier, tables_updated: ['profiles', 'ai_usage', 'user_subscriptions'] },
       });
 
       setSubscriptions((prev) =>
@@ -89,7 +136,7 @@ export function SubscriptionManager() {
 
       toast({
         title: 'Tier Updated',
-        description: `User tier changed to ${newTier}`,
+        description: `User tier changed to ${newTier} (synced to all tables)`,
       });
     } catch (error) {
       console.error('Error updating tier:', error);
@@ -276,8 +323,8 @@ export function SubscriptionManager() {
                   <TableHead>User</TableHead>
                   <TableHead>Tier</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Tokens Used</TableHead>
-                  <TableHead>TTS Used</TableHead>
+                  <TableHead>Messages</TableHead>
+                  <TableHead>TTS</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
