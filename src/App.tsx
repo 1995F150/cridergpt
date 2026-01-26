@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+import { supabase } from '@/integrations/supabase/client';
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { OfflineProvider } from "@/contexts/OfflineContext";
@@ -35,6 +38,49 @@ const queryClient = new QueryClient({
 const App = () => {
   useEffect(() => {
     initGA();
+    
+    // Set up deep link listener for mobile OAuth redirects
+    if (Capacitor.isNativePlatform()) {
+      const setupDeepLinkListener = async () => {
+        CapacitorApp.addListener('appUrlOpen', async (data) => {
+          console.log('🔗 App opened with URL:', data.url);
+          
+          // Extract tokens from URL fragment
+          const url = data.url;
+          if (url.includes('#access_token=')) {
+            try {
+              const access_token = url.split('#access_token=').pop()?.split('&')[0];
+              const refresh_token = url.split('&refresh_token=').pop()?.split('&')[0];
+              
+              if (access_token && refresh_token) {
+                console.log('✅ Setting session from deep link');
+                const { error } = await supabase.auth.setSession({
+                  access_token,
+                  refresh_token,
+                });
+                
+                if (error) {
+                  console.error('❌ Error setting session:', error);
+                } else {
+                  console.log('✅ Session set successfully, redirecting to home');
+                  // Redirect to home page
+                  window.location.href = '/';
+                }
+              }
+            } catch (error) {
+              console.error('❌ Error processing deep link:', error);
+            }
+          }
+        });
+      };
+      
+      setupDeepLinkListener();
+      
+      // Cleanup listener on unmount
+      return () => {
+        CapacitorApp.removeAllListeners();
+      };
+    }
   }, []);
 
   return (

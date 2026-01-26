@@ -1,13 +1,19 @@
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Capacitor } from '@capacitor/core';
 
 export default function GoogleSignInButton() {
   const handleGoogleSignIn = async () => {
+    // Use custom scheme for mobile, web origin for web
+    const redirectTo = Capacitor.isNativePlatform()
+      ? 'app.cridergpt.android://auth-callback'
+      : window.location.origin;
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo,
       },
     });
     if (error) {
