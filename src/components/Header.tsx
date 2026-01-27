@@ -34,7 +34,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
   };
 
   return (
-    <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50 pt-[var(--safe-top)]">
       <div className="container mx-auto px-2 md:px-4 py-2 md:py-3 flex items-center justify-between">
         <div className="flex items-center space-x-2 md:space-x-4">
           {/* Hamburger menu for mobile */}

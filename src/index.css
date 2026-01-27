@@ -6,6 +6,12 @@
 
 @layer base {
   :root {
+    /* Safe-area insets (mobile status bar / notch). Used by Header, etc. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+
     /* Light mode colors - FFA Theme */
     --background: 200 75% 95%;
     --foreground: 210 100% 25%;
@@ -71,6 +77,12 @@
   }
 
   .dark {
+    /* Safe-area insets (mobile status bar / notch). Used by Header, etc. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+
     /* Dark mode colors - FFA Theme */
     --background: 210 100% 8%;
     --foreground: 45 100% 85%;
