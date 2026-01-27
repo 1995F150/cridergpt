@@ -27,6 +27,9 @@ npm install
 npm install @capacitor/core @capacitor/cli @capacitor/android
 npm install @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard
 npm install @capacitor/app
+
+# Install native Google Sign-In plugin (for ChatGPT-like popup)
+npm install @codetrix-studio/capacitor-google-auth
 ```
 
 ## Step 3: Build the Web App
@@ -102,19 +105,45 @@ app.cridergpt.android://auth-callback
 
 ---
 
-## Step 7: Configure Google Cloud Console
+## Step 7: Configure Google Cloud Console (CRITICAL for Native Sign-In)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Navigate to **APIs & Services** → **Credentials**
-3. Ensure you have an **Android OAuth Client ID** with:
-   - Package name: `app.cridergpt.android`
-   - SHA-1 fingerprint from your keystore
+3. Create TWO OAuth Client IDs:
 
-> **Note:** Android OAuth clients do NOT need redirect URIs—they use the package name + SHA-1 for verification.
+### 7a. Web Client ID (Required for Supabase)
+- Application type: **Web application**
+- Name: `CriderGPT Web`
+- Authorized JavaScript origins: `https://cridergpt.lovable.app`
+- Authorized redirect URIs: `https://udpldrrpebdyuiqdtqnq.supabase.co/auth/v1/callback`
+- **Copy this Client ID** - it's used in `GoogleSignInButton.tsx`
+
+### 7b. Android Client ID (Required for Native Sign-In)
+- Application type: **Android**
+- Package name: `app.cridergpt.android`
+- SHA-1 fingerprint: Get from your keystore using:
+  ```bash
+  keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
+  ```
+
+> **IMPORTANT:** The native Google Sign-In uses the **Web Client ID** for authentication, but Android verifies the app using the **Android Client ID's SHA-1**. Both must be configured!
 
 ---
 
-## Step 8: Open in Android Studio
+## Step 8: Configure capacitor-google-auth Plugin
+
+After running `npx cap add android`, edit `android/app/src/main/res/values/strings.xml`:
+
+```xml
+<resources>
+    <string name="app_name">CriderGPT</string>
+    <string name="server_client_id">YOUR_WEB_CLIENT_ID_HERE.apps.googleusercontent.com</string>
+</resources>
+```
+
+---
+
+## Step 9: Open in Android Studio
 
 ```bash
 npx cap open android
@@ -151,10 +180,11 @@ For Play Store release:
 
 ## Features Included
 
-### ✅ Google Sign-In
-- Deep link handler in `App.tsx` captures OAuth redirects
-- `GoogleSignInButton.tsx` uses custom scheme for mobile
-- Intent filter in AndroidManifest intercepts `app.cridergpt.android://auth-callback`
+### ✅ Native Google Sign-In (ChatGPT-style)
+- Uses `@codetrix-studio/capacitor-google-auth` for native popup
+- No browser redirect—account picker appears in-app
+- `GoogleSignInButton.tsx` detects platform and uses native flow on Android
+- Uses `supabase.auth.signInWithIdToken()` with Google's ID token
 
 ### ✅ Push Notifications
 - Uses Web Push API via `useBrowserNotifications.ts`
@@ -210,5 +240,6 @@ After making changes in Lovable:
 
 - **CriderGPT Version**: 4.9.9
 - **Capacitor Version**: 6.x
+- **capacitor-google-auth Version**: 3.x
 - **Min Android SDK**: 22 (Android 5.1)
 - **Target Android SDK**: 34 (Android 14)
