@@ -28,7 +28,7 @@ const FixxyBot: React.FC<FixxyBotProps> = ({ isOpen, onClose }) => {
     {
       id: '1',
       role: 'system',
-      content: '🔧 **Fixxy Bot Online** - I have full developer access and can:\n\n• Generate and deploy code\n• Execute SQL queries and database operations\n• Access all CriderGPT APIs\n• Debug and fix system issues\n• Deploy changes in real-time\n\nWhat would you like me to help you with?',
+      content: '🔧 **Fixxy Bot Online** - I have full developer access and can:\n\n• Generate and deploy code\n• Execute SQL queries and database operations\n• Access all CriderGPT APIs\n• Debug and fix system issues\n• Deploy changes in real-time\n• **Build Android app** (verified owner only)\n• **Run developer commands** (verified owner only)\n\nWhat would you like me to help you with?',
       timestamp: new Date(),
       type: 'text'
     }
@@ -98,7 +98,25 @@ const FixxyBot: React.FC<FixxyBotProps> = ({ isOpen, onClose }) => {
       let operationType = 'text';
       let result = '';
 
-      if (lowerInput.includes('autonomous') || lowerInput.includes('monitor') || lowerInput.includes('start fixxy')) {
+      if (lowerInput.includes('build android') || lowerInput.includes('android build') || lowerInput.includes('mobile app') || lowerInput.includes('developer mode') || lowerInput.includes('dev commands')) {
+        operationType = 'deployment';
+        // Verify developer status first
+        const { data: verifyData, error: verifyError } = await supabase.rpc('verify_developer');
+        
+        // Type assertion for the verify result
+        const verifyResult = verifyData as unknown as { 
+          verified?: boolean; 
+          is_founder?: boolean; 
+          is_system_owner?: boolean; 
+          is_admin?: boolean 
+        } | null;
+        
+        if (verifyError || !verifyResult?.verified) {
+          result = `🔒 **Developer Access Required**\n\nThis feature is only available to the verified owner (Jessie Crider).\n\n**Verification Status:**\n• Founder: ${verifyResult?.is_founder ? '✓' : '✗'}\n• System Owner: ${verifyResult?.is_system_owner ? '✓' : '✗'}\n• Admin: ${verifyResult?.is_admin ? '✓' : '✗'}\n\nIf you believe this is an error, please ensure you're logged in with the correct account.`;
+        } else {
+          result = `🛠️ **Developer Mode Activated** - Welcome back, Jessie!\n\n**Android Build Commands:**\n\`\`\`bash\n# Step 1: Pull latest & Install\ngit pull origin main && npm install\n\n# Step 2: Build the project\nnpm run build\n\n# Step 3: Sync to Android\nnpx cap sync android\n\n# Step 4: Open in Android Studio\nnpx cap open android\n\n# Step 5: Run on device (or emulator)\nnpx cap run android\n\`\`\`\n\n**Maintenance Commands:**\n\`\`\`bash\n# Check for issues\nnpm run lint\n\n# View Capacitor status\nnpx cap doctor\n\n# Generate SHA-1 for Google Console\nkeytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android\n\n# View Android logs\nadb logcat\n\`\`\`\n\n💡 **Tip:** You can open the full Developer Command Panel from the Profile menu for one-click copy of all commands.`;
+        }
+      } else if (lowerInput.includes('autonomous') || lowerInput.includes('monitor') || lowerInput.includes('start fixxy')) {
         operationType = 'deployment';
         // Start autonomous mode
         const { data, error } = await supabase.functions.invoke('fixxy-autonomous', {
@@ -106,7 +124,7 @@ const FixxyBot: React.FC<FixxyBotProps> = ({ isOpen, onClose }) => {
         });
         
         if (error) throw error;
-        result = `🤖 **Autonomous Mode Activated**\n\n${data.message}\n\n**Active Tasks:**\n${data.tasks.map(t => `• ${t.description}`).join('\n')}\n\nFixxy is now monitoring your system 24/7 and will automatically fix issues, push updates, and maintain optimal performance.`;
+        result = `🤖 **Autonomous Mode Activated**\n\n${data.message}\n\n**Active Tasks:**\n${data.tasks.map((t: { description: string }) => `• ${t.description}`).join('\n')}\n\nFixxy is now monitoring your system 24/7 and will automatically fix issues, push updates, and maintain optimal performance.`;
       } else if (lowerInput.includes('status') || lowerInput.includes('what are you doing')) {
         operationType = 'api';
         const { data, error } = await supabase.functions.invoke('fixxy-autonomous', {
@@ -114,7 +132,7 @@ const FixxyBot: React.FC<FixxyBotProps> = ({ isOpen, onClose }) => {
         });
         
         if (error) throw error;
-        result = `📊 **Fixxy Status Report**\n\n**Status:** ${data.status}\n**Last Check:** ${new Date(data.last_check).toLocaleString()}\n\n**Recent Activities:**\n${data.recent_fixes?.map(f => `• Fixed: ${f.issue_type}`).join('\n') || 'No recent fixes'}\n\n${data.recent_updates?.map(u => `• Updated: ${u.update_type}`).join('\n') || 'No recent updates'}`;
+        result = `📊 **Fixxy Status Report**\n\n**Status:** ${data.status}\n**Last Check:** ${new Date(data.last_check).toLocaleString()}\n\n**Recent Activities:**\n${data.recent_fixes?.map((f: { issue_type: string }) => `• Fixed: ${f.issue_type}`).join('\n') || 'No recent fixes'}\n\n${data.recent_updates?.map((u: { update_type: string }) => `• Updated: ${u.update_type}`).join('\n') || 'No recent updates'}`;
       } else if (lowerInput.includes('sql') || lowerInput.includes('database') || lowerInput.includes('query')) {
         operationType = 'sql';
         // Extract SQL query if present
