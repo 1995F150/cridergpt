@@ -4442,6 +4442,7 @@ export type Database = {
           validation_notes: string
         }[]
       }
+      verify_developer: { Args: { check_user_id?: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
