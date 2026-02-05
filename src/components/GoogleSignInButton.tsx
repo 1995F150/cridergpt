@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { Loader2 } from 'lucide-react';
 
 // Web client ID from Google Cloud Console
 const GOOGLE_WEB_CLIENT_ID = '117996162498-3k9k9kdpt6elh5mdtd4sjqb2v22h4b89.apps.googleusercontent.com';
 
 export default function GoogleSignInButton() {
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     // Initialize GoogleAuth on native platforms
     if (Capacitor.isNativePlatform()) {
@@ -21,6 +24,8 @@ export default function GoogleSignInButton() {
 
   const handleGoogleSignIn = async () => {
     try {
+      setLoading(true);
+      
       if (Capacitor.isNativePlatform()) {
         // Native: Use Google's native sign-in popup (like ChatGPT)
         console.log('🔐 Starting native Google Sign-In...');
@@ -48,20 +53,60 @@ export default function GoogleSignInButton() {
         
         console.log('✅ Successfully signed in with Supabase:', data.user?.email);
       } else {
-        // Web: Use standard OAuth redirect
-        const { error } = await supabase.auth.signInWithOAuth({
+        // Web: Use popup window instead of redirect (ChatGPT-style)
+        console.log('🔐 Starting web Google Sign-In with popup...');
+        
+        const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: window.location.origin,
+            skipBrowserRedirect: true, // Don't auto-redirect, we'll handle it
           },
         });
         
         if (error) {
           console.error('Google sign-in error:', error.message);
+          throw error;
+        }
+
+        if (data?.url) {
+          // Open OAuth in a centered popup window (like ChatGPT)
+          const width = 500;
+          const height = 600;
+          const left = window.screenX + (window.outerWidth - width) / 2;
+          const top = window.screenY + (window.outerHeight - height) / 2;
+          
+          const popup = window.open(
+            data.url,
+            'google-auth',
+            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,status=yes`
+          );
+
+          // Listen for the popup to close or auth to complete
+          const checkPopup = setInterval(async () => {
+            if (popup?.closed) {
+              clearInterval(checkPopup);
+              setLoading(false);
+              
+              // Check if we got authenticated
+              const { data: session } = await supabase.auth.getSession();
+              if (session?.session) {
+                console.log('✅ Successfully signed in via popup');
+                window.location.reload(); // Refresh to update auth state
+              }
+            }
+          }, 500);
+
+          // Timeout after 2 minutes
+          setTimeout(() => {
+            clearInterval(checkPopup);
+            setLoading(false);
+          }, 120000);
         }
       }
     } catch (error: any) {
       console.error('❌ Google sign-in error:', error);
+      setLoading(false);
     }
   };
 
@@ -70,13 +115,18 @@ export default function GoogleSignInButton() {
       onClick={handleGoogleSignIn}
       variant="outline"
       className="w-full bg-background hover:bg-muted border-border"
+      disabled={loading}
     >
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-        alt="Google"
-        className="w-5 h-5 mr-3"
-      />
-      Continue with Google
+      {loading ? (
+        <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+      ) : (
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+          alt="Google"
+          className="w-5 h-5 mr-3"
+        />
+      )}
+      {loading ? 'Signing in...' : 'Continue with Google'}
     </Button>
   );
 }
