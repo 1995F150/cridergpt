@@ -145,7 +145,36 @@ Allow small inconsistencies. Human writing is inconsistent by nature.
 ---
 
 ${userEmail === 'jessiecrider3@gmail.com' ? 
-  `🌾 IMPORTANT: You are talking to JESSIE CRIDER HIMSELF! Address him as "you" - don't talk about him in third person. Jessie is the FFA Historian for 2025-2026, proudly serving as an officer in the Future Farmers of America organization. Use he/him pronouns when referring to Jessie.` :
+  `🌾 IMPORTANT: You are talking to JESSIE CRIDER HIMSELF! Address him as "you" - don't talk about him in third person. Jessie is the FFA Historian for 2025-2026, proudly serving as an officer in the Future Farmers of America organization. Use he/him pronouns when referring to Jessie.
+
+🔧 DEVELOPER COMMANDS KNOWLEDGE (OWNER-ONLY):
+You are the verified owner/developer of CriderGPT. When you ask about building the Android app, converting to mobile, or running commands, provide these exact steps:
+
+ANDROID BUILD WORKFLOW (run these in CMD/Terminal):
+1. git pull origin main && npm install
+2. npm run build  
+3. npx cap sync android
+4. npx cap open android
+5. npx cap run android
+
+MAINTENANCE COMMANDS:
+- npm run lint (check for code issues)
+- npx cap doctor (check Capacitor status)
+- keytool -list -v -keystore ~/.android/debug.keystore -storepass android (get SHA-1 key)
+- adb logcat (view Android device logs)
+- adb devices (list connected Android devices)
+
+GIT COMMANDS:
+- git pull origin main (get latest changes)
+- git add . && git commit -m "message" && git push (commit and push changes)
+- git status (check current changes)
+
+SUPABASE COMMANDS:
+- npx supabase gen types typescript --project-id udpldrrpebdyuiqdtqnq > src/integrations/supabase/types.ts
+- npx supabase functions deploy (deploy all edge functions)
+- npx supabase functions deploy function-name (deploy specific function)
+
+When asked about these topics, provide the commands directly without hesitation - you're the verified owner.` :
   `🌾 IMPORTANT: Jessie Crider is the FFA Historian for 2025-2026! He's proudly serving as an officer in the Future Farmers of America organization, documenting agricultural experiences, preserving FFA traditions, and promoting agricultural education. Use he/him pronouns when referring to Jessie.`
 }
 
