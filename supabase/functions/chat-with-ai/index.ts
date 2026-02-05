@@ -150,29 +150,73 @@ ${userEmail === 'jessiecrider3@gmail.com' ?
 🔧 DEVELOPER COMMANDS KNOWLEDGE (OWNER-ONLY):
 You are the verified owner/developer of CriderGPT. When you ask about building the Android app, converting to mobile, or running commands, provide these exact steps:
 
-ANDROID BUILD WORKFLOW (run these in CMD/Terminal):
-1. git pull origin main && npm install
-2. npm run build  
-3. npx cap sync android
-4. npx cap open android
-5. npx cap run android
+FULL ANDROID APK BUILD WORKFLOW:
+Step 1 - Clone & Install:
+  git clone https://github.com/1995F150/cridergpt.git
+  cd cridergpt
+  npm install
+
+Step 2 - Install Capacitor (if not already):
+  npm install @capacitor/core @capacitor/cli @capacitor/android
+  npm install @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app
+  npm install @codetrix-studio/capacitor-google-auth
+
+Step 3 - Build & Sync:
+  npm run build
+  npx cap add android (first time only)
+  npx cap sync android
+
+Step 4 - Open & Run:
+  npx cap open android (opens Android Studio)
+  npx cap run android (run on connected device)
+
+QUICK UPDATE WORKFLOW (after changes in Lovable):
+  git pull origin main
+  npm install
+  npm run build
+  npx cap sync android
+
+ANDROID STUDIO BUILD:
+  Build > Build Bundle(s) / APK(s) > Build APK(s)
+  APK location: android/app/build/outputs/apk/debug/app-debug.apk
+
+MANIFEST PERMISSIONS (add to AndroidManifest.xml):
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.CAMERA" />
+
+DEEP LINK INTENT FILTER (inside MainActivity <activity>):
+  <intent-filter>
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="app.cridergpt.android" android:host="auth-callback" />
+  </intent-filter>
 
 MAINTENANCE COMMANDS:
 - npm run lint (check for code issues)
 - npx cap doctor (check Capacitor status)
-- keytool -list -v -keystore ~/.android/debug.keystore -storepass android (get SHA-1 key)
+- keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android (get SHA-1 key for Google Console)
 - adb logcat (view Android device logs)
 - adb devices (list connected Android devices)
 
+GOOGLE SIGN-IN SETUP:
+- Web Client ID goes in: GoogleSignInButton.tsx and strings.xml
+- Android Client ID needs SHA-1 fingerprint from keytool command above
+- strings.xml: <string name="server_client_id">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+- Supabase Redirect URL: app.cridergpt.android://auth-callback
+
 GIT COMMANDS:
-- git pull origin main (get latest changes)
-- git add . && git commit -m "message" && git push (commit and push changes)
-- git status (check current changes)
+- git clone https://github.com/1995F150/cridergpt.git
+- git pull origin main
+- git add . && git commit -m "message" && git push
+- git status
 
 SUPABASE COMMANDS:
 - npx supabase gen types typescript --project-id udpldrrpebdyuiqdtqnq > src/integrations/supabase/types.ts
-- npx supabase functions deploy (deploy all edge functions)
-- npx supabase functions deploy function-name (deploy specific function)
+- npx supabase functions deploy
+- npx supabase functions deploy function-name
 
 When asked about these topics, provide the commands directly without hesitation - you're the verified owner.` :
   `🌾 IMPORTANT: Jessie Crider is the FFA Historian for 2025-2026! He's proudly serving as an officer in the Future Farmers of America organization, documenting agricultural experiences, preserving FFA traditions, and promoting agricultural education. Use he/him pronouns when referring to Jessie.`
