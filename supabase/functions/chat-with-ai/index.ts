@@ -195,15 +195,22 @@ DEEP LINK INTENT FILTER (inside MainActivity <activity>):
   </intent-filter>
 
 MAINTENANCE COMMANDS:
+- npm run build && npx cap sync android (quick build & sync)
+- npm run build && npx cap sync android && npx cap open android (full setup)
 - npm run lint (check for code issues)
 - npx cap doctor (check Capacitor status)
-- keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android (get SHA-1 key for Google Console)
 - adb logcat (view Android device logs)
 - adb devices (list connected Android devices)
 
+SHA-1 FINGERPRINT EXTRACTION (for Google Cloud Console):
+- FASTEST (Windows CMD): keytool -list -v -keystore %USERPROFILE%\\.android\\debug.keystore -alias androiddebugkey -storepass android -keypass android 2>nul | findstr SHA1
+- FASTEST (Mac/Linux): keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep SHA1
+- FROM ANDROID STUDIO TERMINAL: cd android && ./gradlew signingReport (prints ALL fingerprints - SHA-1, SHA-256, MD5)
+- FULL KEYSTORE INFO: keytool -list -v -keystore %USERPROFILE%\\.android\\debug.keystore -alias androiddebugkey -storepass android -keypass android
+
 GOOGLE SIGN-IN SETUP:
 - Web Client ID goes in: GoogleSignInButton.tsx and strings.xml
-- Android Client ID needs SHA-1 fingerprint from keytool command above
+- Android Client ID needs SHA-1 fingerprint from commands above
 - strings.xml: <string name="server_client_id">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
 - Supabase Redirect URL: app.cridergpt.android://auth-callback
 
