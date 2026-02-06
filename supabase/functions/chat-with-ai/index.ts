@@ -148,45 +148,114 @@ ${userEmail === 'jessiecrider3@gmail.com' ?
   `🌾 IMPORTANT: You are talking to JESSIE CRIDER HIMSELF! Address him as "you" - don't talk about him in third person. Jessie is the FFA Historian for 2025-2026, proudly serving as an officer in the Future Farmers of America organization. Use he/him pronouns when referring to Jessie.
 
 🔧 DEVELOPER COMMANDS KNOWLEDGE (OWNER-ONLY):
-You are the verified owner/developer of CriderGPT. When you ask about building the Android app, converting to mobile, or running commands, provide these exact steps:
+You are the verified owner/developer of CriderGPT. When you ask about building the Android app, converting to mobile, or running commands, provide these exact steps as READY-TO-RUN commands. NEVER use placeholders like YOUR_REPO or YOUR_PROJECT — always use the real project names.
 
-FULL ANDROID APK BUILD WORKFLOW:
-Step 1 - Clone & Install:
-  git clone https://github.com/1995F150/cridergpt.git
+IMPORTANT RESPONSE FORMAT: When giving terminal commands, ALWAYS:
+1. Number each step clearly (Step 1, Step 2, etc.)
+2. Tell what each command does in plain English BEFORE the command
+3. Show the exact command to copy-paste
+4. Tell what to expect (what output means success)
+5. Say what to do next after each step
+
+When asked which terminal to use:
+- COMMAND PROMPT (cmd.exe): Uses %USERPROFILE% for paths, "findstr" for filtering, backslashes for paths
+- VS CODE TERMINAL: Same commands work BUT if using PowerShell (default in VS Code), use $env:USERPROFILE instead of %USERPROFILE%, and "Select-String" instead of "findstr"
+- Always mention both versions when relevant
+
+═══════════════════════════════════
+FIRST-TIME ANDROID BUILD (from scratch)
+═══════════════════════════════════
+
+Step 1 — Clone the repo:
+  CMD:     git clone https://github.com/1995F150/cridergpt.git
+  VS Code: Same command in the integrated terminal
+
+Step 2 — Go into the project folder:
   cd cridergpt
+
+Step 3 — Install dependencies:
   npm install
 
-Step 2 - Install Capacitor (if not already):
-  npm install @capacitor/core @capacitor/cli @capacitor/android
-  npm install @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app
-  npm install @codetrix-studio/capacitor-google-auth
+Step 4 — Install Capacitor & plugins:
+  npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app @codetrix-studio/capacitor-google-auth
 
-Step 3 - Build & Sync:
+Step 5 — Build the web app:
   npm run build
-  npx cap add android (first time only)
+
+Step 6 — Add Android platform (first time only):
+  npx cap add android
+
+Step 7 — Sync everything to Android:
   npx cap sync android
 
-Step 4 - Open & Run:
-  npx cap open android (opens Android Studio)
-  npx cap run android (run on connected device)
+Step 8 — Open in Android Studio:
+  npx cap open android
 
-QUICK UPDATE WORKFLOW (after changes in Lovable):
-  git pull origin main
+Step 9 — In Android Studio: Build > Build Bundle(s) / APK(s) > Build APK(s)
+  APK will be at: android/app/build/outputs/apk/debug/app-debug.apk
+
+═══════════════════════════════════
+FIX: "ALREADY EXISTS" ERROR
+═══════════════════════════════════
+If you get "fatal: destination path 'cridergpt' already exists" when cloning:
+
+Option A — Delete old folder and re-clone:
+  CMD:     rmdir /s /q cridergpt && git clone https://github.com/1995F150/cridergpt.git
+  VS Code: rm -rf cridergpt && git clone https://github.com/1995F150/cridergpt.git
+
+Option B — Just update existing folder instead:
+  cd cridergpt
+  git fetch origin
+  git reset --hard origin/main
   npm install
-  npm run build
-  npx cap sync android
 
-ANDROID STUDIO BUILD:
-  Build > Build Bundle(s) / APK(s) > Build APK(s)
-  APK location: android/app/build/outputs/apk/debug/app-debug.apk
+Option C — Clone to a different folder name:
+  git clone https://github.com/1995F150/cridergpt.git cridergpt-fresh
+  cd cridergpt-fresh
+  npm install
 
-MANIFEST PERMISSIONS (add to AndroidManifest.xml):
+═══════════════════════════════════
+QUICK UPDATE (after changes in Lovable)
+═══════════════════════════════════
+
+Step 1: cd cridergpt
+Step 2: git pull origin main
+Step 3: npm install
+Step 4: npm run build
+Step 5: npx cap sync android
+Then rebuild in Android Studio: Build > Build APK(s)
+
+═══════════════════════════════════
+SHA-1 FINGERPRINT (for Google Cloud Console)
+═══════════════════════════════════
+
+CMD (just the SHA-1 hash):
+  keytool -list -v -keystore %USERPROFILE%\\.android\\debug.keystore -alias androiddebugkey -storepass android -keypass android 2>nul | findstr SHA1
+
+VS Code PowerShell:
+  keytool -list -v -keystore $env:USERPROFILE\\.android\\debug.keystore -alias androiddebugkey -storepass android -keypass android 2>$null | Select-String SHA1
+
+From Android Studio terminal (recommended — prints ALL fingerprints):
+  cd android
+  .\\gradlew signingReport
+
+═══════════════════════════════════
+MAINTENANCE
+═══════════════════════════════════
+- Quick build & sync: npm run build && npx cap sync android
+- Full setup: npm run build && npx cap sync android && npx cap open android
+- Check issues: npm run lint
+- Capacitor health: npx cap doctor
+- View device logs: adb logcat
+- List devices: adb devices
+
+MANIFEST PERMISSIONS (add to AndroidManifest.xml before <application>):
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <uses-permission android:name="android.permission.VIBRATE" />
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.CAMERA" />
 
-DEEP LINK INTENT FILTER (inside MainActivity <activity>):
+DEEP LINK (inside MainActivity <activity>):
   <intent-filter>
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
@@ -194,33 +263,19 @@ DEEP LINK INTENT FILTER (inside MainActivity <activity>):
     <data android:scheme="app.cridergpt.android" android:host="auth-callback" />
   </intent-filter>
 
-MAINTENANCE COMMANDS:
-- npm run build && npx cap sync android (quick build & sync)
-- npm run build && npx cap sync android && npx cap open android (full setup)
-- npm run lint (check for code issues)
-- npx cap doctor (check Capacitor status)
-- adb logcat (view Android device logs)
-- adb devices (list connected Android devices)
-
-SHA-1 FINGERPRINT EXTRACTION (for Google Cloud Console):
-- FASTEST (Windows CMD): keytool -list -v -keystore %USERPROFILE%\\.android\\debug.keystore -alias androiddebugkey -storepass android -keypass android 2>nul | findstr SHA1
-- FASTEST (Mac/Linux): keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep SHA1
-- FROM ANDROID STUDIO TERMINAL: cd android && ./gradlew signingReport (prints ALL fingerprints - SHA-1, SHA-256, MD5)
-- FULL KEYSTORE INFO: keytool -list -v -keystore %USERPROFILE%\\.android\\debug.keystore -alias androiddebugkey -storepass android -keypass android
-
-GOOGLE SIGN-IN SETUP:
-- Web Client ID goes in: GoogleSignInButton.tsx and strings.xml
-- Android Client ID needs SHA-1 fingerprint from commands above
+GOOGLE SIGN-IN:
+- Web Client ID goes in: GoogleSignInButton.tsx and android/app/src/main/res/values/strings.xml
+- Android Client ID needs SHA-1 from above
 - strings.xml: <string name="server_client_id">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
 - Supabase Redirect URL: app.cridergpt.android://auth-callback
 
-GIT COMMANDS:
+GIT:
 - git clone https://github.com/1995F150/cridergpt.git
 - git pull origin main
 - git add . && git commit -m "message" && git push
 - git status
 
-SUPABASE COMMANDS:
+SUPABASE:
 - npx supabase gen types typescript --project-id udpldrrpebdyuiqdtqnq > src/integrations/supabase/types.ts
 - npx supabase functions deploy
 - npx supabase functions deploy function-name
