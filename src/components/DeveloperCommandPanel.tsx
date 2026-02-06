@@ -14,7 +14,8 @@ import {
   Database,
   Shield,
   X,
-  Loader2
+  Loader2,
+  KeyRound
 } from 'lucide-react';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { useToast } from '@/components/ui/use-toast';
@@ -101,21 +102,25 @@ const DeveloperCommandPanel: React.FC<DeveloperCommandPanelProps> = ({ isOpen, o
             </div>
           ) : (
             <Tabs defaultValue="android" className="h-full flex flex-col">
-              <TabsList className="mx-4 mt-4 grid grid-cols-4">
-                <TabsTrigger value="android" className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4" />
-                  Android Build
+              <TabsList className="mx-4 mt-4 grid grid-cols-5">
+                <TabsTrigger value="android" className="flex items-center gap-1 text-xs">
+                  <Smartphone className="w-3 h-3" />
+                  Android
                 </TabsTrigger>
-                <TabsTrigger value="maintenance" className="flex items-center gap-2">
-                  <Wrench className="w-4 h-4" />
-                  Maintenance
+                <TabsTrigger value="signing" className="flex items-center gap-1 text-xs">
+                  <KeyRound className="w-3 h-3" />
+                  SHA-1
                 </TabsTrigger>
-                <TabsTrigger value="git" className="flex items-center gap-2">
-                  <GitBranch className="w-4 h-4" />
+                <TabsTrigger value="maintenance" className="flex items-center gap-1 text-xs">
+                  <Wrench className="w-3 h-3" />
+                  Maintain
+                </TabsTrigger>
+                <TabsTrigger value="git" className="flex items-center gap-1 text-xs">
+                  <GitBranch className="w-3 h-3" />
                   Git
                 </TabsTrigger>
-                <TabsTrigger value="supabase" className="flex items-center gap-2">
-                  <Database className="w-4 h-4" />
+                <TabsTrigger value="supabase" className="flex items-center gap-1 text-xs">
+                  <Database className="w-3 h-3" />
                   Supabase
                 </TabsTrigger>
               </TabsList>
@@ -129,6 +134,21 @@ const DeveloperCommandPanel: React.FC<DeveloperCommandPanelProps> = ({ isOpen, o
                     <CommandCard 
                       key={index}
                       step={cmd.step}
+                      name={cmd.name}
+                      command={cmd.command}
+                      onCopy={copyToClipboard}
+                      isCopied={copiedCommand === cmd.command}
+                    />
+                  ))}
+                </TabsContent>
+
+                <TabsContent value="signing" className="mt-0 space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Automated SHA-1 fingerprint extraction for Google Cloud Console.
+                  </p>
+                  {commands?.signing.map((cmd, index) => (
+                    <CommandCard 
+                      key={index}
                       name={cmd.name}
                       command={cmd.command}
                       onCopy={copyToClipboard}

@@ -121,12 +121,26 @@ app.cridergpt.android://auth-callback
 ### 7b. Android Client ID (Required for Native Sign-In)
 - Application type: **Android**
 - Package name: `app.cridergpt.android`
-- SHA-1 fingerprint: Get from your keystore using:
-  ```bash
-  keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
-  ```
+- SHA-1 fingerprint: Use one of the automated methods below
 
-> **IMPORTANT:** The native Google Sign-In uses the **Web Client ID** for authentication, but Android verifies the app using the **Android Client ID's SHA-1**. Both must be configured!
+#### Automated SHA-1 Extraction
+
+**Option A — Windows CMD (fastest):**
+```bash
+keytool -list -v -keystore %USERPROFILE%\.android\debug.keystore -alias androiddebugkey -storepass android -keypass android 2>nul | findstr SHA1
+```
+
+**Option B — Mac/Linux:**
+```bash
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep SHA1
+```
+
+**Option C — Gradle signingReport (works everywhere, recommended by Google):**
+```bash
+cd android
+./gradlew signingReport
+```
+This prints ALL fingerprints (SHA-1, SHA-256, MD5) for both debug and release keystores automatically.
 
 ---
 
