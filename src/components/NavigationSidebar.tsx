@@ -7,14 +7,12 @@ import { Separator } from '@/components/ui/separator';
 import { 
   MessageSquare, 
   Calculator, 
-  FileText, 
   Folder,
   Images,
   Play, 
   Mail, 
   User, 
   DollarSign, 
-  Star, 
   Bell, 
   Clock, 
   Heart, 
@@ -30,7 +28,6 @@ import {
   Package,
   Eye,
   Shield,
-  Users,
   Gamepad2,
   ShieldCheck
 } from 'lucide-react';
@@ -74,7 +71,6 @@ const navigationGroups: NavGroup[] = [
       { id: 'ffa', label: 'FFA Center', icon: Wheat },
       { id: 'calendar', label: 'Calendar', icon: Calendar },
       { id: 'calculators', label: 'Calculators', icon: Calculator },
-      { id: 'invoices', label: 'Invoices', icon: FileText },
       { id: 'files', label: 'Files', icon: Folder },
       { id: 'gallery', label: 'Gallery', icon: Images },
       { id: 'projects', label: 'Projects', icon: Folder },
@@ -86,13 +82,6 @@ const navigationGroups: NavGroup[] = [
       { id: 'media', label: 'Media', icon: Play, emailRestricted: ['jessiecrider3@gmail.com'] },
       { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
       { id: 'studio', label: '3D Studio', icon: Cuboid },
-    ]
-  },
-  {
-    label: 'COMMUNITY',
-    items: [
-      { id: 'social', label: 'Community Chat', icon: Users },
-      { id: 'reviews', label: 'Reviews', icon: Star },
     ]
   },
   {

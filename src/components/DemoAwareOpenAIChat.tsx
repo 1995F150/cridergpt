@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Brain, BookOpen, AlertTriangle, Loader2, Settings } from "lucide-react";
+import { MessageSquare, Brain, BookOpen, AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import ModelSelector from "./ModelSelector";
@@ -13,8 +13,6 @@ import { DemoExhaustedModal } from "./DemoExhaustedModal";
 import { useVisionMemory } from "@/hooks/useVisionMemory";
 import { ModernChatInput } from "./ModernChatInput";
 import { useAIMemory } from "@/hooks/useAIMemory";
-import { GoogleIntegrationsSettings } from "./GoogleIntegrationsSettings";
-import { useGoogleIntegrations } from "@/hooks/useGoogleIntegrations";
 
 interface FilePreview {
   id: string;
@@ -33,8 +31,6 @@ function DemoAwareOpenAIChat() {
     recentTopics: []
   });
   const [showDemoModal, setShowDemoModal] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { selectedModel, setSelectedModel } = useModelSelection();
@@ -42,7 +38,6 @@ function DemoAwareOpenAIChat() {
   const { demoUsage, canSendMessage, incrementDemoUsage } = useDemoMode();
   const { saveVisionMemory } = useVisionMemory();
   const { storeMemory } = useAIMemory();
-  const { parseGoogleCommand, executeGoogleCommand, integrations } = useGoogleIntegrations();
 
   useEffect(() => {
     // Load knowledge stats on component mount (only for authenticated users)
@@ -201,37 +196,6 @@ function DemoAwareOpenAIChat() {
 
       // Handle text message
       if (message.trim()) {
-        // Check for Google integration commands
-        const googleCommand = parseGoogleCommand(message);
-        if (googleCommand) {
-          const { service, action, query } = googleCommand;
-          
-          // Check if integration is connected
-          if (integrations[service].connected) {
-            const commandResult = await executeGoogleCommand(service, action, query);
-            if (commandResult) {
-              responseText += `\n\n✅ **Google ${service.charAt(0).toUpperCase() + service.slice(1)} Command Executed**\n${commandResult.message || 'Command completed successfully'}\n\n`;
-              
-              // Log the action
-              if (user) {
-                await storeMemory(
-                  `Google ${service} command: ${action}`,
-                  commandResult.message || query,
-                  'conversation',
-                  {
-                    source_type: 'google_integration',
-                    service_name: service,
-                    action: action,
-                    timestamp: new Date().toISOString()
-                  }
-                );
-              }
-            }
-          } else {
-            responseText += `\n\n⚠️ **Google ${service.charAt(0).toUpperCase() + service.slice(1)} Not Connected**\nPlease enable the integration in settings (⚙️ icon) to use this command.\n\n`;
-          }
-        }
-        
         // Generate AI response
         const result = await generateSmartResponse(message, selectedModel, 'chat');
         responseText += typeof result === 'string' ? result : result.response;
@@ -313,20 +277,10 @@ function DemoAwareOpenAIChat() {
                 </Badge>
               )}
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowSettings(true)}
-                title="Google Integrations"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-              <ModelSelector 
-                selectedModel={selectedModel}
-                onModelChange={setSelectedModel}
-              />
-            </div>
+            <ModelSelector 
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+            />
           </div>
           
           {/* Demo usage indicator for non-authenticated users */}
@@ -402,11 +356,6 @@ function DemoAwareOpenAIChat() {
       <DemoExhaustedModal 
         open={showDemoModal} 
         onOpenChange={setShowDemoModal} 
-      />
-
-      <GoogleIntegrationsSettings
-        open={showSettings}
-        onOpenChange={setShowSettings}
       />
     </>
   );
