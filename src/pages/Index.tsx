@@ -9,7 +9,6 @@ import ChatPanel from '@/components/panels/ChatPanel';
 import { CalculatorPanel } from '@/components/panels/CalculatorPanel';
 import { CalendarPanel } from '@/components/panels/CalendarPanel';
 import { VisionMemoryPanel } from '@/components/panels/VisionMemoryPanel';
-import { InvoicePanel } from '@/components/panels/InvoicePanel';
 import { FilesPanel } from '@/components/panels/FilesPanel';
 import { GalleryPanel } from '@/components/panels/GalleryPanel';
 import { CodePanel } from '@/components/panels/CodePanel';
@@ -18,9 +17,7 @@ import { MediaPanel } from '@/components/panels/MediaPanel';
 import { ProjectPanel } from '@/components/panels/ProjectPanel';
 import { ContactPanel } from '@/components/panels/ContactPanel';
 import { ProfilePanel } from '@/components/panels/ProfilePanel';
-import { SocialPanel } from '@/components/panels/SocialPanel';
 import { PaymentPanel } from '@/components/panels/PaymentPanel';
-import { ReviewsPanel } from '@/components/panels/ReviewsPanel';
 import { UpdatesPanel } from '@/components/panels/UpdatesPanel';
 import { TimelinePanel } from '@/components/panels/TimelinePanel';
 import { MemorialPanel } from '@/components/panels/MemorialPanel';
@@ -35,7 +32,6 @@ import { StudioPanel } from '@/components/panels/StudioPanel';
 import { ModToolsPanel } from '@/components/panels/ModToolsPanel';
 import { ZipToExePanel } from '@/components/panels/ZipToExePanel';
 import { Footer } from '@/components/Footer';
-import FixxyBotTrigger from '@/components/FixxyBotTrigger';
 import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,7 +45,6 @@ export type PanelType =
   | 'vision-memory'
   | 'calculators' 
   | 'calendar'
-  | 'invoices'
   | 'files' 
   | 'gallery'
   | 'code' 
@@ -58,9 +53,7 @@ export type PanelType =
   | 'projects' 
   | 'contact' 
   | 'profile' 
-  | 'social' 
   | 'payment' 
-  | 'reviews' 
   | 'updates' 
   | 'timeline' 
   | 'memorial' 
@@ -160,7 +153,6 @@ export default function Index() {
               {activePanel === 'vision-memory' && <VisionMemoryPanel />}
               {activePanel === 'calculators' && <CalculatorPanel />}
               {activePanel === 'calendar' && <CalendarPanel />}
-              {activePanel === 'invoices' && <InvoicePanel />}
               {activePanel === 'files' && <FilesPanel />}
               {activePanel === 'gallery' && <GalleryPanel />}
               {activePanel === 'code' && <CodePanel />}
@@ -169,9 +161,7 @@ export default function Index() {
               {activePanel === 'projects' && <ProjectPanel />}
               {activePanel === 'contact' && <ContactPanel />}
               {activePanel === 'profile' && <ProfilePanel />}
-              {activePanel === 'social' && <SocialPanel />}
               {activePanel === 'payment' && <PaymentPanel />}
-              {activePanel === 'reviews' && <ReviewsPanel />}
               {activePanel === 'updates' && <UpdatesPanel />}
               {activePanel === 'timeline' && <TimelinePanel />}
               {activePanel === 'memorial' && <MemorialPanel />}
@@ -191,7 +181,6 @@ export default function Index() {
           </main>
           <Footer />
         </div>
-        <FixxyBotTrigger />
         
         <NotificationPermissionModal
           open={showNotificationModal}
