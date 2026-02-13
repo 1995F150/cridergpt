@@ -30,7 +30,8 @@ import {
   Eye,
   Shield,
   Gamepad2,
-  ShieldCheck
+  ShieldCheck,
+  Beef
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,6 +71,7 @@ const navigationGroups: NavGroup[] = [
   {
     label: 'PRODUCTIVITY',
     items: [
+      { id: 'livestock', label: 'Livestock ID', icon: Beef },
       { id: 'ffa', label: 'FFA Center', icon: Wheat },
       { id: 'calendar', label: 'Calendar', icon: Calendar },
       { id: 'calculators', label: 'Calculators', icon: Calculator },

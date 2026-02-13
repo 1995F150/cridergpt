@@ -39,6 +39,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminPanel } from '@/components/panels/AdminPanel';
 import { GuardianPanel } from '@/components/panels/GuardianPanel';
+import { LivestockPanel } from '@/components/panels/LivestockPanel';
 
 export type PanelType = 
   | 'chat' 
@@ -68,7 +69,8 @@ export type PanelType =
   | 'studio'
   | 'zip-to-exe'
   | 'admin'
-  | 'guardian';
+  | 'guardian'
+  | 'livestock';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -177,6 +179,7 @@ export default function Index() {
               {activePanel === 'zip-to-exe' && <ZipToExePanel />}
               {activePanel === 'admin' && isAdmin && <AdminPanel />}
               {activePanel === 'guardian' && <GuardianPanel />}
+              {activePanel === 'livestock' && <LivestockPanel />}
             </div>
           </main>
           <Footer />
