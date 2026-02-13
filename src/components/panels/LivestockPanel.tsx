@@ -1,0 +1,211 @@
+import { useState } from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Search, PlusCircle, Scan, BarChart3 } from 'lucide-react';
+import { useLivestock } from '@/hooks/useLivestock';
+import { AnimalCard } from '@/components/livestock/AnimalCard';
+import { AnimalProfile } from '@/components/livestock/AnimalProfile';
+import { AddAnimalForm } from '@/components/livestock/AddAnimalForm';
+import { TagScanner } from '@/components/livestock/TagScanner';
+import { useAuth } from '@/contexts/AuthContext';
+
+export function LivestockPanel() {
+  const { user } = useAuth();
+  const {
+    animals, loading, selectedAnimal, weights, healthRecords, notes, tags,
+    addAnimal, addWeight, addHealthRecord, addNote, addTag,
+    selectAnimal, lookupByTag, setSelectedAnimal,
+  } = useLivestock();
+  
+  const [search, setSearch] = useState('');
+  const [speciesFilter, setSpeciesFilter] = useState<string>('all');
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-full p-8">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <span className="text-5xl mb-4 block">🐮</span>
+            <h2 className="text-xl font-bold mb-2">Livestock Smart ID</h2>
+            <p className="text-muted-foreground mb-4">Sign in to manage your herd, track health, and scan tags.</p>
+            <Button onClick={() => window.location.href = '/auth'}>Sign In</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // If viewing a specific animal profile
+  if (selectedAnimal) {
+    return (
+      <ScrollArea className="h-full">
+        <div className="max-w-2xl mx-auto p-4">
+          <AnimalProfile
+            animal={selectedAnimal}
+            weights={weights}
+            healthRecords={healthRecords}
+            notes={notes}
+            tags={tags}
+            onBack={() => setSelectedAnimal(null)}
+            onAddWeight={addWeight}
+            onAddHealth={addHealthRecord}
+            onAddNote={addNote}
+            onAddTag={addTag}
+          />
+        </div>
+      </ScrollArea>
+    );
+  }
+
+  // Filter animals
+  const filtered = animals.filter(a => {
+    const matchesSearch = !search || 
+      a.name?.toLowerCase().includes(search.toLowerCase()) ||
+      a.animal_id.toLowerCase().includes(search.toLowerCase()) ||
+      a.breed?.toLowerCase().includes(search.toLowerCase());
+    const matchesSpecies = speciesFilter === 'all' || a.species === speciesFilter;
+    return matchesSearch && matchesSpecies;
+  });
+
+  const speciesCounts = animals.reduce((acc, a) => {
+    acc[a.species] = (acc[a.species] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return (
+    <ScrollArea className="h-full">
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              🐮 Livestock Smart ID
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {animals.length} animal{animals.length !== 1 ? 's' : ''} registered
+            </p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="herd" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4 h-12">
+            <TabsTrigger value="herd" className="text-xs sm:text-sm">🐄 Herd</TabsTrigger>
+            <TabsTrigger value="scan" className="text-xs sm:text-sm">📡 Scan</TabsTrigger>
+            <TabsTrigger value="add" className="text-xs sm:text-sm">➕ Add</TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs sm:text-sm">📊 Stats</TabsTrigger>
+          </TabsList>
+
+          {/* Herd Tab */}
+          <TabsContent value="herd" className="space-y-4">
+            {/* Search & Filter */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, ID, or breed..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-9 h-11"
+                />
+              </div>
+            </div>
+
+            {/* Species Filter Chips */}
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant={speciesFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSpeciesFilter('all')}
+              >
+                All ({animals.length})
+              </Button>
+              {Object.entries(speciesCounts).map(([species, count]) => (
+                <Button
+                  key={species}
+                  variant={speciesFilter === species ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSpeciesFilter(species)}
+                >
+                  {species} ({count})
+                </Button>
+              ))}
+            </div>
+
+            {/* Animal List */}
+            {loading ? (
+              <div className="text-center py-12 text-muted-foreground">Loading your herd...</div>
+            ) : filtered.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <span className="text-5xl mb-4 block">🌾</span>
+                  <h3 className="text-lg font-semibold mb-2">
+                    {animals.length === 0 ? 'No Animals Yet' : 'No matches found'}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {animals.length === 0 
+                      ? 'Register your first animal to get started!' 
+                      : 'Try a different search term.'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {filtered.map(animal => (
+                  <AnimalCard key={animal.id} animal={animal} onClick={() => selectAnimal(animal)} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Scan Tab */}
+          <TabsContent value="scan">
+            <TagScanner onTagScanned={lookupByTag} />
+          </TabsContent>
+
+          {/* Add Tab */}
+          <TabsContent value="add">
+            <AddAnimalForm onSubmit={addAnimal} />
+          </TabsContent>
+
+          {/* Stats Tab */}
+          <TabsContent value="stats" className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-3xl font-bold text-primary">{animals.length}</p>
+                  <p className="text-sm text-muted-foreground">Total Animals</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-3xl font-bold text-primary">{animals.filter(a => a.status === 'active').length}</p>
+                  <p className="text-sm text-muted-foreground">Active</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {Object.entries(speciesCounts).length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">By Species</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {Object.entries(speciesCounts).map(([species, count]) => (
+                    <div key={species} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                      <span className="capitalize font-medium">{species}</span>
+                      <Badge variant="outline">{count}</Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </ScrollArea>
+  );
+}
