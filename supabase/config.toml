@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.document-ai-analysis]
 verify_jwt = false
+
+[functions.scan-card]
+verify_jwt = false

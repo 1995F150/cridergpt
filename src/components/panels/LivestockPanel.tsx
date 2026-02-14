@@ -19,6 +19,7 @@ export function LivestockPanel() {
     animals, loading, selectedAnimal, weights, healthRecords, notes, tags,
     addAnimal, addWeight, addHealthRecord, addNote, addTag,
     selectAnimal, lookupByTag, setSelectedAnimal,
+    scanCard, linkCard, unlinkCard, getAnimalCards,
   } = useLivestock();
   
   const [search, setSearch] = useState('');
@@ -55,6 +56,9 @@ export function LivestockPanel() {
             onAddHealth={addHealthRecord}
             onAddNote={addNote}
             onAddTag={addTag}
+            onLinkCard={linkCard}
+            onUnlinkCard={unlinkCard}
+            getAnimalCards={getAnimalCards}
           />
         </div>
       </ScrollArea>
@@ -163,7 +167,7 @@ export function LivestockPanel() {
 
           {/* Scan Tab */}
           <TabsContent value="scan">
-            <TagScanner onTagScanned={lookupByTag} />
+            <TagScanner onTagScanned={lookupByTag} onCardScanned={scanCard} />
           </TabsContent>
 
           {/* Add Tab */}

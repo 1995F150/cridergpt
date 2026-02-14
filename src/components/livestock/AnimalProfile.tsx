@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Heart } from 'lucide-react';
+import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Heart, CreditCard, Unlink } from 'lucide-react';
 import type { LivestockAnimal, LivestockWeight, LivestockHealthRecord, LivestockNote, LivestockTag } from '@/hooks/useLivestock';
 
 interface AnimalProfileProps {
@@ -21,6 +21,9 @@ interface AnimalProfileProps {
   onAddHealth: (animalId: string, record: any) => Promise<void>;
   onAddNote: (animalId: string, content: string, noteType?: string) => Promise<void>;
   onAddTag: (animalId: string, tagNumber: string, tagType?: string, tagLocation?: string) => Promise<void>;
+  onLinkCard?: (animalId: string, cardId: string) => Promise<void>;
+  onUnlinkCard?: (cardId: string) => Promise<void>;
+  getAnimalCards?: (animalId: string) => Promise<any[]>;
 }
 
 const speciesEmoji: Record<string, string> = {
@@ -39,7 +42,8 @@ function getAge(birthDate: string | null): string {
 
 export function AnimalProfile({
   animal, weights, healthRecords, notes, tags,
-  onBack, onAddWeight, onAddHealth, onAddNote, onAddTag
+  onBack, onAddWeight, onAddHealth, onAddNote, onAddTag,
+  onLinkCard, onUnlinkCard, getAnimalCards
 }: AnimalProfileProps) {
   const [newWeight, setNewWeight] = useState('');
   const [weightNotes, setWeightNotes] = useState('');
@@ -47,6 +51,8 @@ export function AnimalProfile({
   const [tagNumber, setTagNumber] = useState('');
   const [tagType, setTagType] = useState('visual');
   const [tagLocation, setTagLocation] = useState('');
+  const [rfidCardId, setRfidCardId] = useState('');
+  const [rfidCards, setRfidCards] = useState<any[]>([]);
   
   // Health record form
   const [healthType, setHealthType] = useState('checkup');
@@ -56,6 +62,12 @@ export function AnimalProfile({
   const [healthDosage, setHealthDosage] = useState('');
   const [healthVet, setHealthVet] = useState('');
 
+  // Load RFID cards
+  useEffect(() => {
+    if (getAnimalCards) {
+      getAnimalCards(animal.id).then(setRfidCards);
+    }
+  }, [animal.id, getAnimalCards]);
   const latestWeight = weights[0]?.weight_lbs;
   const emoji = speciesEmoji[animal.species] || '🐾';
 
@@ -104,11 +116,12 @@ export function AnimalProfile({
 
       {/* Tabs */}
       <Tabs defaultValue="health" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 h-12">
+        <TabsList className="grid w-full grid-cols-5 h-12">
           <TabsTrigger value="health" className="text-xs sm:text-sm">💊 Health</TabsTrigger>
           <TabsTrigger value="weight" className="text-xs sm:text-sm">⚖️ Weight</TabsTrigger>
           <TabsTrigger value="notes" className="text-xs sm:text-sm">📝 Notes</TabsTrigger>
           <TabsTrigger value="tags" className="text-xs sm:text-sm">🏷️ Tags</TabsTrigger>
+          <TabsTrigger value="cards" className="text-xs sm:text-sm">💳 Cards</TabsTrigger>
         </TabsList>
 
         {/* Health Tab */}
@@ -336,6 +349,57 @@ export function AnimalProfile({
                       {t.is_primary && <Badge className="text-xs bg-primary/10 text-primary border-0">Primary</Badge>}
                     </div>
                     {t.tag_location && <span className="text-xs text-muted-foreground">{t.tag_location.replace('_', ' ')}</span>}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        {/* RFID Cards Tab */}
+        <TabsContent value="cards" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <CreditCard className="h-4 w-4" /> Link RFID Card
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label>Card ID *</Label>
+                <Input placeholder="e.g. CARD-001" value={rfidCardId} onChange={e => setRfidCardId(e.target.value)} className="h-12 text-lg font-mono" />
+              </div>
+              <Button className="w-full h-11" disabled={!rfidCardId.trim() || !onLinkCard} onClick={async () => {
+                if (onLinkCard) {
+                  await onLinkCard(animal.id, rfidCardId.trim());
+                  setRfidCardId('');
+                  if (getAnimalCards) getAnimalCards(animal.id).then(setRfidCards);
+                }
+              }}>
+                Link RFID Card
+              </Button>
+            </CardContent>
+          </Card>
+
+          {rfidCards.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">Linked RFID Cards</h3>
+              {rfidCards.map((c: any) => (
+                <Card key={c.id}>
+                  <CardContent className="p-3 flex items-center justify-between">
+                    <div>
+                      <span className="font-mono font-medium">{c.card_id}</span>
+                      {c.last_scan && (
+                        <p className="text-xs text-muted-foreground">Last scan: {new Date(c.last_scan).toLocaleString()}</p>
+                      )}
+                    </div>
+                    {onUnlinkCard && (
+                      <Button variant="ghost" size="sm" onClick={async () => {
+                        await onUnlinkCard(c.card_id);
+                        if (getAnimalCards) getAnimalCards(animal.id).then(setRfidCards);
+                      }}>
+                        <Unlink className="h-4 w-4 mr-1" /> Unlink
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}
