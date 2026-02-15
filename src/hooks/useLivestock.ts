@@ -7,6 +7,7 @@ export interface LivestockAnimal {
   id: string;
   owner_id: string;
   animal_id: string;
+  tag_id: string | null;
   name: string | null;
   species: string;
   breed: string | null;
@@ -296,8 +297,8 @@ export function useLivestock() {
     }
   };
 
-  // RFID Card scanning via edge function
-  const scanCard = async (cardId: string, encrypted: boolean = false) => {
+  // Scan via edge function — looks up by tag_id on livestock_animals
+  const scanCard = async (tagId: string) => {
     if (!user) return null;
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -312,7 +313,7 @@ export function useLivestock() {
             'Authorization': `Bearer ${session.access_token}`,
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ card_id: cardId, encrypted }),
+          body: JSON.stringify({ tag_id: tagId }),
         }
       );
 
@@ -323,7 +324,6 @@ export function useLivestock() {
         return { error: msg, status: res.status };
       }
 
-      // Auto-select the returned animal
       if (result.animal) {
         setSelectedAnimal(result.animal);
         setWeights(result.weights || []);
@@ -332,62 +332,12 @@ export function useLivestock() {
         setTags(result.tags || []);
       }
 
-      toast.success('Card scanned successfully! 📡');
+      toast.success('Tag scanned successfully! 📡');
       return result;
     } catch (err: any) {
-      console.error('Card scan error:', err);
-      toast.error('Card scan failed');
+      console.error('Tag scan error:', err);
+      toast.error('Tag scan failed');
       return null;
-    }
-  };
-
-  // Link an RFID card to an animal
-  const linkCard = async (animalId: string, cardId: string) => {
-    if (!user) return;
-    try {
-      const { error } = await db.from('livestock_rfid_cards').insert({
-        card_id: cardId,
-        animal_id: animalId,
-        linked_by: user.id,
-      });
-      if (error) throw error;
-      toast.success('RFID card linked! 🏷️');
-    } catch (err: any) {
-      console.error('Link card error:', err);
-      toast.error(err.message?.includes('duplicate') ? 'Card ID already registered' : 'Failed to link card');
-    }
-  };
-
-  // Unlink an RFID card
-  const unlinkCard = async (cardId: string) => {
-    if (!user) return;
-    try {
-      const { error } = await db.from('livestock_rfid_cards')
-        .update({ unlinked_at: new Date().toISOString() })
-        .eq('card_id', cardId)
-        .eq('linked_by', user.id)
-        .is('unlinked_at', null);
-      if (error) throw error;
-      toast.success('Card unlinked');
-    } catch (err: any) {
-      console.error('Unlink card error:', err);
-      toast.error('Failed to unlink card');
-    }
-  };
-
-  // Get RFID cards for an animal
-  const getAnimalCards = async (animalId: string) => {
-    try {
-      const { data, error } = await db.from('livestock_rfid_cards')
-        .select('*')
-        .eq('animal_id', animalId)
-        .is('unlinked_at', null)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    } catch (err) {
-      console.error('Get cards error:', err);
-      return [];
     }
   };
 
@@ -409,6 +359,6 @@ export function useLivestock() {
     animals, loading, selectedAnimal, weights, healthRecords, notes, tags,
     addAnimal, addWeight, addHealthRecord, addNote, addTag,
     selectAnimal, lookupByTag, fetchAnimals, setSelectedAnimal,
-    scanCard, linkCard, unlinkCard, getAnimalCards, getScanHistory,
+    scanCard, getScanHistory,
   };
 }

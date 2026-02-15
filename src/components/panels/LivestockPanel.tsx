@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, PlusCircle, Scan, BarChart3 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useLivestock } from '@/hooks/useLivestock';
 import { AnimalCard } from '@/components/livestock/AnimalCard';
 import { AnimalProfile } from '@/components/livestock/AnimalProfile';
@@ -18,8 +18,7 @@ export function LivestockPanel() {
   const {
     animals, loading, selectedAnimal, weights, healthRecords, notes, tags,
     addAnimal, addWeight, addHealthRecord, addNote, addTag,
-    selectAnimal, lookupByTag, setSelectedAnimal,
-    scanCard, linkCard, unlinkCard, getAnimalCards,
+    selectAnimal, setSelectedAnimal, scanCard,
   } = useLivestock();
   
   const [search, setSearch] = useState('');
@@ -40,7 +39,6 @@ export function LivestockPanel() {
     );
   }
 
-  // If viewing a specific animal profile
   if (selectedAnimal) {
     return (
       <ScrollArea className="h-full">
@@ -56,21 +54,19 @@ export function LivestockPanel() {
             onAddHealth={addHealthRecord}
             onAddNote={addNote}
             onAddTag={addTag}
-            onLinkCard={linkCard}
-            onUnlinkCard={unlinkCard}
-            getAnimalCards={getAnimalCards}
           />
         </div>
       </ScrollArea>
     );
   }
 
-  // Filter animals
   const filtered = animals.filter(a => {
+    const q = search.toLowerCase();
     const matchesSearch = !search || 
-      a.name?.toLowerCase().includes(search.toLowerCase()) ||
-      a.animal_id.toLowerCase().includes(search.toLowerCase()) ||
-      a.breed?.toLowerCase().includes(search.toLowerCase());
+      a.name?.toLowerCase().includes(q) ||
+      a.animal_id.toLowerCase().includes(q) ||
+      a.breed?.toLowerCase().includes(q) ||
+      a.tag_id?.toLowerCase().includes(q);
     const matchesSpecies = speciesFilter === 'all' || a.species === speciesFilter;
     return matchesSearch && matchesSpecies;
   });
@@ -83,7 +79,6 @@ export function LivestockPanel() {
   return (
     <ScrollArea className="h-full">
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -103,14 +98,12 @@ export function LivestockPanel() {
             <TabsTrigger value="stats" className="text-xs sm:text-sm">📊 Stats</TabsTrigger>
           </TabsList>
 
-          {/* Herd Tab */}
           <TabsContent value="herd" className="space-y-4">
-            {/* Search & Filter */}
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, ID, or breed..."
+                  placeholder="Search by name, ID, breed, or tag..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="pl-9 h-11"
@@ -118,28 +111,17 @@ export function LivestockPanel() {
               </div>
             </div>
 
-            {/* Species Filter Chips */}
             <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={speciesFilter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSpeciesFilter('all')}
-              >
+              <Button variant={speciesFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setSpeciesFilter('all')}>
                 All ({animals.length})
               </Button>
               {Object.entries(speciesCounts).map(([species, count]) => (
-                <Button
-                  key={species}
-                  variant={speciesFilter === species ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSpeciesFilter(species)}
-                >
+                <Button key={species} variant={speciesFilter === species ? 'default' : 'outline'} size="sm" onClick={() => setSpeciesFilter(species)}>
                   {species} ({count})
                 </Button>
               ))}
             </div>
 
-            {/* Animal List */}
             {loading ? (
               <div className="text-center py-12 text-muted-foreground">Loading your herd...</div>
             ) : filtered.length === 0 ? (
@@ -150,9 +132,7 @@ export function LivestockPanel() {
                     {animals.length === 0 ? 'No Animals Yet' : 'No matches found'}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {animals.length === 0 
-                      ? 'Register your first animal to get started!' 
-                      : 'Try a different search term.'}
+                    {animals.length === 0 ? 'Register your first animal to get started!' : 'Try a different search term.'}
                   </p>
                 </CardContent>
               </Card>
@@ -165,17 +145,14 @@ export function LivestockPanel() {
             )}
           </TabsContent>
 
-          {/* Scan Tab */}
           <TabsContent value="scan">
-            <TagScanner onTagScanned={lookupByTag} onCardScanned={scanCard} />
+            <TagScanner onTagScanned={scanCard} />
           </TabsContent>
 
-          {/* Add Tab */}
           <TabsContent value="add">
             <AddAnimalForm onSubmit={addAnimal} />
           </TabsContent>
 
-          {/* Stats Tab */}
           <TabsContent value="stats" className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <Card>

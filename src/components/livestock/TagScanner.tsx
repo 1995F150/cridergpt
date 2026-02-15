@@ -3,22 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Scan, Wifi, Smartphone, CreditCard } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Scan, Wifi, Smartphone } from 'lucide-react';
 
 interface TagScannerProps {
-  onTagScanned: (tagNumber: string) => Promise<any>;
-  onCardScanned?: (cardId: string) => Promise<any>;
+  onTagScanned: (tagId: string) => Promise<any>;
 }
 
-export function TagScanner({ onTagScanned, onCardScanned }: TagScannerProps) {
+export function TagScanner({ onTagScanned }: TagScannerProps) {
   const [manualTag, setManualTag] = useState('');
   const [scanning, setScanning] = useState(false);
   const [nfcSupported, setNfcSupported] = useState(false);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [scanMode, setScanMode] = useState<'tag' | 'rfid'>('rfid');
 
   useEffect(() => {
     if ('NDEFReader' in window) setNfcSupported(true);
@@ -34,7 +31,7 @@ export function TagScanner({ onTagScanned, onCardScanned }: TagScannerProps) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [manualTag, scanMode]);
+  }, [manualTag]);
 
   const handleScan = async (tagId: string) => {
     if (!tagId) return;
@@ -42,12 +39,8 @@ export function TagScanner({ onTagScanned, onCardScanned }: TagScannerProps) {
     setLastScanned(tagId);
     setScanResult(null);
     try {
-      if (scanMode === 'rfid' && onCardScanned) {
-        const result = await onCardScanned(tagId);
-        setScanResult(result);
-      } else {
-        await onTagScanned(tagId);
-      }
+      const result = await onTagScanned(tagId);
+      setScanResult(result);
     } finally {
       setScanning(false);
       setManualTag('');
@@ -73,7 +66,7 @@ export function TagScanner({ onTagScanned, onCardScanned }: TagScannerProps) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Scan className="h-5 w-5 text-primary" />
-          Scan Tag / RFID Card
+          Scan CriderGPT Tag
           {nfcSupported && (
             <Badge variant="outline" className="text-xs ml-auto flex items-center gap-1">
               <Wifi className="h-3 w-3" /> NFC Ready
@@ -82,26 +75,14 @@ export function TagScanner({ onTagScanned, onCardScanned }: TagScannerProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Mode selector */}
-        <Tabs value={scanMode} onValueChange={(v) => setScanMode(v as 'tag' | 'rfid')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-10">
-            <TabsTrigger value="rfid" className="text-xs sm:text-sm flex items-center gap-1">
-              <CreditCard className="h-3 w-3" /> RFID Card
-            </TabsTrigger>
-            <TabsTrigger value="tag" className="text-xs sm:text-sm">🏷️ Visual Tag</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
         <p className="text-xs text-muted-foreground">
-          {scanMode === 'rfid'
-            ? 'Scan an RFID card or type the card ID. The backend validates authorization and returns the animal profile.'
-            : 'Type a visual tag number to look up the animal directly.'}
+          Scan an NFC tag, key fob, or type a CriderGPT Tag ID to pull up the animal profile.
         </p>
 
         <div className="flex gap-2">
           <Input
             ref={inputRef}
-            placeholder={scanMode === 'rfid' ? 'Card ID (e.g. CARD-001)' : 'Tag number'}
+            placeholder="Tag ID (e.g. CriderGPT-A7X9K2)"
             value={manualTag}
             onChange={e => setManualTag(e.target.value)}
             className="h-12 text-lg font-mono flex-1"
@@ -112,7 +93,7 @@ export function TagScanner({ onTagScanned, onCardScanned }: TagScannerProps) {
             disabled={!manualTag.trim() || scanning}
             className="h-12 px-6"
           >
-            {scanning ? 'Scanning...' : scanMode === 'rfid' ? 'Scan Card' : 'Look Up'}
+            {scanning ? 'Scanning...' : 'Scan'}
           </Button>
         </div>
 
@@ -135,19 +116,18 @@ export function TagScanner({ onTagScanned, onCardScanned }: TagScannerProps) {
           </div>
         )}
 
-        {scanResult?.card && (
+        {scanResult?.animal && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm space-y-1">
-            <p className="font-medium text-primary">✅ Card scanned successfully</p>
-            <p className="text-xs text-muted-foreground">Last scan: {new Date(scanResult.card.last_scan).toLocaleString()}</p>
+            <p className="font-medium text-primary">✅ Animal found — {scanResult.animal.name || scanResult.animal.animal_id}</p>
           </div>
         )}
 
         <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
           <p className="font-semibold">📡 Hardware Connection Guide:</p>
-          <p>• <strong>USB RFID Reader:</strong> Plug in → focus input → scan card → auto-fills</p>
+          <p>• <strong>USB RFID Reader:</strong> Plug in → focus input → scan tag → auto-fills</p>
           <p>• <strong>Bluetooth RFID:</strong> Pair via settings → same as USB</p>
-          <p>• <strong>Phone NFC:</strong> Tap NFC button → hold card/tag to phone</p>
-          <p>• <strong>Manual:</strong> Type the card/tag ID and press Scan</p>
+          <p>• <strong>Phone NFC:</strong> Tap NFC button → hold tag/fob to phone</p>
+          <p>• <strong>Manual:</strong> Type the CriderGPT Tag ID and press Scan</p>
         </div>
       </CardContent>
     </Card>

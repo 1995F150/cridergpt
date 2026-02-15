@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, AlertTriangle, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import type { LivestockAnimal } from '@/hooks/useLivestock';
 
 interface AnimalCardProps {
@@ -9,12 +9,7 @@ interface AnimalCardProps {
 }
 
 const speciesEmoji: Record<string, string> = {
-  cattle: '🐄',
-  pig: '🐷',
-  sheep: '🐑',
-  goat: '🐐',
-  chicken: '🐔',
-  horse: '🐴',
+  cattle: '🐄', pig: '🐷', sheep: '🐑', goat: '🐐', chicken: '🐔', horse: '🐴',
 };
 
 const statusColors: Record<string, string> = {
@@ -63,7 +58,11 @@ export function AnimalCard({ animal, onClick }: AnimalCardProps) {
           </Badge>
         </div>
         
-        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-3">
+        {animal.tag_id && (
+          <p className="text-xs font-mono text-primary/80 mb-2">{animal.tag_id}</p>
+        )}
+
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {animal.sex && (
             <span>{animal.sex === 'male' ? '♂' : '♀'} {animal.sex}</span>
           )}

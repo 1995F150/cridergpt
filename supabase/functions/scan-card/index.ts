@@ -21,7 +21,6 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
 
-    // User client for auth validation
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     })
@@ -33,97 +32,81 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string
 
-    // Service client for data operations (bypasses RLS)
     const db = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 2. Parse request
-    const { card_id, encrypted = false } = await req.json()
-    if (!card_id || typeof card_id !== 'string') {
-      return new Response(JSON.stringify({ error: 'card_id is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    }
-
-    let resolvedCardId = card_id.trim()
-
-    // 3. Decryption placeholder
-    if (encrypted) {
-      // Future: decrypt card_id using a stored secret
-      // For now, just use it as-is
-      console.log('Encrypted card scan requested — decryption not yet implemented, using raw ID')
+    // 2. Parse request — accept tag_id or card_id (backward compat)
+    const body = await req.json()
+    const tagId = (body.tag_id || body.card_id || '').trim()
+    if (!tagId) {
+      return new Response(JSON.stringify({ error: 'tag_id is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || null
 
-    // 4. Look up card
-    const { data: card, error: cardError } = await db
-      .from('livestock_rfid_cards')
+    // 3. Look up animal directly by tag_id
+    const { data: animal, error: animalError } = await db
+      .from('livestock_animals')
       .select('*')
-      .eq('card_id', resolvedCardId)
-      .is('unlinked_at', null)
+      .eq('tag_id', tagId)
       .maybeSingle()
 
-    if (cardError) {
-      console.error('Card lookup error:', cardError)
+    if (animalError) {
+      console.error('Animal lookup error:', animalError)
       return new Response(JSON.stringify({ error: 'Internal error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    if (!card || !card.animal_id) {
-      // Log not_found
+    if (!animal) {
       await db.from('livestock_scan_logs').insert({
-        card_id: resolvedCardId,
+        card_id: tagId,
         scanned_by: userId,
         animal_id: null,
         result: 'not_found',
         ip_address: ipAddress,
       })
-      return new Response(JSON.stringify({ error: 'Card not registered or not linked to an animal' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Tag ID not found. No animal is registered with this ID.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // 5. Authorization check using the existing has_livestock_access function
+    // 4. Authorization check
     const { data: hasAccess } = await db.rpc('has_livestock_access', {
       check_user_id: userId,
-      check_animal_id: card.animal_id,
+      check_animal_id: animal.id,
     })
 
     if (!hasAccess) {
       await db.from('livestock_scan_logs').insert({
-        card_id: resolvedCardId,
+        card_id: tagId,
         scanned_by: userId,
-        animal_id: card.animal_id,
+        animal_id: animal.id,
         result: 'access_denied',
         ip_address: ipAddress,
       })
       return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // 6. Update last_scan
-    await db.from('livestock_rfid_cards').update({ last_scan: new Date().toISOString() }).eq('id', card.id)
-
-    // 7. Fetch full animal profile
-    const [animalRes, weightsRes, healthRes, notesRes, tagsRes] = await Promise.all([
-      db.from('livestock_animals').select('*').eq('id', card.animal_id).single(),
-      db.from('livestock_weights').select('*').eq('animal_id', card.animal_id).order('recorded_at', { ascending: false }),
-      db.from('livestock_health_records').select('*').eq('animal_id', card.animal_id).order('recorded_at', { ascending: false }),
-      db.from('livestock_notes').select('*').eq('animal_id', card.animal_id).order('created_at', { ascending: false }),
-      db.from('livestock_tags').select('*').eq('animal_id', card.animal_id),
+    // 5. Fetch full animal profile
+    const [weightsRes, healthRes, notesRes, tagsRes] = await Promise.all([
+      db.from('livestock_weights').select('*').eq('animal_id', animal.id).order('recorded_at', { ascending: false }),
+      db.from('livestock_health_records').select('*').eq('animal_id', animal.id).order('recorded_at', { ascending: false }),
+      db.from('livestock_notes').select('*').eq('animal_id', animal.id).order('created_at', { ascending: false }),
+      db.from('livestock_tags').select('*').eq('animal_id', animal.id),
     ])
 
-    // 8. Log success
+    // 6. Log success
     await db.from('livestock_scan_logs').insert({
-      card_id: resolvedCardId,
+      card_id: tagId,
       scanned_by: userId,
-      animal_id: card.animal_id,
+      animal_id: animal.id,
       result: 'success',
       ip_address: ipAddress,
     })
 
-    // 9. Return profile
+    // 7. Return profile
     return new Response(JSON.stringify({
-      animal: animalRes.data,
+      animal,
       weights: weightsRes.data || [],
       health_records: healthRes.data || [],
       notes: notesRes.data || [],
       tags: tagsRes.data || [],
-      card: { card_id: card.card_id, last_scan: new Date().toISOString(), linked_at: card.linked_at },
       scan_timestamp: new Date().toISOString(),
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
