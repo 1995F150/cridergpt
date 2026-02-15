@@ -1,120 +1,96 @@
 
 
-# RFID Card Scanning Backend Integration
+# Migrate from RFID Cards Table to Tag ID on Animal Records
 
-## Overview
+## Summary
 
-Extend the existing Livestock Smart ID system with a dedicated RFID card scanning backend. This adds a new `livestock_rfid_cards` table, a `livestock_scan_logs` audit table, and a new `scan-card` edge function that acts as the REST API endpoint.
+Replace the separate `livestock_rfid_cards` table with a `tag_id` column directly on `livestock_animals`. Each animal gets a unique Tag ID prefixed with `CriderGPT-` (e.g., `CriderGPT-A7X9K2`). When an NFC/key fob is scanned, the system looks up the animal by `tag_id` instead of going through a separate cards table. The `livestock_scan_logs` audit table is kept for scan history.
 
 ## Database Changes
 
-### New Table: `livestock_rfid_cards`
-
-Links physical RFID card IDs to animals and users.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | uuid (PK) | Auto-generated |
-| `card_id` | text (unique, not null) | The raw or encrypted ID from the RFID card (e.g., "CARD-001") |
-| `animal_id` | uuid (FK -> livestock_animals.id) | Nullable -- card can be pre-provisioned before linking |
-| `linked_by` | uuid (FK -> auth.users.id) | Who linked this card |
-| `is_encrypted` | boolean | Default false. If true, backend decrypts before lookup |
-| `last_scan` | timestamptz | Updated on every successful scan |
-| `linked_at` | timestamptz | When card was linked to animal |
-| `unlinked_at` | timestamptz | Null = active. Set when card is unlinked |
-| `created_at` | timestamptz | Default now() |
-
-### New Table: `livestock_scan_logs`
-
-Audit trail for every scan attempt.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | uuid (PK) | Auto-generated |
-| `card_id` | text | The scanned card ID |
-| `scanned_by` | uuid | The user who scanned |
-| `animal_id` | uuid | Null if card not found |
-| `result` | text | 'success', 'not_found', 'access_denied', 'decryption_error' |
-| `ip_address` | text | Optional, from request headers |
-| `scanned_at` | timestamptz | Default now() |
-
-### RLS Policies
-
-- `livestock_rfid_cards`: Owners can manage their own cards. Users with `livestock_access` can read cards for animals they have access to.
-- `livestock_scan_logs`: Insert-only for authenticated users (their own scans). Select for users viewing their own scan history.
-
-## Edge Function: `scan-card`
-
-**Path:** `POST /scan-card`
-
-**Request body:**
-```json
-{
-  "card_id": "CARD-001",
-  "encrypted": false
-}
+### Step 1: Drop `livestock_rfid_cards` table
+```sql
+DROP TABLE IF EXISTS livestock_rfid_cards CASCADE;
 ```
 
-**Logic flow:**
-1. Validate JWT (get user from auth header)
-2. If `encrypted: true`, decrypt `card_id` (placeholder for future encryption key integration)
-3. Look up card in `livestock_rfid_cards` where `card_id` matches and `unlinked_at IS NULL`
-4. If not found -> log "not_found", return 404
-5. Check authorization: user must be the animal owner OR have an active `livestock_access` grant
-6. If unauthorized -> log "access_denied", return 403
-7. Update `last_scan` timestamp on the card
-8. Fetch full animal profile (animal + weights + health records + notes + tags)
-9. Log "success" in `livestock_scan_logs`
-10. Return full animal profile JSON
-
-**Response (success):**
-```json
-{
-  "animal": { ... },
-  "weights": [ ... ],
-  "health_records": [ ... ],
-  "notes": [ ... ],
-  "tags": [ ... ],
-  "scan_timestamp": "2026-02-14T..."
-}
+### Step 2: Add `tag_id` column to `livestock_animals`
+```sql
+ALTER TABLE livestock_animals
+ADD COLUMN tag_id text UNIQUE;
 ```
+
+### Step 3: Generate Tag IDs for existing animals
+Every existing animal gets a unique `CriderGPT-XXXXXX` identifier (6-char alphanumeric suffix). A PL/pgSQL block will update all rows that currently have a null `tag_id`.
+
+### Step 4: Set default for new animals
+A database trigger will auto-generate a `CriderGPT-XXXXXX` tag ID on insert if none is provided, ensuring every new animal automatically gets one.
+
+## Edge Function Update: `scan-card`
+
+The `scan-card` edge function will be rewritten to:
+1. Accept `{ "tag_id": "CriderGPT-A7X9K2" }` instead of `card_id`
+2. Look up the animal directly in `livestock_animals` by `tag_id`
+3. Keep the same authorization check via `has_livestock_access`
+4. Keep audit logging to `livestock_scan_logs` (the `card_id` column will store the scanned tag_id value)
+5. Return the full animal profile (weights, health records, notes, tags)
+
+The function will also accept the old `card_id` field name for backward compatibility.
 
 ## Frontend Changes
 
-### TagScanner.tsx Updates
-- When a scan comes in, call the `scan-card` edge function instead of doing a direct client-side tag lookup
-- Display the returned animal profile, or show the appropriate error ("Card not registered", "Access denied")
-- Show `last_scan` info on the scan result
+### 1. `useLivestock.ts` (Hook)
+- Add `tag_id` to the `LivestockAnimal` interface
+- Remove `linkCard`, `unlinkCard`, `getAnimalCards` methods (no more RFID cards table)
+- Update `scanCard` to send `tag_id` instead of `card_id`
+- Update `addAnimal` to accept an optional `tag_id` (auto-generated by DB if omitted)
 
-### LivestockPanel.tsx Updates
-- Add a "Manage Cards" section within the animal profile where owners can:
-  - Link a new RFID card to the animal (input card ID manually or scan)
-  - Unlink an existing card
-  - View scan history for the animal
+### 2. `TagScanner.tsx`
+- Remove the RFID/Visual Tag mode toggle -- simplify to a single scan input
+- Update placeholder text to reference CriderGPT Tag IDs (e.g., "CriderGPT-A7X9K2")
+- Keep NFC and keyboard-emulation support
+- Hardware guide stays the same
 
-### useLivestock.ts Updates
-- Add `scanCard(cardId, encrypted?)` method that calls the edge function
-- Add `linkCard(animalId, cardId)` and `unlinkCard(cardId)` methods for card management
-- Add `getScanHistory(animalId?)` method
+### 3. `AnimalProfile.tsx`
+- Remove the "Cards" tab entirely (no more RFID cards management)
+- Display the animal's `tag_id` prominently in the header (next to name/animal_id)
+- Reduce tabs from 5 to 4: Health, Weight, Notes, Tags
+- Remove `onLinkCard`, `onUnlinkCard`, `getAnimalCards` props
 
-## Encryption Support (Future-Ready)
+### 4. `AnimalCard.tsx`
+- Show the `tag_id` on each animal card in the herd list
 
-The `is_encrypted` flag and `encrypted` request param are included now but the actual decryption is a placeholder. When you're ready to add encryption:
-1. Store an encryption key as a Supabase secret
-2. The edge function reads the secret and decrypts the card ID before lookup
-3. No schema changes needed -- just update the edge function logic
+### 5. `LivestockPanel.tsx`
+- Remove `linkCard`, `unlinkCard`, `getAnimalCards` from the hook destructuring
+- Remove those props from the `AnimalProfile` component call
+- Update search to also match on `tag_id`
 
-## Implementation Steps
+### 6. `AddAnimalForm.tsx`
+- No changes needed -- `tag_id` is auto-generated by the database trigger
 
-1. **Database migration** -- Create `livestock_rfid_cards` and `livestock_scan_logs` tables with RLS
-2. **Edge function** -- Create `scan-card` edge function with full validation, authorization, and audit logging
-3. **Frontend hook** -- Update `useLivestock.ts` with card management and scan methods
-4. **Frontend UI** -- Update `TagScanner.tsx` to use the edge function; add card management UI to `AnimalProfile.tsx`
-5. **Config** -- Add `scan-card` to `supabase/config.toml` with `verify_jwt = false`
+## Tag ID Format
 
-## Technical Notes
+- Pattern: `CriderGPT-XXXXXX` where X is uppercase alphanumeric (A-Z, 0-9)
+- Example: `CriderGPT-A7X9K2`, `CriderGPT-B3M8P1`
+- Guaranteed unique via the `UNIQUE` constraint on the column
+- The DB trigger generates these automatically on insert
+- Future: these IDs can be written to physical NFC tags/key fobs via the Web NFC write API
 
-- The existing `livestock_tags` table handles visual/ear tags. RFID cards are a separate concept (one card = one animal link, with audit trail), hence the new table rather than reusing `livestock_tags`.
-- The `has_livestock_access` database function already exists and will be reused by the edge function for authorization checks.
-- All scan attempts (success or failure) are logged for audit compliance.
-- The edge function uses the Supabase service role key to bypass RLS for the authorization check, then validates permissions in code.
+## What Stays
+
+- `livestock_scan_logs` table -- still used for audit trail of every scan
+- `livestock_tags` table -- still used for visual ear tags (separate concept from the digital Tag ID)
+- `has_livestock_access` function -- still used for authorization
+- NFC scanning, USB RFID reader support, manual input -- all still work
+- The `scan-card` edge function name stays the same (just updated logic)
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `supabase/functions/scan-card/index.ts` | Rewrite to look up by `tag_id` on `livestock_animals` |
+| `src/hooks/useLivestock.ts` | Add `tag_id` to interface, remove card methods, update scan |
+| `src/components/livestock/TagScanner.tsx` | Simplify to single scan mode |
+| `src/components/livestock/AnimalProfile.tsx` | Remove Cards tab, show tag_id in header |
+| `src/components/livestock/AnimalCard.tsx` | Display tag_id |
+| `src/components/panels/LivestockPanel.tsx` | Remove card props, add tag_id to search |
+
