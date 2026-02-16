@@ -116,28 +116,41 @@ export function useLivestock() {
     color_markings?: string;
     notes?: string;
     acquisition_method?: string;
+    tag_id?: string;
   }) => {
     if (!user) return null;
     try {
       const animal_id = generateAnimalId(data.species);
+      const insertData: any = {
+        owner_id: user.id,
+        animal_id,
+        name: data.name || null,
+        species: data.species,
+        breed: data.breed || null,
+        sex: data.sex || null,
+        birth_date: data.birth_date || null,
+        color_markings: data.color_markings || null,
+        notes: data.notes || null,
+        acquisition_method: data.acquisition_method || 'born_on_farm',
+      };
+      if (data.tag_id) insertData.tag_id = data.tag_id;
+
       const { data: newAnimal, error } = await db
         .from('livestock_animals')
-        .insert({
-          owner_id: user.id,
-          animal_id,
-          name: data.name || null,
-          species: data.species,
-          breed: data.breed || null,
-          sex: data.sex || null,
-          birth_date: data.birth_date || null,
-          color_markings: data.color_markings || null,
-          notes: data.notes || null,
-          acquisition_method: data.acquisition_method || 'born_on_farm',
-        })
+        .insert(insertData)
         .select()
         .single();
       
       if (error) throw error;
+
+      // If this tag came from the pool, mark it assigned
+      if (data.tag_id && newAnimal) {
+        await db
+          .from('livestock_tag_pool')
+          .update({ status: 'assigned', assigned_to_animal: newAnimal.id, assigned_by: user.id, assigned_at: new Date().toISOString() })
+          .eq('tag_id', data.tag_id);
+      }
+
       toast.success(`${data.name || animal_id} added to your herd! 🐮`);
       await fetchAnimals();
       return newAnimal;
@@ -318,6 +331,13 @@ export function useLivestock() {
       );
 
       const result = await res.json();
+
+      // Handle unregistered pool tag
+      if (result.status === 'unregistered') {
+        toast.info('Tag recognized! Ready to register a new animal.');
+        return result;
+      }
+
       if (!res.ok) {
         const msg = result.error || 'Scan failed';
         toast.error(msg);

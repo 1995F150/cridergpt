@@ -56,13 +56,30 @@ Deno.serve(async (req) => {
     }
 
     if (!animal) {
+      // Check if tag exists in the pre-generated pool
+      const { data: poolTag } = await db
+        .from('livestock_tag_pool')
+        .select('*')
+        .eq('tag_id', tagId)
+        .eq('status', 'available')
+        .maybeSingle()
+
       await db.from('livestock_scan_logs').insert({
         card_id: tagId,
         scanned_by: userId,
         animal_id: null,
-        result: 'not_found',
+        result: poolTag ? 'unregistered' : 'not_found',
         ip_address: ipAddress,
       })
+
+      if (poolTag) {
+        return new Response(JSON.stringify({
+          status: 'unregistered',
+          tag_id: tagId,
+          message: 'Tag recognized from pool. Ready to register a new animal.',
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
       return new Response(JSON.stringify({ error: 'Tag ID not found. No animal is registered with this ID.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
