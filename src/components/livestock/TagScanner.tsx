@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Scan, Wifi, Smartphone } from 'lucide-react';
+import { Scan, Wifi, Smartphone, PlusCircle } from 'lucide-react';
 
 interface TagScannerProps {
   onTagScanned: (tagId: string) => Promise<any>;
+  onRegisterAnimal?: (tagId: string) => void;
 }
 
-export function TagScanner({ onTagScanned }: TagScannerProps) {
+export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) {
   const [manualTag, setManualTag] = useState('');
   const [scanning, setScanning] = useState(false);
   const [nfcSupported, setNfcSupported] = useState(false);
@@ -113,6 +114,27 @@ export function TagScanner({ onTagScanned }: TagScannerProps) {
         {scanResult?.error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
             {scanResult.error}
+          </div>
+        )}
+
+        {/* Unregistered pool tag — prompt to register */}
+        {scanResult?.status === 'unregistered' && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
+            <p className="text-sm font-medium text-primary">
+              📡 Tag recognized: <span className="font-mono">{scanResult.tag_id}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              This tag is available and ready to be assigned to a new animal.
+            </p>
+            {onRegisterAnimal && (
+              <Button
+                className="w-full h-11"
+                onClick={() => onRegisterAnimal(scanResult.tag_id)}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Register Animal with This Tag
+              </Button>
+            )}
           </div>
         )}
 

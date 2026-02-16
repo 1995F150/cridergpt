@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle } from 'lucide-react';
@@ -17,8 +18,10 @@ interface AddAnimalFormProps {
     color_markings?: string;
     notes?: string;
     acquisition_method?: string;
+    tag_id?: string;
   }) => Promise<any>;
   onSuccess?: () => void;
+  prefillTagId?: string | null;
 }
 
 const speciesOptions = [
@@ -30,7 +33,7 @@ const speciesOptions = [
   { value: 'horse', label: '🐴 Horse', breeds: ['Quarter Horse', 'Thoroughbred', 'Arabian', 'Paint', 'Appaloosa'] },
 ];
 
-export function AddAnimalForm({ onSubmit, onSuccess }: AddAnimalFormProps) {
+export function AddAnimalForm({ onSubmit, onSuccess, prefillTagId }: AddAnimalFormProps) {
   const [species, setSpecies] = useState('');
   const [breed, setBreed] = useState('');
   const [name, setName] = useState('');
@@ -56,6 +59,7 @@ export function AddAnimalForm({ onSubmit, onSuccess }: AddAnimalFormProps) {
         color_markings: colorMarkings || undefined,
         notes: notes || undefined,
         acquisition_method: acquisitionMethod,
+        tag_id: prefillTagId || undefined,
       });
       if (result) {
         setName(''); setSpecies(''); setBreed(''); setSex('');
@@ -77,6 +81,12 @@ export function AddAnimalForm({ onSubmit, onSuccess }: AddAnimalFormProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {prefillTagId && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-center gap-2">
+            <Badge className="text-xs bg-primary/10 text-primary border-primary/30 font-mono">{prefillTagId}</Badge>
+            <span className="text-sm text-muted-foreground">This tag will be assigned to the new animal.</span>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Name (optional)</Label>

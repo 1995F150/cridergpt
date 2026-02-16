@@ -23,6 +23,8 @@ export function LivestockPanel() {
   
   const [search, setSearch] = useState('');
   const [speciesFilter, setSpeciesFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('herd');
+  const [prefillTagId, setPrefillTagId] = useState<string | null>(null);
 
   if (!user) {
     return (
@@ -90,7 +92,7 @@ export function LivestockPanel() {
           </div>
         </div>
 
-        <Tabs defaultValue="herd" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 h-12">
             <TabsTrigger value="herd" className="text-xs sm:text-sm">🐄 Herd</TabsTrigger>
             <TabsTrigger value="scan" className="text-xs sm:text-sm">📡 Scan</TabsTrigger>
@@ -146,11 +148,24 @@ export function LivestockPanel() {
           </TabsContent>
 
           <TabsContent value="scan">
-            <TagScanner onTagScanned={scanCard} />
+            <TagScanner
+              onTagScanned={scanCard}
+              onRegisterAnimal={(tagId) => {
+                setPrefillTagId(tagId);
+                setActiveTab('add');
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="add">
-            <AddAnimalForm onSubmit={addAnimal} />
+            <AddAnimalForm
+              onSubmit={addAnimal}
+              prefillTagId={prefillTagId}
+              onSuccess={() => {
+                setPrefillTagId(null);
+                setActiveTab('herd');
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-4">

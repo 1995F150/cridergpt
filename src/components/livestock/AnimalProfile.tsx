@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Smartphone } from 'lucide-react';
+import { toast } from 'sonner';
 import type { LivestockAnimal, LivestockWeight, LivestockHealthRecord, LivestockNote, LivestockTag } from '@/hooks/useLivestock';
 
 interface AnimalProfileProps {
@@ -75,6 +76,24 @@ export function AnimalProfile({
               <Badge className="text-xs bg-primary/10 text-primary border-primary/30 font-mono">
                 {animal.tag_id}
               </Badge>
+            )}
+            {'NDEFReader' in window && animal.tag_id && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                onClick={async () => {
+                  try {
+                    const ndef = new (window as any).NDEFReader();
+                    await ndef.write({ records: [{ recordType: 'text', data: animal.tag_id }] });
+                    toast.success('Tag ID written to NFC tag! 📡');
+                  } catch (err) {
+                    toast.error('NFC write failed. Hold tag closer.');
+                  }
+                }}
+              >
+                <Smartphone className="h-3 w-3" /> Write NFC
+              </Button>
             )}
           </div>
           <p className="text-sm text-muted-foreground">
