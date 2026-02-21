@@ -1,9 +1,9 @@
-import type { CapacitorConfig } from '@anthropic/capacitor/cli';
+import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.cridergpt.android',
   appName: 'CriderGPT',
-  webDir: 'dist',
+  webDir: 'dist', // Corrected to 'dist' to match Vite's output
   
   server: {
     androidScheme: 'https',
