@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { APIGeneration } from '@/components/admin/APIGeneration';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
@@ -166,6 +167,13 @@ export function AdminPanel() {
             Maintenance
           </TabsTrigger>
           <TabsTrigger 
+            value="api" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <TerminalSquare className="h-4 w-4" />
+            API Generation
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
@@ -234,6 +242,10 @@ export function AdminPanel() {
 
         <TabsContent value="maintenance">
           <MaintenanceMode />
+        </TabsContent>
+
+        <TabsContent value="api">
+          <APIGeneration />
         </TabsContent>
 
         <TabsContent value="settings">

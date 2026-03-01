@@ -91,6 +91,7 @@ export default function ChatPanel() {
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<string>("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [apiKeywords, setApiKeywords] = useState<{ keyword: string; action: string }[]>([]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const isLoading = isChatLoading || isAILoading || isStreaming;
@@ -100,6 +101,14 @@ export default function ChatPanel() {
   useEffect(() => {
     setSidebarOpen(!isMobile);
   }, [isMobile]);
+
+  // Load active API keywords for local detection
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase.from('api_keywords').select('keyword, action').eq('active', true);
+      if (!error && data) setApiKeywords(data as any);
+    })();
+  }, []);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -170,6 +179,49 @@ export default function ChatPanel() {
 
       // Send user message
       await sendMessage(convId, message, "user", undefined, imageUrl);
+
+      // Keyword routing for Jessie-owner commands
+      const isJessie = user?.email?.toLowerCase() === 'jessiecrider3@gmail.com';
+      const lowerMsg = message.toLowerCase();
+      const matchedKw = apiKeywords.find(k => lowerMsg.includes(k.keyword.toLowerCase()));
+      const flags = {
+        use_memory: /\buse\s+memory\b/i.test(message),
+        store_in_training: /\bstore\s+in\s+training\b/i.test(message),
+        vision_memory: /\bvision\s+memory\b/i.test(message),
+      };
+
+      if (matchedKw) {
+        if (!isJessie) {
+          await sendMessage(convId, "❌ This command is restricted to Jessie (owner).", "assistant");
+          return;
+        }
+
+        setIsStreaming(true);
+        setStreamingMessage("Processing owner command...");
+        try {
+          const { data, error } = await supabase.functions.invoke('cridergpt-api', {
+            body: { message, conversation_id: convId, flags }
+          });
+          if (error) throw error;
+
+          // Handle routed responses
+          if (data?.route === 'open_github' && data?.url) {
+            await sendMessage(convId, `🔗 Open the repository: ${data.url}`, 'assistant');
+          } else if (data?.route === 'generate_photo' && (data?.data?.imageUrl || data?.data?.image)) {
+            const img = data.data.imageUrl || data.data.image;
+            await sendMessage(convId, `Here you go!`, 'assistant', undefined, img);
+          } else {
+            const text = typeof data?.data === 'string' ? data.data : JSON.stringify(data?.data ?? data, null, 2);
+            await sendMessage(convId, text || '✅ Command executed.', 'assistant');
+          }
+        } catch (e: any) {
+          await sendMessage(convId, `❌ Command failed: ${e.message || 'Unknown error'}`, 'assistant');
+        } finally {
+          setIsStreaming(false);
+          setStreamingMessage("");
+        }
+        return;
+      }
 
       // ========== PDF GENERATION DETECTION ==========
       // Detect CHAT EXPORT requests (export this conversation as PDF)
