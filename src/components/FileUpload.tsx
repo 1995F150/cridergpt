@@ -84,7 +84,7 @@ export function FileUpload() {
         if (error) throw error;
 
         // Update database record
-        await supabase.from('uploaded_files').insert({
+        await (supabase as any).from('uploaded_files').insert({
           user_id: user.id,
           file_name: file.name,
           file_path: filePath,
@@ -162,7 +162,7 @@ export function FileUpload() {
       if (storageError) throw storageError;
 
       // Remove from database
-      await supabase
+      await (supabase as any)
         .from('uploaded_files')
         .delete()
         .eq('file_path', file.path)

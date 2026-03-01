@@ -116,7 +116,7 @@ export function RevenueDashboard() {
       setRevenueHistory(history);
 
       // Fetch recent checkout sessions as transactions
-      const { data: checkouts } = await supabase
+      const { data: checkouts } = await (supabase as any)
         .from('checkout_sessions')
         .select('*')
         .order('created_at', { ascending: false })

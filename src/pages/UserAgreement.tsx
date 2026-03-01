@@ -53,7 +53,7 @@ export default function UserAgreement() {
     setLoading(true);
     try {
       // Record agreement acceptance
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_agreements')
         .insert({
           agreement_version: AGREEMENT_VERSION,

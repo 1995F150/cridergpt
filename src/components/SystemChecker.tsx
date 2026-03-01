@@ -47,7 +47,7 @@ export function SystemChecker() {
     setTimeout(() => {
       (async () => {
         try {
-          const { data, error } = await supabase.from('system_info').select('*').limit(1);
+          const { data, error } = await (supabase as any).from('system_info').select('*').limit(1);
           setChecks(prev => prev.map(check => 
             check.id === 'database' 
               ? { ...check, status: error ? 'fail' : 'pass', message: error ? `Database error: ${error.message}` : 'Database connection healthy' }

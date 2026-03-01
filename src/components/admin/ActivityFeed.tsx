@@ -113,7 +113,7 @@ export function ActivityFeed() {
   const fetchRecentActivities = async () => {
     try {
       // Fetch recent profiles (signups) - now using created_at column
-      const { data: profiles } = await supabase
+      const { data: profiles } = await (supabase as any)
         .from('profiles')
         .select('id, username, user_id, created_at')
         .order('created_at', { ascending: false })
@@ -128,7 +128,7 @@ export function ActivityFeed() {
         .limit(5);
 
       // Fetch recent activity logs
-      const { data: logs } = await supabase
+      const { data: logs } = await (supabase as any)
         .from('activity_logs')
         .select('*')
         .order('created_at', { ascending: false })

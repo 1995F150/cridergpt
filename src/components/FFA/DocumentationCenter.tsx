@@ -88,7 +88,7 @@ export function DocumentationCenter() {
         const docType = activeSection === 'photos' ? 'photo' : 
                         activeSection === 'minutes' ? 'minutes' : 'history';
         
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('chapter_documents')
           .select('*')
           .eq('chapter_id', profile.chapter_id)
@@ -131,7 +131,7 @@ export function DocumentationCenter() {
         const docType = activeSection === 'photos' ? 'photo' : 
                         activeSection === 'minutes' ? 'minutes' : 'history';
         
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('chapter_documents')
           .insert({
             chapter_id: profile.chapter_id,
@@ -161,7 +161,7 @@ export function DocumentationCenter() {
   const handleDeleteItem = async (id: string, type: 'document' | 'award') => {
     try {
       const table = type === 'award' ? 'chapter_awards' : 'chapter_documents';
-      const { error } = await supabase.from(table).delete().eq('id', id);
+      const { error } = await (supabase as any).from(table).delete().eq('id', id);
       
       if (error) throw error;
       

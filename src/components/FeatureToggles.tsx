@@ -71,7 +71,7 @@ export function FeatureToggles() {
   const loadUsage = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('feature_usage')
         .select('feature_name')
         .eq('user_id', user?.id)
@@ -115,7 +115,7 @@ export function FeatureToggles() {
 
   const logFeatureUsage = async (featureName: string, status: string) => {
     try {
-      await supabase
+      await (supabase as any)
         .from('feature_usage')
         .insert({
           user_id: user?.id,

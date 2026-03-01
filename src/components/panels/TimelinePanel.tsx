@@ -64,7 +64,7 @@ export function TimelinePanel() {
   const loadUserActivity = async (): Promise<TimelineEvent[]> => {
     if (!user) return [];
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('usage_log')
       .select('*')
       .eq('user_id', user.id)
@@ -85,7 +85,7 @@ export function TimelinePanel() {
   };
 
   const loadSystemUpdates = async (): Promise<TimelineEvent[]> => {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('system_updates')
       .select('*')
       .order('created_at', { ascending: false })

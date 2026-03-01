@@ -114,7 +114,7 @@ export class FileGenerator {
         .getPublicUrl(fileName);
 
       // Save document record
-      const { error: dbError } = await supabase
+      const { error: dbError } = await (supabase as any)
         .from('documents')
         .insert({
           user_id: options.userId,
@@ -205,7 +205,7 @@ export class FileGenerator {
         .getPublicUrl(fileName);
 
       // Save document record
-      await supabase.from('documents').insert({
+      await (supabase as any).from('documents').insert({
         user_id: options.userId,
         document_type: 'csv_export',
         title: options.title,
@@ -277,7 +277,7 @@ export class FileGenerator {
         .from('documents')
         .getPublicUrl(fileName);
 
-      await supabase.from('documents').insert({
+      await (supabase as any).from('documents').insert({
         user_id: options.userId,
         document_type: 'text_export',
         title: options.title,
@@ -418,7 +418,7 @@ export class FileGenerator {
         .from('documents')
         .getPublicUrl(fileName);
 
-      await supabase.from('documents').insert({
+      await (supabase as any).from('documents').insert({
         user_id: options.userId,
         document_type: 'word_document',
         title: options.title,

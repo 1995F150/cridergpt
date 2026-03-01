@@ -46,7 +46,7 @@ export function GalleryPanel() {
     
     try {
       // First try to load from uploaded_files database
-      const { data: dbFiles, error: dbError } = await supabase
+      const { data: dbFiles, error: dbError } = await (supabase as any)
         .from('uploaded_files')
         .select('*')
         .eq('user_id', user.id)
@@ -175,7 +175,7 @@ export function GalleryPanel() {
         if (error) throw error;
 
         // Update database record
-        await supabase.from('uploaded_files').insert({
+        await (supabase as any).from('uploaded_files').insert({
           user_id: user.id,
           file_name: file.name,
           file_path: filePath,
@@ -210,7 +210,7 @@ export function GalleryPanel() {
 
       if (storageError) throw storageError;
 
-      await supabase
+      await (supabase as any)
         .from('uploaded_files')
         .delete()
         .eq('file_path', image.path)

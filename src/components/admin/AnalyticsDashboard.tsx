@@ -37,7 +37,7 @@ export function AnalyticsDashboard() {
         .select('tokens_used, tts_requests, created_at');
 
       // Fetch feature usage
-      const { data: features } = await supabase
+      const { data: features } = await (supabase as any)
         .from('feature_usage')
         .select('feature_name, created_at');
 

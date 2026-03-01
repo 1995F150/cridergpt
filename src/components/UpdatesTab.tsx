@@ -106,7 +106,7 @@ const UpdatesTab = () => {
   const fetchUpdates = async () => {
     try {
       console.log('Fetching system updates...');
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('system_updates')
         .select('*')
         .order('created_at', { ascending: false });

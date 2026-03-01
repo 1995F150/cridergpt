@@ -28,7 +28,7 @@ export function ActivityTimeline({ childId, limit = 50 }: ActivityTimelineProps)
   useEffect(() => {
     const fetchActivities = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('child_activity_logs')
         .select('*')
         .eq('child_id', childId)

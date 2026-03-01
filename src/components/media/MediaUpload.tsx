@@ -90,7 +90,7 @@ export function MediaUpload() {
 
           if (error) throw error;
 
-          await supabase.from('uploaded_files').insert({
+          await (supabase as any).from('uploaded_files').insert({
             user_id: user.id,
             file_name: file.name,
             file_path: filePath,

@@ -39,7 +39,7 @@ export function ChildActivityCard({
 
     const fetchActivitySummary = async () => {
       // Get most recent activity
-      const { data: recent } = await supabase
+      const { data: recent } = await (supabase as any)
         .from('child_activity_logs')
         .select('*')
         .eq('child_id', relationship.child_id)
@@ -55,7 +55,7 @@ export function ChildActivityCard({
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from('child_activity_logs')
         .select('*', { count: 'exact', head: true })
         .eq('child_id', relationship.child_id)
@@ -64,7 +64,7 @@ export function ChildActivityCard({
       setActivityCount(count || 0);
 
       // Get average safety score
-      const { data: scores } = await supabase
+      const { data: scores } = await (supabase as any)
         .from('child_activity_logs')
         .select('ai_safety_score')
         .eq('child_id', relationship.child_id)

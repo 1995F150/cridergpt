@@ -116,7 +116,7 @@ export function EmailBroadcast() {
 
   const fetchRecipientCount = async () => {
     try {
-      let query = supabase.from('profiles').select('*', { count: 'exact', head: true });
+      let query = (supabase as any).from('profiles').select('*', { count: 'exact', head: true });
       
       if (targetAudience !== 'all') {
         query = query.eq('current_plan', targetAudience);
@@ -179,7 +179,7 @@ export function EmailBroadcast() {
       // If push notifications are enabled, also insert into user_notifications table
       if (sendPushNotification) {
         // Get all user IDs based on target audience
-        let query = supabase.from('profiles').select('user_id');
+        let query = (supabase as any).from('profiles').select('user_id');
         if (targetAudience !== 'all') {
           query = query.eq('current_plan', targetAudience);
         }
@@ -196,7 +196,7 @@ export function EmailBroadcast() {
             data: { targetAudience, sentBy: user?.id }
           }));
           
-          await supabase.from('user_notifications').insert(notifications);
+          await (supabase as any).from('user_notifications').insert(notifications);
         }
       }
 
