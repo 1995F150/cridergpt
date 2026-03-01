@@ -48,6 +48,7 @@ export function APIGeneration() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [logs, setLogs] = useState<ApiLog[]>([]);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
+  const [usage, setUsage] = useState<Array<{ day: string; endpoint: string; calls: number }>>([]);
   const [genOpen, setGenOpen] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [newPerms, setNewPerms] = useState('{"read_training": true, "write_training": false, "endpoints": ["pc_agent"] }');
@@ -64,6 +65,7 @@ export function APIGeneration() {
       await refreshKeys();
       await refreshKeywords();
       await refreshLogs();
+      await refreshUsage();
     })();
   }, []);
 
@@ -95,6 +97,14 @@ export function APIGeneration() {
     if (!error) setKeywords(data as any);
   }
 
+  async function refreshUsage() {
+    const { data, error } = await supabase
+      .from('cridergpt_api_usage_daily')
+      .select('day, endpoint, calls')
+      .gte('day', new Date(Date.now() - 7*24*60*60*1000).toISOString());
+    if (!error && data) setUsage(data as any);
+  }
+
   async function toggleKillSwitch(val: boolean) {
     setKillSwitch(val);
     const { error } = await supabase.functions.invoke('cridergpt-admin', { body: { action: 'set_kill_switch', kill: val } });
@@ -113,7 +123,38 @@ export function APIGeneration() {
       setGenOpen(false);
       await refreshKeys();
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to generate key', variant: 'destructive' });
+      // Fallback: client-side generation with server insert (admin-only)
+      try {
+        const perms = JSON.parse(newPerms || '{}');
+        const plain = await (async () => {
+          const arr = new Uint8Array(56);
+          crypto.getRandomValues(arr);
+          const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          return Array.from(arr, (b) => alphabet[b % alphabet.length]).join('');
+        })();
+        const enc = new TextEncoder();
+        const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(plain));
+        const hashHex = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+        const { data: userRes } = await supabase.auth.getUser();
+        const createdBy = userRes?.user?.id || null;
+
+        const { error: insertErr } = await supabase.from('cridergpt_api_keys').insert({
+          label: newLabel || null,
+          key_hash: hashHex,
+          permissions: perms,
+          rate_limit_per_minute: newRate || 60,
+          created_by: createdBy,
+        });
+        if (insertErr) throw insertErr;
+
+        setPlainKey(plain);
+        toast({ title: 'API Key Created (fallback)', description: 'Copy the key now. It will not be shown again.' });
+        setGenOpen(false);
+        await refreshKeys();
+      } catch (ef: any) {
+        toast({ title: 'Error', description: ef.message || e.message || 'Failed to generate key', variant: 'destructive' });
+      }
     }
   }
 
@@ -133,6 +174,41 @@ export function APIGeneration() {
     setKwModalOpen(false);
     setKwData({ keyword: '', action_name: '' });
     await refreshKeywords();
+  }
+
+  async function insertTrainingPack() {
+    try {
+      const { data: userRes } = await supabase.auth.getUser();
+      const email = userRes?.user?.email || 'jessiecrider3@gmail.com';
+      const rows = [
+        {
+          user_email: email,
+          title: 'Android Build Playbook (Capacitor/Vite React)',
+          content: `Goal: Produce an Android APK/AAB from the CriderGPT web app using Capacitor.\n\n1) git clone https://github.com/1995F150/cridergpt.git && cd cridergpt\n2) npm install\n3) npm run build\n4) npx cap add android (first time only)\n5) npx cap sync android\n6) npx cap open android\n7) Android Studio: Build > Build APK(s) → android/app/build/outputs/apk/debug/app-debug.apk\n\nQuick update: npm run build && npx cap sync android\nTools: npx cap doctor, npm run lint, adb logcat`,
+          tags: ['android','build','capacitor','mobile'],
+          source: 'admin-ui'
+        },
+        {
+          user_email: email,
+          title: 'Web Dev & Deploy Playbook (Vite React)',
+          content: `1) npm install\n2) npm run dev (local dev server)\n3) npm run build (production)\n4) npm run preview (serve dist)\n5) Deploy: upload dist/ to static hosting\nLint: npm run lint`,
+          tags: ['web','vite','react','deploy'],
+          source: 'admin-ui'
+        },
+        {
+          user_email: email,
+          title: 'PC Agent Action Dictionary (Open Websites & Apps)',
+          content: `Open URL in default browser:\n- Windows (cmd): start https://example.com\n- PowerShell: Start-Process https://example.com\n- macOS: open https://example.com\n- Linux: xdg-open https://example.com\n\nOpen local file/folder:\n- Windows: start "" "C:\\path\\to\\file-or-folder"\n- macOS: open /path/to/file-or-folder\n- Linux: xdg-open /path/to/file-or-folder\n\nLaunch apps:\n- Windows: start notepad | start calc | start mspaint\n- macOS: open -a "Google Chrome" | open -a "Visual Studio Code"\n- Linux: code . | google-chrome https://example.com\n\nOpen GitHub repo quickly:\n- Windows: start https://github.com/1995F150/cridergpt\n- macOS: open https://github.com/1995F150/cridergpt\n- Linux: xdg-open https://github.com/1995F150/cridergpt`,
+          tags: ['pc','agent','os','open','apps','urls'],
+          source: 'admin-ui'
+        }
+      ];
+      const { error } = await supabase.from('cridergpt_training_data').insert(rows);
+      if (error) throw error;
+      toast({ title: 'Training data added', description: 'Android/Web/PC knowledge inserted.' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to insert training data', variant: 'destructive' });
+    }
   }
 
   return (
@@ -157,6 +233,7 @@ export function APIGeneration() {
                 <span className="font-medium">New Key:</span> <span className="select-all">{plainKey}</span>
               </div>
             )}
+            <Button variant="outline" onClick={insertTrainingPack} className="ml-auto">Add Training Booster</Button>
           </div>
         </CardContent>
       </Card>
@@ -166,6 +243,18 @@ export function APIGeneration() {
           <CardTitle className="flex items-center gap-2"><Key className="h-4 w-4" /> API Keys</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Usage snapshot */}
+          <div className="mb-4 text-sm text-muted-foreground">
+            <span className="font-medium">Last 7 days usage:</span>{' '}
+            {usage.length === 0 ? 'no data' :
+              usage
+                .slice()
+                .sort((a,b)=>a.day.localeCompare(b.day))
+                .slice(-7)
+                .map(u => `${new Date(u.day).toLocaleDateString()}: ${u.endpoint} ${u.calls}`)
+                .join('  |  ')
+            }
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
