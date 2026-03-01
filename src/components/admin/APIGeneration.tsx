@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -50,8 +51,15 @@ export function APIGeneration() {
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [usage, setUsage] = useState<Array<{ day: string; endpoint: string; calls: number }>>([]);
   const [genOpen, setGenOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [newLabel, setNewLabel] = useState('');
-  const [newPerms, setNewPerms] = useState('{"read_training": true, "write_training": false, "endpoints": ["pc_agent"] }');
+  const [permReadTraining, setPermReadTraining] = useState(true);
+  const [permWriteTraining, setPermWriteTraining] = useState(false);
+  const [permEndpoints, setPermEndpoints] = useState<Record<string, boolean>>({
+    pc_agent: true,
+    cloned_apps: false,
+    roblox: false,
+  });
   const [newRate, setNewRate] = useState<number>(60);
   const [plainKey, setPlainKey] = useState<string | null>(null);
   const [kwModalOpen, setKwModalOpen] = useState(false);
@@ -111,9 +119,16 @@ export function APIGeneration() {
     if (error) toast({ title: 'Error', description: 'Failed to update kill switch', variant: 'destructive' });
   }
 
+  function buildPermissions() {
+    const endpoints = Object.entries(permEndpoints).filter(([, v]) => v).map(([k]) => k);
+    return { read_training: permReadTraining, write_training: permWriteTraining, endpoints } as any;
+  }
+
   async function generateKey() {
+    if (isGenerating) return;
+    setIsGenerating(true);
     try {
-      const perms = JSON.parse(newPerms || '{}');
+      const perms = buildPermissions();
       const { data, error } = await supabase.functions.invoke('cridergpt-admin', {
         body: { action: 'generate_key', label: newLabel || undefined, permissions: perms, rate_limit_per_minute: newRate }
       });
@@ -125,7 +140,7 @@ export function APIGeneration() {
     } catch (e: any) {
       // Fallback: client-side generation with server insert (admin-only)
       try {
-        const perms = JSON.parse(newPerms || '{}');
+        const perms = buildPermissions();
         const plain = await (async () => {
           const arr = new Uint8Array(56);
           crypto.getRandomValues(arr);
@@ -153,8 +168,11 @@ export function APIGeneration() {
         setGenOpen(false);
         await refreshKeys();
       } catch (ef: any) {
-        toast({ title: 'Error', description: ef.message || e.message || 'Failed to generate key', variant: 'destructive' });
+        console.error('Key generation error:', e, ef);
+        toast({ title: 'Error', description: (ef?.message || e?.message || 'Failed to generate key'), variant: 'destructive' });
       }
+    } finally {
+      setIsGenerating(false);
     }
   }
 
@@ -368,14 +386,42 @@ export function APIGeneration() {
           <DialogHeader>
             <DialogTitle>Generate API Key</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <Label>Label (optional)</Label>
               <Input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="e.g., PC Agent Key" />
             </div>
-            <div>
-              <Label>Permissions (JSON)</Label>
-              <Textarea value={newPerms} onChange={e => setNewPerms(e.target.value)} rows={5} />
+            <div className="space-y-2">
+              <Label>Permissions</Label>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="perm-read" checked={permReadTraining} onCheckedChange={(v) => setPermReadTraining(!!v)} />
+                  <label htmlFor="perm-read" className="text-sm">Read training</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="perm-write" checked={permWriteTraining} onCheckedChange={(v) => setPermWriteTraining(!!v)} />
+                  <label htmlFor="perm-write" className="text-sm">Write training</label>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Allowed Endpoints</Label>
+              <div className="flex flex-wrap gap-4">
+                {[
+                  { key: 'pc_agent', label: 'PC Agent' },
+                  { key: 'cloned_apps', label: 'Cloned Apps' },
+                  { key: 'roblox', label: 'Roblox' },
+                ].map((ep) => (
+                  <div key={ep.key} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`ep-${ep.key}`}
+                      checked={!!permEndpoints[ep.key]}
+                      onCheckedChange={(v) => setPermEndpoints((prev) => ({ ...prev, [ep.key]: !!v }))}
+                    />
+                    <label htmlFor={`ep-${ep.key}`} className="text-sm">{ep.label}</label>
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <Label>Rate Limit (per minute)</Label>
@@ -383,8 +429,8 @@ export function APIGeneration() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setGenOpen(false)}>Cancel</Button>
-            <Button onClick={generateKey}>Generate</Button>
+            <Button variant="outline" onClick={() => setGenOpen(false)} disabled={isGenerating}>Cancel</Button>
+            <Button onClick={generateKey} disabled={isGenerating}>{isGenerating ? 'Generating…' : 'Generate'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
