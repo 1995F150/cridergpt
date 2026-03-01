@@ -95,7 +95,7 @@ export function UpdatesPanel() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_updates')
         .select('*')
         .eq('user_id', user.id)

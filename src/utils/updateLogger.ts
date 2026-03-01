@@ -16,7 +16,7 @@ export const logUpdate = async (data: UpdateLogData) => {
       return;
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_updates')
       .insert({
         user_id: user.id,

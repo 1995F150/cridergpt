@@ -59,7 +59,7 @@ export const ChatInterface: React.FC = () => {
   const loadUsers = async () => {
     try {
       console.log('Loading users from crider_chat_users...');
-      const { data: chatUsers, error } = await supabase
+      const { data: chatUsers, error } = await (supabase as any)
         .from('crider_chat_users')
         .select('user_id, display_name, email, avatar_url, status')
         .eq('is_synced', true)
@@ -102,7 +102,7 @@ export const ChatInterface: React.FC = () => {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setConversations(data || []);
+      setConversations((data || []) as any);
     } catch (error) {
       console.error('Error loading conversations:', error);
     }

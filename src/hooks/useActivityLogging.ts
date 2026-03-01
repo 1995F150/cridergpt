@@ -35,7 +35,7 @@ export function useActivityLogging() {
         : null;
 
       // Insert activity log
-      const { data: activityLog, error } = await supabase
+      const { data: activityLog, error } = await (supabase as any)
         .from('child_activity_logs')
         .insert([{
           child_id: user.id,

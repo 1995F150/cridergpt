@@ -101,12 +101,12 @@ export function APIGeneration() {
   }
 
   async function refreshKeywords() {
-    const { data, error } = await supabase.from('api_keywords').select('*').order('updated_at', { ascending: false });
+    const { data, error } = await (supabase as any).from('api_keywords').select('*').order('updated_at', { ascending: false });
     if (!error) setKeywords(data as any);
   }
 
   async function refreshUsage() {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('cridergpt_api_usage_daily')
       .select('day, endpoint, calls')
       .gte('day', new Date(Date.now() - 7*24*60*60*1000).toISOString());
@@ -154,7 +154,7 @@ export function APIGeneration() {
         const { data: userRes } = await supabase.auth.getUser();
         const createdBy = userRes?.user?.id || null;
 
-        const { error: insertErr } = await supabase.from('cridergpt_api_keys').insert({
+        const { error: insertErr } = await (supabase as any).from('cridergpt_api_keys').insert({
           label: newLabel || null,
           key_hash: hashHex,
           permissions: perms,
@@ -222,24 +222,25 @@ export function APIGeneration() {
         }
       ];
       // Attempt 1: with 'source' column
-      const attempt1 = await supabase.from('cridergpt_training_data').insert(rows);
+      const attempt1 = await (supabase as any).from('cridergpt_training_data').insert(rows);
       if (!attempt1.error) {
         toast({ title: 'Training data added', description: 'Android/Web/PC knowledge inserted.' });
         return;
       }
       // Attempt 2: retry without 'source' column for older schemas
       const rowsNoSource = rows.map(r => ({ user_email: r.user_email, title: r.title, content: r.content, tags: r.tags }));
-      const attempt2 = await supabase.from('cridergpt_training_data').insert(rowsNoSource);
+      const attempt2 = await (supabase as any).from('cridergpt_training_data').insert(rowsNoSource);
       if (!attempt2.error) {
         toast({ title: 'Training data added', description: 'Inserted without source column (compat mode).' });
         return;
       }
       // Attempt 3: fallback to ai_memory as universal storage
       const memPayload = rows.map(r => ({
-        user_id: userRes?.user?.id || null,
-        content: `${r.title}:\n\n${r.content}`,
+        user_id: userRes?.user?.id || '',
+        details: `${r.title}:\n\n${r.content}`,
         category: 'training',
         topic: 'seed',
+        source: 'admin-ui',
         metadata: { tags: r.tags, origin: 'admin-ui' }
       }));
       const attempt3 = await supabase.from('ai_memory').insert(memPayload);

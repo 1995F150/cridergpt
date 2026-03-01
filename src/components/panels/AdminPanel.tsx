@@ -31,7 +31,7 @@ export function AdminPanel() {
       
       try {
         const [reportsRes, chaptersRes] = await Promise.all([
-          supabase.from('user_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+          (supabase as any).from('user_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('chapter_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending')
         ]);
         

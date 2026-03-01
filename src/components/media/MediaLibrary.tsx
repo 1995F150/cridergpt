@@ -45,7 +45,7 @@ export function MediaLibrary({ onRemix }: MediaLibraryProps) {
     setLoading(true);
     
     try {
-      const { data: files, error } = await supabase
+      const { data: files, error } = await (supabase as any)
         .from('uploaded_files')
         .select('*')
         .eq('user_id', user.id)
@@ -82,7 +82,7 @@ export function MediaLibrary({ onRemix }: MediaLibraryProps) {
   const handleDelete = async (item: MediaItem) => {
     try {
       await supabase.storage.from('user-files').remove([item.path]);
-      await supabase.from('uploaded_files').delete().eq('file_path', item.path);
+      await (supabase as any).from('uploaded_files').delete().eq('file_path', item.path);
       
       toast({ title: "Deleted", description: "Media removed from library" });
       setSelectedItem(null);

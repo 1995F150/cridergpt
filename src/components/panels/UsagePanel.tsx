@@ -142,7 +142,7 @@ export function UsagePanel() {
       setLoading(true);
       
       // Fetch token usage from openai_requests
-      const { data: tokenData } = await supabase
+      const { data: tokenData } = await (supabase as any)
         .from('openai_requests')
         .select('id, query, model, tokens_used, created_at')
         .eq('user_id', user?.id)
@@ -150,7 +150,7 @@ export function UsagePanel() {
         .limit(10);
 
       // Fetch TTS requests
-      const { data: ttsData } = await supabase
+      const { data: ttsData } = await (supabase as any)
         .from('text_to_speech_requests')
         .select('id, text, created_at')
         .eq('user_id', user?.id)
@@ -158,16 +158,16 @@ export function UsagePanel() {
         .limit(10);
 
       // Fetch all profiles
-      const { data: profilesData } = await supabase
+      const { data: profilesData } = await (supabase as any)
         .from('profiles')
         .select('id, user_id, username');
 
       // Fetch usage statistics for all users
-      const { data: allTokenUsage } = await supabase
+      const { data: allTokenUsage } = await (supabase as any)
         .from('openai_requests')
         .select('user_id, tokens_used');
 
-      const { data: allTtsRequests } = await supabase
+      const { data: allTtsRequests } = await (supabase as any)
         .from('text_to_speech_requests')
         .select('user_id');
 

@@ -131,7 +131,7 @@ export function PlanPanel() {
 
       // Fetch TTS request count for current month
       const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-      const { data: ttsData } = await supabase
+      const { data: ttsData } = await (supabase as any)
         .from('tts_requests')
         .select('count')
         .eq('user_id', user.id)

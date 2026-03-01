@@ -78,7 +78,7 @@ export function useCalculatorTracking({ calculatorType, projectId }: UseCalculat
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('feedback')
         .insert({
           user_id: user.id,

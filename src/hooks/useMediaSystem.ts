@@ -291,7 +291,7 @@ export function useMediaSystem() {
 
       if (uploadError) throw uploadError;
 
-      await supabase.from('uploaded_files').insert({
+      await (supabase as any).from('uploaded_files').insert({
         user_id: user.id,
         file_name: fileName,
         file_path: filePath,

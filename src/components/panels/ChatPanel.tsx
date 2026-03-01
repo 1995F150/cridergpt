@@ -105,7 +105,7 @@ export default function ChatPanel() {
   // Load active API keywords for local detection
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.from('api_keywords').select('keyword, action').eq('active', true);
+      const { data, error } = await (supabase as any).from('api_keywords').select('keyword, action').eq('active', true);
       if (!error && data) setApiKeywords(data as any);
     })();
   }, []);
