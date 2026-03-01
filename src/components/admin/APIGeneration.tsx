@@ -221,9 +221,30 @@ export function APIGeneration() {
           source: 'admin-ui'
         }
       ];
-      const { error } = await supabase.from('cridergpt_training_data').insert(rows);
-      if (error) throw error;
-      toast({ title: 'Training data added', description: 'Android/Web/PC knowledge inserted.' });
+      // Attempt 1: with 'source' column
+      const attempt1 = await supabase.from('cridergpt_training_data').insert(rows);
+      if (!attempt1.error) {
+        toast({ title: 'Training data added', description: 'Android/Web/PC knowledge inserted.' });
+        return;
+      }
+      // Attempt 2: retry without 'source' column for older schemas
+      const rowsNoSource = rows.map(r => ({ user_email: r.user_email, title: r.title, content: r.content, tags: r.tags }));
+      const attempt2 = await supabase.from('cridergpt_training_data').insert(rowsNoSource);
+      if (!attempt2.error) {
+        toast({ title: 'Training data added', description: 'Inserted without source column (compat mode).' });
+        return;
+      }
+      // Attempt 3: fallback to ai_memory as universal storage
+      const memPayload = rows.map(r => ({
+        user_id: userRes?.user?.id || null,
+        content: `${r.title}:\n\n${r.content}`,
+        category: 'training',
+        topic: 'seed',
+        metadata: { tags: r.tags, origin: 'admin-ui' }
+      }));
+      const attempt3 = await supabase.from('ai_memory').insert(memPayload);
+      if (attempt3.error) throw attempt3.error;
+      toast({ title: 'Training data added', description: 'Stored in ai_memory (fallback).' });
     } catch (e: any) {
       toast({ title: 'Error', description: e.message || 'Failed to insert training data', variant: 'destructive' });
     }
