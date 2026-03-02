@@ -182,13 +182,23 @@ serve(async (req) => {
     // Execute action
     try {
       switch (matched.action) {
-        case "agent_mode": {
+      case "agent_mode":
+        case "pc_agent": {
           endpoint = "fixxy-autonomous";
+          // Queue task for the local Python agent
+          const adminClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", {});
+          await adminClient.from("agent_execution_queue").insert({
+            user_id: user.id,
+            command: rawMessage,
+            keyword: matched.keyword,
+            status: "pending",
+          });
+          // Also invoke fixxy-autonomous for cloud-side processing
           const { data, error } = await supabase.functions.invoke("fixxy-autonomous", {
             body: { message: rawMessage, context: contextChunks, author: userEmail },
           });
           if (error) throw error;
-          responsePayload = { route: matched.action, data };
+          responsePayload = { route: matched.action, data, agent_queued: true };
           break;
         }
         case "convert_app_code": {

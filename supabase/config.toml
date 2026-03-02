@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.scan-card]
 verify_jwt = false
+
+[functions.agent-poll]
+verify_jwt = false

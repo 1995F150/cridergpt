@@ -47,6 +47,78 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_execution_queue: {
+        Row: {
+          command: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          keyword: string | null
+          kill_switch: boolean
+          result: Json | null
+          started_at: string | null
+          status: string
+          user_id: string
+          vision_data: Json | null
+        }
+        Insert: {
+          command: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          keyword?: string | null
+          kill_switch?: boolean
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          user_id: string
+          vision_data?: Json | null
+        }
+        Update: {
+          command?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          keyword?: string | null
+          kill_switch?: boolean
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          user_id?: string
+          vision_data?: Json | null
+        }
+        Relationships: []
+      }
+      agent_status: {
+        Row: {
+          agent_version: string | null
+          id: string
+          is_online: boolean
+          last_heartbeat: string | null
+          metadata: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_version?: string | null
+          id?: string
+          is_online?: boolean
+          last_heartbeat?: string | null
+          metadata?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_version?: string | null
+          id?: string
+          is_online?: boolean
+          last_heartbeat?: string | null
+          metadata?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_feedback: {
         Row: {
           created_at: string | null
