@@ -305,6 +305,33 @@ export type Database = {
         }
         Relationships: []
       }
+      api_keywords: {
+        Row: {
+          action: string
+          active: boolean | null
+          description: string | null
+          id: string
+          keyword: string
+          updated_at: string | null
+        }
+        Insert: {
+          action: string
+          active?: boolean | null
+          description?: string | null
+          id?: string
+          keyword: string
+          updated_at?: string | null
+        }
+        Update: {
+          action?: string
+          active?: boolean | null
+          description?: string | null
+          id?: string
+          keyword?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       app_milestones: {
         Row: {
           created_at: string | null
@@ -670,6 +697,126 @@ export type Database = {
           role?: string
           tokens_used?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      cridergpt_api_keys: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          created_by: string
+          id: string
+          key_hash: string
+          label: string | null
+          permissions: Json | null
+          rate_limit_per_minute: number | null
+          revoked_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          created_by: string
+          id?: string
+          key_hash: string
+          label?: string | null
+          permissions?: Json | null
+          rate_limit_per_minute?: number | null
+          revoked_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          key_hash?: string
+          label?: string | null
+          permissions?: Json | null
+          rate_limit_per_minute?: number | null
+          revoked_at?: string | null
+        }
+        Relationships: []
+      }
+      cridergpt_api_logs: {
+        Row: {
+          command: string | null
+          created_at: string | null
+          endpoint: string | null
+          flags: Json | null
+          id: string
+          status: string | null
+          user_email: string | null
+        }
+        Insert: {
+          command?: string | null
+          created_at?: string | null
+          endpoint?: string | null
+          flags?: Json | null
+          id?: string
+          status?: string | null
+          user_email?: string | null
+        }
+        Update: {
+          command?: string | null
+          created_at?: string | null
+          endpoint?: string | null
+          flags?: Json | null
+          id?: string
+          status?: string | null
+          user_email?: string | null
+        }
+        Relationships: []
+      }
+      cridergpt_api_settings: {
+        Row: {
+          endpoint_overrides: Json | null
+          id: string
+          kill_switch: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          endpoint_overrides?: Json | null
+          id?: string
+          kill_switch?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          endpoint_overrides?: Json | null
+          id?: string
+          kill_switch?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cridergpt_training_corpus: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          source_id: string | null
+          source_table: string
+          topic: string | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          source_id?: string | null
+          source_table: string
+          topic?: string | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          source_id?: string | null
+          source_table?: string
+          topic?: string | null
         }
         Relationships: []
       }
