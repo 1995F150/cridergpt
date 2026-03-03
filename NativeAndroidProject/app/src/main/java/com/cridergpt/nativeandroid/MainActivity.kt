@@ -3,6 +3,7 @@ package com.cridergpt.nativeandroid
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.cridergpt.nativeandroid.data.supabase.SupabaseProvider
 import com.cridergpt.nativeandroid.ui.CriderGptApp
 import com.cridergpt.nativeandroid.ui.theme.CriderGptTheme
 
@@ -12,6 +13,9 @@ import com.cridergpt.nativeandroid.ui.theme.CriderGptTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Ensure Supabase client is initialized during app startup.
+        SupabaseProvider.client
+
         setContent {
             CriderGptTheme {
                 CriderGptApp()
