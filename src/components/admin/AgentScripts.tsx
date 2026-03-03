@@ -370,6 +370,236 @@ if __name__ == "__main__":
 `,
   },
   {
+    name: 'gui_agent.py',
+    content: `"""
+CriderGPT Agent – Desktop GUI (tkinter)
+=========================================
+Provides a simple UI for:
+  - Entering / saving API key to .env
+  - Toggling agent on/off
+  - Viewing connection status & recent tasks
+
+Run:  python gui_agent.py
+"""
+import tkinter as tk
+from tkinter import ttk, messagebox
+import threading
+import os
+import sys
+
+# Ensure we can import sibling modules
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from dotenv import load_dotenv, set_key
+
+ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+
+class CriderGPTAgentGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("CriderGPT Agent Controller")
+        self.root.geometry("520x440")
+        self.root.resizable(False, False)
+
+        self.agent_running = False
+        self.stop_event = threading.Event()
+        self.agent_thread = None
+
+        self._build_ui()
+        self._load_env()
+
+    def _build_ui(self):
+        # Header
+        hdr = tk.Frame(self.root, bg="#1a1a2e", height=50)
+        hdr.pack(fill="x")
+        tk.Label(hdr, text="CriderGPT Agent", fg="#1f8b4c", bg="#1a1a2e",
+                 font=("Segoe UI", 16, "bold")).pack(pady=10)
+
+        # API Key
+        frm = ttk.LabelFrame(self.root, text="API Configuration", padding=10)
+        frm.pack(fill="x", padx=10, pady=5)
+        ttk.Label(frm, text="API Key:").grid(row=0, column=0, sticky="w")
+        self.api_entry = ttk.Entry(frm, width=50, show="*")
+        self.api_entry.grid(row=0, column=1, padx=5)
+        ttk.Button(frm, text="Save", command=self._save_api_key).grid(row=0, column=2)
+
+        # Status
+        sfrm = ttk.LabelFrame(self.root, text="Status", padding=10)
+        sfrm.pack(fill="x", padx=10, pady=5)
+        self.status_var = tk.StringVar(value="Offline")
+        self.status_label = ttk.Label(sfrm, textvariable=self.status_var,
+                                       font=("Segoe UI", 12, "bold"))
+        self.status_label.pack(anchor="w")
+
+        self.conn_var = tk.StringVar(value="Not connected")
+        ttk.Label(sfrm, textvariable=self.conn_var).pack(anchor="w")
+
+        # Controls
+        cfrm = tk.Frame(self.root, pady=10)
+        cfrm.pack()
+        self.start_btn = ttk.Button(cfrm, text="▶  Start Agent", command=self._start_agent)
+        self.start_btn.pack(side="left", padx=5)
+        self.stop_btn = ttk.Button(cfrm, text="■  Stop Agent", command=self._stop_agent, state="disabled")
+        self.stop_btn.pack(side="left", padx=5)
+
+        # Log
+        lfrm = ttk.LabelFrame(self.root, text="Log", padding=5)
+        lfrm.pack(fill="both", expand=True, padx=10, pady=5)
+        self.log_text = tk.Text(lfrm, height=8, state="disabled", font=("Consolas", 9))
+        self.log_text.pack(fill="both", expand=True)
+
+    def _log(self, msg):
+        self.log_text.config(state="normal")
+        self.log_text.insert("end", msg + "\\n")
+        self.log_text.see("end")
+        self.log_text.config(state="disabled")
+
+    def _load_env(self):
+        if os.path.exists(ENV_PATH):
+            load_dotenv(ENV_PATH)
+            key = os.getenv("CRIDERGPT_API_KEY", "")
+            if key and key != "YOUR_SUPABASE_ACCESS_TOKEN_HERE":
+                self.api_entry.insert(0, key)
+                self._log("[gui] Loaded API key from .env")
+
+    def _save_api_key(self):
+        key = self.api_entry.get().strip()
+        if not key:
+            messagebox.showwarning("Missing", "Enter an API key first.")
+            return
+        if not os.path.exists(ENV_PATH):
+            with open(ENV_PATH, "w") as f:
+                f.write("# CriderGPT Agent\\n")
+        set_key(ENV_PATH, "CRIDERGPT_API_KEY", key)
+        os.environ["CRIDERGPT_API_KEY"] = key
+        self._log("[gui] API key saved to .env")
+        messagebox.showinfo("Saved", "API key saved.")
+
+    def _start_agent(self):
+        if self.agent_running:
+            return
+        key = self.api_entry.get().strip()
+        if not key or key == "YOUR_SUPABASE_ACCESS_TOKEN_HERE":
+            messagebox.showwarning("Missing", "Enter a valid API key first.")
+            return
+        os.environ["CRIDERGPT_API_KEY"] = key
+
+        self.stop_event.clear()
+        self.agent_running = True
+        self.status_var.set("Online")
+        self.conn_var.set("Agent running...")
+        self.start_btn.config(state="disabled")
+        self.stop_btn.config(state="normal")
+        self._log("[gui] Starting agent...")
+
+        def run():
+            try:
+                from auth import test_connection
+                if not test_connection():
+                    self._log("[gui] Connection failed!")
+                    self.root.after(0, self._stop_agent)
+                    return
+                self._log("[gui] Connected to CriderGPT API")
+                self.root.after(0, lambda: self.conn_var.set("Connected"))
+                from poller import poll_loop
+                poll_loop(self.stop_event)
+            except Exception as e:
+                self._log(f"[gui] Agent error: {e}")
+            finally:
+                self.root.after(0, self._on_agent_stopped)
+
+        self.agent_thread = threading.Thread(target=run, daemon=True)
+        self.agent_thread.start()
+
+    def _stop_agent(self):
+        self.stop_event.set()
+        self._log("[gui] Stopping agent...")
+
+    def _on_agent_stopped(self):
+        self.agent_running = False
+        self.status_var.set("Offline")
+        self.conn_var.set("Not connected")
+        self.start_btn.config(state="normal")
+        self.stop_btn.config(state="disabled")
+        self._log("[gui] Agent stopped.")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = CriderGPTAgentGUI(root)
+    root.mainloop()
+`,
+  },
+  {
+    name: 'build_exe.py',
+    content: `"""
+CriderGPT Agent – EXE Builder
+===============================
+Uses PyInstaller to package the agent into a single .exe.
+
+Prerequisites:
+    pip install pyinstaller
+
+Usage:
+    python build_exe.py
+
+Output:
+    dist/CriderGPT-Agent.exe
+"""
+import subprocess
+import sys
+import os
+
+
+def main():
+    print("=" * 50)
+    print("  CriderGPT Agent EXE Builder")
+    print("=" * 50)
+
+    # Check PyInstaller
+    try:
+        import PyInstaller
+        print(f"[build] PyInstaller {PyInstaller.__version__} found.")
+    except ImportError:
+        print("[build] Installing PyInstaller...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
+
+    # Install agent dependencies
+    if os.path.exists("requirements.txt"):
+        print("[build] Installing agent dependencies...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+
+    # Build with PyInstaller
+    print("[build] Building CriderGPT-Agent.exe ...")
+    cmd = [
+        sys.executable, "-m", "PyInstaller",
+        "--onefile",
+        "--name", "CriderGPT-Agent",
+        "--icon", "NONE",
+        "--add-data", f"requirements.txt{os.pathsep}.",
+        "--hidden-import", "config",
+        "--hidden-import", "auth",
+        "--hidden-import", "poller",
+        "--hidden-import", "executor",
+        "--hidden-import", "vision",
+        "gui_agent.py",
+    ]
+    subprocess.check_call(cmd)
+
+    exe_path = os.path.join("dist", "CriderGPT-Agent.exe")
+    if os.path.exists(exe_path):
+        size_mb = os.path.getsize(exe_path) / (1024 * 1024)
+        print(f"\\n[build] SUCCESS! Built: {exe_path} ({size_mb:.1f} MB)")
+        print("[build] Copy the .exe and your .env file to any Windows PC to run.")
+    else:
+        print("[build] Build may have failed — check PyInstaller output above.")
+
+
+if __name__ == "__main__":
+    main()
+`,
+  },
+  {
     name: 'setup_agent.py',
     content: `"""
 CriderGPT Agent – Setup & Installer Script

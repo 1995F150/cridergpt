@@ -27,6 +27,7 @@ import {
   Wrench,
   Package,
   Eye,
+  FileCode,
   Shield,
   Gamepad2,
   ShieldCheck,
@@ -98,6 +99,7 @@ const navigationGroups: NavGroup[] = [
   {
     label: 'TOOLS',
     items: [
+      { id: 'code-editor', label: 'Code Editor', icon: FileCode, emailRestricted: ['jessiecrider3@gmail.com'] },
       { id: 'app-converter', label: 'App Converter', icon: Smartphone },
       { id: 'zip-to-exe', label: 'ZIP-to-EXE Builder', icon: Package },
       { id: 'mod-tools', label: 'Mod Creation Tools', icon: Wrench },
