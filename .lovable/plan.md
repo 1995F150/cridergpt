@@ -1,124 +1,84 @@
 
+# CriderGPT Phase 1.5: API Fix, Adsterra Native Banner, and Agent Enhancements
 
-# CriderGPT Phase 1: Local Agent Add-On
+## Problem Summary
 
-## Overview
-
-This plan adds a local PC agent system that polls the CriderGPT API for commands, executes them locally, and reports results back. It includes Python scripts (downloadable from Admin), a new task queue table, a polling edge function, a vision capture command, and an ad script integration. No existing files are modified unless explicitly importing new modules.
-
----
-
-## 1. Database: Agent Execution Queue
-
-Create a new `agent_execution_queue` table that the Python agent polls for tasks and writes results back to.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | auto-generated |
-| user_id | uuid | owner who issued the command |
-| command | text | the raw command string |
-| keyword | text | matched keyword trigger |
-| status | text | `pending`, `running`, `completed`, `failed`, `cancelled` |
-| result | jsonb | output/error from local execution |
-| vision_data | jsonb | screenshot metadata if vision capture was used |
-| created_at | timestamptz | when queued |
-| started_at | timestamptz | when agent picked it up |
-| completed_at | timestamptz | when agent finished |
-| kill_switch | boolean default false | per-task halt flag |
-
-RLS: Only the owner (jessiecrider3@gmail.com user_id) can read/write rows.
+The API system is broken because **5 critical database tables are missing** (`cridergpt_api_keys`, `cridergpt_api_settings`, `cridergpt_api_logs`, `api_keywords`, `cridergpt_training_corpus`). Both the `cridergpt-admin` and `cridergpt-api` edge functions query these tables, so any API key generation or command execution fails. Additionally, a new Adsterra Native Banner ad needs to be integrated, and the old ad script needs to be removed from `index.html`.
 
 ---
 
-## 2. Edge Function: `agent-poll`
+## Part 1: Fix the API System (Database Tables)
 
-A new edge function the Python agent calls to:
+Create the 5 missing tables that the edge functions already reference:
 
-- **GET tasks**: Fetch pending commands for the authenticated user
-- **POST results**: Mark a task as completed/failed with output
-- **Heartbeat**: Agent reports its alive status (stored in `agent_execution_queue` or a simple `agent_status` row)
+### Tables to Create
 
-Authentication: Uses the existing API key system. The function validates the bearer token against `cridergpt_api_keys` (key_hash check) and confirms the user is the authorized owner.
+| Table | Purpose |
+|-------|---------|
+| `cridergpt_api_keys` | Stores API keys (hashed), permissions, rate limits |
+| `cridergpt_api_settings` | Kill switch, endpoint overrides |
+| `cridergpt_api_logs` | Request/command audit trail |
+| `api_keywords` | Keyword-to-action mappings for API routing |
+| `cridergpt_training_corpus` | Unified training data from ai_memory + writing_samples + training_data |
 
-Endpoints (via action field in JSON body):
-- `poll` -- returns up to 10 pending tasks, marks them `running`
-- `report` -- accepts task_id + result, marks `completed` or `failed`
-- `heartbeat` -- updates agent online status
-- `vision_upload` -- accepts base64 screenshot + metadata, stores in Supabase storage
+Each table gets RLS policies restricted to admin users via the existing `has_role` function. The `cridergpt_training_corpus` table will be populated with a view or materialized approach pulling from `ai_memory`, `writing_samples`, and `cridergpt_training_data`.
 
----
+### Also: Seed Default Keywords
 
-## 3. Update `cridergpt-api` to Queue Agent Tasks
-
-When the existing `cridergpt-api` edge function matches a keyword with action `agent_mode` or `pc_agent`, instead of only calling `fixxy-autonomous`, it also inserts a row into `agent_execution_queue` with status `pending`. The Python agent picks it up on next poll.
-
-This is a small addition to the existing switch/case in `cridergpt-api/index.ts` -- not a rewrite.
+Insert default keywords (`agent_mode`, `pc_agent`, `convert_app_code`, `open_github`, `generate_photo`) so the API can route commands immediately.
 
 ---
 
-## 4. Python Agent Scripts (7 files)
+## Part 2: Adsterra Native Banner Integration
 
-These are stored as downloadable `.py` content in the Admin panel. Each file is a string constant rendered in a new "Agent Scripts" tab.
-
-### File List:
-
-| File | Purpose |
-|------|---------|
-| `config.py` | Loads `.env` (API URL, API key, poll interval, vision toggle) |
-| `auth.py` | Authenticates with CriderGPT API using the API key |
-| `poller.py` | Background loop: polls `agent-poll` for pending tasks every 10s |
-| `executor.py` | Receives a command dict, runs it locally (subprocess, file ops, URL open), returns result |
-| `vision.py` | Captures screenshots (using `pillow` + `pyautogui`), sends to API with metadata (active window, timestamp) |
-| `agent.py` | Main entry point: starts poller + vision loop, handles graceful shutdown (kill switch) |
-| `requirements.txt` | `requests`, `python-dotenv`, `pillow`, `pyautogui`, `psutil` |
-
-Safety features baked in:
-- Keyword authorization check before execution
-- Kill switch polling (checks `kill_switch` field on every cycle)
-- Single-user enforcement (API key tied to owner account)
-- Vision is read-only (capture + send, no clicks/keystrokes)
-- All commands logged to `agent_execution_queue`
-
-### EXE Wrapper Notes
-The plan includes a `setup_agent.py` script that:
-- Installs dependencies from `requirements.txt`
-- Creates a `.env` template
-- Optionally registers as a Windows startup task
-- Provides start/stop commands
-
-Actual EXE compilation (PyInstaller) instructions are included as comments in `agent.py`.
+1. **Remove** the old `effectivegatecpm.com` script from `index.html`
+2. **Create** `src/components/AdsterraBanner.tsx` -- a React component that:
+   - Renders a `<div id="container-0db409f9b28e67b2c5eb854b55bb35c8">`
+   - Loads the Adsterra invoke script asynchronously after mount via `useEffect`
+   - Includes a fallback placeholder for layout stability
+   - Cleans up on unmount
+3. **Place** the banner in the main layout (below header/above footer) inside `src/pages/Index.tsx` or the app shell so it appears on all pages
+4. Ensure the ad is responsive and doesn't block interactive elements or PWA behavior
 
 ---
 
-## 5. Admin Panel: Agent Scripts Tab
+## Part 3: Agent EXE Builder Python Script
 
-Add a new tab "Agent Scripts" to the existing Admin panel (`AdminPanel.tsx`) that:
+Since Lovable cannot compile native EXE files, we'll add a `build_exe.py` script to the Agent Scripts tab that:
+- Uses PyInstaller to package the agent into a single `.exe`
+- Includes a simple tkinter GUI with: API key input, save to `.env`, agent on/off toggle, connection status indicator
+- The GUI wraps the existing `agent.py` logic
+- Instructions for running: `python build_exe.py` produces `CriderGPT-Agent.exe`
 
-- Lists all 7 Python files with syntax-highlighted code blocks
-- "Copy" and "Download .py" buttons for each file
-- Shows agent connection status (polls `agent-poll` heartbeat endpoint)
-- Shows recent execution results from `agent_execution_queue`
-- "Generate .env Template" button that pre-fills the API URL and a placeholder for the key
-
-New component: `src/components/admin/AgentScripts.tsx`
-
----
-
-## 6. Ad Script Integration
-
-Add the provided ad script to `index.html` just before `</body>`, loaded asynchronously:
-
-```html
-<script async src="https://pl28825167.effectivegatecpm.com/50/cd/34/50cd342b9dce7103747bc542e2fbc402.js"></script>
-```
+New Python files to add to `AgentScripts.tsx`:
+- `gui_agent.py` -- tkinter-based desktop UI with API input, on/off switch, status panel
+- `build_exe.py` -- PyInstaller build script
 
 ---
 
-## 7. Smart ID Scan Fix Investigation
+## Part 4: Code Editor Tab (Basic)
 
-The TagScanner and scan-card edge function look correct. The likely issue is that `getClaims()` may not exist on older Supabase client versions. The fix:
-- Replace `getClaims(token)` with `getUser()` in the `scan-card` edge function (the same pattern used in `cridergpt-api`)
-- This ensures the scan actually authenticates properly and returns animal data
+Add a new "Code Editor" tab to the navigation sidebar that provides:
+- A Monaco-style textarea (using a simple code editor with syntax highlighting)
+- File browser showing the project structure (fetched via edge function that reads code structure)
+- Run button that sends code to the `generate-code` edge function for execution/debugging
+- AI assist button that sends selected code to the chat AI for help
+- Owner-only access (jessiecrider3@gmail.com)
+
+This will be a new component `src/components/panels/CodeEditorPanel.tsx` and nav entry.
+
+---
+
+## Part 5: CriderGPT AI Code Awareness (Owner-Only)
+
+Update the `chat-with-ai` edge function's system prompt so that when the authenticated user is `jessiecrider3@gmail.com`:
+- The AI knows it's talking to Jessie Crider, the founder
+- It can reference the full codebase structure
+- It can generate Android Studio zip exports on request
+- It can provide full source code only to the verified owner
+- For all other users, code access is denied
+
+This is a system prompt enhancement only -- no new edge function needed.
 
 ---
 
@@ -126,22 +86,32 @@ The TagScanner and scan-card edge function look correct. The likely issue is tha
 
 | File | Action |
 |------|--------|
-| Database migration | Create `agent_execution_queue` table with RLS |
-| `supabase/functions/agent-poll/index.ts` | New edge function |
-| `supabase/config.toml` | Add `[functions.agent-poll]` entry |
-| `supabase/functions/cridergpt-api/index.ts` | Add queue insert for `agent_mode` action |
-| `supabase/functions/scan-card/index.ts` | Fix auth: replace `getClaims` with `getUser` |
-| `src/components/admin/AgentScripts.tsx` | New component with all Python file contents |
-| `src/components/panels/AdminPanel.tsx` | Add Agent Scripts tab |
-| `index.html` | Add async ad script before `</body>` |
+| Database migration | Create 5 missing tables + seed keywords |
+| `index.html` | Remove old ad script |
+| `src/components/AdsterraBanner.tsx` | New: Adsterra native banner component |
+| `src/pages/Index.tsx` or layout | Add AdsterraBanner placement |
+| `src/components/admin/AgentScripts.tsx` | Add `gui_agent.py` and `build_exe.py` to Python files |
+| `src/components/panels/CodeEditorPanel.tsx` | New: basic code editor panel |
+| `src/components/NavigationSidebar.tsx` | Add Code Editor nav item |
+| `src/components/panels/AdminPanel.tsx` | No changes needed (already has agent tab) |
+| `supabase/functions/chat-with-ai/index.ts` | Add owner-only code awareness system prompt |
 
 ## Execution Order
 
-1. Database migration (agent_execution_queue table)
-2. Fix scan-card auth (getClaims -> getUser)
-3. Create agent-poll edge function
-4. Update cridergpt-api to queue agent tasks
-5. Build AgentScripts admin component with all Python files
-6. Wire into AdminPanel
-7. Add ad script to index.html
+1. Database migration (create 5 tables, seed keywords)
+2. Remove old ad script from index.html
+3. Create and place AdsterraBanner component
+4. Add GUI agent + EXE builder Python scripts to AgentScripts
+5. Create CodeEditorPanel with basic editing + AI assist
+6. Update chat-with-ai with owner code awareness
+7. Wire new nav items
 
+---
+
+## Technical Notes
+
+- The `has_role` RPC function already exists and is used by `cridergpt-admin` for admin checks
+- `ai_memory` has a `details` column (not `content`), so the training corpus view needs to map correctly
+- The `cridergpt_training_data` table exists but has different columns than the code expects -- the migration will add the missing columns or create the corpus table as the unified source
+- EXE building cannot happen in-browser; the Python scripts provide the tooling for local compilation
+- The Adsterra script uses `data-cfasync="false"` which is Cloudflare-specific; we'll keep it for compatibility
