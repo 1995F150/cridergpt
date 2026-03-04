@@ -42,6 +42,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminPanel } from '@/components/panels/AdminPanel';
 import { GuardianPanel } from '@/components/panels/GuardianPanel';
 import { LivestockPanel } from '@/components/panels/LivestockPanel';
+import { ReceiptPanel } from '@/components/panels/ReceiptPanel';
 
 export type PanelType = 
   | 'chat' 
@@ -73,7 +74,8 @@ export type PanelType =
   | 'code-editor'
   | 'admin'
   | 'guardian'
-  | 'livestock';
+  | 'livestock'
+  | 'receipts';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -184,6 +186,7 @@ export default function Index() {
               {activePanel === 'admin' && isAdmin && <AdminPanel />}
               {activePanel === 'guardian' && <GuardianPanel />}
               {activePanel === 'livestock' && <LivestockPanel />}
+              {activePanel === 'receipts' && <ReceiptPanel />}
             </div>
           </main>
           <AdsterraBanner />
