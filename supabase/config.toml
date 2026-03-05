@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.agent-poll]
 verify_jwt = false
+
+[functions.swarm-orchestrator]
+verify_jwt = false

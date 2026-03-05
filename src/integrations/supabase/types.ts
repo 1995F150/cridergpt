@@ -119,6 +119,107 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_swarm_sessions: {
+        Row: {
+          active_agents: number
+          completed_agents: number
+          created_at: string
+          id: string
+          max_agents: number
+          name: string
+          objective: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_agents?: number
+          completed_agents?: number
+          created_at?: string
+          id?: string
+          max_agents?: number
+          name?: string
+          objective?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_agents?: number
+          completed_agents?: number
+          created_at?: string
+          id?: string
+          max_agents?: number
+          name?: string
+          objective?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_swarm_tasks: {
+        Row: {
+          agent_index: number
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          model: string | null
+          prompt: string
+          result: string | null
+          role: string
+          role_label: string
+          session_id: string
+          started_at: string | null
+          status: string
+          tokens_used: number | null
+          user_id: string
+        }
+        Insert: {
+          agent_index: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model?: string | null
+          prompt: string
+          result?: string | null
+          role?: string
+          role_label?: string
+          session_id: string
+          started_at?: string | null
+          status?: string
+          tokens_used?: number | null
+          user_id: string
+        }
+        Update: {
+          agent_index?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model?: string | null
+          prompt?: string
+          result?: string | null
+          role?: string
+          role_label?: string
+          session_id?: string
+          started_at?: string | null
+          status?: string
+          tokens_used?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_swarm_tasks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "agent_swarm_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_feedback: {
         Row: {
           created_at: string | null

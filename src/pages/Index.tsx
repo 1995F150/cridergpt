@@ -43,6 +43,7 @@ import { AdminPanel } from '@/components/panels/AdminPanel';
 import { GuardianPanel } from '@/components/panels/GuardianPanel';
 import { LivestockPanel } from '@/components/panels/LivestockPanel';
 import { ReceiptPanel } from '@/components/panels/ReceiptPanel';
+import AgentSwarmPanel from '@/components/panels/AgentSwarmPanel';
 
 export type PanelType = 
   | 'chat' 
@@ -75,7 +76,8 @@ export type PanelType =
   | 'admin'
   | 'guardian'
   | 'livestock'
-  | 'receipts';
+  | 'receipts'
+  | 'agent-swarm';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -187,6 +189,7 @@ export default function Index() {
               {activePanel === 'guardian' && <GuardianPanel />}
               {activePanel === 'livestock' && <LivestockPanel />}
               {activePanel === 'receipts' && <ReceiptPanel />}
+              {activePanel === 'agent-swarm' && <AgentSwarmPanel />}
             </div>
           </main>
           <AdsterraBanner />

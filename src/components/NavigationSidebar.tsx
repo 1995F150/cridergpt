@@ -32,7 +32,8 @@ import {
   Gamepad2,
   ShieldCheck,
   Beef,
-  Receipt
+  Receipt,
+  Brain
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
@@ -73,6 +74,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { id: 'livestock', label: 'Livestock ID', icon: Beef },
       { id: 'receipts', label: 'Receipts', icon: Receipt },
+      { id: 'agent-swarm', label: 'Agent Swarm', icon: Brain },
       { id: 'ffa', label: 'FFA Center', icon: Wheat },
       { id: 'calendar', label: 'Calendar', icon: Calendar },
       { id: 'calculators', label: 'Calculators', icon: Calculator },
