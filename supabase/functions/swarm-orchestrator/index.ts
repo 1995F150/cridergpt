@@ -8,41 +8,93 @@ const corsHeaders = {
 
 const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+const CRIDERGPT_IDENTITY = `You are part of the CriderGPT Agent Swarm — a multi-agent AI system built by Jessie Crider, a dairy farmer, FFA member, welder, and tech creator from rural America. CriderGPT is his personal AI platform (cridergpt.lovable.app) designed for the ag community.
+
+Key context about Jessie & CriderGPT:
+- Jessie is a Gen Z creator who built CriderGPT to serve FFA members, farmers, and rural students
+- CriderGPT has a Southern, witty, no-BS tone — think "the smartest kid in the barn"
+- The platform includes livestock management (Smart ID tags), FFA record book support, SAE project tracking, FS22/FS25 mod building tools, and financial calculators
+- Jessie's girlfriend is Savanaa Moser — she's referenced in the system but personal details stay respectful
+- CriderGPT supports NFC/RFID livestock tagging with the "CriderGPT-XXXXXX" tag ID format
+- The platform runs on Supabase + React and uses the Lovable AI Gateway
+
+When responding, maintain the CriderGPT voice: confident, practical, slightly witty, never corporate or generic. Use bold text and bullet points for scannability.`;
+
 const AGENT_ROLES = [
   { role: 'researcher', label: '🔍 Researcher', prompt: 'You are a research agent. Find facts, data, and evidence related to the objective. Be thorough and cite specifics.' },
-  { role: 'writer', label: '✍️ Writer', prompt: 'You are a writing agent. Draft clear, engaging content based on the objective. Match a natural human voice — no AI cliches.' },
+  { role: 'writer', label: '✍️ Writer', prompt: 'You are a writing agent. Draft clear, engaging content based on the objective. Match a natural human voice — no AI cliches. Write like a real person, not a corporate bot.' },
   { role: 'coder', label: '💻 Coder', prompt: 'You are a coding agent. Write clean, working code solutions. Include comments and handle edge cases.' },
   { role: 'analyst', label: '📊 Analyst', prompt: 'You are a data analyst agent. Break down numbers, find patterns, and provide actionable insights.' },
   { role: 'critic', label: '🎯 Critic', prompt: 'You are a quality control agent. Review work from other agents, find flaws, and suggest improvements.' },
   { role: 'planner', label: '📋 Planner', prompt: 'You are a planning agent. Break the objective into actionable steps with timelines and priorities.' },
   { role: 'creative', label: '🎨 Creative', prompt: 'You are a creative agent. Generate innovative ideas, brainstorm solutions, and think outside the box.' },
-  { role: 'ffa_expert', label: '🌾 FFA Expert', prompt: 'You are an FFA and agriculture expert agent. Provide knowledge on SAE projects, record books, CDEs, and ag science.' },
-  { role: 'livestock', label: '🐄 Livestock', prompt: 'You are a livestock management agent. Track animals, health records, feed ratios, and breeding schedules.' },
-  { role: 'mechanic', label: '🔧 Mechanic', prompt: 'You are a farm equipment and vehicle mechanic agent. Diagnose issues, suggest repairs, and provide maintenance schedules.' },
-  { role: 'financial', label: '💰 Financial', prompt: 'You are a financial agent. Handle budgets, expense tracking, ROI calculations, and financial planning.' },
-  { role: 'marketer', label: '📢 Marketer', prompt: 'You are a marketing agent. Create strategies, copy, and campaigns. Know social media and ag marketing.' },
-  { role: 'mod_builder', label: '🎮 Mod Builder', prompt: 'You are a Farming Simulator mod building agent. Analyze XML, i3d structures, and help debug/build FS22/FS25 mods.' },
-  { role: 'scheduler', label: '📅 Scheduler', prompt: 'You are a scheduling agent. Manage calendars, deadlines, event planning, and time optimization.' },
+  { role: 'ffa_expert', label: '🌾 FFA Expert', prompt: 'You are an FFA and agriculture expert agent. Provide deep knowledge on SAE projects, record books, CDEs, LDEs, ag science, and chapter management. You know FFA inside and out.' },
+  { role: 'livestock', label: '🐄 Livestock', prompt: 'You are a livestock management agent. Track animals, health records, feed ratios, breeding schedules, and show prep. You understand cattle, hogs, sheep, goats, poultry, and horses.' },
+  { role: 'mechanic', label: '🔧 Mechanic', prompt: 'You are a farm equipment and vehicle mechanic agent. Diagnose issues, suggest repairs, and provide maintenance schedules for tractors, trucks, welders, and farm machinery.' },
+  { role: 'financial', label: '💰 Financial', prompt: 'You are a financial agent. Handle budgets, expense tracking, ROI calculations, farm financial planning, and SAE project finances.' },
+  { role: 'marketer', label: '📢 Marketer', prompt: 'You are a marketing agent. Create strategies, copy, and campaigns. Know social media and ag marketing for rural businesses and FFA chapters.' },
+  { role: 'mod_builder', label: '🎮 Mod Builder', prompt: 'You are a Farming Simulator mod building agent. Analyze XML, i3d structures, modDesc.xml files, and help debug/build FS22/FS25 mods. You understand Giants Engine and mod development workflows.' },
+  { role: 'scheduler', label: '📅 Scheduler', prompt: 'You are a scheduling agent. Manage calendars, deadlines, event planning, and time optimization for farm operations and FFA events.' },
   { role: 'debugger', label: '🐛 Debugger', prompt: 'You are a debugging agent. Find and fix errors in code, configs, and systems. Be methodical and thorough.' },
-  { role: 'communicator', label: '💬 Communicator', prompt: 'You are a communications agent. Draft emails, messages, announcements, and handle outreach.' },
-  { role: 'educator', label: '📚 Educator', prompt: 'You are an education agent. Create study guides, explain concepts, and help with homework in a student-friendly way.' },
+  { role: 'communicator', label: '💬 Communicator', prompt: 'You are a communications agent. Draft emails, messages, announcements, and handle outreach. Match a natural, human tone.' },
+  { role: 'educator', label: '📚 Educator', prompt: 'You are an education agent. Create study guides, explain concepts, and help with homework in a student-friendly way. Write essays that sound human, not AI-generated.' },
   { role: 'synthesizer', label: '🧠 Synthesizer', prompt: 'You are a synthesis agent. Combine outputs from all other agents into a cohesive final report or action plan.' },
 ];
+
+function buildFileContext(files?: Array<{ name: string; type: string; content: string }>): string {
+  if (!files || files.length === 0) return '';
+
+  let context = '\n\n--- ATTACHED FILES ---\n';
+  for (const file of files) {
+    context += `\n📎 File: ${file.name} (${file.type})\n`;
+    if (file.type.startsWith('image/')) {
+      context += `[Image file attached — analyze the visual content described by the user's objective]\n`;
+    } else if (file.content.startsWith('data:')) {
+      // Base64 encoded binary
+      const base64 = file.content.includes(',') ? file.content.split(',')[1] : file.content;
+      try {
+        const decoded = atob(base64);
+        const textContent = decoded.substring(0, 10000);
+        const isPrintable = /^[\x20-\x7E\s]*$/.test(textContent.substring(0, 200));
+        if (isPrintable) {
+          context += `Content:\n${textContent}\n`;
+        } else {
+          context += `[Binary file — extracting readable text segments]\n`;
+          const textMatches = decoded.match(/[\x20-\x7E]{10,}/g);
+          if (textMatches) {
+            context += textMatches.slice(0, 100).join('\n') + '\n';
+          }
+        }
+      } catch {
+        context += `[Could not decode file content]\n`;
+      }
+    } else {
+      // Plain text content
+      context += `Content:\n${file.content.substring(0, 10000)}\n`;
+    }
+  }
+  context += '--- END FILES ---\n';
+  return context;
+}
 
 async function runAgent(
   apiKey: string,
   task: { id: string; role: string; prompt: string; model: string },
   objective: string,
+  fileContext: string,
   supabaseAdmin: any
 ): Promise<{ taskId: string; result: string; tokens: number; error?: string }> {
   const roleConfig = AGENT_ROLES.find(r => r.role === task.role) || AGENT_ROLES[0];
 
   try {
-    // Mark task as running
     await supabaseAdmin.from('agent_swarm_tasks').update({
       status: 'running',
       started_at: new Date().toISOString(),
     }).eq('id', task.id);
+
+    const systemPrompt = `${CRIDERGPT_IDENTITY}\n\n${roleConfig.prompt}\n\nYou are Agent #${task.role} in a swarm of up to 18 specialized agents working together. Your specific task instructions follow. Be concise, actionable, and deliver results — not filler.`;
+
+    const userPrompt = `SWARM OBJECTIVE: ${objective}\n\nYOUR SPECIFIC TASK: ${task.prompt}${fileContext}`;
 
     const response = await fetch(AI_GATEWAY, {
       method: 'POST',
@@ -53,8 +105,8 @@ async function runAgent(
       body: JSON.stringify({
         model: task.model || 'google/gemini-3-flash-preview',
         messages: [
-          { role: 'system', content: `${roleConfig.prompt}\n\nYou are Agent #${task.role} in a swarm of up to 18 specialized agents working together. Your specific task instructions follow. Be concise, actionable, and deliver results — not filler.` },
-          { role: 'user', content: `SWARM OBJECTIVE: ${objective}\n\nYOUR SPECIFIC TASK: ${task.prompt}` },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
         ],
         max_tokens: 2000,
       }),
@@ -69,7 +121,6 @@ async function runAgent(
     const result = data.choices?.[0]?.message?.content || 'No response generated';
     const tokens = data.usage?.total_tokens || 0;
 
-    // Mark task as completed
     await supabaseAdmin.from('agent_swarm_tasks').update({
       status: 'completed',
       result,
@@ -108,7 +159,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Auth check
     const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } }
     });
@@ -118,10 +168,9 @@ serve(async (req) => {
     }
     const userId = claimsData.user.id;
 
-    // Admin client for writes
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    const { action, sessionId, objective, agents, taskUpdates } = await req.json();
+    const { action, sessionId, objective, agents, files } = await req.json();
 
     // GET ROLES
     if (action === 'get_roles') {
@@ -135,12 +184,13 @@ serve(async (req) => {
       if (!objective || !agents || !Array.isArray(agents) || agents.length === 0) {
         return new Response(JSON.stringify({ error: 'Missing objective or agents array' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-
       if (agents.length > 18) {
         return new Response(JSON.stringify({ error: 'Maximum 18 agents per swarm' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // Create session
+      // Build file context string once for all agents
+      const fileContext = buildFileContext(files);
+
       const { data: session, error: sessionError } = await supabaseAdmin
         .from('agent_swarm_sessions')
         .insert({
@@ -156,7 +206,6 @@ serve(async (req) => {
 
       if (sessionError) throw sessionError;
 
-      // Create task records
       const taskInserts = agents.map((agent: any, index: number) => ({
         session_id: session.id,
         user_id: userId,
@@ -175,22 +224,19 @@ serve(async (req) => {
 
       if (tasksError) throw tasksError;
 
-      // Run all agents in parallel
       const results = await Promise.allSettled(
-        tasks.map((task: any) => runAgent(LOVABLE_API_KEY, task, objective, supabaseAdmin))
+        tasks.map((task: any) => runAgent(LOVABLE_API_KEY, task, objective, fileContext, supabaseAdmin))
       );
 
       const completedCount = results.filter(r => r.status === 'fulfilled' && !(r as any).value.error).length;
       const failedCount = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && (r as any).value.error)).length;
 
-      // Update session
       await supabaseAdmin.from('agent_swarm_sessions').update({
         status: failedCount === agents.length ? 'failed' : 'completed',
         active_agents: 0,
         completed_agents: completedCount,
       }).eq('id', session.id);
 
-      // Fetch final tasks
       const { data: finalTasks } = await supabaseAdmin
         .from('agent_swarm_tasks')
         .select('*')

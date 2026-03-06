@@ -595,6 +595,57 @@ serve(async (req) => {
       }
     }
 
+    // Fetch user's livestock data if message mentions animals/livestock/herd
+    let livestockContext = '';
+    if (userId && message) {
+      const lowerMsg = message.toLowerCase();
+      const livestockKeywords = ['animal', 'livestock', 'herd', 'cattle', 'cow', 'calf', 'calves', 'steer', 'heifer', 'bull', 'pig', 'sheep', 'goat', 'chicken', 'horse', 'tag', 'weigh', 'health', 'vaccine', 'vet', 'bessie', 'feed', 'breed'];
+      const isLivestockQuery = livestockKeywords.some(kw => lowerMsg.includes(kw));
+      
+      if (isLivestockQuery) {
+        console.log('Livestock query detected, fetching user herd data...');
+        const { data: animalsData } = await supabase
+          .from('livestock_animals')
+          .select('name, animal_id, species, breed, sex, status, tag_id, birth_date, color_markings, notes, created_at')
+          .eq('owner_id', userId)
+          .eq('status', 'active')
+          .limit(50);
+
+        if (animalsData && animalsData.length > 0) {
+          livestockContext = '\n\n🐄 USER\'S HERD DATA (from their Livestock Smart ID):\n';
+          livestockContext += animalsData.map(a => 
+            `• ${a.name || a.animal_id} — ${a.species}${a.breed ? ` (${a.breed})` : ''}, ${a.sex || 'unknown sex'}, Tag: ${a.tag_id || 'none'}${a.birth_date ? `, Born: ${a.birth_date}` : ''}${a.notes ? ` | Notes: ${a.notes}` : ''}`
+          ).join('\n');
+          livestockContext += `\n\nTotal active animals: ${animalsData.length}`;
+          
+          // If asking about a specific animal, fetch its health records
+          const specificAnimal = animalsData.find(a => 
+            lowerMsg.includes((a.name || '').toLowerCase()) || 
+            lowerMsg.includes((a.tag_id || '').toLowerCase()) ||
+            lowerMsg.includes((a.animal_id || '').toLowerCase())
+          );
+          
+          if (specificAnimal) {
+            const { data: healthData } = await supabase
+              .from('livestock_health_records')
+              .select('title, record_type, description, medication, recorded_at')
+              .eq('animal_id', specificAnimal.animal_id)
+              .order('recorded_at', { ascending: false })
+              .limit(10);
+            
+            if (healthData && healthData.length > 0) {
+              livestockContext += `\n\nHealth records for ${specificAnimal.name || specificAnimal.animal_id}:\n`;
+              livestockContext += healthData.map(h => 
+                `• ${h.recorded_at}: ${h.title} (${h.record_type})${h.medication ? ` — Meds: ${h.medication}` : ''}${h.description ? ` — ${h.description}` : ''}`
+              ).join('\n');
+            }
+          }
+          
+          console.log('Loaded livestock context for', animalsData.length, 'animals');
+        }
+      }
+    }
+
     // Get user plan and daily message limits
     let userPlan = 'free';
     let messageLimit = MESSAGE_LIMITS.free;
@@ -656,7 +707,7 @@ serve(async (req) => {
     }
 
     // Build messages array
-    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext);
+    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext;
     
     const messages: any[] = [
       { role: 'system', content: systemPrompt }
