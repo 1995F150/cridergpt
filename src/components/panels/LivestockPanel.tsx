@@ -25,6 +25,7 @@ export function LivestockPanel() {
   const [speciesFilter, setSpeciesFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('herd');
   const [prefillTagId, setPrefillTagId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   if (!user) {
     return (
@@ -62,6 +63,28 @@ export function LivestockPanel() {
     );
   }
 
+  // Show AddAnimalForm only when triggered from scan
+  if (showAddForm && prefillTagId) {
+    return (
+      <ScrollArea className="h-full">
+        <div className="max-w-2xl mx-auto p-4 space-y-4">
+          <Button variant="outline" onClick={() => { setShowAddForm(false); setPrefillTagId(null); setActiveTab('scan'); }}>
+            ← Back to Scanner
+          </Button>
+          <AddAnimalForm
+            onSubmit={addAnimal}
+            prefillTagId={prefillTagId}
+            onSuccess={() => {
+              setPrefillTagId(null);
+              setShowAddForm(false);
+              setActiveTab('herd');
+            }}
+          />
+        </div>
+      </ScrollArea>
+    );
+  }
+
   const filtered = animals.filter(a => {
     const q = search.toLowerCase();
     const matchesSearch = !search || 
@@ -87,16 +110,15 @@ export function LivestockPanel() {
               🐮 Livestock Smart ID
             </h1>
             <p className="text-sm text-muted-foreground">
-              {animals.length} animal{animals.length !== 1 ? 's' : ''} registered
+              {animals.length} animal{animals.length !== 1 ? 's' : ''} registered · Scan a tag to add new animals
             </p>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 h-12">
+          <TabsList className="grid w-full grid-cols-3 h-12">
             <TabsTrigger value="herd" className="text-xs sm:text-sm">🐄 Herd</TabsTrigger>
             <TabsTrigger value="scan" className="text-xs sm:text-sm">📡 Scan</TabsTrigger>
-            <TabsTrigger value="add" className="text-xs sm:text-sm">➕ Add</TabsTrigger>
             <TabsTrigger value="stats" className="text-xs sm:text-sm">📊 Stats</TabsTrigger>
           </TabsList>
 
@@ -134,8 +156,11 @@ export function LivestockPanel() {
                     {animals.length === 0 ? 'No Animals Yet' : 'No matches found'}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {animals.length === 0 ? 'Register your first animal to get started!' : 'Try a different search term.'}
+                    {animals.length === 0 ? 'Scan a tag to register your first animal!' : 'Try a different search term.'}
                   </p>
+                  {animals.length === 0 && (
+                    <Button onClick={() => setActiveTab('scan')}>📡 Go to Scanner</Button>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -152,18 +177,7 @@ export function LivestockPanel() {
               onTagScanned={scanCard}
               onRegisterAnimal={(tagId) => {
                 setPrefillTagId(tagId);
-                setActiveTab('add');
-              }}
-            />
-          </TabsContent>
-
-          <TabsContent value="add">
-            <AddAnimalForm
-              onSubmit={addAnimal}
-              prefillTagId={prefillTagId}
-              onSuccess={() => {
-                setPrefillTagId(null);
-                setActiveTab('herd');
+                setShowAddForm(true);
               }}
             />
           </TabsContent>
