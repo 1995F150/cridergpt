@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, Bot } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, Bot, Brain } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
@@ -20,6 +20,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { APIGeneration } from '@/components/admin/APIGeneration';
 import { AgentScripts } from '@/components/admin/AgentScripts';
+import { LearningDashboard } from '@/components/admin/LearningDashboard';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
@@ -182,6 +183,13 @@ export function AdminPanel() {
             Agent Scripts
           </TabsTrigger>
           <TabsTrigger 
+            value="learning" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Brain className="h-4 w-4" />
+            Learning
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
@@ -262,6 +270,10 @@ export function AdminPanel() {
 
         <TabsContent value="agent">
           <AgentScripts />
+        </TabsContent>
+
+        <TabsContent value="learning">
+          <LearningDashboard />
         </TabsContent>
       </Tabs>
     </div>
