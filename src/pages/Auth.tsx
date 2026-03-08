@@ -285,6 +285,9 @@ export default function Auth() {
           </div>
           
           <GoogleSignInButton />
+          <GitHubSignInButton />
+          <TwitterSignInButton />
+          <SpotifySignInButton />
           <SnapchatSignInButton />
           
           <div className="text-center">
