@@ -31,6 +31,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CameraSystem } from "@/components/CameraSystem";
 import { CallModeInterface } from "@/components/CallModeInterface";
 import { useToast } from "@/hooks/use-toast";
