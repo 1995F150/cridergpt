@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { APIGeneration } from '@/components/admin/APIGeneration';
 import { AgentScripts } from '@/components/admin/AgentScripts';
 import { LearningDashboard } from '@/components/admin/LearningDashboard';
+import { AndroidBuildSystem } from '@/components/admin/AndroidBuildSystem';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
