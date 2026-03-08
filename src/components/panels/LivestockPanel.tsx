@@ -21,7 +21,6 @@ export function LivestockPanel() {
     selectAnimal, setSelectedAnimal, scanCard,
   } = useLivestock();
   
-  const [search, setSearch] = useState('');
   const [speciesFilter, setSpeciesFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('herd');
   const [prefillTagId, setPrefillTagId] = useState<string | null>(null);
