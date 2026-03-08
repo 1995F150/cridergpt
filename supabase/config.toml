@@ -44,3 +44,9 @@ verify_jwt = false
 
 [functions.snapchat-auth]
 verify_jwt = false
+
+[functions.tiktok-auth]
+verify_jwt = false
+
+[functions.tiktok-post-video]
+verify_jwt = false
