@@ -723,7 +723,7 @@ serve(async (req) => {
     }
 
     // Build messages array
-    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext;
+    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext;
     
     const messages: any[] = [
       { role: 'system', content: systemPrompt }
