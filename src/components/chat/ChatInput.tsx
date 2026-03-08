@@ -79,6 +79,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 
 export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
   const [message, setMessage] = useState("");
+  const [agentMode, setAgentMode] = useState(false);
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [processingPaste, setProcessingPaste] = useState(false);

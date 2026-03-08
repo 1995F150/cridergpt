@@ -53,6 +53,7 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
   placeholder = "Message CriderGPT..."
 }) => {
   const [message, setMessage] = useState('');
+  const [agentMode, setAgentMode] = useState(false);
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCallMode, setShowCallMode] = useState(false);
