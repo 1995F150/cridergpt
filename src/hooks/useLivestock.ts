@@ -314,34 +314,24 @@ export function useLivestock() {
   const scanCard = async (tagId: string) => {
     if (!user) return null;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error('Please sign in'); return null; }
+      const { data: result, error: invokeError } = await supabase.functions.invoke('scan-card', {
+        body: { tag_id: tagId },
+      });
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/scan-card`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ tag_id: tagId }),
-        }
-      );
-
-      const result = await res.json();
+      if (invokeError) {
+        toast.error(invokeError.message || 'Scan failed');
+        return { error: invokeError.message, status: 500 };
+      }
 
       // Handle unregistered pool tag
-      if (result.status === 'unregistered') {
+      if (result?.status === 'unregistered') {
         toast.info('Tag recognized! Ready to register a new animal.');
         return result;
       }
 
-      if (!res.ok) {
-        const msg = result.error || 'Scan failed';
-        toast.error(msg);
-        return { error: msg, status: res.status };
+      if (result?.error) {
+        toast.error(result.error);
+        return { error: result.error };
       }
 
       if (result.animal) {

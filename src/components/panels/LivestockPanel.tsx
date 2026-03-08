@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search } from 'lucide-react';
+
 import { useLivestock } from '@/hooks/useLivestock';
 import { AnimalCard } from '@/components/livestock/AnimalCard';
 import { AnimalProfile } from '@/components/livestock/AnimalProfile';
@@ -21,7 +21,6 @@ export function LivestockPanel() {
     selectAnimal, setSelectedAnimal, scanCard,
   } = useLivestock();
   
-  const [search, setSearch] = useState('');
   const [speciesFilter, setSpeciesFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('herd');
   const [prefillTagId, setPrefillTagId] = useState<string | null>(null);
@@ -86,14 +85,7 @@ export function LivestockPanel() {
   }
 
   const filtered = animals.filter(a => {
-    const q = search.toLowerCase();
-    const matchesSearch = !search || 
-      a.name?.toLowerCase().includes(q) ||
-      a.animal_id.toLowerCase().includes(q) ||
-      a.breed?.toLowerCase().includes(q) ||
-      a.tag_id?.toLowerCase().includes(q);
-    const matchesSpecies = speciesFilter === 'all' || a.species === speciesFilter;
-    return matchesSearch && matchesSpecies;
+    return speciesFilter === 'all' || a.species === speciesFilter;
   });
 
   const speciesCounts = animals.reduce((acc, a) => {
@@ -123,18 +115,6 @@ export function LivestockPanel() {
           </TabsList>
 
           <TabsContent value="herd" className="space-y-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, ID, breed, or tag..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="pl-9 h-11"
-                />
-              </div>
-            </div>
-
             <div className="flex gap-2 flex-wrap">
               <Button variant={speciesFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setSpeciesFilter('all')}>
                 All ({animals.length})

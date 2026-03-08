@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 
 export function AdsterraBanner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoaded = useRef(false);
+  const { plan, isActive } = useSubscriptionStatus();
 
   useEffect(() => {
-    if (scriptLoaded.current || !containerRef.current) return;
+    if (scriptLoaded.current || !containerRef.current || isActive) return;
     scriptLoaded.current = true;
 
     const script = document.createElement('script');
@@ -18,7 +20,10 @@ export function AdsterraBanner() {
     return () => {
       script.remove();
     };
-  }, []);
+  }, [isActive]);
+
+  // Hide ads for paid users (plus, pro, lifetime)
+  if (isActive) return null;
 
   return (
     <div className="w-full flex justify-center py-1 bg-background">
