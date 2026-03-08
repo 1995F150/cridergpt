@@ -10,6 +10,9 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import SnapchatSignInButton from '@/components/SnapchatSignInButton';
+import GitHubSignInButton from '@/components/GitHubSignInButton';
+import TwitterSignInButton from '@/components/TwitterSignInButton';
+import SpotifySignInButton from '@/components/SpotifySignInButton';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function Auth() {
