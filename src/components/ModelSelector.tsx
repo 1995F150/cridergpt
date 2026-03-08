@@ -7,14 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Lock, Zap, Brain, Sparkles, Settings } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 
 interface ModelOption {
   id: string;
   name: string;
   description: string;
   icon: React.ComponentType<any>;
-  requiredPlan: 'free' | 'plu' | 'pro';
+  requiredPlan: 'free' | 'plus' | 'pro';
   speed: 'fast' | 'medium' | 'slow';
   capability: 'basic' | 'advanced' | 'premium';
 }
