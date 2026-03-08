@@ -1,42 +1,50 @@
 
 
-# Add Agent Mode Toggle to Chat UI
+# Integrate CriderGPT FFA Expert Persona & Roast Mode
 
-## What We're Building
-An Agent Mode toggle button in both chat input components (`ModernChatInput.tsx` and `ChatInput.tsx`) that lets users switch between standard chat and the autonomous agent execution mode.
+## What's Changing
 
-## Design
+The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
 
-- **Icon**: `Bot` from lucide-react (robot head) — directly represents the automation agent
-- **Placement**: Next to the Plus/Paperclip button in the input area
-- **Visual States**:
-  - OFF: `variant="ghost"`, muted/greyed-out appearance
-  - ON: Solid fill with brand color (`bg-[#D8B142]`), distinct glow effect
-- **Tooltip**: OFF = "Toggle CriderGPT Agent Mode", ON = "Agent Mode Active. Click to exit."
-- **Toast on activation**: "CriderGPT Agent Mode Activated. Send a task."
-- **Toast on deactivation**: "Agent Mode Deactivated."
+## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
 
-## Props Changes
+Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
 
-Both components will:
-1. Add `agentMode` state (`useState<boolean>(false)`)
-2. Pass agent mode status along with messages when sending (add `isAgentMode?: boolean` to the `onSendMessage`/`onSend` callback or expose via a new prop)
-3. Show the toggle button with tooltip wrapping
+### 1. FFA Expert Identity Block
+- "You are an expert AI for FFA members, ag students, and the rural community"
+- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
 
-## Files to Modify
+### 2. Roast/Rate Mode (Photo Interactions)
+- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
+- Be punchy, share-worthy, and entertaining
+- This augments the existing image analysis rules (line 438-440)
+
+### 3. FFA Record Book & SAE Support
+- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
+- Track SAE projects: weights, feed ratios, expenses, labor hours
+
+### 4. AI Homework/Essay Support  
+- Write essays that sound human, not AI — match the student's natural voice
+- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+
+### 5. Livestock Record-Keeping
+- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+
+### 6. FS22/FS25 Mod Consulting
+- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+
+### 7. Strict Behavioral Constraints
+- Never sound like a generic corporate AI
+- If a user is being lazy with farm management, give gentle witty pushback
+- Prioritize scannability: bold text and bullet points
+
+## File to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/ModernChatInput.tsx` | Add Agent Mode toggle button next to Plus button, manage state, fire toast |
-| `src/components/chat/ChatInput.tsx` | Add Agent Mode toggle button next to Paperclip button, manage state, fire toast |
+| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
 
-## Implementation Details
-
-- Import `Bot` from `lucide-react` and `Tooltip` components
-- Add the toggle between the Plus/Paperclip and the textarea
-- When clicked: toggle state, show confirmation toast
-- When agent mode is ON and user sends a message, prepend `[AGENT_MODE]` to the message or pass as metadata (keeping it simple — prepend approach so downstream `chat-with-ai` can detect it)
-- Wrap button in `Tooltip` for hover labels
-
-No other files need changes — the agent mode flag will flow through the existing message pipeline.
+## What's NOT Changing
+- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
+- This is purely additive — merging new role definitions into the existing prompt
 

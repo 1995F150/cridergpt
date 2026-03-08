@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { 
   Send, 
   Plus, 
@@ -11,7 +12,8 @@ import {
   Loader2,
   Sparkles,
   Video,
-  Phone
+  Phone,
+  Bot
 } from 'lucide-react';
 import { CallModeInterface } from '@/components/CallModeInterface';
 import {
@@ -21,6 +23,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,6 +54,7 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
   placeholder = "Message CriderGPT..."
 }) => {
   const [message, setMessage] = useState('');
+  const [agentMode, setAgentMode] = useState(false);
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCallMode, setShowCallMode] = useState(false);
@@ -184,11 +193,22 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
+  const toggleAgentMode = () => {
+    const next = !agentMode;
+    setAgentMode(next);
+    toast({
+      title: next ? "CriderGPT Agent Mode Activated" : "Agent Mode Deactivated",
+      description: next ? "Send a task." : undefined,
+    });
+  };
+
   const handleSend = async () => {
     if ((!message.trim() && files.length === 0) || isLoading) return;
 
+    const finalMessage = agentMode ? `[AGENT_MODE] ${message}` : message;
+
     try {
-      await onSendMessage(message, files);
+      await onSendMessage(finalMessage, files);
       setMessage('');
       setFiles([]);
     } catch (error) {
@@ -277,6 +297,31 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
         >
           <Plus className="h-5 w-5" />
         </Button>
+
+        {/* Agent Mode Toggle */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  "shrink-0 h-10 w-10 rounded-lg transition-all duration-200",
+                  agentMode
+                    ? "bg-[#D8B142] text-[#081F35] hover:bg-[#D8B142]/90 shadow-[0_0_12px_rgba(216,177,66,0.4)]"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                onClick={toggleAgentMode}
+                disabled={isLoading}
+              >
+                <Bot className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {agentMode ? "Agent Mode Active. Click to exit." : "Toggle CriderGPT Agent Mode"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Textarea */}
         <Textarea

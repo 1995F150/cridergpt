@@ -16,6 +16,7 @@ import {
   MicOff,
   Camera,
   Phone,
+  Bot,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,6 +31,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CameraSystem } from "@/components/CameraSystem";
 import { CallModeInterface } from "@/components/CallModeInterface";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +79,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 
 export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
   const [message, setMessage] = useState("");
+  const [agentMode, setAgentMode] = useState(false);
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [processingPaste, setProcessingPaste] = useState(false);
@@ -255,12 +263,22 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
     });
   }, []);
 
+  const toggleAgentMode = useCallback(() => {
+    const next = !agentMode;
+    setAgentMode(next);
+    toast({
+      title: next ? "CriderGPT Agent Mode Activated" : "Agent Mode Deactivated",
+      description: next ? "Send a task." : undefined,
+    });
+  }, [agentMode, toast]);
+
   const handleSend = useCallback(() => {
     if ((!message.trim() && files.length === 0) || isLoading) return;
-    onSend(message.trim(), files.length > 0 ? files : undefined);
+    const finalMessage = agentMode ? `[AGENT_MODE] ${message.trim()}` : message.trim();
+    onSend(finalMessage, files.length > 0 ? files : undefined);
     setMessage("");
     setFiles([]);
-  }, [message, files, isLoading, onSend]);
+  }, [message, files, isLoading, onSend, agentMode]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -416,6 +434,30 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Agent Mode Toggle */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={agentMode ? "default" : "outline"}
+                  size="icon"
+                  className={cn(
+                    "shrink-0 transition-all duration-200",
+                    agentMode
+                      ? "bg-[#D8B142] text-[#081F35] hover:bg-[#D8B142]/90 shadow-[0_0_12px_rgba(216,177,66,0.4)]"
+                      : "text-muted-foreground"
+                  )}
+                  onClick={toggleAgentMode}
+                >
+                  <Bot className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {agentMode ? "Agent Mode Active. Click to exit." : "Toggle CriderGPT Agent Mode"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <input
             ref={fileInputRef}
