@@ -1,50 +1,36 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+# Plan: Fix Ads for Paid Users, Fix Tag Scanning, Remove Search Bar
 
-## What's Changing
+## Three Issues to Fix
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+### 1. Hide Ads for Plus/Pro/Lifetime Users
+The `AdsterraBanner` component currently shows to all users regardless of plan. It needs to check the user's subscription status and hide for paid plans.
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+**Changes:**
+- Modify `src/components/AdsterraBanner.tsx` to use `useSubscriptionStatus()` hook
+- If the user's plan is `plus`, `pro`, or `lifetime`, don't render the ad banner
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+### 2. Fix Tag Scanning ("Failed to scan tag")
+The `scanCard` function in `useLivestock.ts` calls the `scan-card` edge function using `import.meta.env.VITE_SUPABASE_URL` and `import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY`. However, the Supabase client in this project uses **hardcoded** values (not env vars). These env vars are likely undefined at runtime, causing the fetch to fail silently or hit the wrong URL.
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+**Fix:**
+- Import the hardcoded URL and key from `@/integrations/supabase/client` (or re-export them), or use `supabase.functions.invoke()` instead of raw `fetch`
+- Using `supabase.functions.invoke('scan-card', { body: { tag_id: tagId } })` is the cleanest fix — it automatically handles the URL, auth headers, and apikey
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+### 3. Remove Search Bar from Herd Tab
+The user wants scan-only workflow. The search bar in the Herd tab (lines 126-136 of `LivestockPanel.tsx`) should be removed entirely. Animals are found by scanning, not searching.
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+**Changes:**
+- Remove the search `Input` and `Search` icon import from `LivestockPanel.tsx`
+- Remove the `search` state variable and filtering logic related to text search
+- Keep the species filter buttons (those are useful for browsing the herd view)
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+## Technical Details
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+**Ad hiding** uses the existing `useSubscriptionStatus` hook which returns `{ plan, isActive }`. The component will short-circuit render to `null` when `isActive` is true.
 
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+**Tag scanning fix** replaces the raw `fetch()` call with `supabase.functions.invoke()` which is the Supabase SDK's built-in method for calling edge functions. This automatically uses the correct project URL and attaches the user's session token — eliminating the env var dependency entirely.
 
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
-
-## File to Modify
-
-| File | Change |
-|------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
-
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+**Search removal** is a straightforward UI deletion from `LivestockPanel.tsx`.
 
