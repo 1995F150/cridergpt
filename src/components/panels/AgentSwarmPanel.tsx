@@ -454,8 +454,17 @@ export default function AgentSwarmPanel() {
                     {expandedTask === task.id && (
                       <div className="px-3 pb-3 border-t">
                         {task.result ? (
-                          <div className="mt-2 text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-md max-h-64 overflow-y-auto">
-                            {task.result}
+                          <div className="mt-2">
+                            <div className="text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-md max-h-64 overflow-y-auto">
+                              {task.result}
+                            </div>
+                            <div className="mt-2 flex justify-end">
+                              <ShareToSnapchat
+                                title={`CriderGPT Agent: ${task.role_label}`}
+                                content={task.result}
+                                variant="default"
+                              />
+                            </div>
                           </div>
                         ) : task.error_message ? (
                           <p className="mt-2 text-sm text-destructive">{task.error_message}</p>
