@@ -595,6 +595,22 @@ serve(async (req) => {
       }
     }
 
+    // Fetch imported conversation messages for learning context
+    let importedContext = '';
+    if (memoryEnabled) {
+      const { data: importedData } = await supabase
+        .from('imported_messages')
+        .select('role, content')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if (importedData && importedData.length > 0) {
+        importedContext = '\n\n📖 IMPORTED CONVERSATION LEARNING:\n' +
+          importedData.map(m => `[${m.role}]: ${m.content.substring(0, 200)}`).join('\n');
+        console.log('Loaded', importedData.length, 'imported messages for context');
+      }
+    }
+
     // Fetch user's livestock data if message mentions animals/livestock/herd
     let livestockContext = '';
     if (userId && message) {
