@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
+import SnapchatSignInButton from '@/components/SnapchatSignInButton';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function Auth() {
@@ -281,6 +282,7 @@ export default function Auth() {
           </div>
           
           <GoogleSignInButton />
+          <SnapchatSignInButton />
           
           <div className="text-center">
             <Button
