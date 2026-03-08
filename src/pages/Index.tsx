@@ -33,7 +33,7 @@ import { ModToolsPanel } from '@/components/panels/ModToolsPanel';
 import { ZipToExePanel } from '@/components/panels/ZipToExePanel';
 import { CodeEditorPanel } from '@/components/panels/CodeEditorPanel';
 import { Footer } from '@/components/Footer';
-import { AdsterraBanner } from '@/components/AdsterraBanner';
+
 import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 import { useAuth } from '@/contexts/AuthContext';
@@ -192,7 +192,7 @@ export default function Index() {
               {activePanel === 'agent-swarm' && <AgentSwarmPanel />}
             </div>
           </main>
-          <AdsterraBanner />
+          
           <Footer />
         </div>
         
