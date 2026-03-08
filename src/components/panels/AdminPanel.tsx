@@ -271,6 +271,10 @@ export function AdminPanel() {
         <TabsContent value="agent">
           <AgentScripts />
         </TabsContent>
+
+        <TabsContent value="learning">
+          <LearningDashboard />
+        </TabsContent>
       </Tabs>
     </div>
   );
