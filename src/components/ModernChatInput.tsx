@@ -297,6 +297,31 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
           <Plus className="h-5 w-5" />
         </Button>
 
+        {/* Agent Mode Toggle */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  "shrink-0 h-10 w-10 rounded-lg transition-all duration-200",
+                  agentMode
+                    ? "bg-[#D8B142] text-[#081F35] hover:bg-[#D8B142]/90 shadow-[0_0_12px_rgba(216,177,66,0.4)]"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                onClick={toggleAgentMode}
+                disabled={isLoading}
+              >
+                <Bot className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {agentMode ? "Agent Mode Active. Click to exit." : "Toggle CriderGPT Agent Mode"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         {/* Textarea */}
         <Textarea
           ref={textareaRef}

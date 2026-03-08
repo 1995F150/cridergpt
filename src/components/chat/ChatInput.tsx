@@ -435,6 +435,30 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Agent Mode Toggle */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={agentMode ? "default" : "outline"}
+                  size="icon"
+                  className={cn(
+                    "shrink-0 transition-all duration-200",
+                    agentMode
+                      ? "bg-[#D8B142] text-[#081F35] hover:bg-[#D8B142]/90 shadow-[0_0_12px_rgba(216,177,66,0.4)]"
+                      : "text-muted-foreground"
+                  )}
+                  onClick={toggleAgentMode}
+                >
+                  <Bot className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {agentMode ? "Agent Mode Active. Click to exit." : "Toggle CriderGPT Agent Mode"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <input
             ref={fileInputRef}
             type="file"
