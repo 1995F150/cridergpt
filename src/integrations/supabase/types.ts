@@ -499,6 +499,42 @@ export type Database = {
         }
         Relationships: []
       }
+      build_logs: {
+        Row: {
+          build_type: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          log_output: string | null
+          status: string
+          triggered_by: string | null
+          version_code: number | null
+          version_name: string | null
+        }
+        Insert: {
+          build_type?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          log_output?: string | null
+          status?: string
+          triggered_by?: string | null
+          version_code?: number | null
+          version_name?: string | null
+        }
+        Update: {
+          build_type?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          log_output?: string | null
+          status?: string
+          triggered_by?: string | null
+          version_code?: number | null
+          version_name?: string | null
+        }
+        Relationships: []
+      }
       buyers: {
         Row: {
           created_at: string | null

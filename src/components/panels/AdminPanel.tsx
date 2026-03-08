@@ -283,6 +283,10 @@ export function AdminPanel() {
         <TabsContent value="learning">
           <LearningDashboard />
         </TabsContent>
+
+        <TabsContent value="android">
+          <AndroidBuildSystem />
+        </TabsContent>
       </Tabs>
     </div>
   );

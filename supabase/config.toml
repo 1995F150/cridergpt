@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.self-learn]
 verify_jwt = false
+
+[functions.android-build]
+verify_jwt = false
