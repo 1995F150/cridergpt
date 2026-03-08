@@ -34,7 +34,7 @@ const models: ModelOption[] = [
     name: 'GPT-4o Mini',
     description: 'Balanced performance and speed',
     icon: Brain,
-    requiredPlan: 'plu',
+    requiredPlan: 'plus',
     speed: 'medium',
     capability: 'advanced'
   },
