@@ -191,6 +191,13 @@ export function AdminPanel() {
             Learning
           </TabsTrigger>
           <TabsTrigger 
+            value="android" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Smartphone className="h-4 w-4" />
+            Android Build
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
