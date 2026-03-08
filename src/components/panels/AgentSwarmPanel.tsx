@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ShareToSnapchat } from "@/components/ShareToSnapchat";
 import {
   Bot, Play, Square, History, Zap, ChevronDown, ChevronUp,
   CheckCircle2, XCircle, Loader2, Clock, Brain, Paperclip, X, FileText, Image as ImageIcon, File
