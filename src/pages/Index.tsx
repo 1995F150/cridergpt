@@ -192,7 +192,7 @@ export default function Index() {
               {activePanel === 'agent-swarm' && <AgentSwarmPanel />}
             </div>
           </main>
-          <AdsterraBanner />
+          
           <Footer />
         </div>
         
