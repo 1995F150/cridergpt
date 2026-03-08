@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.tiktok-post-video]
 verify_jwt = false
+
+[functions.self-learn]
+verify_jwt = false

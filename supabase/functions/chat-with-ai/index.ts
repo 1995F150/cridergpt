@@ -803,9 +803,30 @@ serve(async (req) => {
         .eq('id', usage.id);
     }
 
+    // Gap detection — log when AI hedges
+    const hedgePhrases = ["i'm not sure", "i don't have", "i cannot confirm", "i'm unable to verify", "i don't know enough", "beyond my knowledge"];
+    const lowerResponse = aiResponse.toLowerCase();
+    const detectedHedge = hedgePhrases.find(p => lowerResponse.includes(p));
+
+    if (detectedHedge && userId) {
+      try {
+        await supabase.from('learning_queue').insert({
+          topic: message?.substring(0, 200) || 'unknown',
+          gap_description: `AI hedged with: "${detectedHedge}" — topic may need training data`,
+          detected_from: message?.substring(0, 500),
+          user_id: userId,
+          source: 'auto',
+          priority: 5
+        });
+        console.log('Gap detected and logged:', detectedHedge);
+      } catch (gapErr) {
+        console.error('Failed to log gap:', gapErr);
+      }
+    }
+
     console.log('AI response generated successfully');
 
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       response: aiResponse,
       usage: {
         used: (usage?.messages_sent || 0) + 1,
