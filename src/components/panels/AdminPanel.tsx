@@ -20,6 +20,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { APIGeneration } from '@/components/admin/APIGeneration';
 import { AgentScripts } from '@/components/admin/AgentScripts';
+import { LearningDashboard } from '@/components/admin/LearningDashboard';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
