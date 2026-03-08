@@ -183,6 +183,13 @@ export function AdminPanel() {
             Agent Scripts
           </TabsTrigger>
           <TabsTrigger 
+            value="learning" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Brain className="h-4 w-4" />
+            Learning
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
