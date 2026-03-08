@@ -16,6 +16,7 @@ import {
   MicOff,
   Camera,
   Phone,
+  Bot,
 } from "lucide-react";
 import {
   DropdownMenu,

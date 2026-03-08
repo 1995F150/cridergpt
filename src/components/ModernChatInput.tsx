@@ -11,7 +11,8 @@ import {
   Loader2,
   Sparkles,
   Video,
-  Phone
+  Phone,
+  Bot
 } from 'lucide-react';
 import { CallModeInterface } from '@/components/CallModeInterface';
 import {
