@@ -41,14 +41,11 @@ const models = [
 export function AISettings() {
   const { toast } = useToast();
   const { selectedModel, setSelectedModel } = useModelSelection();
-  const { user } = useAuth();
+  const { plan: userPlan } = useSubscriptionStatus();
 
-  // Get user's current plan
-  const userPlan = user?.app_metadata?.plan || 'free';
-  
   const hasAccess = (requiredPlan: string) => {
-    const planHierarchy = { 'free': 0, 'plus': 1, 'pro': 2 };
-    return planHierarchy[userPlan as keyof typeof planHierarchy] >= planHierarchy[requiredPlan as keyof typeof planHierarchy];
+    const planHierarchy: Record<string, number> = { 'free': 0, 'plus': 1, 'pro': 2, 'lifetime': 3 };
+    return (planHierarchy[userPlan] ?? 0) >= (planHierarchy[requiredPlan] ?? 0);
   };
 
   const handleModelChange = (modelId: string) => {

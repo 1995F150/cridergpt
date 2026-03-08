@@ -55,15 +55,12 @@ interface ModelSelectorProps {
 }
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange }) => {
-  const { user } = useAuth();
+  const { plan: userPlan } = useSubscriptionStatus();
   const [isOpen, setIsOpen] = useState(false);
   
-  // Get user's current plan (you may need to adjust this based on your auth context)
-  const userPlan = user?.app_metadata?.plan || 'free';
-  
   const hasAccess = (requiredPlan: string) => {
-    const planHierarchy = { 'free': 0, 'plu': 1, 'pro': 2 };
-    return planHierarchy[userPlan as keyof typeof planHierarchy] >= planHierarchy[requiredPlan as keyof typeof planHierarchy];
+    const planHierarchy: Record<string, number> = { 'free': 0, 'plus': 1, 'pro': 2, 'lifetime': 3 };
+    return (planHierarchy[userPlan] ?? 0) >= (planHierarchy[requiredPlan] ?? 0);
   };
 
   const selectedModelData = models.find(model => model.id === selectedModel) || models[0];
