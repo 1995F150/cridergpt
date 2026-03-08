@@ -85,14 +85,7 @@ export function LivestockPanel() {
   }
 
   const filtered = animals.filter(a => {
-    const q = search.toLowerCase();
-    const matchesSearch = !search || 
-      a.name?.toLowerCase().includes(q) ||
-      a.animal_id.toLowerCase().includes(q) ||
-      a.breed?.toLowerCase().includes(q) ||
-      a.tag_id?.toLowerCase().includes(q);
-    const matchesSpecies = speciesFilter === 'all' || a.species === speciesFilter;
-    return matchesSearch && matchesSpecies;
+    return speciesFilter === 'all' || a.species === speciesFilter;
   });
 
   const speciesCounts = animals.reduce((acc, a) => {
