@@ -199,6 +199,13 @@ export function AdminPanel() {
             Android Build
           </TabsTrigger>
           <TabsTrigger 
+            value="imports" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <FileJson className="h-4 w-4" />
+            Imports
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
