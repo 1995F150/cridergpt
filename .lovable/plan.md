@@ -1,50 +1,106 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+# Self-Learning Pipeline: Learning Queue + Self-Learn Function + Admin Dashboard
 
-## What's Changing
+## Overview
+Build a knowledge gap detection and self-learning system with three parts: a database table to track gaps, an edge function to process them, and an admin UI to manage it all.
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+## 1. Database Migration: `learning_queue` table
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+```sql
+CREATE TABLE public.learning_queue (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  topic text NOT NULL,
+  gap_description text,
+  priority integer DEFAULT 5,
+  status text DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'learned', 'dismissed')),
+  source text DEFAULT 'auto',  -- 'auto' or 'manual'
+  learned_data text,
+  detected_from text,  -- conversation excerpt that triggered detection
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now(),
+  resolved_at timestamptz
+);
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+ALTER TABLE public.learning_queue ENABLE ROW LEVEL SECURITY;
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+-- Admin-only access via has_role
+CREATE POLICY "Admins can manage learning queue"
+  ON public.learning_queue FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+```
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+## 2. Gap Detection in `chat-with-ai/index.ts`
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+After generating the AI response (line ~774), add a lightweight check:
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+```typescript
+// Gap detection — log when AI hedges
+const hedgePhrases = ["i'm not sure", "i don't have", "i cannot confirm", "i'm unable to verify"];
+const lowerResponse = aiResponse.toLowerCase();
+const detectedHedge = hedgePhrases.find(p => lowerResponse.includes(p));
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+if (detectedHedge && userId) {
+  await supabase.from('learning_queue').insert({
+    topic: message?.substring(0, 200) || 'unknown',
+    gap_description: `AI hedged with: "${detectedHedge}" — topic may need training data`,
+    detected_from: message?.substring(0, 500),
+    user_id: userId,
+    source: 'auto',
+    priority: 5
+  });
+}
+```
 
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+This is non-blocking and only fires when the AI admits uncertainty.
 
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
+## 3. New Edge Function: `self-learn`
 
-## File to Modify
+**File:** `supabase/functions/self-learn/index.ts`
 
-| File | Change |
+- Fetches up to 20 pending items from `learning_queue`
+- For each, calls the AI gateway with a research prompt: "Provide a comprehensive, factual summary about: {topic}"
+- Stores the result in `cridergpt_training_corpus` (existing table) with category `self-learned`
+- Updates `learning_queue` status to `learned` with `resolved_at`
+- Logs actions to `system_logs`
+- Admin-only (checks `has_role` via auth header)
+- Max 20 items per invocation (safety cap)
+
+**Config:** Add `[functions.self-learn] verify_jwt = false` to `supabase/config.toml`
+
+## 4. Admin Dashboard Component: `LearningDashboard.tsx`
+
+**File:** `src/components/admin/LearningDashboard.tsx`
+
+Features:
+- Stats cards: pending count, learned count, dismissed count
+- Table of queue items with columns: topic, status, priority, created date
+- Actions per row: Dismiss, Prioritize (set priority 1), View learned data
+- "Run Learning Cycle" button that invokes the `self-learn` edge function
+- "Add Manual Gap" form to insert topics manually
+
+## 5. Wire into Admin Panel
+
+Add a new tab in `AdminPanel.tsx`:
+- Icon: `Brain` from lucide-react
+- Label: "Learning"
+- Renders `<LearningDashboard />`
+
+## Files Changed/Created
+
+| File | Action |
 |------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
+| New migration | Create `learning_queue` table + RLS |
+| `supabase/functions/chat-with-ai/index.ts` | Add gap detection after line ~774 |
+| `supabase/functions/self-learn/index.ts` | **New** edge function |
+| `supabase/config.toml` | Register `self-learn` |
+| `src/components/admin/LearningDashboard.tsx` | **New** admin component |
+| `src/components/panels/AdminPanel.tsx` | Add Learning tab |
 
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+## Safety Constraints
+- All items visible in admin panel before processing
+- Max 20 items per learning cycle
+- No external scraping — AI synthesis only
+- All actions logged to `system_logs`
+- Admin-only RLS on the table
 
