@@ -22,6 +22,7 @@ import { APIGeneration } from '@/components/admin/APIGeneration';
 import { AgentScripts } from '@/components/admin/AgentScripts';
 import { LearningDashboard } from '@/components/admin/LearningDashboard';
 import { AndroidBuildSystem } from '@/components/admin/AndroidBuildSystem';
+import { ConversationImporter } from '@/components/admin/ConversationImporter';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
