@@ -128,6 +128,9 @@ export function ProfileDropdown() {
   };
 
   const getAvatarUrl = () => {
+    // Prioritize Snapchat Bitmoji if connected
+    const snapBitmoji = localStorage.getItem('snap_bitmoji_url');
+    if (snapBitmoji) return snapBitmoji;
     return user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   };
 

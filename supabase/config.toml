@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.swarm-orchestrator]
 verify_jwt = false
+
+[functions.snapchat-auth]
+verify_jwt = false
