@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useModelSelection } from "@/hooks/useModelSelection";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { Brain, Zap, Sparkles, Lock } from "lucide-react";
 
 const models = [
