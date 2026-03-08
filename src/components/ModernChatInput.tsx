@@ -192,11 +192,22 @@ export const ModernChatInput: React.FC<ModernChatInputProps> = ({
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
+  const toggleAgentMode = () => {
+    const next = !agentMode;
+    setAgentMode(next);
+    toast({
+      title: next ? "CriderGPT Agent Mode Activated" : "Agent Mode Deactivated",
+      description: next ? "Send a task." : undefined,
+    });
+  };
+
   const handleSend = async () => {
     if ((!message.trim() && files.length === 0) || isLoading) return;
 
+    const finalMessage = agentMode ? `[AGENT_MODE] ${message}` : message;
+
     try {
-      await onSendMessage(message, files);
+      await onSendMessage(finalMessage, files);
       setMessage('');
       setFiles([]);
     } catch (error) {
