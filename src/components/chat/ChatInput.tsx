@@ -263,12 +263,22 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
     });
   }, []);
 
+  const toggleAgentMode = useCallback(() => {
+    const next = !agentMode;
+    setAgentMode(next);
+    toast({
+      title: next ? "CriderGPT Agent Mode Activated" : "Agent Mode Deactivated",
+      description: next ? "Send a task." : undefined,
+    });
+  }, [agentMode, toast]);
+
   const handleSend = useCallback(() => {
     if ((!message.trim() && files.length === 0) || isLoading) return;
-    onSend(message.trim(), files.length > 0 ? files : undefined);
+    const finalMessage = agentMode ? `[AGENT_MODE] ${message.trim()}` : message.trim();
+    onSend(finalMessage, files.length > 0 ? files : undefined);
     setMessage("");
     setFiles([]);
-  }, [message, files, isLoading, onSend]);
+  }, [message, files, isLoading, onSend, agentMode]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
