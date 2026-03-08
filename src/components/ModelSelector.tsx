@@ -7,14 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Lock, Zap, Brain, Sparkles, Settings } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 
 interface ModelOption {
   id: string;
   name: string;
   description: string;
   icon: React.ComponentType<any>;
-  requiredPlan: 'free' | 'plu' | 'pro';
+  requiredPlan: 'free' | 'plus' | 'pro';
   speed: 'fast' | 'medium' | 'slow';
   capability: 'basic' | 'advanced' | 'premium';
 }
@@ -34,7 +34,7 @@ const models: ModelOption[] = [
     name: 'GPT-4o Mini',
     description: 'Balanced performance and speed',
     icon: Brain,
-    requiredPlan: 'plu',
+    requiredPlan: 'plus',
     speed: 'medium',
     capability: 'advanced'
   },
@@ -55,15 +55,12 @@ interface ModelSelectorProps {
 }
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange }) => {
-  const { user } = useAuth();
+  const { plan: userPlan } = useSubscriptionStatus();
   const [isOpen, setIsOpen] = useState(false);
   
-  // Get user's current plan (you may need to adjust this based on your auth context)
-  const userPlan = user?.app_metadata?.plan || 'free';
-  
   const hasAccess = (requiredPlan: string) => {
-    const planHierarchy = { 'free': 0, 'plu': 1, 'pro': 2 };
-    return planHierarchy[userPlan as keyof typeof planHierarchy] >= planHierarchy[requiredPlan as keyof typeof planHierarchy];
+    const planHierarchy: Record<string, number> = { 'free': 0, 'plus': 1, 'pro': 2, 'lifetime': 3 };
+    return (planHierarchy[userPlan] ?? 0) >= (planHierarchy[requiredPlan] ?? 0);
   };
 
   const selectedModelData = models.find(model => model.id === selectedModel) || models[0];

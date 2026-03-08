@@ -837,6 +837,42 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_imports: {
+        Row: {
+          created_at: string | null
+          filename: string | null
+          id: string
+          imported_at: string | null
+          message_count: number | null
+          raw_json: Json | null
+          source: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          filename?: string | null
+          id?: string
+          imported_at?: string | null
+          message_count?: number | null
+          raw_json?: Json | null
+          source?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          filename?: string | null
+          id?: string
+          imported_at?: string | null
+          message_count?: number | null
+          raw_json?: Json | null
+          source?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cridergpt_api_keys: {
         Row: {
           active: boolean | null
@@ -1323,6 +1359,41 @@ export type Database = {
             columns: ["relationship_id"]
             isOneToOne: false
             referencedRelation: "guardian_relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imported_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          import_id: string
+          message_timestamp: string | null
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          import_id: string
+          message_timestamp?: string | null
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          import_id?: string
+          message_timestamp?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imported_messages_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_imports"
             referencedColumns: ["id"]
           },
         ]
