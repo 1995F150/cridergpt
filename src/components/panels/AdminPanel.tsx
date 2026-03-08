@@ -295,6 +295,10 @@ export function AdminPanel() {
         <TabsContent value="android">
           <AndroidBuildSystem />
         </TabsContent>
+
+        <TabsContent value="imports">
+          <ConversationImporter />
+        </TabsContent>
       </Tabs>
     </div>
   );
