@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, Bot, Brain } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, Bot, Brain, Smartphone } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { APIGeneration } from '@/components/admin/APIGeneration';
 import { AgentScripts } from '@/components/admin/AgentScripts';
 import { LearningDashboard } from '@/components/admin/LearningDashboard';
+import { AndroidBuildSystem } from '@/components/admin/AndroidBuildSystem';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
@@ -190,6 +191,13 @@ export function AdminPanel() {
             Learning
           </TabsTrigger>
           <TabsTrigger 
+            value="android" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Smartphone className="h-4 w-4" />
+            Android Build
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
@@ -274,6 +282,10 @@ export function AdminPanel() {
 
         <TabsContent value="learning">
           <LearningDashboard />
+        </TabsContent>
+
+        <TabsContent value="android">
+          <AndroidBuildSystem />
         </TabsContent>
       </Tabs>
     </div>

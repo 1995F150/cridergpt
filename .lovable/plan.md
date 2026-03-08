@@ -1,99 +1,50 @@
 
 
-# Plan: Add OAuth Sign-In Buttons + Admin Android Build System
+# Integrate CriderGPT FFA Expert Persona & Roast Mode
 
-## Summary
+## What's Changing
 
-Three deliverables:
-1. **GitHub and X (Twitter) sign-in buttons** on the Auth page (providers already configured in Supabase backend)
-2. **Spotify sign-in button** (also already configured)
-3. **Admin-only Android Build Automation panel** — an admin tool that displays build commands, triggers builds, and documents the web-to-Android pipeline
+The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
 
----
+## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
 
-## 1. New OAuth Sign-In Buttons
+Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
 
-Create three new components following the same popup pattern used by `GoogleSignInButton` and `SnapchatSignInButton`:
+### 1. FFA Expert Identity Block
+- "You are an expert AI for FFA members, ag students, and the rural community"
+- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
 
-| Component | File | OAuth Provider |
-|-----------|------|----------------|
-| `GitHubSignInButton` | `src/components/GitHubSignInButton.tsx` | `github` |
-| `TwitterSignInButton` | `src/components/TwitterSignInButton.tsx` | `twitter` |
-| `SpotifySignInButton` | `src/components/SpotifySignInButton.tsx` | `spotify` |
+### 2. Roast/Rate Mode (Photo Interactions)
+- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
+- Be punchy, share-worthy, and entertaining
+- This augments the existing image analysis rules (line 438-440)
 
-Each will:
-- Call `supabase.auth.signInWithOAuth({ provider: '...' })` with `skipBrowserRedirect: true`
-- Open a centered popup window (same as Google button pattern)
-- Poll for popup close, then check session
-- Show loading spinner while authenticating
-- Use appropriate brand icon (GitHub octocat SVG, X logo, Spotify logo)
+### 3. FFA Record Book & SAE Support
+- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
+- Track SAE projects: weights, feed ratios, expenses, labor hours
 
-**Wire into Auth page** (`src/pages/Auth.tsx`):
-- Import all three new buttons
-- Add them below the existing Google and Snapchat buttons in the "Or continue with" section
+### 4. AI Homework/Essay Support  
+- Write essays that sound human, not AI — match the student's natural voice
+- Avoid "over-polished" AI cliches while keeping ag technical accuracy
 
----
+### 5. Livestock Record-Keeping
+- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
 
-## 2. Admin Android Build System Panel
+### 6. FS22/FS25 Mod Consulting
+- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
 
-**New file:** `src/components/admin/AndroidBuildSystem.tsx`
+### 7. Strict Behavioral Constraints
+- Never sound like a generic corporate AI
+- If a user is being lazy with farm management, give gentle witty pushback
+- Prioritize scannability: bold text and bullet points
 
-An admin-only panel (added as a new tab in `AdminPanel.tsx`) that provides:
+## File to Modify
 
-- **Build Status Dashboard**: Shows last build date, current version, build status
-- **One-Click Build Commands**: Copyable command sequences for the full Capacitor build pipeline:
-  - `npm run build` → `npx cap sync android` → `npx cap run android`
-  - APK generation: `cd android && ./gradlew assembleDebug`
-  - Release build: `cd android && ./gradlew assembleRelease`
-- **Build Log Viewer**: Fetches and displays build logs from a `build_logs` table
-- **Trigger Build** button: Invokes a new `android-build` edge function that logs the build request and stores status
-- **Version Manager**: Input field to set the next version code/name
-
-**New edge function:** `supabase/functions/android-build/index.ts`
-- Accepts build requests from admin
-- Logs build commands and status to a `build_logs` table
-- Returns build instructions and status
-- Admin-only (validates role via auth header)
-
-**New migration:** Create `build_logs` table:
-```sql
-CREATE TABLE public.build_logs (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  triggered_by uuid REFERENCES auth.users(id),
-  build_type text DEFAULT 'debug', -- 'debug' or 'release'
-  version_name text,
-  version_code integer,
-  status text DEFAULT 'requested',
-  log_output text,
-  created_at timestamptz DEFAULT now(),
-  completed_at timestamptz
-);
--- RLS: admin only via has_role
-```
-
-**Wire into AdminPanel.tsx:**
-- New tab with `Smartphone` icon, label "Android Build"
-- Renders `<AndroidBuildSystem />`
-
----
-
-## Files Changed/Created
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/components/GitHubSignInButton.tsx` | **New** |
-| `src/components/TwitterSignInButton.tsx` | **New** |
-| `src/components/SpotifySignInButton.tsx` | **New** |
-| `src/pages/Auth.tsx` | Add 3 new sign-in buttons |
-| `src/components/admin/AndroidBuildSystem.tsx` | **New** admin panel |
-| `src/components/panels/AdminPanel.tsx` | Add Android Build tab |
-| `supabase/functions/android-build/index.ts` | **New** edge function |
-| `supabase/config.toml` | Register `android-build` |
-| New migration | Create `build_logs` table + RLS |
+| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
 
-## Note on Spotify
-Spotify OAuth works on web only (no native Capacitor support). The button will use the same popup flow. This is fine since you mentioned not worrying about it on mobile.
-
-## Note on Play Store Billing
-The Google Play billing integration (for in-app purchases) is a separate concern from authentication. This plan does not address Play Store billing — that would require the Google Play Billing Library integration in the Android native layer, which is a much larger task we can plan separately.
+## What's NOT Changing
+- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
+- This is purely additive — merging new role definitions into the existing prompt
 
