@@ -1291,6 +1291,48 @@ export type Database = {
           },
         ]
       }
+      learning_queue: {
+        Row: {
+          created_at: string | null
+          detected_from: string | null
+          gap_description: string | null
+          id: string
+          learned_data: string | null
+          priority: number | null
+          resolved_at: string | null
+          source: string | null
+          status: string | null
+          topic: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          detected_from?: string | null
+          gap_description?: string | null
+          id?: string
+          learned_data?: string | null
+          priority?: number | null
+          resolved_at?: string | null
+          source?: string | null
+          status?: string | null
+          topic: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          detected_from?: string | null
+          gap_description?: string | null
+          id?: string
+          learned_data?: string | null
+          priority?: number | null
+          resolved_at?: string | null
+          source?: string | null
+          status?: string | null
+          topic?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       lifetime_plan_config: {
         Row: {
           created_at: string | null
