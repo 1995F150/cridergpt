@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.android-build]
 verify_jwt = false
+
+[functions.agi-chat]
+verify_jwt = false
