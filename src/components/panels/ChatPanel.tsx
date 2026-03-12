@@ -720,8 +720,13 @@ Make it detailed and actionable.`;
                 />
               ))}
               
-              {/* Streaming indicator */}
-              {isStreaming && (
+              {/* AGI Thinking Steps */}
+              {isAGIMode && (agiToolSteps.length > 0 || isStreaming) && (
+                <ThinkingSteps steps={agiToolSteps} isThinking={isStreaming} />
+              )}
+
+              {/* Streaming indicator (non-AGI) */}
+              {isStreaming && !isAGIMode && (
                 <div className="flex items-center gap-3 py-4 px-2 md:px-4">
                   <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center overflow-hidden">
                     <img 
