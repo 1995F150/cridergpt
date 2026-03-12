@@ -95,6 +95,8 @@ export default function ChatPanel() {
   const [streamingMessage, setStreamingMessage] = useState<string>("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [apiKeywords, setApiKeywords] = useState<{ keyword: string; action: string }[]>([]);
+  const [agiToolSteps, setAgiToolSteps] = useState<ThinkingStep[]>([]);
+  const { isAGIMode, toggleAGIMode } = useAGIMode();
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const isLoading = isChatLoading || isAILoading || isStreaming;
