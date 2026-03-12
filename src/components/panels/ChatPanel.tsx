@@ -376,6 +376,64 @@ Make it detailed and actionable.`;
           setIsStreaming(false);
           setStreamingMessage("");
         }
+      } else if (isAGIMode && user) {
+        // ========== AGI MODE ==========
+        setIsStreaming(true);
+        setStreamingMessage("🧠 AGI Mode — reasoning...");
+        setAgiToolSteps([]);
+
+        try {
+          const conversationHistory = messages.map(m => ({
+            role: m.role,
+            content: m.content
+          }));
+
+          const { data, error } = await supabase.functions.invoke('agi-chat', {
+            body: {
+              message,
+              conversation_history: conversationHistory,
+              image_url: imageUrl,
+              user_id: user.id,
+              user_email: user.email,
+            }
+          });
+
+          if (error) throw error;
+
+          if (data?.error) {
+            throw new Error(data.error);
+          }
+
+          // Show tool steps
+          if (data?.tool_steps?.length) {
+            setAgiToolSteps(data.tool_steps);
+          }
+
+          const response = data?.response || "I couldn't generate a response. Please try again.";
+          await sendMessage(convId, response, "assistant");
+
+          // Send browser notification if user is not on the page
+          if (document.hidden && canSendNotifications) {
+            sendAIResponseNotification(response);
+          }
+
+          // Auto-rename conversation
+          if (messages.length === 0 && message.length > 0) {
+            const title = message.length > 40 ? message.substring(0, 40) + "..." : message;
+            await updateConversationTitle(convId, title);
+          }
+        } catch (error: any) {
+          console.error("AGI response error:", error);
+          toast({
+            title: "AGI Error",
+            description: error.message || "Failed to get AGI response.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsStreaming(false);
+          setStreamingMessage("");
+          setTimeout(() => setAgiToolSteps([]), 3000);
+        }
       } else {
         // Regular AI response with streaming
         setIsStreaming(true);
