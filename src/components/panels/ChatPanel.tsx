@@ -34,6 +34,8 @@ import { PatternMemoryBadge } from "@/components/chat/PatternMemoryBadge";
 import ModelSelector from "@/components/ModelSelector";
 import { generateChatPDF, isPDFRequest } from "@/utils/chatPdfGenerator";
 import { cn } from "@/lib/utils";
+import { useAGIMode } from "@/hooks/useAGIMode";
+import { ThinkingSteps, type ThinkingStep } from "@/components/chat/ThinkingSteps";
 
 interface FilePreview {
   id: string;
