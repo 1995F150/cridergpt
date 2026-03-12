@@ -9,6 +9,7 @@ import {
   Loader2,
   Sparkles,
   History,
+  Brain,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat, type ChatMessage as ChatMessageType } from "@/hooks/useChat";
