@@ -9,6 +9,7 @@ import {
   Loader2,
   Sparkles,
   History,
+  Brain,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat, type ChatMessage as ChatMessageType } from "@/hooks/useChat";
@@ -33,6 +34,8 @@ import { PatternMemoryBadge } from "@/components/chat/PatternMemoryBadge";
 import ModelSelector from "@/components/ModelSelector";
 import { generateChatPDF, isPDFRequest } from "@/utils/chatPdfGenerator";
 import { cn } from "@/lib/utils";
+import { useAGIMode } from "@/hooks/useAGIMode";
+import { ThinkingSteps, type ThinkingStep } from "@/components/chat/ThinkingSteps";
 
 interface FilePreview {
   id: string;
@@ -92,6 +95,8 @@ export default function ChatPanel() {
   const [streamingMessage, setStreamingMessage] = useState<string>("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [apiKeywords, setApiKeywords] = useState<{ keyword: string; action: string }[]>([]);
+  const [agiToolSteps, setAgiToolSteps] = useState<ThinkingStep[]>([]);
+  const { isAGIMode, toggleAGIMode } = useAGIMode();
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const isLoading = isChatLoading || isAILoading || isStreaming;
@@ -371,6 +376,64 @@ Make it detailed and actionable.`;
           setIsStreaming(false);
           setStreamingMessage("");
         }
+      } else if (isAGIMode && user) {
+        // ========== AGI MODE ==========
+        setIsStreaming(true);
+        setStreamingMessage("🧠 AGI Mode — reasoning...");
+        setAgiToolSteps([]);
+
+        try {
+          const conversationHistory = messages.map(m => ({
+            role: m.role,
+            content: m.content
+          }));
+
+          const { data, error } = await supabase.functions.invoke('agi-chat', {
+            body: {
+              message,
+              conversation_history: conversationHistory,
+              image_url: imageUrl,
+              user_id: user.id,
+              user_email: user.email,
+            }
+          });
+
+          if (error) throw error;
+
+          if (data?.error) {
+            throw new Error(data.error);
+          }
+
+          // Show tool steps
+          if (data?.tool_steps?.length) {
+            setAgiToolSteps(data.tool_steps);
+          }
+
+          const response = data?.response || "I couldn't generate a response. Please try again.";
+          await sendMessage(convId, response, "assistant");
+
+          // Send browser notification if user is not on the page
+          if (document.hidden && canSendNotifications) {
+            sendAIResponseNotification(response);
+          }
+
+          // Auto-rename conversation
+          if (messages.length === 0 && message.length > 0) {
+            const title = message.length > 40 ? message.substring(0, 40) + "..." : message;
+            await updateConversationTitle(convId, title);
+          }
+        } catch (error: any) {
+          console.error("AGI response error:", error);
+          toast({
+            title: "AGI Error",
+            description: error.message || "Failed to get AGI response.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsStreaming(false);
+          setStreamingMessage("");
+          setTimeout(() => setAgiToolSteps([]), 3000);
+        }
       } else {
         // Regular AI response with streaming
         setIsStreaming(true);
@@ -555,6 +618,20 @@ Make it detailed and actionable.`;
 
           <div className="flex items-center gap-2">
             <PatternMemoryBadge className="hidden sm:flex" />
+            {user && (
+              <Button
+                variant={isAGIMode ? "default" : "outline"}
+                size="sm"
+                onClick={toggleAGIMode}
+                className={cn(
+                  "gap-1 text-xs",
+                  isAGIMode && "bg-primary text-primary-foreground"
+                )}
+              >
+                <Brain className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">AGI</span>
+              </Button>
+            )}
             <ModelSelector
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
@@ -643,8 +720,13 @@ Make it detailed and actionable.`;
                 />
               ))}
               
-              {/* Streaming indicator */}
-              {isStreaming && (
+              {/* AGI Thinking Steps */}
+              {isAGIMode && (agiToolSteps.length > 0 || isStreaming) && (
+                <ThinkingSteps steps={agiToolSteps} isThinking={isStreaming} />
+              )}
+
+              {/* Streaming indicator (non-AGI) */}
+              {isStreaming && !isAGIMode && (
                 <div className="flex items-center gap-3 py-4 px-2 md:px-4">
                   <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center overflow-hidden">
                     <img 
