@@ -618,6 +618,20 @@ Make it detailed and actionable.`;
 
           <div className="flex items-center gap-2">
             <PatternMemoryBadge className="hidden sm:flex" />
+            {user && (
+              <Button
+                variant={isAGIMode ? "default" : "outline"}
+                size="sm"
+                onClick={toggleAGIMode}
+                className={cn(
+                  "gap-1 text-xs",
+                  isAGIMode && "bg-primary text-primary-foreground"
+                )}
+              >
+                <Brain className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">AGI</span>
+              </Button>
+            )}
             <ModelSelector
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
