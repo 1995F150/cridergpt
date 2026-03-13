@@ -1964,6 +1964,74 @@ export type Database = {
         }
         Relationships: []
       }
+      music_tracks: {
+        Row: {
+          audio_url: string | null
+          bpm: number | null
+          created_at: string
+          duration_seconds: number | null
+          error_message: string | null
+          genre: string | null
+          id: string
+          metadata: Json | null
+          mood: string | null
+          prompt: string | null
+          source_audio_url: string | null
+          status: string
+          title: string
+          track_type: string
+          updated_at: string
+          user_id: string
+          voice_profile_id: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          bpm?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          genre?: string | null
+          id?: string
+          metadata?: Json | null
+          mood?: string | null
+          prompt?: string | null
+          source_audio_url?: string | null
+          status?: string
+          title?: string
+          track_type?: string
+          updated_at?: string
+          user_id: string
+          voice_profile_id?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          bpm?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          genre?: string | null
+          id?: string
+          metadata?: Json | null
+          mood?: string | null
+          prompt?: string | null
+          source_audio_url?: string | null
+          status?: string
+          title?: string
+          track_type?: string
+          updated_at?: string
+          user_id?: string
+          voice_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_tracks_voice_profile_id_fkey"
+            columns: ["voice_profile_id"]
+            isOneToOne: false
+            referencedRelation: "voice_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string | null
