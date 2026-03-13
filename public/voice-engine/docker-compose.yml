@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  voice-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cridergpt-voice-engine
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persist voice samples and generated music between restarts
+      - voice-samples:/app/voice-samples
+      - music-output:/app/music-output
+      # Persist downloaded models so they don't re-download every restart
+      - model-cache:/root/.local/share
+      - huggingface-cache:/root/.cache/huggingface
+    environment:
+      - DEVICE=cuda
+      - PORT=5000
+      - VOICE_SAMPLES_DIR=/app/voice-samples
+      - MUSIC_OUTPUT_DIR=/app/music-output
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  voice-samples:
+  music-output:
+  model-cache:
+  huggingface-cache:
