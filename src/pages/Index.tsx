@@ -44,6 +44,7 @@ import { GuardianPanel } from '@/components/panels/GuardianPanel';
 import { LivestockPanel } from '@/components/panels/LivestockPanel';
 import { ReceiptPanel } from '@/components/panels/ReceiptPanel';
 import AgentSwarmPanel from '@/components/panels/AgentSwarmPanel';
+import { VoiceStudioPanel } from '@/components/panels/VoiceStudioPanel';
 
 export type PanelType = 
   | 'chat' 
