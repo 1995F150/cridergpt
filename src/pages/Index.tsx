@@ -192,6 +192,7 @@ export default function Index() {
               {activePanel === 'livestock' && <LivestockPanel />}
               {activePanel === 'receipts' && <ReceiptPanel />}
               {activePanel === 'agent-swarm' && <AgentSwarmPanel />}
+              {activePanel === 'voice-studio' && <VoiceStudioPanel />}
             </div>
           </main>
           
