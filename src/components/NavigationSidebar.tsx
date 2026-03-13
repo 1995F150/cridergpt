@@ -33,7 +33,8 @@ import {
   ShieldCheck,
   Beef,
   Receipt,
-  Brain
+  Brain,
+  AudioLines
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
