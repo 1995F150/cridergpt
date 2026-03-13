@@ -44,6 +44,7 @@ import { GuardianPanel } from '@/components/panels/GuardianPanel';
 import { LivestockPanel } from '@/components/panels/LivestockPanel';
 import { ReceiptPanel } from '@/components/panels/ReceiptPanel';
 import AgentSwarmPanel from '@/components/panels/AgentSwarmPanel';
+import { VoiceStudioPanel } from '@/components/panels/VoiceStudioPanel';
 
 export type PanelType = 
   | 'chat' 
@@ -77,7 +78,8 @@ export type PanelType =
   | 'guardian'
   | 'livestock'
   | 'receipts'
-  | 'agent-swarm';
+  | 'agent-swarm'
+  | 'voice-studio';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -190,6 +192,7 @@ export default function Index() {
               {activePanel === 'livestock' && <LivestockPanel />}
               {activePanel === 'receipts' && <ReceiptPanel />}
               {activePanel === 'agent-swarm' && <AgentSwarmPanel />}
+              {activePanel === 'voice-studio' && <VoiceStudioPanel />}
             </div>
           </main>
           

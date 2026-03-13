@@ -3298,6 +3298,51 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_profiles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          metadata: Json | null
+          name: string
+          sample_duration_seconds: number | null
+          sample_path: string | null
+          sample_url: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          metadata?: Json | null
+          name: string
+          sample_duration_seconds?: number | null
+          sample_path?: string | null
+          sample_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          metadata?: Json | null
+          name?: string
+          sample_duration_seconds?: number | null
+          sample_path?: string | null
+          sample_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       writing_samples: {
         Row: {
           category: string | null
