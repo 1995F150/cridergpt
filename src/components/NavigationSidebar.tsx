@@ -76,6 +76,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'livestock', label: 'Livestock ID', icon: Beef },
       { id: 'receipts', label: 'Receipts', icon: Receipt },
       { id: 'agent-swarm', label: 'Agent Swarm', icon: Brain },
+      { id: 'voice-studio', label: 'Voice Studio', icon: AudioLines },
       { id: 'ffa', label: 'FFA Center', icon: Wheat },
       { id: 'calendar', label: 'Calendar', icon: Calendar },
       { id: 'calculators', label: 'Calculators', icon: Calculator },
