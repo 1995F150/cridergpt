@@ -97,10 +97,45 @@ export function useCallMode() {
     }
   };
 
-  // Text-to-speech for AI responses
-  const speakResponse = (text: string) => {
+  // Text-to-speech for AI responses — uses cloned voice engine when available
+  const speakResponse = async (text: string) => {
+    // Try cloned voice engine first
+    try {
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { text }
+      });
+
+      if (!error && data?.audioContent) {
+        // Pause mic while AI speaks
+        if (recognitionRef.current) {
+          recognitionRef.current.stop();
+        }
+
+        const audioBlob = new Blob(
+          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
+          { type: 'audio/mpeg' }
+        );
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.volume = volume;
+
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          // Resume mic after AI finishes speaking
+          if (recognitionRef.current && isCallActive && !isMuted) {
+            recognitionRef.current.start();
+          }
+        };
+
+        audio.play();
+        return;
+      }
+    } catch (err) {
+      console.warn('Cloned voice unavailable, falling back to browser TTS:', err);
+    }
+
+    // Fallback to browser SpeechSynthesis
     if ('speechSynthesis' in window) {
-      // Cancel any ongoing speech
       window.speechSynthesis.cancel();
       
       synthRef.current = new SpeechSynthesisUtterance(text);
@@ -108,13 +143,11 @@ export function useCallMode() {
       synthRef.current.rate = 1.0;
       synthRef.current.pitch = 1.0;
       
-      // Pause mic while AI speaks
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
 
       synthRef.current.onend = () => {
-        // Resume mic after AI finishes speaking
         if (recognitionRef.current && isCallActive && !isMuted) {
           recognitionRef.current.start();
         }
