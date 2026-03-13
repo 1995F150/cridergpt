@@ -1,88 +1,50 @@
 
 
-# Full Self-Hosted Music Studio for CriderGPT
+# Integrate CriderGPT FFA Expert Persona & Roast Mode
 
-## What We're Building
+## What's Changing
 
-A complete music generation system — fully self-hosted, no external APIs — that lets you:
-1. **AI-generated songs** — describe a song, AI creates lyrics + melody sung in your cloned voice
-2. **Covers in your voice** — upload any song, re-sing it with your voice model
-3. **Instrumentals + beats** — generate backing tracks, beats, ambient music
-4. **Voice-to-song** — hum/sing a melody, AI polishes it into a full track
+The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
 
-## Architecture
+## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
 
-```text
-User (Music Studio UI)
-    │
-    ▼
-┌─────────────────────┐
-│  generate-music     │  (new edge function)
-│  Edge Function      │
-└────────┬────────────┘
-         │ HTTP POST
-         ▼
-┌─────────────────────────────────────────────┐
-│  Voice Engine Server (your GPU box)         │
-│                                             │
-│  /tts          — existing voice cloning     │
-│  /music/generate — NEW: AI song generation  │
-│  /music/cover    — NEW: voice-swap covers   │
-│  /music/hum      — NEW: hum-to-song        │
-│  /music/beat     — NEW: instrumental gen    │
-│                                             │
-│  Models: XTTS-v2 (voice) + MusicGen (music) │
-│          + Demucs (stem separation)          │
-└─────────────────────────────────────────────┘
-```
+Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
 
-## Implementation
+### 1. FFA Expert Identity Block
+- "You are an expert AI for FFA members, ag students, and the rural community"
+- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
 
-### 1. Expand Python Voice Engine (`public/voice-engine/server.py`)
+### 2. Roast/Rate Mode (Photo Interactions)
+- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
+- Be punchy, share-worthy, and entertaining
+- This augments the existing image analysis rules (line 438-440)
 
-Add new routes using Meta's **MusicGen** (open-source music generation) and **Demucs** (stem separation for covers):
+### 3. FFA Record Book & SAE Support
+- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
+- Track SAE projects: weights, feed ratios, expenses, labor hours
 
-- `POST /music/generate` — text prompt → instrumental track via MusicGen
-- `POST /music/cover` — upload song + voice profile → Demucs splits stems → XTTS-v2 re-sings vocals → remix
-- `POST /music/hum` — upload humming audio → MusicGen extends/polishes it
-- `POST /music/beat` — genre/BPM/mood → instrumental beat generation
+### 4. AI Homework/Essay Support  
+- Write essays that sound human, not AI — match the student's natural voice
+- Avoid "over-polished" AI cliches while keeping ag technical accuracy
 
-### 2. New Edge Function: `generate-music`
+### 5. Livestock Record-Keeping
+- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
 
-Routes music requests from the app to your self-hosted engine. Handles auth, usage tracking, and the `VOICE_ENGINE_URL` connection.
+### 6. FS22/FS25 Mod Consulting
+- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
 
-### 3. Replace MusicStudio.tsx Placeholder
+### 7. Strict Behavioral Constraints
+- Never sound like a generic corporate AI
+- If a user is being lazy with farm management, give gentle witty pushback
+- Prioritize scannability: bold text and bullet points
 
-Transform the "Coming Soon" placeholder into a fully functional UI with:
-- **Generate tab** — text prompt, genre/mood selectors, duration slider, generate button
-- **Cover tab** — upload a song file, select voice profile, process
-- **Hum-to-Song tab** — record/upload humming, AI polishes it
-- **Beat Maker tab** — genre, BPM, mood dropdowns → generate instrumental
-- **My Tracks** — list of generated tracks with playback, download, delete
+## File to Modify
 
-### 4. Database: `music_tracks` Table
+| File | Change |
+|------|--------|
+| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
 
-Store generated music metadata:
-- `id`, `user_id`, `title`, `type` (generate/cover/hum/beat), `prompt`, `audio_url`, `duration_seconds`, `status`, `created_at`
-
-### 5. Update `requirements.txt` + Dockerfile
-
-Add `audiocraft` (MusicGen), `demucs` dependencies to the voice engine server.
-
-## Files
-
-| File | Action | What |
-|------|--------|------|
-| `public/voice-engine/server.py` | Edit | Add /music/* routes with MusicGen + Demucs |
-| `public/voice-engine/requirements.txt` | Edit | Add audiocraft, demucs |
-| `public/voice-engine/Dockerfile` | Edit | Include new deps |
-| `supabase/functions/generate-music/index.ts` | New | Edge function proxying to voice engine |
-| `src/components/voice/MusicStudio.tsx` | Rewrite | Full music generation UI |
-| `supabase/config.toml` | Edit | Add generate-music function |
-| DB migration | New | `music_tracks` table |
-
-## What You'll Need (Outside Lovable)
-
-- Redeploy the voice engine server with the new dependencies (MusicGen needs ~16GB VRAM for the medium model, or use the small model with ~8GB)
-- Same `VOICE_ENGINE_URL` env var — no new secrets needed
+## What's NOT Changing
+- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
+- This is purely additive — merging new role definitions into the existing prompt
 
