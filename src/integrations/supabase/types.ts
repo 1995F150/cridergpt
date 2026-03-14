@@ -2539,6 +2539,118 @@ export type Database = {
         }
         Relationships: []
       }
+      spending_entries: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          group_id: string
+          id: string
+          note: string | null
+          spent_by: string
+          spent_date: string
+          spent_on: string | null
+          store_location: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          group_id: string
+          id?: string
+          note?: string | null
+          spent_by: string
+          spent_date?: string
+          spent_on?: string | null
+          store_location?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          note?: string | null
+          spent_by?: string
+          spent_date?: string
+          spent_on?: string | null
+          store_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spending_entries_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "spending_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spending_group_members: {
+        Row: {
+          display_name: string | null
+          group_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          display_name?: string | null
+          group_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string | null
+          group_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spending_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "spending_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spending_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          invite_code: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          invite_code?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          invite_code?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null
@@ -3828,6 +3940,10 @@ export type Database = {
         | { Args: { check_email: string }; Returns: boolean }
       is_guardian_of: {
         Args: { child_uuid: string; guardian_uuid: string }
+        Returns: boolean
+      }
+      is_spending_group_member: {
+        Args: { check_group_id: string; check_user_id: string }
         Returns: boolean
       }
       log_tier_upgrade:
