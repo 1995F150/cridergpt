@@ -80,7 +80,8 @@ export type PanelType =
   | 'livestock'
   | 'receipts'
   | 'agent-swarm'
-  | 'voice-studio';
+  | 'voice-studio'
+  | 'shared-spending';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
