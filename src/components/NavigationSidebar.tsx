@@ -78,6 +78,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'receipts', label: 'Receipts', icon: Receipt },
       { id: 'agent-swarm', label: 'Agent Swarm', icon: Brain },
       { id: 'voice-studio', label: 'Voice Studio', icon: AudioLines },
+      { id: 'shared-spending', label: 'Shared Spending', icon: HandCoins },
       { id: 'ffa', label: 'FFA Center', icon: Wheat },
       { id: 'calendar', label: 'Calendar', icon: Calendar },
       { id: 'calculators', label: 'Calculators', icon: Calculator },

@@ -195,6 +195,7 @@ export default function Index() {
               {activePanel === 'receipts' && <ReceiptPanel />}
               {activePanel === 'agent-swarm' && <AgentSwarmPanel />}
               {activePanel === 'voice-studio' && <VoiceStudioPanel />}
+              {activePanel === 'shared-spending' && <SharedSpendingPanel />}
             </div>
           </main>
           

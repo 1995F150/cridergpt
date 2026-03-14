@@ -73,6 +73,7 @@ const navigationGroups: NavGroup[] = [
     label: 'PRODUCTIVITY',
     items: [
       { id: 'livestock', label: 'Livestock ID', icon: Beef },
+      { id: 'shared-spending', label: 'Shared Spending', icon: HandCoins },
       { id: 'ffa', label: 'FFA Center', icon: Wheat },
       { id: 'calendar', label: 'Calendar', icon: Calendar },
       { id: 'calculators', label: 'Calculators', icon: Calculator },
