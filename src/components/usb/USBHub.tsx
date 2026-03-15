@@ -946,9 +946,11 @@ function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Fun
   const fileInputRef = useRef<HTMLInputElement>(null);
   const vcfInputRef = useRef<HTMLInputElement>(null);
 
+  const isMobileDevice = isIOS || isAndroid || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   const connectSerial = async () => {
-    if (!hasWebSerial) {
-      toast({ title: 'Not Supported', description: 'Web Serial API requires Chrome or Edge on desktop.', variant: 'destructive' });
+    if (!hasWebSerial || isMobileDevice) {
+      toast({ title: 'Not Supported', description: 'Web Serial API requires Chrome or Edge on desktop. Use the buttons below to import contacts and files.', variant: 'destructive' });
       return;
     }
     try {
@@ -1133,7 +1135,7 @@ function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Fun
         )}
 
         {/* Serial connection (Chrome/Edge desktop) */}
-        {hasWebSerial && !isIOS && (
+        {hasWebSerial && !isIOS && !isAndroid && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) && (
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-foreground">Serial Data Stream</h3>
             <div className="flex gap-2">
