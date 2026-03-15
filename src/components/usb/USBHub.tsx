@@ -275,13 +275,21 @@ function DeviceConnectTab({ logAction }: { logAction: Function }) {
     try {
       const dev = await (navigator as any).usb.requestDevice({ filters: [] });
       await dev.open();
-      if (dev.configuration === null) await dev.selectConfiguration(1);
-      await dev.claimInterface(0);
+      if (dev.configuration === null) {
+        try { await dev.selectConfiguration(1); } catch {}
+      }
+      // Try to claim interface — may fail on phones/complex devices
+      try {
+        await dev.claimInterface(0);
+      } catch (claimErr: any) {
+        console.warn('[USB] Could not claim interface (normal for phones):', claimErr.message);
+      }
       setDevice(dev);
       setConnected(true);
       await logAction({ source_type: 'sensor', device_name: dev.productName || 'USB Device', status: 'completed', data_payload: { vendor: dev.vendorId, product: dev.productId } });
       toast({ title: 'Connected', description: dev.productName || 'USB Device' });
-      pollDevice(dev);
+      // Only poll if interface was claimed successfully
+      try { pollDevice(dev); } catch {}
     } catch (e: any) {
       if (e.name !== 'NotFoundError') {
         toast({ title: 'Connection Failed', description: e.message, variant: 'destructive' });
@@ -756,8 +764,11 @@ function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Fun
   const [serialData, setSerialData] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
   const [transferredFiles, setTransferredFiles] = useState<{ name: string; size: number; file: File }[]>([]);
+  const [contacts, setContacts] = useState<{ name: string; phone: string; email: string }[]>([]);
+  const [contactsSynced, setContactsSynced] = useState(false);
   const readerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const vcfInputRef = useRef<HTMLInputElement>(null);
 
   const connectSerial = async () => {
     if (!hasWebSerial) {
@@ -839,11 +850,100 @@ function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Fun
     }
   };
 
+  const parseVCard = (text: string) => {
+    const cards: { name: string; phone: string; email: string }[] = [];
+    const entries = text.split('BEGIN:VCARD');
+    for (const entry of entries) {
+      if (!entry.trim()) continue;
+      let name = '', phone = '', email = '';
+      const lines = entry.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('FN:') || trimmed.startsWith('FN;')) {
+          name = trimmed.split(':').slice(1).join(':').trim();
+        }
+        if (trimmed.startsWith('TEL') && trimmed.includes(':')) {
+          phone = trimmed.split(':').slice(1).join(':').trim();
+        }
+        if (trimmed.startsWith('EMAIL') && trimmed.includes(':')) {
+          email = trimmed.split(':').slice(1).join(':').trim();
+        }
+      }
+      if (name || phone || email) cards.push({ name, phone, email });
+    }
+    return cards;
+  };
+
+  const handleVCFImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const parsed = parseVCard(text).filter(c => c.phone || c.email);
+      setContacts(parsed);
+      setContactsSynced(false);
+      toast({ title: 'Contacts Imported', description: `${parsed.length} contacts from ${file.name}` });
+    };
+    reader.readAsText(file);
+  };
+
+  const pickDeviceContacts = async () => {
+    if (hasContactPicker) {
+      try {
+        const props = ['name', 'tel', 'email'];
+        const selected = await (navigator as any).contacts.select(props, { multiple: true });
+        const parsed = selected.map((c: any) => ({
+          name: c.name?.[0] || '',
+          phone: c.tel?.[0] || '',
+          email: c.email?.[0] || '',
+        }));
+        setContacts(parsed);
+        setContactsSynced(false);
+        toast({ title: 'Contacts Selected', description: `${parsed.length} contacts` });
+      } catch (e: any) {
+        if (e.name !== 'AbortError') {
+          toast({ title: 'Error', description: e.message, variant: 'destructive' });
+        }
+      }
+    } else {
+      vcfInputRef.current?.click();
+    }
+  };
+
+  const syncDeviceContacts = async () => {
+    if (!user || contacts.length === 0) return;
+    setLoading(true);
+    try {
+      const rows = contacts.map(c => ({
+        user_id: user.id,
+        name: c.name || null,
+        phone: c.phone || null,
+        email: c.email || null,
+        source: 'connected_device',
+      }));
+      const { error } = await (supabase as any).from('user_contacts').upsert(rows, { onConflict: 'user_id,phone' });
+      if (error) throw error;
+      await logAction({
+        source_type: 'connected_device',
+        records_imported: contacts.length,
+        data_payload: { count: contacts.length, type: 'contacts' },
+        status: 'completed',
+      });
+      setContactsSynced(true);
+      toast({ title: 'Contacts Synced', description: `${contacts.length} contacts saved` });
+    } catch (e: any) {
+      toast({ title: 'Sync Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Cable className="h-5 w-5" /> Connected Device Reader</CardTitle>
-        <CardDescription>Read data from a plugged-in phone or laptop via USB cable</CardDescription>
+        <CardDescription>Read data and contacts from a plugged-in phone or laptop via USB cable</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isIOS && (
@@ -872,6 +972,53 @@ function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Fun
             )}
           </div>
         )}
+
+        {/* Device Contacts */}
+        <div className="space-y-3 border-t border-border pt-4">
+          <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Contact2 className="h-4 w-4" /> Device Contacts
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {hasContactPicker
+              ? 'Read contacts directly from the connected device.'
+              : 'Import contacts from your device by selecting a .vcf (vCard) file export.'}
+          </p>
+          <input ref={vcfInputRef} type="file" accept=".vcf,.vcard" className="hidden" onChange={handleVCFImport} />
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={pickDeviceContacts} disabled={loading}>
+              <Contact2 className="h-4 w-4 mr-2" />
+              {hasContactPicker ? 'Read Contacts' : 'Import vCard (.vcf)'}
+            </Button>
+            {contacts.length > 0 && (
+              <Button onClick={syncDeviceContacts} disabled={loading || contactsSynced} variant={contactsSynced ? 'outline' : 'default'}>
+                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : contactsSynced ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                {contactsSynced ? 'Synced' : `Sync ${contacts.length} Contacts`}
+              </Button>
+            )}
+          </div>
+          {contacts.length > 0 && (
+            <ScrollArea className="h-48 border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Name</TableHead>
+                    <TableHead className="text-xs">Phone</TableHead>
+                    <TableHead className="text-xs">Email</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contacts.slice(0, 50).map((c, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="text-xs py-1">{c.name || '—'}</TableCell>
+                      <TableCell className="text-xs py-1">{c.phone || '—'}</TableCell>
+                      <TableCell className="text-xs py-1">{c.email || '—'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          )}
+        </div>
 
         {/* File-based transfer (works everywhere) */}
         <div className="space-y-3 border-t border-border pt-4">
