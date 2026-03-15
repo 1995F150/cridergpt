@@ -3128,6 +3128,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_contacts: {
+        Row: {
+          email: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          source: string | null
+          synced_at: string | null
+          user_id: string
+        }
+        Insert: {
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          source?: string | null
+          synced_at?: string | null
+          user_id: string
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          source?: string | null
+          synced_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_ffa_profiles: {
         Row: {
           chapter_id: string | null
