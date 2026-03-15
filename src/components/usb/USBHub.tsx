@@ -114,6 +114,9 @@ export function USBHub() {
         <TabsContent value="connected">
           <ConnectedDeviceTab logAction={logAction} loading={loading} setLoading={setLoading} />
         </TabsContent>
+        <TabsContent value="codefix">
+          <CodeFixTab logAction={logAction} loading={loading} setLoading={setLoading} />
+        </TabsContent>
       </Tabs>
 
       {/* Recent Activity */}
