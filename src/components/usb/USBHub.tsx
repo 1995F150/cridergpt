@@ -18,7 +18,7 @@ import {
   FolderOpen, Upload, Usb, ScanLine, FileSpreadsheet,
   AlertTriangle, CheckCircle2, Loader2, Trash2, RefreshCw,
   HardDrive, Activity, Wifi, WifiOff, File, X, Contact2,
-  Cable, Smartphone, Share, Plus, Download, Info
+  Cable, Smartphone, Share, Plus, Download, Info, Code2, Wrench
 } from 'lucide-react';
 
 // Platform detection
@@ -86,13 +86,14 @@ export function USBHub() {
       )}
 
       <Tabs defaultValue="files" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7">
           <TabsTrigger value="files"><FolderOpen className="h-4 w-4 mr-1.5 hidden sm:inline" />Files</TabsTrigger>
           <TabsTrigger value="device"><Usb className="h-4 w-4 mr-1.5 hidden sm:inline" />Device</TabsTrigger>
           <TabsTrigger value="scanner"><ScanLine className="h-4 w-4 mr-1.5 hidden sm:inline" />Scanner</TabsTrigger>
           <TabsTrigger value="import"><FileSpreadsheet className="h-4 w-4 mr-1.5 hidden sm:inline" />Import</TabsTrigger>
           <TabsTrigger value="contacts"><Contact2 className="h-4 w-4 mr-1.5 hidden sm:inline" />Contacts</TabsTrigger>
           <TabsTrigger value="connected"><Cable className="h-4 w-4 mr-1.5 hidden sm:inline" />Connected</TabsTrigger>
+          <TabsTrigger value="codefix"><Code2 className="h-4 w-4 mr-1.5 hidden sm:inline" />Code Fix</TabsTrigger>
         </TabsList>
 
         <TabsContent value="files">
@@ -112,6 +113,9 @@ export function USBHub() {
         </TabsContent>
         <TabsContent value="connected">
           <ConnectedDeviceTab logAction={logAction} loading={loading} setLoading={setLoading} />
+        </TabsContent>
+        <TabsContent value="codefix">
+          <CodeFixTab logAction={logAction} loading={loading} setLoading={setLoading} />
         </TabsContent>
       </Tabs>
 
@@ -906,6 +910,204 @@ function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Fun
             </ScrollArea>
           )}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── CODE FIX TAB ────────────────────────────────────────────────
+function CodeFixTab({ logAction, loading, setLoading }: { logAction: Function; loading: boolean; setLoading: Function }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<{ name: string; content: string; file: File } | null>(null);
+  const [analysis, setAnalysis] = useState<string>('');
+  const [fixedCode, setFixedCode] = useState<string>('');
+  const [diagnosing, setDiagnosing] = useState(false);
+
+  const CODE_EXTENSIONS = '.py,.js,.ts,.tsx,.jsx,.json,.xml,.plist,.sh,.bash,.log,.conf,.cfg,.ini,.yaml,.yml,.toml,.html,.css,.java,.kt,.swift,.c,.cpp,.h,.rb,.go,.rs,.lua,.sql,.env,.txt,.md,.gradle,.properties';
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedFile({ name: file.name, content: reader.result as string, file });
+      setAnalysis('');
+      setFixedCode('');
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDiagnose = async () => {
+    if (!selectedFile) return;
+    setDiagnosing(true);
+    setAnalysis('');
+    setFixedCode('');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+        body: {
+          message: `You are CriderGPT, a phone/device code repair specialist. Analyze this code file from a user's phone and:
+1. Identify ALL bugs, security issues, configuration problems, and potential crashes
+2. Explain each issue clearly
+3. Provide the COMPLETE fixed version of the code
+
+File: ${selectedFile.name}
+
+\`\`\`
+${selectedFile.content}
+\`\`\`
+
+Format your response as:
+## Issues Found
+[list each issue with explanation]
+
+## Fixed Code
+\`\`\`
+[complete fixed code here]
+\`\`\``,
+          model: 'google/gemini-2.5-flash'
+        }
+      });
+
+      if (error) throw error;
+
+      const response = data.response || '';
+      setAnalysis(response);
+
+      // Extract fixed code block from response
+      const codeMatch = response.match(/## Fixed Code\s*```[\w]*\n([\s\S]*?)```/);
+      if (codeMatch) {
+        setFixedCode(codeMatch[1].trim());
+      }
+
+      await logAction({
+        source_type: 'code_fix',
+        file_name: selectedFile.name,
+        data_payload: { original_size: selectedFile.content.length, issues_found: true },
+        status: 'completed'
+      });
+
+      toast({ title: 'Diagnosis Complete', description: `Analyzed ${selectedFile.name}` });
+    } catch (e: any) {
+      toast({ title: 'Diagnosis Failed', description: e.message, variant: 'destructive' });
+      await logAction({
+        source_type: 'code_fix',
+        file_name: selectedFile.name,
+        status: 'error',
+        data_payload: { error: e.message }
+      });
+    } finally {
+      setDiagnosing(false);
+    }
+  };
+
+  const handleDownloadFix = () => {
+    if (!fixedCode || !selectedFile) return;
+    const blob = new Blob([fixedCode], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fixed-${selectedFile.name}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Downloaded', description: `fixed-${selectedFile.name} saved to your device` });
+  };
+
+  const clearFile = () => {
+    setSelectedFile(null);
+    setAnalysis('');
+    setFixedCode('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Wrench className="h-5 w-5" /> Phone Code Repair</CardTitle>
+        <CardDescription>Read code files from your phone, let CriderGPT diagnose issues, and download the fixed version</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={CODE_EXTENSIONS}
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => fileInputRef.current?.click()} variant="outline">
+            <FolderOpen className="h-4 w-4 mr-2" /> Select Code File
+          </Button>
+          {selectedFile && (
+            <Button variant="ghost" size="sm" onClick={clearFile}>
+              <X className="h-4 w-4 mr-1" /> Clear
+            </Button>
+          )}
+        </div>
+
+        {selectedFile && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm">
+              <File className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{selectedFile.name}</span>
+              <Badge variant="outline" className="text-xs">{(selectedFile.content.length / 1024).toFixed(1)} KB</Badge>
+            </div>
+
+            {/* Original Code Preview */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Original Code:</p>
+              <ScrollArea className="h-48 border rounded-md bg-muted/30">
+                <pre className="p-3 text-xs font-mono text-foreground whitespace-pre-wrap break-all">{selectedFile.content}</pre>
+              </ScrollArea>
+            </div>
+
+            <Button onClick={handleDiagnose} disabled={diagnosing || loading} className="w-full">
+              {diagnosing ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Diagnosing...</>
+              ) : (
+                <><Wrench className="h-4 w-4 mr-2" /> Diagnose &amp; Fix</>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {analysis && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">AI Analysis:</p>
+              <ScrollArea className="h-64 border rounded-md bg-muted/30">
+                <div className="p-3 text-sm text-foreground whitespace-pre-wrap">{analysis}</div>
+              </ScrollArea>
+            </div>
+
+            {fixedCode && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-muted-foreground">Fixed Code:</p>
+                  <Button size="sm" onClick={handleDownloadFix}>
+                    <Download className="h-3 w-3 mr-1" /> Download Fixed File
+                  </Button>
+                </div>
+                <ScrollArea className="h-48 border rounded-md bg-muted/30">
+                  <pre className="p-3 text-xs font-mono text-foreground whitespace-pre-wrap break-all">{fixedCode}</pre>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!selectedFile && (
+          <Alert>
+            <Code2 className="h-4 w-4" />
+            <AlertTitle>How it works</AlertTitle>
+            <AlertDescription>
+              Select a code or config file from your phone (Python, JavaScript, XML, JSON, etc.). CriderGPT will analyze it for bugs, security issues, and configuration problems, then provide a fixed version you can download back to your device.
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   );
