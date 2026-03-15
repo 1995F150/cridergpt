@@ -275,13 +275,21 @@ function DeviceConnectTab({ logAction }: { logAction: Function }) {
     try {
       const dev = await (navigator as any).usb.requestDevice({ filters: [] });
       await dev.open();
-      if (dev.configuration === null) await dev.selectConfiguration(1);
-      await dev.claimInterface(0);
+      if (dev.configuration === null) {
+        try { await dev.selectConfiguration(1); } catch {}
+      }
+      // Try to claim interface — may fail on phones/complex devices
+      try {
+        await dev.claimInterface(0);
+      } catch (claimErr: any) {
+        console.warn('[USB] Could not claim interface (normal for phones):', claimErr.message);
+      }
       setDevice(dev);
       setConnected(true);
       await logAction({ source_type: 'sensor', device_name: dev.productName || 'USB Device', status: 'completed', data_payload: { vendor: dev.vendorId, product: dev.productId } });
       toast({ title: 'Connected', description: dev.productName || 'USB Device' });
-      pollDevice(dev);
+      // Only poll if interface was claimed successfully
+      try { pollDevice(dev); } catch {}
     } catch (e: any) {
       if (e.name !== 'NotFoundError') {
         toast({ title: 'Connection Failed', description: e.message, variant: 'destructive' });
