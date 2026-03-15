@@ -764,8 +764,11 @@ function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Fun
   const [serialData, setSerialData] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
   const [transferredFiles, setTransferredFiles] = useState<{ name: string; size: number; file: File }[]>([]);
+  const [contacts, setContacts] = useState<{ name: string; phone: string; email: string }[]>([]);
+  const [contactsSynced, setContactsSynced] = useState(false);
   const readerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const vcfInputRef = useRef<HTMLInputElement>(null);
 
   const connectSerial = async () => {
     if (!hasWebSerial) {
