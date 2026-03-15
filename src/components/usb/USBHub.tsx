@@ -1123,11 +1123,11 @@ function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Fun
       </CardHeader>
       <CardContent className="space-y-4">
         {isIOS && (
-          <Alert>
-            <Smartphone className="h-4 w-4" />
-            <AlertTitle>iOS Mode</AlertTitle>
+          <Alert className="border-primary/30 bg-primary/5">
+            <Smartphone className="h-4 w-4 text-primary" />
+            <AlertTitle>Connect Your iPhone</AlertTitle>
             <AlertDescription>
-              Connect your device via Lightning/USB-C and select files to transfer. Serial connections are not available on iOS.
+              Plug in your iPhone via Lightning or USB-C adapter. Use the buttons below to read contacts and transfer files. For the quickest setup, use the <strong>Device</strong> tab.
             </AlertDescription>
           </Alert>
         )}
