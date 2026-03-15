@@ -12,16 +12,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import {
   FolderOpen, Upload, Usb, ScanLine, FileSpreadsheet,
   AlertTriangle, CheckCircle2, Loader2, Trash2, RefreshCw,
-  HardDrive, Activity, Wifi, WifiOff, File, X, Contact2
+  HardDrive, Activity, Wifi, WifiOff, File, X, Contact2,
+  Cable, Smartphone, Share, Plus, Download, Info
 } from 'lucide-react';
 
-// Browser compatibility checks
+// Platform detection
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+const isAndroid = /Android/.test(navigator.userAgent);
+
+// Browser compatibility checks (with iOS awareness)
 const hasFileSystemAccess = 'showDirectoryPicker' in window;
 const hasWebUSB = 'usb' in navigator;
 const hasContactPicker = 'contacts' in navigator && 'ContactsManager' in window;
+const hasWebSerial = 'serial' in navigator;
 
 interface USBLog {
   id: string;
@@ -39,6 +47,7 @@ export function USBHub() {
   const { user } = useAuth();
   const [logs, setLogs] = useState<USBLog[]>([]);
   const [loading, setLoading] = useState(false);
+  const { isInstallable, isIOS: pwaIsIOS } = usePWAInstall();
 
   const fetchLogs = useCallback(async () => {
     if (!user) return;
@@ -71,13 +80,19 @@ export function USBHub() {
         </div>
       </div>
 
+      {/* PWA Install Prompt */}
+      {(isInstallable || pwaIsIOS) && (
+        <PWAInstallPrompt variant="card" />
+      )}
+
       <Tabs defaultValue="files" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
           <TabsTrigger value="files"><FolderOpen className="h-4 w-4 mr-1.5 hidden sm:inline" />Files</TabsTrigger>
           <TabsTrigger value="device"><Usb className="h-4 w-4 mr-1.5 hidden sm:inline" />Device</TabsTrigger>
           <TabsTrigger value="scanner"><ScanLine className="h-4 w-4 mr-1.5 hidden sm:inline" />Scanner</TabsTrigger>
           <TabsTrigger value="import"><FileSpreadsheet className="h-4 w-4 mr-1.5 hidden sm:inline" />Import</TabsTrigger>
           <TabsTrigger value="contacts"><Contact2 className="h-4 w-4 mr-1.5 hidden sm:inline" />Contacts</TabsTrigger>
+          <TabsTrigger value="connected"><Cable className="h-4 w-4 mr-1.5 hidden sm:inline" />Connected</TabsTrigger>
         </TabsList>
 
         <TabsContent value="files">
@@ -94,6 +109,9 @@ export function USBHub() {
         </TabsContent>
         <TabsContent value="contacts">
           <ContactsSyncTab logAction={logAction} loading={loading} setLoading={setLoading} />
+        </TabsContent>
+        <TabsContent value="connected">
+          <ConnectedDeviceTab logAction={logAction} loading={loading} setLoading={setLoading} />
         </TabsContent>
       </Tabs>
 
@@ -133,14 +151,16 @@ export function USBHub() {
   );
 }
 
-// ─── FILE READER TAB ─────────────────────────────────────────────
+// ─── FILE READER TAB (with iOS fallback) ─────────────────────────
 function FileReaderTab({ logAction, loading, setLoading }: { logAction: Function; loading: boolean; setLoading: Function }) {
   const { user } = useAuth();
   const [files, setFiles] = useState<{ name: string; size: number; file: File }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleBrowse = async () => {
-    if (!hasFileSystemAccess) {
-      toast({ title: 'Not Supported', description: 'File System Access API requires Chrome, Edge, or Brave.', variant: 'destructive' });
+    if (isIOS || !hasFileSystemAccess) {
+      // Fallback: use standard file input
+      fileInputRef.current?.click();
       return;
     }
     try {
@@ -159,6 +179,17 @@ function FileReaderTab({ logAction, loading, setLoading }: { logAction: Function
         toast({ title: 'Error', description: e.message, variant: 'destructive' });
       }
     }
+  };
+
+  const handleFallbackFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+    const found: { name: string; size: number; file: File }[] = [];
+    for (let i = 0; i < fileList.length; i++) {
+      found.push({ name: fileList[i].name, size: fileList[i].size, file: fileList[i] });
+    }
+    setFiles(found);
+    toast({ title: 'Files Selected', description: `${found.length} files ready` });
   };
 
   const handleUpload = async (item: { name: string; file: File }) => {
@@ -186,12 +217,22 @@ function FileReaderTab({ logAction, loading, setLoading }: { logAction: Function
         <CardDescription>Browse files on a connected USB drive and upload them to your cloud storage</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!hasFileSystemAccess && (
-          <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Browser Not Supported</AlertTitle>
-            <AlertDescription>File System Access API requires Chrome, Edge, or Brave.</AlertDescription></Alert>
+        {isIOS && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>iOS Mode</AlertTitle>
+            <AlertDescription>Using standard file picker. Connect your USB drive via Lightning/USB-C adapter, then select files.</AlertDescription>
+          </Alert>
         )}
-        <Button onClick={handleBrowse} disabled={!hasFileSystemAccess || loading}>
-          <FolderOpen className="h-4 w-4 mr-2" /> Browse USB Drive
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFallbackFiles}
+        />
+        <Button onClick={handleBrowse} disabled={loading}>
+          <FolderOpen className="h-4 w-4 mr-2" /> {isIOS ? 'Select Files' : 'Browse USB Drive'}
         </Button>
         {files.length > 0 && (
           <ScrollArea className="h-64 border rounded-md">
@@ -216,7 +257,7 @@ function FileReaderTab({ logAction, loading, setLoading }: { logAction: Function
   );
 }
 
-// ─── DEVICE CONNECT TAB ──────────────────────────────────────────
+// ─── DEVICE CONNECT TAB (with iOS fallback) ──────────────────────
 function DeviceConnectTab({ logAction }: { logAction: Function }) {
   const [device, setDevice] = useState<any>(null);
   const [readings, setReadings] = useState<string[]>([]);
@@ -274,12 +315,19 @@ function DeviceConnectTab({ logAction }: { logAction: Function }) {
         <CardDescription>Pair with USB hardware (sensors, scales) and stream live data</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!hasWebUSB && (
-          <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Browser Not Supported</AlertTitle>
-            <AlertDescription>WebUSB API requires Chrome, Edge, or Brave.</AlertDescription></Alert>
+        {(isIOS || !hasWebUSB) && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>{isIOS ? 'iOS Device Detected' : 'Browser Not Supported'}</AlertTitle>
+            <AlertDescription>
+              {isIOS
+                ? 'Direct USB pairing isn\'t available on iOS. Use the Files tab to transfer data via Lightning/USB-C adapter, or the Connected tab for file-based data transfer.'
+                : 'WebUSB API requires Chrome, Edge, or Brave. Use the Files or Connected tab for file-based data transfer instead.'}
+            </AlertDescription>
+          </Alert>
         )}
         <div className="flex gap-2">
-          <Button onClick={connectDevice} disabled={connected || !hasWebUSB}>
+          <Button onClick={connectDevice} disabled={connected || !hasWebUSB || isIOS}>
             {connected ? <Wifi className="h-4 w-4 mr-2" /> : <WifiOff className="h-4 w-4 mr-2" />}
             {connected ? 'Connected' : 'Pair Device'}
           </Button>
@@ -535,15 +583,17 @@ function DataImportTab({ logAction, loading, setLoading }: { logAction: Function
   );
 }
 
-// ─── CONTACTS SYNC TAB ───────────────────────────────────────────
+// ─── CONTACTS SYNC TAB (with iOS vCard fallback) ─────────────────
 function ContactsSyncTab({ logAction, loading, setLoading }: { logAction: Function; loading: boolean; setLoading: Function }) {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<{ name: string; phone: string; email: string }[]>([]);
   const [synced, setSynced] = useState(false);
+  const vcfInputRef = useRef<HTMLInputElement>(null);
 
   const pickContacts = async () => {
     if (!hasContactPicker) {
-      toast({ title: 'Not Supported', description: 'Contact Picker API requires Chrome on Android.', variant: 'destructive' });
+      // On iOS or unsupported, trigger vCard import
+      vcfInputRef.current?.click();
       return;
     }
     try {
@@ -563,6 +613,46 @@ function ContactsSyncTab({ logAction, loading, setLoading }: { logAction: Functi
     }
   };
 
+  const parseVCard = (text: string): { name: string; phone: string; email: string }[] => {
+    const cards: { name: string; phone: string; email: string }[] = [];
+    const entries = text.split('BEGIN:VCARD');
+    for (const entry of entries) {
+      if (!entry.trim()) continue;
+      let name = '';
+      let phone = '';
+      let email = '';
+      const lines = entry.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('FN:') || trimmed.startsWith('FN;')) {
+          name = trimmed.split(':').slice(1).join(':').trim();
+        } else if (trimmed.startsWith('TEL') && trimmed.includes(':')) {
+          phone = phone || trimmed.split(':').slice(1).join(':').trim();
+        } else if (trimmed.startsWith('EMAIL') && trimmed.includes(':')) {
+          email = email || trimmed.split(':').slice(1).join(':').trim();
+        }
+      }
+      if (name || phone || email) {
+        cards.push({ name, phone, email });
+      }
+    }
+    return cards;
+  };
+
+  const handleVCFImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const parsed = parseVCard(text).filter(c => c.phone || c.email);
+      setContacts(parsed);
+      setSynced(false);
+      toast({ title: 'vCard Imported', description: `${parsed.length} contacts parsed from ${file.name}` });
+    };
+    reader.readAsText(file);
+  };
+
   const syncContacts = async () => {
     if (!user || contacts.length === 0) return;
     setLoading(true);
@@ -572,7 +662,7 @@ function ContactsSyncTab({ logAction, loading, setLoading }: { logAction: Functi
         name: c.name || null,
         phone: c.phone || null,
         email: c.email || null,
-        source: 'phone_contacts',
+        source: isIOS ? 'vcard_import' : 'phone_contacts',
       }));
 
       const { error } = await (supabase as any).from('user_contacts').upsert(rows, { onConflict: 'user_id,phone' });
@@ -581,7 +671,7 @@ function ContactsSyncTab({ logAction, loading, setLoading }: { logAction: Functi
       await logAction({
         source_type: 'contacts',
         records_imported: contacts.length,
-        data_payload: { count: contacts.length },
+        data_payload: { count: contacts.length, method: isIOS ? 'vcard' : 'contact_picker' },
         status: 'completed',
       });
       setSynced(true);
@@ -600,13 +690,26 @@ function ContactsSyncTab({ logAction, loading, setLoading }: { logAction: Functi
         <CardDescription>Import contacts from your phone and sync them to the backend</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!hasContactPicker && (
-          <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Browser Not Supported</AlertTitle>
-            <AlertDescription>Contact Picker API requires Chrome on Android.</AlertDescription></Alert>
+        {isIOS && (
+          <Alert>
+            <Smartphone className="h-4 w-4" />
+            <AlertTitle>iOS Mode</AlertTitle>
+            <AlertDescription>
+              Export your contacts as a .vcf file from the Contacts app (select contacts → Share → vCard), then import below.
+            </AlertDescription>
+          </Alert>
         )}
-        <div className="flex gap-2">
-          <Button onClick={pickContacts} disabled={!hasContactPicker || loading}>
-            <Contact2 className="h-4 w-4 mr-2" /> Select Contacts
+        <input
+          ref={vcfInputRef}
+          type="file"
+          accept=".vcf,.vcard"
+          className="hidden"
+          onChange={handleVCFImport}
+        />
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={pickContacts} disabled={loading}>
+            <Contact2 className="h-4 w-4 mr-2" />
+            {hasContactPicker ? 'Select Contacts' : 'Import vCard (.vcf)'}
           </Button>
           {contacts.length > 0 && (
             <Button onClick={syncContacts} disabled={loading || synced} variant={synced ? 'outline' : 'default'}>
@@ -637,6 +740,172 @@ function ContactsSyncTab({ logAction, loading, setLoading }: { logAction: Functi
             </Table>
           </ScrollArea>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── CONNECTED DEVICE TAB (Web Serial + fallback) ────────────────
+function ConnectedDeviceTab({ logAction, loading, setLoading }: { logAction: Function; loading: boolean; setLoading: Function }) {
+  const { user } = useAuth();
+  const [port, setPort] = useState<any>(null);
+  const [serialData, setSerialData] = useState<string[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [transferredFiles, setTransferredFiles] = useState<{ name: string; size: number; file: File }[]>([]);
+  const readerRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const connectSerial = async () => {
+    if (!hasWebSerial) {
+      toast({ title: 'Not Supported', description: 'Web Serial API requires Chrome or Edge on desktop.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const selectedPort = await (navigator as any).serial.requestPort();
+      await selectedPort.open({ baudRate: 9600 });
+      setPort(selectedPort);
+      setConnected(true);
+      toast({ title: 'Serial Connected', description: 'Reading data from connected device...' });
+      await logAction({ source_type: 'connected_device', device_name: 'Serial Device', status: 'completed' });
+      readSerial(selectedPort);
+    } catch (e: any) {
+      if (e.name !== 'NotFoundError') {
+        toast({ title: 'Connection Failed', description: e.message, variant: 'destructive' });
+      }
+    }
+  };
+
+  const readSerial = async (serialPort: any) => {
+    try {
+      const reader = serialPort.readable.getReader();
+      readerRef.current = reader;
+      const decoder = new TextDecoder();
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value);
+        setSerialData(prev => [text, ...prev].slice(0, 100));
+      }
+    } catch {
+      setConnected(false);
+    }
+  };
+
+  const disconnectSerial = async () => {
+    try {
+      if (readerRef.current) {
+        await readerRef.current.cancel();
+        readerRef.current = null;
+      }
+      if (port) {
+        await port.close();
+      }
+    } catch {}
+    setPort(null);
+    setConnected(false);
+    setSerialData([]);
+  };
+
+  const handleFileTransfer = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+    const found: { name: string; size: number; file: File }[] = [];
+    for (let i = 0; i < fileList.length; i++) {
+      found.push({ name: fileList[i].name, size: fileList[i].size, file: fileList[i] });
+    }
+    setTransferredFiles(found);
+    toast({ title: 'Files Selected', description: `${found.length} files from connected device` });
+  };
+
+  const uploadFile = async (item: { name: string; file: File }) => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const path = `${user.id}/connected-device/${Date.now()}-${item.name}`;
+      const { error } = await supabase.storage.from('usb-uploads').upload(path, item.file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('usb-uploads').getPublicUrl(path);
+      await logAction({ source_type: 'connected_device', file_name: item.name, file_url: urlData.publicUrl, status: 'completed' });
+      toast({ title: 'Uploaded', description: item.name });
+      setTransferredFiles(prev => prev.filter(f => f.name !== item.name));
+    } catch (e: any) {
+      toast({ title: 'Upload Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Cable className="h-5 w-5" /> Connected Device Reader</CardTitle>
+        <CardDescription>Read data from a plugged-in phone or laptop via USB cable</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isIOS && (
+          <Alert>
+            <Smartphone className="h-4 w-4" />
+            <AlertTitle>iOS Mode</AlertTitle>
+            <AlertDescription>
+              Connect your device via Lightning/USB-C and select files to transfer. Serial connections are not available on iOS.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Serial connection (Chrome/Edge desktop) */}
+        {hasWebSerial && !isIOS && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-foreground">Serial Data Stream</h3>
+            <div className="flex gap-2">
+              <Button onClick={connected ? disconnectSerial : connectSerial} variant={connected ? 'destructive' : 'default'}>
+                {connected ? <><WifiOff className="h-4 w-4 mr-2" /> Disconnect</> : <><Cable className="h-4 w-4 mr-2" /> Connect Serial</>}
+              </Button>
+            </div>
+            {serialData.length > 0 && (
+              <ScrollArea className="h-40 border rounded-md bg-muted/30 p-3 font-mono text-xs">
+                {serialData.map((d, i) => <div key={i} className="text-foreground">{d}</div>)}
+              </ScrollArea>
+            )}
+          </div>
+        )}
+
+        {/* File-based transfer (works everywhere) */}
+        <div className="space-y-3 border-t border-border pt-4">
+          <h3 className="text-sm font-medium text-foreground">File Transfer from Device</h3>
+          <p className="text-xs text-muted-foreground">
+            {isIOS
+              ? 'Select files from your connected device using the Files app.'
+              : 'Select files from a connected phone or laptop to upload to CriderGPT.'}
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileTransfer}
+          />
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={loading}>
+            <FolderOpen className="h-4 w-4 mr-2" /> Select Device Files
+          </Button>
+          {transferredFiles.length > 0 && (
+            <ScrollArea className="h-48 border rounded-md">
+              <div className="p-2 space-y-1">
+                {transferredFiles.map((f) => (
+                  <div key={f.name} className="flex items-center justify-between p-2 rounded hover:bg-muted/50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate text-sm">{f.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{(f.size / 1024).toFixed(1)} KB</span>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => uploadFile(f)} disabled={loading}>
+                      {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
