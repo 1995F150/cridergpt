@@ -35,7 +35,8 @@ import {
   Receipt,
   Brain,
   AudioLines,
-  HandCoins
+  HandCoins,
+  Usb
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
