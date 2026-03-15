@@ -72,11 +72,12 @@ export function USBHub() {
       </div>
 
       <Tabs defaultValue="files" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="files"><FolderOpen className="h-4 w-4 mr-1.5 hidden sm:inline" />Files</TabsTrigger>
           <TabsTrigger value="device"><Usb className="h-4 w-4 mr-1.5 hidden sm:inline" />Device</TabsTrigger>
           <TabsTrigger value="scanner"><ScanLine className="h-4 w-4 mr-1.5 hidden sm:inline" />Scanner</TabsTrigger>
           <TabsTrigger value="import"><FileSpreadsheet className="h-4 w-4 mr-1.5 hidden sm:inline" />Import</TabsTrigger>
+          <TabsTrigger value="contacts"><Contact2 className="h-4 w-4 mr-1.5 hidden sm:inline" />Contacts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="files">
