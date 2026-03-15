@@ -92,6 +92,9 @@ export function USBHub() {
         <TabsContent value="import">
           <DataImportTab logAction={logAction} loading={loading} setLoading={setLoading} />
         </TabsContent>
+        <TabsContent value="contacts">
+          <ContactsSyncTab logAction={logAction} loading={loading} setLoading={setLoading} />
+        </TabsContent>
       </Tabs>
 
       {/* Recent Activity */}
