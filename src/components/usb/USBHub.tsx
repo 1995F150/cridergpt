@@ -213,7 +213,7 @@ function FileReaderTab({ logAction, loading, setLoading }: { logAction: Function
 
 // ─── DEVICE CONNECT TAB ──────────────────────────────────────────
 function DeviceConnectTab({ logAction }: { logAction: Function }) {
-  const [device, setDevice] = useState<USBDevice | null>(null);
+  const [device, setDevice] = useState<any>(null);
   const [readings, setReadings] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
 
@@ -223,7 +223,7 @@ function DeviceConnectTab({ logAction }: { logAction: Function }) {
       return;
     }
     try {
-      const dev = await navigator.usb.requestDevice({ filters: [] });
+      const dev = await (navigator as any).usb.requestDevice({ filters: [] });
       await dev.open();
       if (dev.configuration === null) await dev.selectConfiguration(1);
       await dev.claimInterface(0);
@@ -239,7 +239,7 @@ function DeviceConnectTab({ logAction }: { logAction: Function }) {
     }
   };
 
-  const pollDevice = async (dev: USBDevice) => {
+  const pollDevice = async (dev: any) => {
     try {
       while (dev.opened) {
         const result = await dev.transferIn(1, 64);
