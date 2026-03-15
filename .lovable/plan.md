@@ -1,50 +1,57 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+# Add Contacts Tab to USB Data Hub
 
-## What's Changing
+## Overview
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+Add a 5th tab "Contacts" to the USB Hub that reads phone contacts using the **Contact Picker API** (`navigator.contacts.select()`) and syncs them to a new `user_contacts` Supabase table. This API is available on Chrome for Android — perfect for the mobile use case.
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+## Technical Approach
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+### Database
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+Create a `user_contacts` table:
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+```sql
+CREATE TABLE public.user_contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT,
+  phone TEXT,
+  email TEXT,
+  source TEXT DEFAULT 'phone_contacts',
+  synced_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, phone)
+);
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+ALTER TABLE public.user_contacts ENABLE ROW LEVEL SECURITY;
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+-- Users can only access their own contacts
+CREATE POLICY "Users manage own contacts" ON public.user_contacts
+  FOR ALL USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+```
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+### Frontend — New "Contacts" Tab
 
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+Add a `ContactsSyncTab` component inside `USBHub.tsx`:
 
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
+- Uses `navigator.contacts.select(['name', 'tel', 'email'], { multiple: true })` to open the native phone contact picker
+- Shows browser compatibility warning (Contact Picker API only works on Chrome Android)
+- Displays selected contacts in a table preview
+- "Sync to Backend" button upserts contacts into `user_contacts` (deduplicates by phone number)
+- Logs the action to `usb_data_logs` with `source_type: 'contacts'`
 
-## File to Modify
+### Changes to USBHub.tsx
 
-| File | Change |
+- Add 5th tab: `grid-cols-5` on TabsList
+- New `TabsTrigger` with `Contact2` icon and "Contacts" label
+- New `TabsContent` rendering `ContactsSyncTab`
+
+## Files
+
+| File | Action |
 |------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
-
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+| DB migration | Create `user_contacts` table with RLS |
+| `src/components/usb/USBHub.tsx` | Add Contacts tab + `ContactsSyncTab` component |
 
