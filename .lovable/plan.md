@@ -1,74 +1,50 @@
 
 
-# Add FFA Belt Buckle to Jessie Crider's AI Image Generation Dataset
+# Integrate CriderGPT FFA Expert Persona & Roast Mode
 
-## Overview
+## What's Changing
 
-Adding the FFA belt buckle photo as a secondary reference for Jessie Crider in the character-based AI image generation system. This will help the AI recognize and generate accurate FFA-related details (like the belt buckle) when creating images of Jessie in agricultural/FFA contexts.
+The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
 
-## What I See
+## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
 
-The uploaded image shows:
-- Blue jeans with orange stitching
-- Ornate FFA belt buckle (bronze/gold colored)
-- Classic FFA emblem design with decorative border
-- Authentic agricultural/FFA styling
+Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
 
-## Technical Implementation
+### 1. FFA Expert Identity Block
+- "You are an expert AI for FFA members, ag students, and the rural community"
+- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
 
-### 1. Copy Image to Public Folder
-Copy `user-uploads://PXL_20260315_165420654.jpg` → `public/jessie-ffa-buckle.jpg`
+### 2. Roast/Rate Mode (Photo Interactions)
+- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
+- Be punchy, share-worthy, and entertaining
+- This augments the existing image analysis rules (line 438-440)
 
-### 2. Database Migration
-Add a new row to `character_references` table for Jessie with the belt buckle reference:
+### 3. FFA Record Book & SAE Support
+- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
+- Track SAE projects: weights, feed ratios, expenses, labor hours
 
-```sql
-INSERT INTO public.character_references (
-  slug, 
-  name, 
-  pronouns, 
-  era, 
-  description, 
-  traits, 
-  context, 
-  reference_photo_url, 
-  is_primary, 
-  is_system
-) VALUES (
-  'jessie-ffa-buckle',
-  'Jessie Crider',
-  'he/him',
-  'Modern',
-  'Jessie Crider - FFA belt buckle detail reference',
-  'FFA belt buckle, ornate bronze/gold design, classic FFA emblem, decorative border, worn with blue jeans',
-  'Use this reference for FFA formal wear details. The belt buckle is an authentic FFA accessory worn with official dress (blue jeans, belt, FFA jacket). Include when generating FFA-related scenes or formal agricultural contexts.',
-  '/jessie-ffa-buckle.jpg',
-  false,
-  true
-);
-```
+### 4. AI Homework/Essay Support  
+- Write essays that sound human, not AI — match the student's natural voice
+- Avoid "over-polished" AI cliches while keeping ag technical accuracy
 
-### 3. How It Works
+### 5. Livestock Record-Keeping
+- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
 
-The existing `useMediaSystem.ts` hook already:
-- Fetches all character references from the database dynamically
-- Sends multiple reference images to the `generate-ai-image` edge function
-- Parses character mentions in prompts (e.g., "Jessie", "me", "creator")
+### 6. FS22/FS25 Mod Consulting
+- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
 
-When the AI generates an image mentioning Jessie in an FFA context, it will now have access to:
-1. Main face reference (`/jessie-crider-reference-1.jpg`)
-2. FFA belt buckle detail (`/jessie-ffa-buckle.jpg`)
+### 7. Strict Behavioral Constraints
+- Never sound like a generic corporate AI
+- If a user is being lazy with farm management, give gentle witty pushback
+- Prioritize scannability: bold text and bullet points
 
-This gives the AI model more accurate visual data for FFA accessories.
+## File to Modify
 
-## Files Modified
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `public/jessie-ffa-buckle.jpg` | Copy uploaded image |
-| `supabase/migrations/[timestamp]_add_jessie_ffa_buckle.sql` | Insert new reference row |
+| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
 
-## No Code Changes Needed
-
-The media generation system already supports multiple references per character via the `character_references` table. The AI will automatically detect and use this reference when generating images of Jessie.
+## What's NOT Changing
+- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
+- This is purely additive — merging new role definitions into the existing prompt
 
