@@ -534,3 +534,110 @@ function DataImportTab({ logAction, loading, setLoading }: { logAction: Function
     </Card>
   );
 }
+
+// ─── CONTACTS SYNC TAB ───────────────────────────────────────────
+function ContactsSyncTab({ logAction, loading, setLoading }: { logAction: Function; loading: boolean; setLoading: Function }) {
+  const { user } = useAuth();
+  const [contacts, setContacts] = useState<{ name: string; phone: string; email: string }[]>([]);
+  const [synced, setSynced] = useState(false);
+
+  const pickContacts = async () => {
+    if (!hasContactPicker) {
+      toast({ title: 'Not Supported', description: 'Contact Picker API requires Chrome on Android.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const results = await (navigator as any).contacts.select(['name', 'tel', 'email'], { multiple: true });
+      const parsed = results.map((c: any) => ({
+        name: c.name?.[0] || '',
+        phone: c.tel?.[0] || '',
+        email: c.email?.[0] || '',
+      })).filter((c: any) => c.phone || c.email);
+      setContacts(parsed);
+      setSynced(false);
+      toast({ title: 'Contacts Selected', description: `${parsed.length} contacts ready to sync` });
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        toast({ title: 'Error', description: e.message, variant: 'destructive' });
+      }
+    }
+  };
+
+  const syncContacts = async () => {
+    if (!user || contacts.length === 0) return;
+    setLoading(true);
+    try {
+      const rows = contacts.map(c => ({
+        user_id: user.id,
+        name: c.name || null,
+        phone: c.phone || null,
+        email: c.email || null,
+        source: 'phone_contacts',
+      }));
+
+      const { error } = await (supabase as any).from('user_contacts').upsert(rows, { onConflict: 'user_id,phone' });
+      if (error) throw error;
+
+      await logAction({
+        source_type: 'contacts',
+        records_imported: contacts.length,
+        data_payload: { count: contacts.length },
+        status: 'completed',
+      });
+      setSynced(true);
+      toast({ title: 'Contacts Synced', description: `${contacts.length} contacts saved to backend` });
+    } catch (e: any) {
+      toast({ title: 'Sync Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Contact2 className="h-5 w-5" /> Phone Contacts Sync</CardTitle>
+        <CardDescription>Import contacts from your phone and sync them to the backend</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!hasContactPicker && (
+          <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Browser Not Supported</AlertTitle>
+            <AlertDescription>Contact Picker API requires Chrome on Android.</AlertDescription></Alert>
+        )}
+        <div className="flex gap-2">
+          <Button onClick={pickContacts} disabled={!hasContactPicker || loading}>
+            <Contact2 className="h-4 w-4 mr-2" /> Select Contacts
+          </Button>
+          {contacts.length > 0 && (
+            <Button onClick={syncContacts} disabled={loading || synced} variant={synced ? 'outline' : 'default'}>
+              {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : synced ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+              {synced ? 'Synced' : `Sync ${contacts.length} Contacts`}
+            </Button>
+          )}
+        </div>
+        {contacts.length > 0 && (
+          <ScrollArea className="h-64 border rounded-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Name</TableHead>
+                  <TableHead className="text-xs">Phone</TableHead>
+                  <TableHead className="text-xs">Email</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {contacts.slice(0, 50).map((c, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-xs py-1">{c.name || '—'}</TableCell>
+                    <TableCell className="text-xs py-1">{c.phone || '—'}</TableCell>
+                    <TableCell className="text-xs py-1">{c.email || '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
