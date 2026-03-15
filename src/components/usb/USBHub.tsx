@@ -21,6 +21,7 @@ import {
 // Browser compatibility checks
 const hasFileSystemAccess = 'showDirectoryPicker' in window;
 const hasWebUSB = 'usb' in navigator;
+const hasContactPicker = 'contacts' in navigator && 'ContactsManager' in window;
 
 interface USBLog {
   id: string;
