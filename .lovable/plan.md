@@ -1,50 +1,32 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+# Fix iPhone USB Hub — Surface Connect/Contacts/Files Options
 
-## What's Changing
+## Problem
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+On iPhone, the "Device" tab just shows "not supported" with no actionable options. The contacts and file transfer features for iPhone are hidden in the "Connected" tab, which users don't find. The 7-tab grid also doesn't display well on mobile (411px viewport).
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+## Changes — `src/components/usb/USBHub.tsx`
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+### 1. Fix Mobile Tab Layout
+Replace `grid-cols-4 sm:grid-cols-7` with a horizontally scrollable tab list using `flex overflow-x-auto` so all 7 tabs are accessible without wrapping awkwardly on small screens.
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+### 2. Add iPhone Options to Device Tab
+When `isIOS` is detected on the Device Connect tab, instead of just showing "not supported," show three actionable buttons:
+- **Import Contacts** — triggers Contact Picker or vCard file picker
+- **Select Files** — opens standard file picker for transferring files from the connected device
+- **Install App** — shows PWA install prompt for better device access
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+This makes the Device tab the one-stop shop on iPhone, since WebUSB/Serial aren't available.
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+### 3. Add iPhone Connect Section to Connected Tab
+Add a prominent "Connect iPhone" section at the top of the Connected Device tab when iOS is detected, with:
+- Instructions for connecting via Lightning/USB-C adapter
+- Direct buttons for contacts and file access (already exist but will be more prominent)
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+### Files
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
-
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
-
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
-
-## File to Modify
-
-| File | Change |
+| File | Action |
 |------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
-
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+| `src/components/usb/USBHub.tsx` | Fix tab layout for mobile, add iPhone actions to Device tab |
 
