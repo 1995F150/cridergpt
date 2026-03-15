@@ -1,50 +1,47 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+# USB Hub Enhancements — Connected Device Data Reading + iPhone Support + PWA Install
 
-## What's Changing
+## Overview
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+Three additions to the USB Hub:
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+1. **Connected Device Data Reader** — A new tab that reads data from a plugged-in phone or laptop using the **Web Serial API** (`navigator.serial`) and **File System Access API**. This covers reading files/data from connected devices over USB cable.
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+2. **iPhone Compatibility** — Currently, several tabs show "not supported" on Safari/iOS. Add fallback approaches for each tab:
+   - File Reader: Fall back to standard `<input type="file">` picker (works on all browsers including Safari)
+   - Device Connect: Show instructions to use a companion approach or fall back to file-based data transfer
+   - Contacts: On iOS, fall back to importing a `.vcf` (vCard) file export since Contact Picker API isn't available on iOS
+   - Add platform detection throughout and show iOS-friendly alternatives instead of just "not supported"
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+3. **PWA Install from USB Hub** — When a USB device is detected or the USB Hub is open, show a prominent PWA install card using the existing `usePWAInstall` hook. This encourages users to install the app while they're actively using hardware features.
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+## Technical Details
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+### New "Connected Device" Tab
+- Uses **Web Serial API** (`navigator.serial.requestPort()`) for serial data from connected devices
+- Falls back to file picker for transferring files from a connected phone/laptop
+- Logs all transfers to `usb_data_logs` with `source_type: 'connected_device'`
+- Web Serial works in Chrome/Edge on desktop — for iOS/unsupported browsers, show file-based transfer
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+### iPhone Fallbacks per Tab
+| Tab | Current | iOS Fallback |
+|-----|---------|-------------|
+| Files | `showDirectoryPicker()` | Standard `<input type="file" multiple>` |
+| Device | WebUSB | Show "connect via file transfer" message |
+| Scanner | Keyboard listener | Works as-is (keyboard events work everywhere) |
+| Import | File input | Works as-is |
+| Contacts | Contact Picker API | Import `.vcf` vCard file + parse it |
+| Connected Device (new) | Web Serial | Standard file picker |
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+### PWA Install Integration
+- Import `usePWAInstall` in `USBHub.tsx`
+- Show a `PWAInstallPrompt` card (variant="card") at the top of the USB Hub when `isInstallable` or on iOS
+- Message: "Install CriderGPT for the best USB experience — works offline with full device access"
 
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+## Files Changed
 
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
-
-## File to Modify
-
-| File | Change |
+| File | Action |
 |------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
-
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+| `src/components/usb/USBHub.tsx` | Add Connected Device tab, iOS fallbacks for all tabs, PWA install prompt, vCard parser for iOS contacts |
 
