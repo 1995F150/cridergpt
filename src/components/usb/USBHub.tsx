@@ -261,11 +261,18 @@ function FileReaderTab({ logAction, loading, setLoading }: { logAction: Function
   );
 }
 
-// ─── DEVICE CONNECT TAB (with iOS fallback) ──────────────────────
+// ─── DEVICE CONNECT TAB (with iOS fallback + actions) ────────────
 function DeviceConnectTab({ logAction }: { logAction: Function }) {
   const [device, setDevice] = useState<any>(null);
   const [readings, setReadings] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
+  const [iosContacts, setIosContacts] = useState<{ name: string; phone: string; email: string }[]>([]);
+  const [iosFiles, setIosFiles] = useState<{ name: string; size: number; file: File }[]>([]);
+  const [contactsSynced, setContactsSynced] = useState(false);
+  const { user } = useAuth();
+  const { isInstallable, isIOS: pwaIsIOS } = usePWAInstall();
+  const vcfRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const connectDevice = async () => {
     if (!hasWebUSB) {
@@ -278,17 +285,13 @@ function DeviceConnectTab({ logAction }: { logAction: Function }) {
       if (dev.configuration === null) {
         try { await dev.selectConfiguration(1); } catch {}
       }
-      // Try to claim interface — may fail on phones/complex devices
-      try {
-        await dev.claimInterface(0);
-      } catch (claimErr: any) {
-        console.warn('[USB] Could not claim interface (normal for phones):', claimErr.message);
+      try { await dev.claimInterface(0); } catch (claimErr: any) {
+        console.warn('[USB] Could not claim interface:', claimErr.message);
       }
       setDevice(dev);
       setConnected(true);
       await logAction({ source_type: 'sensor', device_name: dev.productName || 'USB Device', status: 'completed', data_payload: { vendor: dev.vendorId, product: dev.productId } });
       toast({ title: 'Connected', description: dev.productName || 'USB Device' });
-      // Only poll if interface was claimed successfully
       try { pollDevice(dev); } catch {}
     } catch (e: any) {
       if (e.name !== 'NotFoundError') {
@@ -306,9 +309,7 @@ function DeviceConnectTab({ logAction }: { logAction: Function }) {
           setReadings(prev => [text, ...prev].slice(0, 50));
         }
       }
-    } catch {
-      setConnected(false);
-    }
+    } catch { setConnected(false); }
   };
 
   const disconnect = async () => {
@@ -320,42 +321,217 @@ function DeviceConnectTab({ logAction }: { logAction: Function }) {
     }
   };
 
+  // iOS: Import contacts via Contact Picker or vCard
+  const handleImportContacts = async () => {
+    if (hasContactPicker) {
+      try {
+        const results = await (navigator as any).contacts.select(['name', 'tel', 'email'], { multiple: true });
+        const parsed = results.map((c: any) => ({
+          name: c.name?.[0] || '', phone: c.tel?.[0] || '', email: c.email?.[0] || '',
+        })).filter((c: any) => c.phone || c.email);
+        setIosContacts(parsed);
+        setContactsSynced(false);
+        toast({ title: 'Contacts Selected', description: `${parsed.length} contacts ready` });
+      } catch (e: any) {
+        if (e.name !== 'AbortError') toast({ title: 'Error', description: e.message, variant: 'destructive' });
+      }
+    } else {
+      vcfRef.current?.click();
+    }
+  };
+
+  const handleVCFImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const cards: { name: string; phone: string; email: string }[] = [];
+      for (const entry of text.split('BEGIN:VCARD')) {
+        if (!entry.trim()) continue;
+        let name = '', phone = '', email = '';
+        for (const line of entry.split('\n')) {
+          const t = line.trim();
+          if (t.startsWith('FN:') || t.startsWith('FN;')) name = t.split(':').slice(1).join(':').trim();
+          if (t.startsWith('TEL') && t.includes(':')) phone = phone || t.split(':').slice(1).join(':').trim();
+          if (t.startsWith('EMAIL') && t.includes(':')) email = email || t.split(':').slice(1).join(':').trim();
+        }
+        if (name || phone || email) cards.push({ name, phone, email });
+      }
+      setIosContacts(cards.filter(c => c.phone || c.email));
+      setContactsSynced(false);
+      toast({ title: 'vCard Imported', description: `${cards.length} contacts parsed` });
+    };
+    reader.readAsText(file);
+  };
+
+  const syncContacts = async () => {
+    if (!user || iosContacts.length === 0) return;
+    try {
+      const rows = iosContacts.map(c => ({ user_id: user.id, name: c.name || null, phone: c.phone || null, email: c.email || null, source: 'device_connect' }));
+      const { error } = await (supabase as any).from('user_contacts').upsert(rows, { onConflict: 'user_id,phone' });
+      if (error) throw error;
+      await logAction({ source_type: 'contacts', records_imported: iosContacts.length, data_payload: { count: iosContacts.length }, status: 'completed' });
+      setContactsSynced(true);
+      toast({ title: 'Contacts Synced', description: `${iosContacts.length} contacts saved` });
+    } catch (e: any) {
+      toast({ title: 'Sync Failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  // iOS: Select files
+  const handleSelectFiles = () => { fileRef.current?.click(); };
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+    const found: { name: string; size: number; file: File }[] = [];
+    for (let i = 0; i < fileList.length; i++) found.push({ name: fileList[i].name, size: fileList[i].size, file: fileList[i] });
+    setIosFiles(found);
+    toast({ title: 'Files Selected', description: `${found.length} files ready` });
+  };
+
+  const uploadFile = async (item: { name: string; file: File }) => {
+    if (!user) return;
+    try {
+      const path = `${user.id}/device/${Date.now()}-${item.name}`;
+      const { error } = await supabase.storage.from('usb-uploads').upload(path, item.file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('usb-uploads').getPublicUrl(path);
+      await logAction({ source_type: 'device_file', file_name: item.name, file_url: urlData.publicUrl, status: 'completed' });
+      toast({ title: 'Uploaded', description: item.name });
+      setIosFiles(prev => prev.filter(f => f.name !== item.name));
+    } catch (e: any) {
+      toast({ title: 'Upload Failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Usb className="h-5 w-5" /> USB Device Connect</CardTitle>
-        <CardDescription>Pair with USB hardware (sensors, scales) and stream live data</CardDescription>
+        <CardTitle className="flex items-center gap-2"><Usb className="h-5 w-5" /> {isIOS ? 'iPhone Connect' : 'USB Device Connect'}</CardTitle>
+        <CardDescription>{isIOS ? 'Import contacts, transfer files, and connect your iPhone' : 'Pair with USB hardware (sensors, scales) and stream live data'}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(isIOS || !hasWebUSB) && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>{isIOS ? 'iOS Device Detected' : 'Browser Not Supported'}</AlertTitle>
-            <AlertDescription>
-              {isIOS
-                ? 'Direct USB pairing isn\'t available on iOS. Use the Files tab to transfer data via Lightning/USB-C adapter, or the Connected tab for file-based data transfer.'
-                : 'WebUSB API requires Chrome, Edge, or Brave. Use the Files or Connected tab for file-based data transfer instead.'}
-            </AlertDescription>
-          </Alert>
-        )}
-        <div className="flex gap-2">
-          <Button onClick={connectDevice} disabled={connected || !hasWebUSB || isIOS}>
-            {connected ? <Wifi className="h-4 w-4 mr-2" /> : <WifiOff className="h-4 w-4 mr-2" />}
-            {connected ? 'Connected' : 'Pair Device'}
-          </Button>
-          {connected && (
-            <Button variant="destructive" onClick={disconnect}><X className="h-4 w-4 mr-2" /> Disconnect</Button>
-          )}
-        </div>
-        {device && (
-          <div className="text-sm text-muted-foreground">
-            Device: <span className="font-medium text-foreground">{device.productName || 'Unknown'}</span> (VID: {device.vendorId})
-          </div>
-        )}
-        {readings.length > 0 && (
-          <ScrollArea className="h-48 border rounded-md bg-muted/30 p-3 font-mono text-xs">
-            {readings.map((r, i) => <div key={i} className="text-foreground">{r}</div>)}
-          </ScrollArea>
+        {/* Hidden inputs for iOS */}
+        <input ref={vcfRef} type="file" accept=".vcf,.vcard" className="hidden" onChange={handleVCFImport} />
+        <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFilesSelected} />
+
+        {isIOS ? (
+          <>
+            {/* iOS: Prominent action buttons */}
+            <Alert className="border-primary/30 bg-primary/5">
+              <Smartphone className="h-4 w-4 text-primary" />
+              <AlertTitle>iPhone Connected</AlertTitle>
+              <AlertDescription>
+                Use the buttons below to import contacts, transfer files, or install the app for the best experience.
+              </AlertDescription>
+            </Alert>
+
+            <div className="grid grid-cols-1 gap-3">
+              <Button onClick={handleImportContacts} className="w-full justify-start gap-3 h-14 text-left" variant="outline">
+                <div className="bg-primary/10 rounded-full p-2"><Contact2 className="h-5 w-5 text-primary" /></div>
+                <div>
+                  <div className="font-medium">Import Contacts</div>
+                  <div className="text-xs text-muted-foreground">{hasContactPicker ? 'Select from your phone' : 'Import vCard (.vcf) file'}</div>
+                </div>
+              </Button>
+
+              <Button onClick={handleSelectFiles} className="w-full justify-start gap-3 h-14 text-left" variant="outline">
+                <div className="bg-primary/10 rounded-full p-2"><FolderOpen className="h-5 w-5 text-primary" /></div>
+                <div>
+                  <div className="font-medium">Select Files</div>
+                  <div className="text-xs text-muted-foreground">Transfer files from your device storage</div>
+                </div>
+              </Button>
+
+              {(isInstallable || pwaIsIOS) && (
+                <PWAInstallPrompt variant="card" />
+              )}
+            </div>
+
+            {/* Show imported contacts */}
+            {iosContacts.length > 0 && (
+              <div className="space-y-2 border-t border-border pt-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium flex items-center gap-2"><Contact2 className="h-4 w-4" /> {iosContacts.length} Contacts</h3>
+                  <Button size="sm" onClick={syncContacts} disabled={contactsSynced} variant={contactsSynced ? 'outline' : 'default'}>
+                    {contactsSynced ? <><CheckCircle2 className="h-4 w-4 mr-1" /> Synced</> : <><Upload className="h-4 w-4 mr-1" /> Sync All</>}
+                  </Button>
+                </div>
+                <ScrollArea className="h-48 border rounded-md">
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead className="text-xs">Name</TableHead>
+                      <TableHead className="text-xs">Phone</TableHead>
+                      <TableHead className="text-xs">Email</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {iosContacts.slice(0, 50).map((c, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="text-xs py-1">{c.name || '—'}</TableCell>
+                          <TableCell className="text-xs py-1">{c.phone || '—'}</TableCell>
+                          <TableCell className="text-xs py-1">{c.email || '—'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* Show selected files */}
+            {iosFiles.length > 0 && (
+              <div className="space-y-2 border-t border-border pt-4">
+                <h3 className="text-sm font-medium flex items-center gap-2"><File className="h-4 w-4" /> {iosFiles.length} Files Selected</h3>
+                <ScrollArea className="h-48 border rounded-md">
+                  <div className="p-2 space-y-1">
+                    {iosFiles.map(f => (
+                      <div key={f.name} className="flex items-center justify-between p-2 rounded hover:bg-muted/50">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate text-sm">{f.name}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">{(f.size / 1024).toFixed(1)} KB</span>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => uploadFile(f)}>
+                          <Upload className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Non-iOS: Original WebUSB flow */}
+            {!hasWebUSB && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Browser Not Supported</AlertTitle>
+                <AlertDescription>WebUSB API requires Chrome, Edge, or Brave. Use the Files or Connected tab for file-based data transfer instead.</AlertDescription>
+              </Alert>
+            )}
+            <div className="flex gap-2">
+              <Button onClick={connectDevice} disabled={connected || !hasWebUSB}>
+                {connected ? <Wifi className="h-4 w-4 mr-2" /> : <WifiOff className="h-4 w-4 mr-2" />}
+                {connected ? 'Connected' : 'Pair Device'}
+              </Button>
+              {connected && (
+                <Button variant="destructive" onClick={disconnect}><X className="h-4 w-4 mr-2" /> Disconnect</Button>
+              )}
+            </div>
+            {device && (
+              <div className="text-sm text-muted-foreground">
+                Device: <span className="font-medium text-foreground">{device.productName || 'Unknown'}</span> (VID: {device.vendorId})
+              </div>
+            )}
+            {readings.length > 0 && (
+              <ScrollArea className="h-48 border rounded-md bg-muted/30 p-3 font-mono text-xs">
+                {readings.map((r, i) => <div key={i} className="text-foreground">{r}</div>)}
+              </ScrollArea>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
