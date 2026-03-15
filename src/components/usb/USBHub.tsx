@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   FolderOpen, Upload, Usb, ScanLine, FileSpreadsheet,
   AlertTriangle, CheckCircle2, Loader2, Trash2, RefreshCw,
-  HardDrive, Activity, Wifi, WifiOff, File, X
+  HardDrive, Activity, Wifi, WifiOff, File, X, Contact2
 } from 'lucide-react';
 
 // Browser compatibility checks
