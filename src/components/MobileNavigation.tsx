@@ -32,7 +32,8 @@ import {
   Gamepad2,
   ShieldCheck,
   Beef,
-  HandCoins
+  HandCoins,
+  Usb
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
@@ -106,6 +107,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'zip-to-exe', label: 'ZIP-to-EXE Builder', icon: Package },
       { id: 'mod-tools', label: 'Mod Creation Tools', icon: Wrench },
       { id: 'cloud-gaming', label: 'Cloud Gaming', icon: Gamepad2 },
+      { id: 'usb-hub', label: 'USB Hub', icon: Usb },
       { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
     ]
   },

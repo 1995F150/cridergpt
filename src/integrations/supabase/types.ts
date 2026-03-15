@@ -3056,6 +3056,45 @@ export type Database = {
         }
         Relationships: []
       }
+      usb_data_logs: {
+        Row: {
+          created_at: string | null
+          data_payload: Json | null
+          device_name: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          records_imported: number | null
+          source_type: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_payload?: Json | null
+          device_name?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          records_imported?: number | null
+          source_type: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_payload?: Json | null
+          device_name?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          records_imported?: number | null
+          source_type?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_activity_log: {
         Row: {
           created_at: string | null

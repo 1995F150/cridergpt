@@ -46,6 +46,7 @@ import { ReceiptPanel } from '@/components/panels/ReceiptPanel';
 import AgentSwarmPanel from '@/components/panels/AgentSwarmPanel';
 import { VoiceStudioPanel } from '@/components/panels/VoiceStudioPanel';
 import { SharedSpendingPanel } from '@/components/panels/SharedSpendingPanel';
+import { USBPanel } from '@/components/panels/USBPanel';
 
 export type PanelType = 
   | 'chat' 
@@ -81,7 +82,8 @@ export type PanelType =
   | 'receipts'
   | 'agent-swarm'
   | 'voice-studio'
-  | 'shared-spending';
+  | 'shared-spending'
+  | 'usb-hub';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -196,6 +198,7 @@ export default function Index() {
               {activePanel === 'agent-swarm' && <AgentSwarmPanel />}
               {activePanel === 'voice-studio' && <VoiceStudioPanel />}
               {activePanel === 'shared-spending' && <SharedSpendingPanel />}
+              {activePanel === 'usb-hub' && <USBPanel />}
             </div>
           </main>
           
