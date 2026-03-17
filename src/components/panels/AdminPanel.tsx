@@ -23,6 +23,7 @@ import { AgentScripts } from '@/components/admin/AgentScripts';
 import { LearningDashboard } from '@/components/admin/LearningDashboard';
 import { AndroidBuildSystem } from '@/components/admin/AndroidBuildSystem';
 import { ConversationImporter } from '@/components/admin/ConversationImporter';
+import { SnapchatAnalytics } from '@/components/admin/SnapchatAnalytics';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
