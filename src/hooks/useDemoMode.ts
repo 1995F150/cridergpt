@@ -10,7 +10,7 @@ interface DemoUsage {
 export function useDemoMode() {
   const [demoUsage, setDemoUsage] = useState<DemoUsage>({
     messagesUsed: 0,
-    maxMessages: 1,
+    maxMessages: 5,
     isExhausted: false,
     sessionId: ''
   });
@@ -26,15 +26,15 @@ export function useDemoMode() {
         const parsed = JSON.parse(stored);
         setDemoUsage({
           messagesUsed: parsed.messagesUsed || 0,
-          maxMessages: parsed.maxMessages || 1,
-          isExhausted: parsed.messagesUsed >= (parsed.maxMessages || 1),
+          maxMessages: 5,
+          isExhausted: parsed.messagesUsed >= 5,
           sessionId: parsed.sessionId || generateSessionId()
         });
       } else {
         const newSessionId = generateSessionId();
         setDemoUsage({
           messagesUsed: 0,
-          maxMessages: 1,
+          maxMessages: 5,
           isExhausted: false,
           sessionId: newSessionId
         });
@@ -44,7 +44,7 @@ export function useDemoMode() {
       const newSessionId = generateSessionId();
       setDemoUsage({
         messagesUsed: 0,
-        maxMessages: 1,
+        maxMessages: 5,
         isExhausted: false,
         sessionId: newSessionId
       });
@@ -77,7 +77,7 @@ export function useDemoMode() {
     const newSessionId = generateSessionId();
     const resetUsage = {
       messagesUsed: 0,
-      maxMessages: 1,
+      maxMessages: 5,
       isExhausted: false,
       sessionId: newSessionId
     };

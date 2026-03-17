@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, MessageSquare, ArrowRight } from 'lucide-react';
+import { Sparkles, MessageSquare, ArrowRight, Calculator, Tractor, BookOpen } from 'lucide-react';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 interface DemoExhaustedModalProps {
   open: boolean;
@@ -17,89 +18,63 @@ export function DemoExhaustedModal({ open, onOpenChange }: DemoExhaustedModalPro
     window.location.href = '/auth?mode=signup';
   };
 
-  const handleLogIn = () => {
-    setIsNavigating(true);
-    window.location.href = '/auth?mode=login';
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-card border-border">
         <DialogHeader className="space-y-4">
-          <div className="flex items-center justify-center w-16 h-16 mx-auto bg-gradient-to-br from-cyber-blue/20 to-tech-accent/20 rounded-full">
-            <Sparkles className="w-8 h-8 text-cyber-blue" />
+          <div className="flex items-center justify-center w-16 h-16 mx-auto bg-primary/10 rounded-full">
+            <Sparkles className="w-8 h-8 text-primary" />
           </div>
           
-          <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-cyber-blue to-tech-accent bg-clip-text text-transparent">
-            You've Used Your Free Demo
+          <DialogTitle className="text-center text-2xl font-bold text-foreground">
+            You've Used All 5 Demo Messages
           </DialogTitle>
           
           <DialogDescription className="text-center text-base text-muted-foreground">
-            Thanks for trying CriderGPT! To continue using our AI assistant and unlock all features, please sign up for a free account or log in.
+            Sign up in 10 seconds to keep chatting and unlock 30+ tools — completely free.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-6">
-          {/* Demo Summary */}
-          <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
-            <div className="flex items-center gap-3 mb-2">
-              <MessageSquare className="w-5 h-5 text-cyber-blue" />
-              <span className="font-semibold text-foreground">Demo Complete</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              You've sent <Badge variant="secondary">1 message</Badge> to our AI assistant. 
-              Sign up to continue the conversation and access all CriderGPT features.
-            </p>
+        <div className="space-y-5 mt-4">
+          {/* Google Sign-In — one-click */}
+          <GoogleSignInButton />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or</span></div>
           </div>
 
-          {/* Free Plan Benefits */}
-          <div className="space-y-3">
-            <h4 className="font-semibold text-foreground">What you get with a free account:</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+          <Button 
+            onClick={handleSignUp}
+            disabled={isNavigating}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            size="lg"
+          >
+            Sign Up with Email
+            {isNavigating && <div className="ml-2 w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />}
+          </Button>
+
+          {/* Features you'll unlock */}
+          <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+            <h4 className="font-semibold text-foreground text-sm mb-2">What you'll unlock for free:</h4>
+            <ul className="space-y-1.5 text-xs text-muted-foreground">
               <li className="flex items-center gap-2">
-                <ArrowRight className="w-4 h-4 text-cyber-blue" />
+                <MessageSquare className="w-3.5 h-3.5 text-primary" />
                 13 AI chat tokens per month
               </li>
               <li className="flex items-center gap-2">
-                <ArrowRight className="w-4 h-4 text-cyber-blue" />
-                5 calculators per day (Soil Health, Spray Mix, Irrigation ≤10 acres)
+                <Calculator className="w-3.5 h-3.5 text-primary" />
+                5 calculators/day — Soil Health, Spray Mix, Voltage Drop
               </li>
               <li className="flex items-center gap-2">
-                <ArrowRight className="w-4 h-4 text-cyber-blue" />
-                2 documents per day (SAE logs, watermarked invoices)
+                <BookOpen className="w-3.5 h-3.5 text-primary" />
+                FFA Record Book, SAE logs, and event planner
               </li>
               <li className="flex items-center gap-2">
-                <ArrowRight className="w-4 h-4 text-cyber-blue" />
-                5 TTS requests per month
-              </li>
-              <li className="flex items-center gap-2">
-                <ArrowRight className="w-4 h-4 text-cyber-blue" />
-                Basic agriculture tools and FFA support
+                <Tractor className="w-3.5 h-3.5 text-primary" />
+                Livestock tracker, irrigation planner, and more
               </li>
             </ul>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-3 pt-4">
-            <Button 
-              onClick={handleSignUp}
-              disabled={isNavigating}
-              className="w-full bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90 text-white font-semibold py-3"
-              size="lg"
-            >
-              Sign Up Free
-              {isNavigating && <div className="ml-2 w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            </Button>
-            
-            <Button 
-              onClick={handleLogIn}
-              disabled={isNavigating}
-              variant="outline"
-              className="w-full border-cyber-blue/30 text-cyber-blue hover:bg-cyber-blue/10"
-              size="lg"
-            >
-              Log In
-            </Button>
           </div>
 
           <p className="text-xs text-center text-muted-foreground">

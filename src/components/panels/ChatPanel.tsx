@@ -28,6 +28,7 @@ import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatGallery } from "@/components/chat/ChatGallery";
 import { DemoExhaustedModal } from "@/components/DemoExhaustedModal";
+import { GuestWelcomeHero } from "@/components/GuestWelcomeHero";
 import { SuggestionChips } from "@/components/chat/SuggestionChips";
 import { PendingTasksBanner } from "@/components/chat/PendingTasksBanner";
 import { PatternMemoryBadge } from "@/components/chat/PatternMemoryBadge";
@@ -146,7 +147,6 @@ export default function ChatPanel() {
         setShowDemoModal(true);
         return;
       }
-      incrementDemoUsage();
     }
 
     try {
@@ -434,6 +434,39 @@ Make it detailed and actionable.`;
           setStreamingMessage("");
           setTimeout(() => setAgiToolSteps([]), 3000);
         }
+      } else if (!user) {
+        // ========== DEMO MODE — route through demo-chat edge function ==========
+        setIsStreaming(true);
+        setStreamingMessage("Thinking...");
+
+        try {
+          const { data, error } = await supabase.functions.invoke('demo-chat', {
+            body: { message, sessionId: demoUsage.sessionId }
+          });
+
+          if (error) throw error;
+
+          if (data?.error) {
+            if (data.error === "Demo limit exceeded") {
+              setShowDemoModal(true);
+              return;
+            }
+            throw new Error(data.message || data.error);
+          }
+
+          const response = data?.response || "Thanks for trying CriderGPT! Sign up for full access.";
+          await sendMessage(convId, response, "assistant");
+
+          // Increment local counter after successful response
+          incrementDemoUsage();
+
+        } catch (error: any) {
+          console.error("Demo chat error:", error);
+          await sendMessage(convId, "Sorry, something went wrong. Please try again or sign up for full access!", "assistant");
+        } finally {
+          setIsStreaming(false);
+          setStreamingMessage("");
+        }
       } else {
         // Regular AI response with streaming
         setIsStreaming(true);
@@ -667,46 +700,53 @@ Make it detailed and actionable.`;
         {/* Messages Area */}
         <ScrollArea ref={scrollRef} className="flex-1 p-2 md:p-4">
           {messages.length === 0 && !currentConversation ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
-              <img 
-                src="/cridergpt-logo.png" 
-                alt="CriderGPT" 
-                className="h-16 w-16 md:h-20 md:w-20 object-contain mb-4"
+            !user ? (
+              <GuestWelcomeHero 
+                onSuggestionClick={handleSendMessage} 
+                messagesRemaining={demoUsage.maxMessages - demoUsage.messagesUsed} 
               />
-              <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome to CriderGPT</h2>
-              <p className="text-muted-foreground max-w-md mb-4 text-sm md:text-base">
-                Your AI assistant for agriculture, mechanics, welding, and more.
-              </p>
-              
-              {/* Personalized Suggestion Chips */}
-              <div className="w-full max-w-lg mb-4">
-                <SuggestionChips
-                  suggestions={suggestions}
-                  onSuggestionClick={handleSendMessage}
-                  onRefresh={generateSuggestions}
-                  isLoading={isSuggestionsLoading}
-                  className="justify-center"
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
+                <img 
+                  src="/cridergpt-logo.png" 
+                  alt="CriderGPT" 
+                  className="h-16 w-16 md:h-20 md:w-20 object-contain mb-4"
                 />
-              </div>
+                <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome to CriderGPT</h2>
+                <p className="text-muted-foreground max-w-md mb-4 text-sm md:text-base">
+                  Your AI assistant for agriculture, mechanics, welding, and more.
+                </p>
+                
+                {/* Personalized Suggestion Chips */}
+                <div className="w-full max-w-lg mb-4">
+                  <SuggestionChips
+                    suggestions={suggestions}
+                    onSuggestionClick={handleSendMessage}
+                    onRefresh={generateSuggestions}
+                    isLoading={isSuggestionsLoading}
+                    className="justify-center"
+                  />
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full max-w-lg">
-                {[
-                  "How do I troubleshoot a John Deere hydraulic issue?",
-                  "What welding settings for 1/4 inch steel?",
-                  "Generate an image of a modern farm at sunset",
-                  "Calculate voltage drop for 200ft 12AWG wire",
-                ].map((prompt, i) => (
-                  <Button
-                    key={i}
-                    variant="outline"
-                    className="text-left h-auto py-2 md:py-3 px-3 md:px-4"
-                    onClick={() => handleSendMessage(prompt)}
-                  >
-                    <span className="text-xs md:text-sm line-clamp-2">{prompt}</span>
-                  </Button>
-                ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full max-w-lg">
+                  {[
+                    "How do I troubleshoot a John Deere hydraulic issue?",
+                    "What welding settings for 1/4 inch steel?",
+                    "Generate an image of a modern farm at sunset",
+                    "Calculate voltage drop for 200ft 12AWG wire",
+                  ].map((prompt, i) => (
+                    <Button
+                      key={i}
+                      variant="outline"
+                      className="text-left h-auto py-2 md:py-3 px-3 md:px-4"
+                      onClick={() => handleSendMessage(prompt)}
+                    >
+                      <span className="text-xs md:text-sm line-clamp-2">{prompt}</span>
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )
           ) : (
             <div className="space-y-1">
               {messages.map((msg) => (
@@ -719,6 +759,29 @@ Make it detailed and actionable.`;
                   userName={user?.email?.split("@")[0] || "You"}
                 />
               ))}
+
+              {/* Progressive signup nudges for demo users */}
+              {!user && demoUsage.messagesUsed >= 2 && demoUsage.messagesUsed < 4 && (
+                <div className="mx-2 my-3 p-3 rounded-lg bg-primary/5 border border-primary/20 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    <Sparkles className="h-3 w-3 inline mr-1 text-primary" />
+                    Enjoying CriderGPT? <Button variant="link" className="text-primary p-0 h-auto text-xs" onClick={() => window.location.href = "/auth"}>Sign up free</Button> to save your chats and unlock 30+ tools.
+                  </p>
+                </div>
+              )}
+              {!user && demoUsage.messagesUsed >= 4 && !demoUsage.isExhausted && (
+                <div className="mx-2 my-3 p-4 rounded-lg bg-primary/10 border border-primary/30 text-center">
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    ⚡ Last message before demo ends!
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Sign up in 10 seconds to keep chatting — it's free.
+                  </p>
+                  <Button size="sm" className="bg-primary text-primary-foreground" onClick={() => window.location.href = "/auth"}>
+                    Create Free Account
+                  </Button>
+                </div>
+              )}
               
               {/* AGI Thinking Steps */}
               {isAGIMode && (agiToolSteps.length > 0 || isStreaming) && (
