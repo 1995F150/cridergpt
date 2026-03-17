@@ -10,7 +10,7 @@ interface DemoUsage {
 export function useDemoMode() {
   const [demoUsage, setDemoUsage] = useState<DemoUsage>({
     messagesUsed: 0,
-    maxMessages: 1,
+    maxMessages: 5,
     isExhausted: false,
     sessionId: ''
   });
