@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   MapPin, Activity, Compass, BatteryCharging, Wifi,
-  Play, Square, AlertTriangle
+  Play, Square, AlertTriangle, Thermometer, Sun, Gauge
 } from 'lucide-react';
-import { useGPS, useAccelerometer, useGyroscope, useBattery, useNetworkInfo } from '@/hooks/useSensors';
+import { useGPS, useAccelerometer, useGyroscope, useBattery, useNetworkInfo, useAmbientLight } from '@/hooks/useSensors';
+import { useWeather } from '@/hooks/useWeather';
 
 function SensorCard({ title, icon: Icon, active, error, onStart, onStop, children }: {
   title: string;
@@ -62,12 +63,55 @@ function DataRow({ label, value }: { label: string; value: string | number | nul
   );
 }
 
+function CompassDial({ heading }: { heading: number | null }) {
+  if (heading === null) return <p className="text-xs text-muted-foreground text-center">No heading data</p>;
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const dir = directions[Math.round(heading / 45) % 8];
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative w-20 h-20 rounded-full border-2 border-primary/30">
+        <div
+          className="absolute inset-2 flex items-center justify-center"
+          style={{ transform: `rotate(${heading}deg)` }}
+        >
+          <div className="w-0.5 h-6 bg-destructive rounded-full origin-bottom" />
+        </div>
+        <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 text-[9px] font-bold text-primary">N</span>
+      </div>
+      <span className="text-xs font-mono text-foreground">{heading.toFixed(0)}° {dir}</span>
+    </div>
+  );
+}
+
+function SpeedGauge({ speed }: { speed: number | null }) {
+  const mph = speed ? speed * 2.237 : 0;
+  const pct = Math.min(mph / 120 * 100, 100);
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative w-20 h-10 overflow-hidden">
+        <div className="absolute inset-0 border-2 border-primary/30 rounded-t-full" />
+        <div
+          className="absolute bottom-0 left-1/2 w-0.5 h-9 bg-primary origin-bottom rounded-full"
+          style={{ transform: `rotate(${-90 + pct * 1.8}deg)` }}
+        />
+      </div>
+      <span className="text-lg font-bold font-mono text-foreground">{mph.toFixed(1)}</span>
+      <span className="text-[10px] text-muted-foreground">mph</span>
+    </div>
+  );
+}
+
 export function SensorDashboard() {
   const gps = useGPS();
   const accel = useAccelerometer();
   const gyro = useGyroscope();
   const battery = useBattery();
   const network = useNetworkInfo();
+  const light = useAmbientLight();
+  const weather = useWeather(
+    gps.data?.latitude ?? null,
+    gps.data?.longitude ?? null
+  );
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -79,6 +123,53 @@ export function SensorDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
+        {/* Weather / Temperature */}
+        <Card className="border-border sm:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Thermometer className="h-4 w-4 text-primary" />
+              Local Weather
+              {weather.isLoading && (
+                <Badge variant="secondary" className="text-xs ml-auto">Loading…</Badge>
+              )}
+              {weather.data && (
+                <Badge variant="default" className="text-xs ml-auto">{weather.data.description}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {weather.error ? (
+              <div className="flex items-center gap-2 text-destructive text-xs">
+                <AlertTriangle className="h-3 w-3" /> {weather.error}
+              </div>
+            ) : weather.data ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold font-mono text-foreground">{weather.data.temperature}°F</p>
+                  <p className="text-xs text-muted-foreground">{weather.data.temperatureC}°C</p>
+                </div>
+                <div>
+                  <p className="text-sm font-mono text-foreground">{weather.data.humidity ?? '—'}%</p>
+                  <p className="text-xs text-muted-foreground">Humidity</p>
+                </div>
+                <div>
+                  <p className="text-sm font-mono text-foreground">{weather.data.windSpeed} mph</p>
+                  <p className="text-xs text-muted-foreground">Wind</p>
+                </div>
+                <div>
+                  <Button size="sm" variant="outline" onClick={weather.refresh} className="h-7 text-xs">
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {gps.isTracking ? 'Waiting for GPS to fetch weather…' : 'Start GPS tracking to get local weather'}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* GPS */}
         <SensorCard
           title="GPS / Location"
@@ -101,6 +192,25 @@ export function SensorDashboard() {
             <p className="text-xs text-muted-foreground">Tap play to start tracking</p>
           )}
         </SensorCard>
+
+        {/* Speedometer & Compass */}
+        <Card className="border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-primary" />
+              Speed & Compass
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex justify-around items-center">
+              <SpeedGauge speed={gps.data?.speed ?? null} />
+              <CompassDial heading={gyro.data?.alpha ?? gps.data?.heading ?? null} />
+            </div>
+            {!gps.isTracking && !gyro.isActive && (
+              <p className="text-xs text-muted-foreground text-center mt-2">Start GPS or Gyroscope</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Accelerometer */}
         <SensorCard
@@ -142,6 +252,28 @@ export function SensorDashboard() {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">Tap play to read orientation</p>
+          )}
+        </SensorCard>
+
+        {/* Ambient Light */}
+        <SensorCard
+          title="Ambient Light"
+          icon={Sun}
+          active={light.isActive}
+          error={light.error}
+          onStart={light.start}
+          onStop={light.stop}
+        >
+          {light.lux !== null ? (
+            <div className="text-center space-y-1">
+              <p className="text-2xl font-bold font-mono text-foreground">{light.lux.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground">lux</p>
+              <p className="text-xs text-muted-foreground">
+                {light.lux < 50 ? '🌙 Dark' : light.lux < 200 ? '🏠 Indoor' : light.lux < 1000 ? '☁️ Cloudy' : '☀️ Bright'}
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Chrome on Android only</p>
           )}
         </SensorCard>
 
@@ -215,8 +347,8 @@ export function SensorDashboard() {
         <CardContent className="p-4">
           <p className="text-xs text-muted-foreground">
             <strong>Native-only sensors</strong> (available in the Android APK via Capacitor plugins):
-            NFC Tag Scanner, Bluetooth LE, Biometric Auth, Barcode/QR Scanner, and Haptic Feedback.
-            Build the APK to access these.
+            NFC Tag Scanner, Bluetooth LE, Biometric Auth, Barcode/QR Scanner, Haptic Feedback,
+            Barometric Pressure, and Step Counter/Pedometer. Build the APK to access these.
           </p>
         </CardContent>
       </Card>

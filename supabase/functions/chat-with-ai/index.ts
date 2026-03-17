@@ -518,7 +518,7 @@ serve(async (req) => {
   );
 
   try {
-    const { message, imageData, conversation_history } = await req.json();
+    const { message, imageData, conversation_history, sensor_context } = await req.json();
 
     if (!message && !imageData) {
       throw new Error('Message or image is required');
@@ -723,7 +723,8 @@ serve(async (req) => {
     }
 
     // Build messages array
-    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext;
+    const sensorInfo = sensor_context ? `\n${sensor_context}` : '';
+    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext + sensorInfo;
     
     const messages: any[] = [
       { role: 'system', content: systemPrompt }

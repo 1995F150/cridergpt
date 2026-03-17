@@ -251,7 +251,7 @@ export const useChat = () => {
   }, [user, toast, currentConversation]);
 
   // Send message with AI response
-  const sendMessageWithAI = useCallback(async (conversationId: string, userMessage: string, imageUrl?: string) => {
+  const sendMessageWithAI = useCallback(async (conversationId: string, userMessage: string, imageUrl?: string, sensorContext?: string) => {
     if (!user || isLoading) return;
 
     setIsLoading(true);
@@ -277,6 +277,7 @@ export const useChat = () => {
           body: JSON.stringify({
             message: userMessage,
             conversation_history: conversationHistory,
+            sensor_context: sensorContext || undefined,
           }),
         }
       );
