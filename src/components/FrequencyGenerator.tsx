@@ -1623,7 +1623,7 @@ function SignalProcessingSection({ engine, frequency, waveform, volume }: { engi
           }},
           { l: 'Distortion', fn: () => {
             engine.init(); const ctx = engine.ctx!;
-            const osc = ctx.createOscillator(); const dist = ctx.createWaveshaper();
+            const osc = ctx.createOscillator(); const dist = ctx.createWaveShaper();
             const gain = ctx.createGain();
             osc.frequency.value = frequency; osc.type = waveform;
             const curve = new Float32Array(256);
