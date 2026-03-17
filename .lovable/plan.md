@@ -1,50 +1,66 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+# Upgrade Demo Chat to Drive Signups & Traffic
 
-## What's Changing
+## Problem
+Right now, unauthenticated visitors land on the full app UI, get 1 demo message (localStorage limit), and see a generic signup modal. There's no compelling reason to sign up. The demo-chat edge function allows 3 messages but ChatPanel doesn't even use it. The experience doesn't showcase CriderGPT's strengths.
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+## What We're Building
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+A proper **public demo experience** that lets visitors try 5 real AI messages without signing up, with a persistent chat thread, smart signup nudges, and a public-facing hero section that sells the app.
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+## Changes
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+### 1. Increase Demo Limit to 5 Messages
+- **`src/hooks/useDemoMode.ts`**: Change `maxMessages` from 1 to 5
+- **`supabase/functions/demo-chat/index.ts`**: Change server-side limit from 3 to 5
+- More messages = more invested users = higher conversion
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+### 2. Route Demo Users Through the `demo-chat` Edge Function
+- **`src/components/panels/ChatPanel.tsx`**: When `!user`, call `supabase.functions.invoke('demo-chat')` instead of `generateSmartResponse`. This uses the proper server-side tracking (IP, user agent, session) and prevents localStorage bypass.
+- Show a persistent "messages remaining" counter in the chat header
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+### 3. Add a Public Welcome Hero for Guests
+- **New: `src/components/GuestWelcomeHero.tsx`**: A compact hero card shown above the chat for unauthenticated users. Shows:
+  - CriderGPT logo + tagline ("AI-powered farming, welding, FFA & more")
+  - "Try it free — 5 messages, no signup" badge
+  - 3-4 quick-start suggestion chips ("What's the best welding rod for mild steel?", "Help me plan a crop rotation", "Calculate voltage drop for 100ft wire", "What should I say in my FFA speech?")
+  - These pre-fill the chat input so visitors immediately see value
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+### 4. Better Signup Conversion Modal
+- **`src/components/DemoExhaustedModal.tsx`**: Update copy to be more compelling:
+  - Show what they accomplished in the demo (e.g. "You asked about welding and farming!")
+  - Highlight top features they haven't tried yet (calculators, FFA tools, livestock)
+  - Add Google sign-in button directly in the modal (one-click signup)
+  - "Takes 10 seconds" messaging
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+### 5. Progressive Signup Nudges
+- **`src/components/panels/ChatPanel.tsx`**: After message 2, show a subtle inline banner: "Enjoying CriderGPT? Sign up to save your chats and unlock 30+ tools"
+- After message 4, show a more prominent nudge with the signup CTA
+- After message 5, show the exhausted modal
 
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+### 6. SEO Landing Content for Guests
+- **`src/pages/Index.tsx`**: When `!user`, render a lightweight SEO section below the chat with:
+  - "What is CriderGPT?" paragraph (crawlable text for Google)
+  - Feature grid showing top tools (calculators, FFA, livestock, AI image gen)
+  - This gives Google indexable content beyond just the app shell
 
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
-
-## File to Modify
+## Files Modified
 
 | File | Change |
 |------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
+| `src/hooks/useDemoMode.ts` | Increase limit to 5 |
+| `supabase/functions/demo-chat/index.ts` | Increase to 5, improve system prompt |
+| `src/components/panels/ChatPanel.tsx` | Route demo through edge function, add nudges + counter |
+| `src/components/GuestWelcomeHero.tsx` | **New** — hero card with quick-start chips |
+| `src/components/DemoExhaustedModal.tsx` | Better copy, Google sign-in button, feature highlights |
+| `src/pages/Index.tsx` | Add SEO content section for guests |
 
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+## Why This Works
+
+- **5 messages** is the sweet spot — enough to show real value, not enough to satisfy ongoing need
+- **Quick-start chips** eliminate the "what do I type?" blank page problem
+- **Server-side tracking** prevents people from clearing localStorage to get unlimited demos
+- **SEO content** gives Google something to index beyond the app shell, helping you rank for "AI farming assistant", "welding calculator", "FFA tools"
+- **Progressive nudges** convert at the right moment — when users are engaged, not annoyed
 
