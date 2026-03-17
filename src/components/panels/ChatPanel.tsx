@@ -112,16 +112,16 @@ export default function ChatPanel() {
     weather: weather.data,
     batteryLevel: battery.level,
     batteryCharging: battery.charging,
-    networkOnline: network.info.online,
-    networkType: network.info.type,
+    networkOnline: network.online,
+    networkType: network.type,
   });
 
   // Auto-start GPS tracking for sensor context
   useEffect(() => {
     if (user && !gps.isTracking) {
-      gps.start();
+      gps.startTracking();
     }
-    return () => { gps.stop(); };
+    return () => { gps.stopTracking(); };
   }, [user]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
