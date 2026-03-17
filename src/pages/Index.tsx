@@ -207,6 +207,7 @@ export default function Index() {
               {activePanel === 'usb-hub' && <USBPanel />}
               {activePanel === 'rdr2-guide' && <RDR2GuidePanel />}
               {activePanel === 'sensors' && <SensorPanel />}
+              {activePanel === 'frequency' && <FrequencyPanel />}
             </div>
 
             {/* SEO Content for Search Engines — only shown to guests */}

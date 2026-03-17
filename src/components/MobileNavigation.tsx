@@ -110,6 +110,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'cloud-gaming', label: 'Cloud Gaming', icon: Gamepad2 },
       { id: 'rdr2-guide', label: 'RDR2 Guide', icon: Gamepad2 },
       { id: 'usb-hub', label: 'USB Hub', icon: Usb },
+      { id: 'frequency', label: 'Frequency Tools', icon: AudioLines },
       { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
     ]
   },
