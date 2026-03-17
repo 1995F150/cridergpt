@@ -47,6 +47,7 @@ import AgentSwarmPanel from '@/components/panels/AgentSwarmPanel';
 import { VoiceStudioPanel } from '@/components/panels/VoiceStudioPanel';
 import { SharedSpendingPanel } from '@/components/panels/SharedSpendingPanel';
 import { USBPanel } from '@/components/panels/USBPanel';
+import { RDR2GuidePanel } from '@/components/panels/RDR2GuidePanel';
 
 export type PanelType = 
   | 'chat' 
@@ -83,7 +84,8 @@ export type PanelType =
   | 'agent-swarm'
   | 'voice-studio'
   | 'shared-spending'
-  | 'usb-hub';
+  | 'usb-hub'
+  | 'rdr2-guide';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -199,6 +201,7 @@ export default function Index() {
               {activePanel === 'voice-studio' && <VoiceStudioPanel />}
               {activePanel === 'shared-spending' && <SharedSpendingPanel />}
               {activePanel === 'usb-hub' && <USBPanel />}
+              {activePanel === 'rdr2-guide' && <RDR2GuidePanel />}
             </div>
 
             {/* SEO Content for Search Engines — only shown to guests */}
