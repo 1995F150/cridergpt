@@ -48,6 +48,7 @@ import { VoiceStudioPanel } from '@/components/panels/VoiceStudioPanel';
 import { SharedSpendingPanel } from '@/components/panels/SharedSpendingPanel';
 import { USBPanel } from '@/components/panels/USBPanel';
 import { RDR2GuidePanel } from '@/components/panels/RDR2GuidePanel';
+import { SensorPanel } from '@/components/panels/SensorPanel';
 
 export type PanelType = 
   | 'chat' 
