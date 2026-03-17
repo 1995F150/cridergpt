@@ -207,6 +207,13 @@ export function AdminPanel() {
             Imports
           </TabsTrigger>
           <TabsTrigger 
+            value="snapchat" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Ghost className="h-4 w-4" />
+            Snapchat
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
