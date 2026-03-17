@@ -434,6 +434,39 @@ Make it detailed and actionable.`;
           setStreamingMessage("");
           setTimeout(() => setAgiToolSteps([]), 3000);
         }
+      } else if (!user) {
+        // ========== DEMO MODE — route through demo-chat edge function ==========
+        setIsStreaming(true);
+        setStreamingMessage("Thinking...");
+
+        try {
+          const { data, error } = await supabase.functions.invoke('demo-chat', {
+            body: { message, sessionId: demoUsage.sessionId }
+          });
+
+          if (error) throw error;
+
+          if (data?.error) {
+            if (data.error === "Demo limit exceeded") {
+              setShowDemoModal(true);
+              return;
+            }
+            throw new Error(data.message || data.error);
+          }
+
+          const response = data?.response || "Thanks for trying CriderGPT! Sign up for full access.";
+          await sendMessage(convId, response, "assistant");
+
+          // Increment local counter after successful response
+          incrementDemoUsage();
+
+        } catch (error: any) {
+          console.error("Demo chat error:", error);
+          await sendMessage(convId, "Sorry, something went wrong. Please try again or sign up for full access!", "assistant");
+        } finally {
+          setIsStreaming(false);
+          setStreamingMessage("");
+        }
       } else {
         // Regular AI response with streaming
         setIsStreaming(true);
