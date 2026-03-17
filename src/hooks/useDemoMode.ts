@@ -26,8 +26,8 @@ export function useDemoMode() {
         const parsed = JSON.parse(stored);
         setDemoUsage({
           messagesUsed: parsed.messagesUsed || 0,
-          maxMessages: parsed.maxMessages || 1,
-          isExhausted: parsed.messagesUsed >= (parsed.maxMessages || 1),
+          maxMessages: 5,
+          isExhausted: parsed.messagesUsed >= 5,
           sessionId: parsed.sessionId || generateSessionId()
         });
       } else {
