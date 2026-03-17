@@ -201,6 +201,7 @@ export default function Index() {
               {activePanel === 'voice-studio' && <VoiceStudioPanel />}
               {activePanel === 'shared-spending' && <SharedSpendingPanel />}
               {activePanel === 'usb-hub' && <USBPanel />}
+              {activePanel === 'rdr2-guide' && <RDR2GuidePanel />}
             </div>
 
             {/* SEO Content for Search Engines — only shown to guests */}
