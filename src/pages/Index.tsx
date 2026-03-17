@@ -86,7 +86,8 @@ export type PanelType =
   | 'voice-studio'
   | 'shared-spending'
   | 'usb-hub'
-  | 'rdr2-guide';
+  | 'rdr2-guide'
+  | 'sensors';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
