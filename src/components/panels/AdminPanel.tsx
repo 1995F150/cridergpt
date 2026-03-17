@@ -307,6 +307,10 @@ export function AdminPanel() {
         <TabsContent value="imports">
           <ConversationImporter />
         </TabsContent>
+
+        <TabsContent value="snapchat">
+          <SnapchatAnalytics />
+        </TabsContent>
       </Tabs>
     </div>
   );
