@@ -49,6 +49,7 @@ import { SharedSpendingPanel } from '@/components/panels/SharedSpendingPanel';
 import { USBPanel } from '@/components/panels/USBPanel';
 import { RDR2GuidePanel } from '@/components/panels/RDR2GuidePanel';
 import { SensorPanel } from '@/components/panels/SensorPanel';
+import { FrequencyPanel } from '@/components/panels/FrequencyPanel';
 
 export type PanelType = 
   | 'chat' 
@@ -87,7 +88,8 @@ export type PanelType =
   | 'shared-spending'
   | 'usb-hub'
   | 'rdr2-guide'
-  | 'sensors';
+  | 'sensors'
+  | 'frequency';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
@@ -205,6 +207,7 @@ export default function Index() {
               {activePanel === 'usb-hub' && <USBPanel />}
               {activePanel === 'rdr2-guide' && <RDR2GuidePanel />}
               {activePanel === 'sensors' && <SensorPanel />}
+              {activePanel === 'frequency' && <FrequencyPanel />}
             </div>
 
             {/* SEO Content for Search Engines — only shown to guests */}
