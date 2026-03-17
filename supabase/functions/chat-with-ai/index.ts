@@ -518,7 +518,7 @@ serve(async (req) => {
   );
 
   try {
-    const { message, imageData, conversation_history } = await req.json();
+    const { message, imageData, conversation_history, sensor_context } = await req.json();
 
     if (!message && !imageData) {
       throw new Error('Message or image is required');
