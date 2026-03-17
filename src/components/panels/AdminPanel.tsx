@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, Bot, Brain, Smartphone, FileJson } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, Bot, Brain, Smartphone, FileJson, Ghost } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
@@ -23,6 +23,7 @@ import { AgentScripts } from '@/components/admin/AgentScripts';
 import { LearningDashboard } from '@/components/admin/LearningDashboard';
 import { AndroidBuildSystem } from '@/components/admin/AndroidBuildSystem';
 import { ConversationImporter } from '@/components/admin/ConversationImporter';
+import { SnapchatAnalytics } from '@/components/admin/SnapchatAnalytics';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
@@ -206,6 +207,13 @@ export function AdminPanel() {
             Imports
           </TabsTrigger>
           <TabsTrigger 
+            value="snapchat" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Ghost className="h-4 w-4" />
+            Snapchat
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
@@ -298,6 +306,10 @@ export function AdminPanel() {
 
         <TabsContent value="imports">
           <ConversationImporter />
+        </TabsContent>
+
+        <TabsContent value="snapchat">
+          <SnapchatAnalytics />
         </TabsContent>
       </Tabs>
     </div>

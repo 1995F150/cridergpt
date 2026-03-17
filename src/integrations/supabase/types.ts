@@ -2539,6 +2539,51 @@ export type Database = {
         }
         Relationships: []
       }
+      snapchat_lens_analytics: {
+        Row: {
+          created_at: string
+          id: string
+          lens_name: string
+          metadata: Json | null
+          notes: string | null
+          snapshot_date: string
+          top_countries: Json | null
+          top_interests: Json | null
+          total_plays: number | null
+          total_shares: number | null
+          total_views: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lens_name: string
+          metadata?: Json | null
+          notes?: string | null
+          snapshot_date?: string
+          top_countries?: Json | null
+          top_interests?: Json | null
+          total_plays?: number | null
+          total_shares?: number | null
+          total_views?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lens_name?: string
+          metadata?: Json | null
+          notes?: string | null
+          snapshot_date?: string
+          top_countries?: Json | null
+          top_interests?: Json | null
+          total_plays?: number | null
+          total_shares?: number | null
+          total_views?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       spending_entries: {
         Row: {
           amount: number
