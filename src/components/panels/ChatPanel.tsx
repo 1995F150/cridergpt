@@ -509,7 +509,8 @@ Make it detailed and actionable.`;
             message,
             selectedModel,
             imageUrl ? "vision_analysis" : "chat",
-            imageUrl
+            imageUrl,
+            sensorContext || undefined
           );
 
           const response = typeof result === "string" ? result : result.response;
