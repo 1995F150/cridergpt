@@ -759,6 +759,29 @@ Make it detailed and actionable.`;
                   userName={user?.email?.split("@")[0] || "You"}
                 />
               ))}
+
+              {/* Progressive signup nudges for demo users */}
+              {!user && demoUsage.messagesUsed >= 2 && demoUsage.messagesUsed < 4 && (
+                <div className="mx-2 my-3 p-3 rounded-lg bg-primary/5 border border-primary/20 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    <Sparkles className="h-3 w-3 inline mr-1 text-primary" />
+                    Enjoying CriderGPT? <Button variant="link" className="text-primary p-0 h-auto text-xs" onClick={() => window.location.href = "/auth"}>Sign up free</Button> to save your chats and unlock 30+ tools.
+                  </p>
+                </div>
+              )}
+              {!user && demoUsage.messagesUsed >= 4 && !demoUsage.isExhausted && (
+                <div className="mx-2 my-3 p-4 rounded-lg bg-primary/10 border border-primary/30 text-center">
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    ⚡ Last message before demo ends!
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Sign up in 10 seconds to keep chatting — it's free.
+                  </p>
+                  <Button size="sm" className="bg-primary text-primary-foreground" onClick={() => window.location.href = "/auth"}>
+                    Create Free Account
+                  </Button>
+                </div>
+              )}
               
               {/* AGI Thinking Steps */}
               {isAGIMode && (agiToolSteps.length > 0 || isStreaming) && (

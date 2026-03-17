@@ -200,6 +200,31 @@ export default function Index() {
               {activePanel === 'shared-spending' && <SharedSpendingPanel />}
               {activePanel === 'usb-hub' && <USBPanel />}
             </div>
+
+            {/* SEO Content for Search Engines — only shown to guests */}
+            {!user && activePanel === 'chat' && (
+              <section className="border-t border-border bg-card px-4 py-8 md:px-8 md:py-12">
+                <div className="max-w-3xl mx-auto space-y-6">
+                  <h2 className="text-lg md:text-xl font-bold text-foreground">What is CriderGPT?</h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    CriderGPT is a free AI assistant built for agriculture, welding, FFA, and practical trades. Created by Jessie Crider — FFA Historian 2025–2026 from Southwest Virginia — it combines real-world knowledge with AI to help farmers, students, and tradespeople get answers fast. From soil health calculators and crop rotation planners to welding rod guides and voltage drop calculators, CriderGPT has 30+ built-in tools designed for people who work with their hands.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                    {[
+                      { title: "AI Chat", desc: "Ask about farming, welding, or code" },
+                      { title: "Calculators", desc: "Soil health, voltage, spray mix" },
+                      { title: "FFA Tools", desc: "Record book, SAE logs, events" },
+                      { title: "Livestock", desc: "Track animals, health records" },
+                    ].map((f, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                        <h3 className="text-sm font-semibold text-foreground">{f.title}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">{f.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
           </main>
           
           <Footer />
