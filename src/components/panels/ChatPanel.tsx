@@ -700,46 +700,53 @@ Make it detailed and actionable.`;
         {/* Messages Area */}
         <ScrollArea ref={scrollRef} className="flex-1 p-2 md:p-4">
           {messages.length === 0 && !currentConversation ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
-              <img 
-                src="/cridergpt-logo.png" 
-                alt="CriderGPT" 
-                className="h-16 w-16 md:h-20 md:w-20 object-contain mb-4"
+            !user ? (
+              <GuestWelcomeHero 
+                onSuggestionClick={handleSendMessage} 
+                messagesRemaining={demoUsage.maxMessages - demoUsage.messagesUsed} 
               />
-              <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome to CriderGPT</h2>
-              <p className="text-muted-foreground max-w-md mb-4 text-sm md:text-base">
-                Your AI assistant for agriculture, mechanics, welding, and more.
-              </p>
-              
-              {/* Personalized Suggestion Chips */}
-              <div className="w-full max-w-lg mb-4">
-                <SuggestionChips
-                  suggestions={suggestions}
-                  onSuggestionClick={handleSendMessage}
-                  onRefresh={generateSuggestions}
-                  isLoading={isSuggestionsLoading}
-                  className="justify-center"
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
+                <img 
+                  src="/cridergpt-logo.png" 
+                  alt="CriderGPT" 
+                  className="h-16 w-16 md:h-20 md:w-20 object-contain mb-4"
                 />
-              </div>
+                <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome to CriderGPT</h2>
+                <p className="text-muted-foreground max-w-md mb-4 text-sm md:text-base">
+                  Your AI assistant for agriculture, mechanics, welding, and more.
+                </p>
+                
+                {/* Personalized Suggestion Chips */}
+                <div className="w-full max-w-lg mb-4">
+                  <SuggestionChips
+                    suggestions={suggestions}
+                    onSuggestionClick={handleSendMessage}
+                    onRefresh={generateSuggestions}
+                    isLoading={isSuggestionsLoading}
+                    className="justify-center"
+                  />
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full max-w-lg">
-                {[
-                  "How do I troubleshoot a John Deere hydraulic issue?",
-                  "What welding settings for 1/4 inch steel?",
-                  "Generate an image of a modern farm at sunset",
-                  "Calculate voltage drop for 200ft 12AWG wire",
-                ].map((prompt, i) => (
-                  <Button
-                    key={i}
-                    variant="outline"
-                    className="text-left h-auto py-2 md:py-3 px-3 md:px-4"
-                    onClick={() => handleSendMessage(prompt)}
-                  >
-                    <span className="text-xs md:text-sm line-clamp-2">{prompt}</span>
-                  </Button>
-                ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full max-w-lg">
+                  {[
+                    "How do I troubleshoot a John Deere hydraulic issue?",
+                    "What welding settings for 1/4 inch steel?",
+                    "Generate an image of a modern farm at sunset",
+                    "Calculate voltage drop for 200ft 12AWG wire",
+                  ].map((prompt, i) => (
+                    <Button
+                      key={i}
+                      variant="outline"
+                      className="text-left h-auto py-2 md:py-3 px-3 md:px-4"
+                      onClick={() => handleSendMessage(prompt)}
+                    >
+                      <span className="text-xs md:text-sm line-clamp-2">{prompt}</span>
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )
           ) : (
             <div className="space-y-1">
               {messages.map((msg) => (
