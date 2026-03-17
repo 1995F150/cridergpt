@@ -83,7 +83,8 @@ export type PanelType =
   | 'agent-swarm'
   | 'voice-studio'
   | 'shared-spending'
-  | 'usb-hub';
+  | 'usb-hub'
+  | 'rdr2-guide';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
