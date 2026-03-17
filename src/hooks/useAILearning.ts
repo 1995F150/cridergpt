@@ -103,7 +103,8 @@ export function useAILearning() {
     input: string,
     selectedModel: string = 'gpt-4o-mini',
     category?: string,
-    imageData?: string
+    imageData?: string,
+    sensorContext?: string
   ): Promise<{ response: string; imageUrl?: string }> => {
     // Handle demo mode for non-authenticated users
     if (!user) {
