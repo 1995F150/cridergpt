@@ -1,50 +1,62 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+## Plan: Sensor-Powered Features + Weather via GPS + AI Sensor Context
 
-## What's Changing
+### What phones can actually sense
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+To set expectations: **no phone has a built-in room temperature sensor** accessible via browser or even Capacitor. Phones have an internal thermometer for battery/CPU protection, but it's not exposed to apps. However, we can get **local weather temperature using GPS coordinates + a free weather API** — which gives the same practical result.
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+Here's the full picture of what we can add:
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+| Feature | Source | How |
+|---|---|---|
+| **Local Temperature / Weather** | GPS → OpenWeatherMap API | Free API, no key needed for basic use |
+| **Ambient Light Level** | `AmbientLightSensor` API | Detect brightness (limited browser support) |
+| **Proximity Detection** | `ProximitySensor` API | Phone near face/object (very limited support) |
+| **Barometric Pressure** | Capacitor native only | Altitude estimation, weather prediction |
+| **Magnetometer / Compass** | Already in gyroscope hook | Compass heading via `deviceorientation` alpha |
+| **Step Counter / Pedometer** | Capacitor native only | Health/fitness tracking |
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+### What we'll build
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+**1. Weather/Temperature card on Sensor Dashboard**
+- Use the existing GPS hook to get lat/lng
+- Call Open-Meteo API (free, no API key needed) to fetch current temperature, humidity, wind speed, and conditions
+- New `useWeather` hook that takes GPS coordinates and returns weather data
+- Display as a new card in the Sensor Dashboard
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+**2. Hook sensor data into CriderGPT AI context**
+- Create a `useSensorContext` hook that collects all active sensor data into a summary string
+- Inject this as additional context when sending messages to `chat-with-ai`
+- CriderGPT can then say things like "I see you're at 38.5°N, it's 72°F outside, your battery is at 45%"
+- Update `sendMessageWithAI` in `useChat.ts` to include `sensor_context`
+- Update the edge function's system prompt to acknowledge sensor data
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+**3. Ambient Light Sensor card** (browser support: Chrome on Android)
+- New `useAmbientLight` hook using the `AmbientLightSensor` API
+- Shows current light level in lux on the dashboard
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+**4. Add more sensor-driven feature ideas to the dashboard**
+- Speed tracker (already have GPS speed) — show a speedometer-style display
+- Shake detection from accelerometer — "shake to clear chat" or "shake to get a random fact"
+- Compass visualization using gyroscope alpha data
 
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+### Files to create/modify
 
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
+| File | Action |
+|---|---|
+| `src/hooks/useWeather.ts` | **Create** — fetch weather from Open-Meteo using GPS coords |
+| `src/hooks/useSensorContext.ts` | **Create** — aggregate all sensor data for AI context |
+| `src/hooks/useSensors.ts` | **Modify** — add `useAmbientLight` hook |
+| `src/components/SensorDashboard.tsx` | **Modify** — add Weather card, Light card, speedometer |
+| `src/hooks/useChat.ts` | **Modify** — pass sensor context to AI |
+| `supabase/functions/chat-with-ai/index.ts` | **Modify** — accept and use sensor_context in system prompt |
 
-## File to Modify
+### Weather API (no key needed)
 
-| File | Change |
-|------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
+```
+https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&current_weather=true
+```
 
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+Returns temperature in °C (we'll convert to °F), wind speed, and weather code — completely free, no signup.
 
