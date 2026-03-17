@@ -88,7 +88,8 @@ export type PanelType =
   | 'shared-spending'
   | 'usb-hub'
   | 'rdr2-guide'
-  | 'sensors';
+  | 'sensors'
+  | 'frequency';
 
 export default function Index() {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
