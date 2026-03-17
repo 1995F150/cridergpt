@@ -256,6 +256,12 @@ export function RDR2GuidePanel() {
     return tutorials.filter(t => t.title.toLowerCase().includes(q) || t.summary.toLowerCase().includes(q) || t.tips.some(tip => tip.toLowerCase().includes(q)));
   }, [search]);
 
+  const filteredModding = useMemo(() => {
+    if (!search) return moddingGuides;
+    const q = search.toLowerCase();
+    return moddingGuides.filter(t => t.title.toLowerCase().includes(q) || t.summary.toLowerCase().includes(q) || t.tips.some(tip => tip.toLowerCase().includes(q)));
+  }, [search]);
+
   return (
     <div className="h-full overflow-auto">
       <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-5">
