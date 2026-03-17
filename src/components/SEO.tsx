@@ -12,21 +12,25 @@ export const SEO = ({ page = 'default' }: SEOProps) => {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "SoftwareApplication",
+        "@type": "WebApplication",
         "name": "CriderGPT",
+        "alternateName": ["CriderGPT Helper", "CriderGPT AI", "CriderGPT App"],
         "operatingSystem": "Web, Android, Windows",
-        "applicationCategory": "AI Assistant, Farming Simulator Tools",
-        "description": "AI-powered farming assistant built by Jessie Crider for FS22 and FS25. Manage production chains, monitor field data, and automate farm maintenance with real AI logic.",
+        "applicationCategory": "UtilitiesApplication",
+        "description": "CriderGPT is the official AI-powered assistant app built by Jessie Crider. Features AI chat, 30+ smart calculators, FFA dashboard, livestock tracking, AI image generation, document analysis, and more.",
         "url": "https://cridergpt.lovable.app",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
         "offers": {
           "@type": "Offer",
-          "price": "100.00",
+          "price": "0",
           "priceCurrency": "USD",
-          "availability": "https://schema.org/InStock"
+          "availability": "https://schema.org/InStock",
+          "description": "Free to use with optional paid plans"
         },
         "author": {
           "@type": "Person",
-          "name": "Jessie Crider"
+          "name": "Jessie Crider",
+          "url": "https://cridergpt.lovable.app"
         },
         "aggregateRating": {
           "@type": "AggregateRating",
@@ -35,14 +39,18 @@ export const SEO = ({ page = 'default' }: SEOProps) => {
         },
         "featureList": [
           "AI Chat Assistant",
-          "Smart Calculators",
-          "FFA Dashboard",
+          "30+ Smart Calculators",
+          "FFA Dashboard & Record Book",
+          "Livestock Management",
           "AI Image Generation",
-          "Document Analysis",
-          "Cloud Gaming Integration",
-          "Invoice Management",
+          "Document AI Analysis",
           "Calendar & Events",
-          "Code Generator"
+          "Invoice Creator",
+          "Code Generator",
+          "Cloud Gaming Links",
+          "Map Builder",
+          "Voice Studio",
+          "Project Manager"
         ]
       },
       {
@@ -60,15 +68,14 @@ export const SEO = ({ page = 'default' }: SEOProps) => {
         ]
       },
       {
-        "@type": "WebApplication",
-        "name": "CriderGPT Helper",
-        "applicationCategory": "Productivity, Gaming, AI Tools",
-        "browserRequirements": "Requires JavaScript. Requires HTML5.",
-        "operatingSystem": "All",
-        "offers": {
-          "@type": "Offer",
-          "price": "100.00",
-          "priceCurrency": "USD"
+        "@type": "WebSite",
+        "name": "CriderGPT",
+        "url": "https://cridergpt.lovable.app",
+        "description": "The official CriderGPT web app — not the landing page. Use AI chat, calculators, FFA tools, and more.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://cridergpt.lovable.app/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
         }
       }
     ]
