@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Beaker, Flame, BookOpen, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Beaker, Flame, BookOpen, MessageSquare, ChevronDown, ChevronUp, Monitor } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // ── Data ──────────────────────────────────────────────
