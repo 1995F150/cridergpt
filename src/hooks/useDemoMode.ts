@@ -34,7 +34,7 @@ export function useDemoMode() {
         const newSessionId = generateSessionId();
         setDemoUsage({
           messagesUsed: 0,
-          maxMessages: 1,
+          maxMessages: 5,
           isExhausted: false,
           sessionId: newSessionId
         });
