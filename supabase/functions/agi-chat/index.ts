@@ -175,6 +175,34 @@ const AGI_TOOLS = [
       description: "Check the user's current plan usage and limits — tokens, TTS, image gen, etc. Use when they ask about their plan, limits, usage, or if they're running low.",
       parameters: { type: "object", properties: {} }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_mod_zip",
+      description: "Create a Farming Simulator mod ZIP file with generated code. Use when user asks to make/create an FS mod, script mod, placeable, or fillType. Returns a download link.",
+      parameters: {
+        type: "object",
+        properties: {
+          mod_name: { type: "string", description: "Name of the mod" },
+          template: { type: "string", enum: ["script", "placeable", "fillType"], description: "Base template to use" },
+          files: {
+            type: "array",
+            description: "Custom files to include/override. Each has 'path' and 'content'.",
+            items: {
+              type: "object",
+              properties: {
+                path: { type: "string", description: "File path inside the ZIP (e.g., 'scripts/main.lua')" },
+                content: { type: "string", description: "File content" }
+              },
+              required: ["path", "content"]
+            }
+          },
+          mod_description: { type: "string", description: "Short description of the mod" }
+        },
+        required: ["mod_name"]
+      }
+    }
   }
 ];
 
