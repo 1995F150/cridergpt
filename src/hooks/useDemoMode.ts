@@ -77,7 +77,7 @@ export function useDemoMode() {
     const newSessionId = generateSessionId();
     const resetUsage = {
       messagesUsed: 0,
-      maxMessages: 1,
+      maxMessages: 5,
       isExhausted: false,
       sessionId: newSessionId
     };

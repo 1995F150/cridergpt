@@ -62,7 +62,7 @@ serve(async (req) => {
     let currentUsage = demoUsage;
     
     if (!currentUsage) {
-      // Create new demo usage record - allow 3 messages for demo
+      // Create new demo usage record - allow 5 messages for demo
       const { data: newUsage, error: createError } = await supabaseClient
         .from('demo_usage')
         .insert({
@@ -70,7 +70,7 @@ serve(async (req) => {
           ip_address: ip,
           user_agent: userAgent,
           messages_sent: 0,
-          max_messages: 3
+          max_messages: 5
         })
         .select()
         .single();
