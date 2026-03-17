@@ -112,6 +112,69 @@ const AGI_TOOLS = [
       description: "Retrieve the user's current pending tasks and reminders.",
       parameters: { type: "object", properties: {} }
     }
+  },
+  // =================== NEW FEATURE TOOLS ===================
+  {
+    type: "function",
+    function: {
+      name: "calendar_read",
+      description: "Read the user's upcoming calendar events. Use when they ask about their schedule, what's coming up, appointments, or when something is happening.",
+      parameters: {
+        type: "object",
+        properties: {
+          days_ahead: { type: "number", description: "How many days ahead to look (default 7)" },
+          category: { type: "string", description: "Filter by event category (e.g., 'ffa', 'personal', 'farm')" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "calendar_create",
+      description: "Add a new event to the user's calendar. Use when they want to schedule something — vet appointments, FFA meetings, farm tasks, etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Event title" },
+          event_date: { type: "string", description: "Date in YYYY-MM-DD format" },
+          event_time: { type: "string", description: "Start time in HH:MM format (24hr)" },
+          end_time: { type: "string", description: "End time in HH:MM format (24hr)" },
+          description: { type: "string", description: "Event details/notes" },
+          category: { type: "string", description: "Event category (e.g., 'ffa', 'personal', 'farm', 'vet')" }
+        },
+        required: ["title", "event_date"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "ffa_profile_lookup",
+      description: "Look up the user's FFA profile including their chapter, officer role, and graduation year. Use when they ask about their FFA chapter or membership details.",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "spending_summary",
+      description: "Get a summary of the user's shared spending groups and recent expenses. Use when they ask about budgets, spending, how much they've spent, or group expenses.",
+      parameters: {
+        type: "object",
+        properties: {
+          days_back: { type: "number", description: "How many days back to look (default 30)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "usage_check",
+      description: "Check the user's current plan usage and limits — tokens, TTS, image gen, etc. Use when they ask about their plan, limits, usage, or if they're running low.",
+      parameters: { type: "object", properties: {} }
+    }
   }
 ];
 
@@ -176,7 +239,6 @@ async function executeTool(
 
     case "calculate": {
       try {
-        // Safe math evaluation
         const expr = args.expression.replace(/[^0-9+\-*/().,%\s]/g, "");
         const result = Function(`"use strict"; return (${expr})`)();
         const contextStr = args.context ? ` (${args.context})` : "";
@@ -200,7 +262,6 @@ async function executeTool(
     }
 
     case "ffa_record_entry": {
-      // Format the messy input into a structured entry
       const entryType = args.entry_type || "general";
       const structured = `**FFA Record Book Entry — ${entryType.toUpperCase()}**\n\nRaw Input: "${args.raw_input}"\n\n_This entry has been formatted and is ready for your record book._`;
       return { result: structured, status_emoji: "📋", status_text: "Record formatted" };
@@ -220,6 +281,162 @@ async function executeTool(
       
       const formatted = data.map((t: any, i: number) => `${i + 1}. [${t.priority}] ${t.task_description}${t.context ? ` — ${t.context}` : ""}`).join("\n");
       return { result: `${data.length} pending tasks:\n${formatted}`, status_emoji: "📝", status_text: `${data.length} pending tasks` };
+    }
+
+    // =================== NEW FEATURE TOOLS ===================
+
+    case "calendar_read": {
+      const daysAhead = args.days_ahead || 7;
+      const now = new Date();
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + daysAhead);
+
+      let query = supabaseAdmin
+        .from("events")
+        .select("title, description, event_date, event_time, end_time, category")
+        .eq("created_by", userId)
+        .gte("event_date", now.toISOString().split("T")[0])
+        .lte("event_date", futureDate.toISOString().split("T")[0])
+        .order("event_date", { ascending: true });
+
+      if (args.category) query = query.ilike("category", `%${args.category}%`);
+
+      const { data, error } = await query.limit(20);
+      if (error) return { result: `Error reading calendar: ${error.message}`, status_emoji: "❌", status_text: "Calendar read failed" };
+      if (!data?.length) return { result: `No events found in the next ${daysAhead} days.`, status_emoji: "📅", status_text: "No upcoming events" };
+
+      const formatted = data.map((e: any) => {
+        const time = e.event_time ? ` at ${e.event_time}` : "";
+        const end = e.end_time ? ` - ${e.end_time}` : "";
+        const cat = e.category ? ` [${e.category}]` : "";
+        return `• **${e.event_date}**${time}${end}: ${e.title}${cat}${e.description ? " — " + e.description : ""}`;
+      }).join("\n");
+      return { result: `${data.length} upcoming events:\n${formatted}`, status_emoji: "📅", status_text: `${data.length} events found` };
+    }
+
+    case "calendar_create": {
+      const { error } = await supabaseAdmin.from("events").insert({
+        created_by: userId,
+        title: args.title,
+        event_date: args.event_date,
+        event_time: args.event_time || null,
+        end_time: args.end_time || null,
+        description: args.description || null,
+        category: args.category || null,
+        visibility: "private",
+      });
+      if (error) return { result: `Failed to create event: ${error.message}`, status_emoji: "❌", status_text: "Event creation failed" };
+      const timeStr = args.event_time ? ` at ${args.event_time}` : "";
+      return { result: `Event created: "${args.title}" on ${args.event_date}${timeStr}`, status_emoji: "📅", status_text: "Event created" };
+    }
+
+    case "ffa_profile_lookup": {
+      const { data: profile, error } = await supabaseAdmin
+        .from("user_ffa_profiles")
+        .select("state, officer_role, is_advisor, graduation_year, setup_completed, chapter_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) return { result: `Error looking up FFA profile: ${error.message}`, status_emoji: "❌", status_text: "FFA lookup failed" };
+      if (!profile) return { result: "No FFA profile found. The user hasn't set up their FFA profile yet.", status_emoji: "🌾", status_text: "No FFA profile" };
+
+      let chapterName = "Unknown";
+      if (profile.chapter_id) {
+        const { data: chapter } = await supabaseAdmin
+          .from("chapters")
+          .select("name, state, city")
+          .eq("id", profile.chapter_id)
+          .maybeSingle();
+        if (chapter) chapterName = `${chapter.name} (${chapter.city || ""}, ${chapter.state})`;
+      }
+
+      const lines = [
+        `**Chapter**: ${chapterName}`,
+        `**State**: ${profile.state || "N/A"}`,
+        `**Role**: ${profile.officer_role || "Member"}`,
+        `**Advisor**: ${profile.is_advisor ? "Yes" : "No"}`,
+        `**Graduation Year**: ${profile.graduation_year || "N/A"}`,
+        `**Setup Complete**: ${profile.setup_completed ? "Yes" : "No"}`,
+      ];
+      return { result: lines.join("\n"), status_emoji: "🌾", status_text: "FFA profile found" };
+    }
+
+    case "spending_summary": {
+      const daysBack = args.days_back || 30;
+      const sinceDate = new Date();
+      sinceDate.setDate(sinceDate.getDate() - daysBack);
+
+      // Get groups the user belongs to
+      const { data: memberships, error: memErr } = await supabaseAdmin
+        .from("spending_group_members")
+        .select("group_id, display_name, role")
+        .eq("user_id", userId);
+
+      if (memErr) return { result: `Error fetching spending groups: ${memErr.message}`, status_emoji: "❌", status_text: "Spending lookup failed" };
+      if (!memberships?.length) return { result: "You're not in any spending groups yet.", status_emoji: "💰", status_text: "No spending groups" };
+
+      const groupIds = memberships.map((m: any) => m.group_id);
+
+      // Get group names
+      const { data: groups } = await supabaseAdmin
+        .from("spending_groups")
+        .select("id, name")
+        .in("id", groupIds);
+
+      // Get recent entries
+      const { data: entries, error: entErr } = await supabaseAdmin
+        .from("spending_entries")
+        .select("amount, category, store_location, spent_date, group_id")
+        .in("group_id", groupIds)
+        .gte("spent_date", sinceDate.toISOString().split("T")[0])
+        .order("spent_date", { ascending: false })
+        .limit(50);
+
+      if (entErr) return { result: `Error fetching expenses: ${entErr.message}`, status_emoji: "❌", status_text: "Expense fetch failed" };
+
+      const groupMap = new Map((groups || []).map((g: any) => [g.id, g.name]));
+      let totalSpent = 0;
+      const byCat: Record<string, number> = {};
+
+      for (const e of entries || []) {
+        const amt = Number(e.amount) || 0;
+        totalSpent += amt;
+        const cat = e.category || "Uncategorized";
+        byCat[cat] = (byCat[cat] || 0) + amt;
+      }
+
+      const groupList = memberships.map((m: any) => `• ${groupMap.get(m.group_id) || "Unknown"} (${m.role})`).join("\n");
+      const catBreakdown = Object.entries(byCat)
+        .sort((a, b) => b[1] - a[1])
+        .map(([cat, amt]) => `• ${cat}: $${amt.toFixed(2)}`)
+        .join("\n");
+
+      const result = [
+        `**Spending Groups:**\n${groupList}`,
+        `\n**Last ${daysBack} Days:** $${totalSpent.toFixed(2)} total (${(entries || []).length} entries)`,
+        catBreakdown ? `\n**By Category:**\n${catBreakdown}` : "",
+      ].filter(Boolean).join("\n");
+
+      return { result, status_emoji: "💰", status_text: `$${totalSpent.toFixed(2)} spent` };
+    }
+
+    case "usage_check": {
+      const { data, error } = await supabaseAdmin.rpc("get_usage_summary", { user_uuid: userId });
+
+      if (error) return { result: `Error checking usage: ${error.message}`, status_emoji: "❌", status_text: "Usage check failed" };
+      if (!data) return { result: "No usage data found.", status_emoji: "📊", status_text: "No usage data" };
+
+      const d = typeof data === "string" ? JSON.parse(data) : data;
+      const lines = [
+        `**Plan**: ${d.plan || "free"}`,
+        `**Tokens**: ${d.daily_usage?.tokens ?? 0} / ${d.daily_limits?.tokens ?? 0}`,
+        `**TTS**: ${d.daily_usage?.tts ?? 0} / ${d.daily_limits?.tts ?? 0}`,
+        `**Images**: ${d.daily_usage?.images ?? 0} / ${d.daily_limits?.images ?? 0}`,
+        `**Documents**: ${d.daily_usage?.documents ?? 0} / ${d.daily_limits?.documents ?? 0}`,
+        `**Rate Limit**: ${d.rate_limiting?.current_minute_requests ?? 0} / ${d.rate_limiting?.requests_per_minute_limit ?? 0} req/min`,
+        d.status?.is_suspended ? `⚠️ **SUSPENDED**: ${d.status.suspension_reason}` : "✅ **Status**: Active",
+      ];
+      return { result: lines.join("\n"), status_emoji: "📊", status_text: "Usage checked" };
     }
 
     default:
@@ -246,7 +463,6 @@ serve(async (req) => {
     const effectiveUserId = user_id;
 
     // ========== GATHER CONTEXT ==========
-    // Pull recent memories
     let memoriesContext = "";
     if (effectiveUserId) {
       const { data: memories } = await supabaseAdmin
@@ -261,7 +477,6 @@ serve(async (req) => {
       }
     }
 
-    // Pull pending tasks
     let tasksContext = "";
     if (effectiveUserId) {
       const { data: tasks } = await supabaseAdmin
@@ -293,13 +508,21 @@ You are CriderGPT in **AGI Mode** — an autonomous, tool-using AI assistant bui
 
 ## AGI Capabilities
 You have access to tools that you should use PROACTIVELY:
-- **memory_recall**: Search past conversations and user facts. Use this when the user references anything from the past or you need context.
+- **memory_recall**: Search past conversations and user facts. Use when the user references anything from the past or you need context.
 - **livestock_lookup**: Query the user's actual herd data. Use when they mention animals, cattle, livestock.
 - **save_memory**: Store important facts the user shares. Use when they tell you something about themselves, their farm, preferences.
 - **calculate**: Do math. Use for ANY numbers — costs, ratios, conversions, yields.
 - **create_task**: Make reminders. Use when the user mentions something they need to do.
 - **ffa_record_entry**: Format messy notes into proper FFA record book entries.
 - **get_pending_tasks**: Check what tasks the user has pending.
+
+## App Feature Tools
+You can also directly access the user's app features:
+- **calendar_read**: Check the user's upcoming events/schedule. Use when they ask "what do I have this week?" or anything about their calendar.
+- **calendar_create**: Add events to the user's calendar. Use when they say "schedule a vet appointment for Friday" or want to add something to their schedule.
+- **ffa_profile_lookup**: Look up the user's FFA chapter, officer role, and membership details. Use when they ask about their FFA info.
+- **spending_summary**: Get spending group totals and category breakdowns. Use when they ask about budgets, expenses, or "how much did we spend?"
+- **usage_check**: Check the user's plan limits and current usage (tokens, TTS, images). Use when they ask "am I running low?" or about their plan.
 
 ## Rules
 1. Use tools WITHOUT asking permission — just do it
@@ -315,14 +538,12 @@ ${tasksContext}`;
     // ========== BUILD MESSAGES ==========
     const messages: any[] = [{ role: "system", content: systemPrompt }];
 
-    // Add conversation history
     if (conversation_history?.length) {
       for (const msg of conversation_history.slice(-20)) {
         messages.push({ role: msg.role, content: msg.content });
       }
     }
 
-    // Add current message
     if (image_url) {
       messages.push({
         role: "user",
@@ -389,7 +610,6 @@ ${tasksContext}`;
 
       const assistantMessage = choice.message;
 
-      // If there are tool calls, execute them
       if (assistantMessage.tool_calls?.length) {
         messages.push(assistantMessage);
 
@@ -411,11 +631,9 @@ ${tasksContext}`;
             content: toolResult.result,
           });
         }
-        // Continue loop — AI will process tool results
         continue;
       }
 
-      // No tool calls — we have the final response
       finalResponse = assistantMessage.content || "";
       break;
     }
