@@ -277,6 +277,7 @@ export const useChat = () => {
           body: JSON.stringify({
             message: userMessage,
             conversation_history: conversationHistory,
+            sensor_context: sensorContext || undefined,
           }),
         }
       );
