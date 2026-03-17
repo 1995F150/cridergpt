@@ -121,7 +121,8 @@ export function useAILearning() {
         body: { 
           message: input || "Analyze this image",
           model: selectedModel,
-          imageData: imageData
+          imageData: imageData,
+          sensor_context: sensorContext || undefined
         }
       });
 
