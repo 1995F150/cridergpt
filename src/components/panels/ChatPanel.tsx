@@ -147,7 +147,6 @@ export default function ChatPanel() {
         setShowDemoModal(true);
         return;
       }
-      incrementDemoUsage();
     }
 
     try {
