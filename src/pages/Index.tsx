@@ -204,6 +204,7 @@ export default function Index() {
               {activePanel === 'shared-spending' && <SharedSpendingPanel />}
               {activePanel === 'usb-hub' && <USBPanel />}
               {activePanel === 'rdr2-guide' && <RDR2GuidePanel />}
+              {activePanel === 'sensors' && <SensorPanel />}
             </div>
 
             {/* SEO Content for Search Engines — only shown to guests */}
