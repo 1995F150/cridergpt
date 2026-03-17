@@ -420,6 +420,7 @@ Make it detailed and actionable.`;
               image_url: imageUrl,
               user_id: user.id,
               user_email: user.email,
+              sensor_context: sensorContext || undefined,
             }
           });
 
