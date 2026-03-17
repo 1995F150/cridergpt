@@ -1,50 +1,87 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+# Add App Feature Tools to AGI Mode
 
-## What's Changing
+## What You're Asking For
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+You want CriderGPT's AI to be able to **use** the app's own features — calendar, calculators, FFA records, etc. — as tools during conversation. Instead of just talking about them, the AI can actually read/write calendar events, run calculations through the real calculators, look up FFA data, etc.
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+## Current State
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+The **AGI Mode** (`agi-chat/index.ts`) already has a tool-calling loop with 7 tools: `memory_recall`, `livestock_lookup`, `save_memory`, `calculate`, `create_task`, `ffa_record_entry`, `get_pending_tasks`. This is the right place to add new feature tools since it already supports the tool-calling pattern.
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+The regular `chat-with-ai` does NOT have tool-calling — it's just a straight prompt/response. We'll leave that as-is and focus on AGI mode.
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+## New Tools to Add to AGI Mode
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+| Tool | What It Does | DB Table |
+|------|-------------|----------|
+| `calendar_read` | Fetch upcoming events for the user | `calendar_events` |
+| `calendar_create` | Add a new event to the user's calendar | `calendar_events` |
+| `ffa_profile_lookup` | Read user's FFA chapter, SAE data | `ffa_profiles` |
+| `spending_summary` | Get shared spending group totals | `spending_groups` / `spending_expenses` |
+| `usage_check` | Check user's plan limits and current usage | `usage_controls` via `get_usage_summary()` |
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+**Excluded** (per your request): Payment processing — not a tool the AI should touch.
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+## Changes
 
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+### `supabase/functions/agi-chat/index.ts`
 
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
+1. **Add 5 new tool definitions** to the `AGI_TOOLS` array with proper schemas
+2. **Add 5 new cases** to the `executeTool` switch statement, each querying the relevant Supabase table
+3. **Update the system prompt** to tell the AI about its new capabilities and when to use each one
 
-## File to Modify
+### Example: Calendar Tool
+
+```typescript
+// Tool definition
+{
+  type: "function",
+  function: {
+    name: "calendar_read",
+    description: "Read the user's upcoming calendar events. Use when they ask about their schedule, what's coming up, or when something is.",
+    parameters: {
+      type: "object",
+      properties: {
+        days_ahead: { type: "number", description: "How many days ahead to look (default 7)" }
+      }
+    }
+  }
+}
+
+// Execution
+case "calendar_read": {
+  const daysAhead = args.days_ahead || 7;
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + daysAhead);
+  
+  const { data, error } = await supabaseAdmin
+    .from("calendar_events")
+    .select("title, description, start_time, end_time, location")
+    .eq("user_id", userId)
+    .gte("start_time", new Date().toISOString())
+    .lte("start_time", futureDate.toISOString())
+    .order("start_time", { ascending: true })
+    .limit(20);
+  // format and return
+}
+```
+
+## What This Means for Users
+
+When AGI Mode is on, a user can say things like:
+- "What do I have going on this week?" → AI calls `calendar_read`
+- "Add a vet appointment for Friday at 2pm" → AI calls `calendar_create`
+- "How's my FFA chapter looking?" → AI calls `ffa_profile_lookup`
+- "How much have we spent this month?" → AI calls `spending_summary`
+- "Am I close to my daily limit?" → AI calls `usage_check`
+
+The AI chains these with existing tools naturally — e.g., reading calendar + creating a task reminder in one response.
+
+## File Modified
 
 | File | Change |
 |------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
-
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+| `supabase/functions/agi-chat/index.ts` | Add 5 new tool definitions, 5 new executeTool cases, update system prompt |
 
