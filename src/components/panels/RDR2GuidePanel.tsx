@@ -145,6 +145,83 @@ const tutorials: Tutorial[] = [
   },
 ];
 
+const moddingGuides: Tutorial[] = [
+  {
+    title: 'How to Install Script Hook RDR2',
+    summary: 'The foundation for most RDR2 PC mods — required by trainers and .ASI plugins.',
+    tips: [
+      'Download Script Hook RDR2 from Alexander Blade\'s official site (dev-c.com).',
+      'Extract the archive — you need ScriptHookRDR2.dll and dinput8.dll.',
+      'Copy both DLL files into your RDR2 game root folder (where RDR2.exe is located).',
+      'Script Hook must match your game version — after a game update, wait for a new Script Hook release.',
+      'If the game crashes on launch after an update, remove ScriptHookRDR2.dll until a compatible version drops.',
+      'Script Hook is required before installing any .ASI mods or trainers like Rampage.',
+    ],
+  },
+  {
+    title: 'How to Install Lenny\'s Mod Loader (LML)',
+    summary: 'Manages XML/data mods without replacing game files directly.',
+    tips: [
+      'Download LML from Nexus Mods (search "Lenny\'s Mod Loader RDR2").',
+      'Extract everything into your RDR2 game root folder — this creates a "lml" folder.',
+      'Mods go inside the "lml" folder, each in their own subfolder.',
+      'Each mod folder should contain an install.xml that tells LML which files to replace or merge.',
+      'LML handles load order automatically, but you can adjust priority in vfs.xml if conflicts arise.',
+      'To disable a mod, just remove its folder from "lml/" — no game files are permanently changed.',
+    ],
+  },
+  {
+    title: 'How to Install Rampage Trainer',
+    summary: 'The most popular RDR2 trainer — spawn peds, vehicles, change weather, teleport, and more.',
+    tips: [
+      'Rampage requires Script Hook RDR2 — install that first.',
+      'Download Rampage Trainer from Nexus Mods or the official GTA5-Mods page.',
+      'Extract all files into your RDR2 game root folder (same folder as RDR2.exe).',
+      'Launch the game, then press F5 to open the Rampage menu.',
+      'Navigate with arrow keys, Enter to select, Backspace to go back.',
+      'Features: player options, spawn menu, teleport, weather control, time control, weapon mods, and more.',
+      'If F5 doesn\'t work, make sure Script Hook is up to date and dinput8.dll is in the game folder.',
+    ],
+  },
+  {
+    title: 'How to Install .ASI Mods',
+    summary: 'Simple plugin mods that add features — just drop files in the game folder.',
+    tips: [
+      'Install Script Hook RDR2 first — it\'s the ASI loader for Red Dead.',
+      'Download any .ASI mod (e.g., Map Editor, Photo Mode enhancements).',
+      'Drop the .asi file directly into your RDR2 game root folder.',
+      'Some ASI mods come with a .ini config file — place that in the same folder.',
+      'Launch the game normally — Script Hook will load all .asi files automatically.',
+      'To remove an ASI mod, just delete its .asi (and .ini) file from the game folder.',
+    ],
+  },
+  {
+    title: 'How to Install XML/Data Mods with LML',
+    summary: 'Change game data like weapon stats, ped behavior, and world settings using LML.',
+    tips: [
+      'Install Lenny\'s Mod Loader (LML) first — see the guide above.',
+      'Download an XML/data mod from Nexus Mods.',
+      'Create a new folder inside "lml/" with the mod\'s name (e.g., lml/BetterWeapons/).',
+      'Place the mod\'s files inside that folder along with its install.xml.',
+      'The install.xml tells LML which game files to replace or merge — don\'t edit it unless you know what you\'re doing.',
+      'Multiple data mods can conflict if they edit the same files — check mod descriptions for compatibility notes.',
+    ],
+  },
+  {
+    title: 'Troubleshooting — Mods Not Working',
+    summary: 'Common fixes when your RDR2 mods crash, don\'t load, or break the game.',
+    tips: [
+      'Game updated? Script Hook must match the exact game version — remove it until updated.',
+      'Antivirus blocking DLLs? Add your RDR2 folder to your antivirus exclusion list.',
+      'Verifying game files through Steam/Rockstar will DELETE all mod files — back them up first.',
+      'Game crashes on startup? Remove mods one at a time to find the culprit.',
+      'To quickly disable ALL mods: rename dinput8.dll to dinput8.dll.bak — the game launches vanilla.',
+      'Check that you\'re using the correct game version (Steam vs Rockstar Launcher) — some mods are version-specific.',
+      'LML mods not loading? Make sure each mod folder has a valid install.xml file.',
+    ],
+  },
+];
+
 const craftCategories = ['All', 'Tonics', 'Horse', 'Ammo', 'Throwables', 'Hunting'];
 const cookCategories = ['All', 'Meat', 'Fish', 'Poultry'];
 
