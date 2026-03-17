@@ -86,6 +86,13 @@ export const seoConfig: Record<string, SEOConfig> = {
     keywords: "CriderGPT community, CriderGPT social, farming community, FS25 community",
     canonical: "https://cridergpt.lovable.app/social"
   },
+  "rdr2-guide": {
+    title: "RDR2 Guide — Crafting Recipes, Tutorials & PC Mods | CriderGPT",
+    description: "Complete Red Dead Redemption 2 guide. Crafting recipes, cooking, hunting tips, and PC modding tutorials for Script Hook, Lenny's Mod Loader, and Rampage Trainer.",
+    keywords: "RDR2 crafting recipes, Red Dead Redemption 2 guide, RDR2 cooking recipes, RDR2 PC mods, how to install Script Hook RDR2, Lenny Mod Loader RDR2, Rampage Trainer RDR2, RDR2 mod tutorial, RDR2 hunting guide, RDR2 tonics, RDR2 ammo crafting",
+    canonical: "https://cridergpt.lovable.app/rdr2-guide",
+    ogImage: "https://cridergpt.lovable.app/lovable-uploads/1b1242ff-1483-4ec4-ba1d-41b6c2478a76.png"
+  },
   livestock: {
     title: "Livestock Manager — CriderGPT Official App",
     description: "Track your animals, health records, production data, and breeding history. Full livestock management inside CriderGPT.",

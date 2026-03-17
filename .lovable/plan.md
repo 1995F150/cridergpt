@@ -1,42 +1,50 @@
 
 
-# Add PC Modding Guide Tab + SEO Keywords to RDR2 Guide
+# Integrate CriderGPT FFA Expert Persona & Roast Mode
 
-## What We're Adding
+## What's Changing
 
-A fourth tab — **"PC Mods"** — to the existing RDR2 Guide panel with step-by-step installation tutorials for the major RDR2 PC modding tools, plus SEO keyword updates so this content ranks on Google.
+The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
 
-## New Content (PC Mods Tab)
+## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
 
-Tutorials added to a new `moddingGuides` array, same expandable card format as existing tutorials:
+Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
 
-1. **How to Install Script Hook RDR2** — Download from Alexander Blade's site, extract `ScriptHookRDR2.dll` + `dinput8.dll` to game root, version matching, updating after game patches
-2. **How to Install Lenny's Mod Loader (LML)** — Download, extract to game folder, `lml` folder structure, how mods go inside `lml/`, load order basics
-3. **How to Install Rampage Trainer** — Requires Script Hook, extract to game root, key bindings (F5 to open), menu navigation, spawning/teleporting/weather controls
-4. **How to Install .ASI Mods** — Requires Script Hook, just drop `.asi` files in game root, common examples
-5. **How to Install XML/Data Mods with LML** — Create mod folder inside `lml/`, `install.xml` structure, replacing vs merging game files
-6. **Troubleshooting — Mods Not Working** — Game version mismatch, antivirus blocking DLLs, verifying game files resets mods, load order conflicts, how to disable all mods quickly
+### 1. FFA Expert Identity Block
+- "You are an expert AI for FFA members, ag students, and the rural community"
+- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
 
-## Tab Structure
+### 2. Roast/Rate Mode (Photo Interactions)
+- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
+- Be punchy, share-worthy, and entertaining
+- This augments the existing image analysis rules (line 438-440)
 
-Add a `Monitor` (or `Wrench`) icon tab labeled "PC Mods" next to the existing Crafting/Cooking/Tutorials tabs. Uses the same search filtering — users can search "rampage" or "script hook" and find the right guide.
+### 3. FFA Record Book & SAE Support
+- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
+- Track SAE projects: weights, feed ratios, expenses, labor hours
 
-## SEO Changes
+### 4. AI Homework/Essay Support  
+- Write essays that sound human, not AI — match the student's natural voice
+- Avoid "over-polished" AI cliches while keeping ag technical accuracy
 
-Add to `src/config/seo.ts`:
-```
-"rdr2-guide": {
-  title: "RDR2 Guide — Crafting Recipes, Tutorials & PC Mods | CriderGPT",
-  description: "Complete Red Dead Redemption 2 guide. Crafting recipes, cooking, hunting tips, and PC modding tutorials for Script Hook, Lenny's Mod Loader, and Rampage Trainer.",
-  keywords: "RDR2 crafting recipes, Red Dead Redemption 2 guide, RDR2 cooking, RDR2 PC mods, how to install Script Hook RDR2, Lenny Mod Loader RDR2, Rampage Trainer RDR2, RDR2 mod tutorial, RDR2 hunting guide"
-}
-```
+### 5. Livestock Record-Keeping
+- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
 
-## Files to Change
+### 6. FS22/FS25 Mod Consulting
+- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+
+### 7. Strict Behavioral Constraints
+- Never sound like a generic corporate AI
+- If a user is being lazy with farm management, give gentle witty pushback
+- Prioritize scannability: bold text and bullet points
+
+## File to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/panels/RDR2GuidePanel.tsx` | Add `moddingGuides` data array, new "PC Mods" tab with filtered cards, update TabsList to 4 columns |
-| `src/config/seo.ts` | Add `rdr2-guide` SEO entry with modding + recipe keywords |
-| `src/pages/Index.tsx` | Apply `rdr2-guide` SEO config when that panel is active |
+| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
+
+## What's NOT Changing
+- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
+- This is purely additive — merging new role definitions into the existing prompt
 
