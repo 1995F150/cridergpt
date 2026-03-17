@@ -101,6 +101,28 @@ export default function ChatPanel() {
   const [apiKeywords, setApiKeywords] = useState<{ keyword: string; action: string }[]>([]);
   const [agiToolSteps, setAgiToolSteps] = useState<ThinkingStep[]>([]);
   const { isAGIMode, toggleAGIMode } = useAGIMode();
+
+  // Sensor context for AI awareness
+  const gps = useGPS();
+  const battery = useBattery();
+  const network = useNetworkInfo();
+  const weather = useWeather(gps.data?.latitude ?? null, gps.data?.longitude ?? null);
+  const sensorContext = useSensorContext({
+    gps: gps.data,
+    weather: weather.data,
+    batteryLevel: battery.level,
+    batteryCharging: battery.charging,
+    networkOnline: network.info.online,
+    networkType: network.info.type,
+  });
+
+  // Auto-start GPS tracking for sensor context
+  useEffect(() => {
+    if (user && !gps.isTracking) {
+      gps.start();
+    }
+    return () => { gps.stop(); };
+  }, [user]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const isLoading = isChatLoading || isAILoading || isStreaming;
