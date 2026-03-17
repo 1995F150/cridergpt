@@ -37,7 +37,7 @@ export function DemoExhaustedModal({ open, onOpenChange }: DemoExhaustedModalPro
 
         <div className="space-y-5 mt-4">
           {/* Google Sign-In — one-click */}
-          <GoogleSignInButton className="w-full" />
+          <GoogleSignInButton />
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
