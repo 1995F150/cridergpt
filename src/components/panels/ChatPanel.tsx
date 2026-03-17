@@ -37,6 +37,9 @@ import { generateChatPDF, isPDFRequest } from "@/utils/chatPdfGenerator";
 import { cn } from "@/lib/utils";
 import { useAGIMode } from "@/hooks/useAGIMode";
 import { ThinkingSteps, type ThinkingStep } from "@/components/chat/ThinkingSteps";
+import { useGPS, useBattery, useNetworkInfo } from "@/hooks/useSensors";
+import { useWeather } from "@/hooks/useWeather";
+import { useSensorContext } from "@/hooks/useSensorContext";
 
 interface FilePreview {
   id: string;
@@ -98,6 +101,28 @@ export default function ChatPanel() {
   const [apiKeywords, setApiKeywords] = useState<{ keyword: string; action: string }[]>([]);
   const [agiToolSteps, setAgiToolSteps] = useState<ThinkingStep[]>([]);
   const { isAGIMode, toggleAGIMode } = useAGIMode();
+
+  // Sensor context for AI awareness
+  const gps = useGPS();
+  const battery = useBattery();
+  const network = useNetworkInfo();
+  const weather = useWeather(gps.data?.latitude ?? null, gps.data?.longitude ?? null);
+  const sensorContext = useSensorContext({
+    gps: gps.data,
+    weather: weather.data,
+    batteryLevel: battery.level,
+    batteryCharging: battery.charging,
+    networkOnline: network.online,
+    networkType: network.type,
+  });
+
+  // Auto-start GPS tracking for sensor context
+  useEffect(() => {
+    if (user && !gps.isTracking) {
+      gps.startTracking();
+    }
+    return () => { gps.stopTracking(); };
+  }, [user]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const isLoading = isChatLoading || isAILoading || isStreaming;
@@ -395,6 +420,7 @@ Make it detailed and actionable.`;
               image_url: imageUrl,
               user_id: user.id,
               user_email: user.email,
+              sensor_context: sensorContext || undefined,
             }
           });
 
@@ -483,7 +509,8 @@ Make it detailed and actionable.`;
             message,
             selectedModel,
             imageUrl ? "vision_analysis" : "chat",
-            imageUrl
+            imageUrl,
+            sensorContext || undefined
           );
 
           const response = typeof result === "string" ? result : result.response;
