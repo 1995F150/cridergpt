@@ -409,6 +409,41 @@ export function RDR2GuidePanel() {
               );
             })}
           </TabsContent>
+
+          {/* PC Mods Tab */}
+          <TabsContent value="pc-mods" className="space-y-2 mt-3">
+            {filteredModding.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">No modding guides match your search.</p>}
+            {filteredModding.map((t, i) => {
+              const idx = i + 100; // offset to avoid collision with tutorial indices
+              const isOpen = expandedTutorial === idx;
+              return (
+                <Card key={i} className="overflow-hidden">
+                  <button
+                    className="w-full text-left p-3 flex items-start justify-between gap-2"
+                    onClick={() => setExpandedTutorial(isOpen ? null : idx)}
+                  >
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{t.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t.summary}</p>
+                    </div>
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />}
+                  </button>
+                  {isOpen && (
+                    <CardContent className="pt-0 px-3 pb-3">
+                      <ul className="space-y-1.5">
+                        {t.tips.map((tip, j) => (
+                          <li key={j} className="text-xs text-muted-foreground flex gap-2">
+                            <span className="text-primary font-bold shrink-0">{j + 1}.</span>
+                            <span>{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
+          </TabsContent>
         </Tabs>
       </div>
     </div>
