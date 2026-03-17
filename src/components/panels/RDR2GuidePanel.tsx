@@ -298,10 +298,11 @@ export function RDR2GuidePanel() {
 
         {/* Tabs */}
         <Tabs defaultValue="crafting" className="w-full">
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="crafting" className="gap-1.5"><Beaker className="h-3.5 w-3.5" />Crafting</TabsTrigger>
-            <TabsTrigger value="cooking" className="gap-1.5"><Flame className="h-3.5 w-3.5" />Cooking</TabsTrigger>
-            <TabsTrigger value="tutorials" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" />Tutorials</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="crafting" className="gap-1 text-xs"><Beaker className="h-3.5 w-3.5" />Crafting</TabsTrigger>
+            <TabsTrigger value="cooking" className="gap-1 text-xs"><Flame className="h-3.5 w-3.5" />Cooking</TabsTrigger>
+            <TabsTrigger value="tutorials" className="gap-1 text-xs"><BookOpen className="h-3.5 w-3.5" />Tutorials</TabsTrigger>
+            <TabsTrigger value="pc-mods" className="gap-1 text-xs"><Monitor className="h-3.5 w-3.5" />PC Mods</TabsTrigger>
           </TabsList>
 
           {/* Crafting Tab */}
