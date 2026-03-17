@@ -105,15 +105,51 @@ function OpenAIChat() {
           await saveVisionMemory(imageBase64, visionResult, message || "Image analysis");
         }
 
-        // Detect FS22/FS25 mod files in ZIPs
+        // Process ZIP files — unpack and analyze via edge function
         for (const zipFile of zipFiles) {
-          const modDetectionPrompt = `Detected ZIP file: ${zipFile.name}. This appears to be a Farming Simulator mod file. Ready to analyze structure when extracted.`;
-          responseText += modDetectionPrompt + '\n\n';
-          
           toast({
-            title: "FS Mod Detected",
-            description: `Found ${zipFile.name} - looks like a FS22/FS25 mod!`,
+            title: "Processing ZIP",
+            description: `Unpacking ${zipFile.name}...`,
           });
+
+          try {
+            const zipBase64 = await fileToBase64(zipFile.file);
+            const { data: zipData, error: zipError } = await supabase.functions.invoke('process-mod-zip', {
+              body: { mode: 'read', zip_base64: zipBase64 }
+            });
+
+            if (zipError) throw zipError;
+            if (zipData.error) throw new Error(zipData.error);
+
+            // Add summary to response
+            responseText += `${zipData.summary}\n\n`;
+
+            // Build file contents context for AI
+            const textFiles = Object.entries(zipData.files || {})
+              .filter(([_, content]) => typeof content === 'string' && !(content as string).startsWith('[Binary'))
+              .slice(0, 20); // Limit to 20 text files
+
+            if (textFiles.length > 0) {
+              let fileContext = `\n[ZIP Contents: ${zipFile.name}]\n`;
+              for (const [path, content] of textFiles) {
+                fileContext += `\n--- ${path} ---\n${(content as string).substring(0, 5000)}\n`;
+              }
+              processedDocContent += fileContext;
+
+              // Ask AI to analyze
+              if (!message.trim()) {
+                const result = await generateSmartResponse(
+                  `Analyze this Farming Simulator mod ZIP file. Here are the extracted files:\n${fileContext}`,
+                  selectedModel,
+                  'chat'
+                );
+                responseText += (typeof result === 'string' ? result : result.response) + '\n\n';
+              }
+            }
+          } catch (zipErr: any) {
+            console.error('ZIP processing error:', zipErr);
+            responseText += `⚠️ Could not process ${zipFile.name}: ${zipErr.message}\n\n`;
+          }
         }
 
         // Process and analyze documents (PDF, DOCX, TXT)
