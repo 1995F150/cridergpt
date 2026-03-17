@@ -37,6 +37,9 @@ import { generateChatPDF, isPDFRequest } from "@/utils/chatPdfGenerator";
 import { cn } from "@/lib/utils";
 import { useAGIMode } from "@/hooks/useAGIMode";
 import { ThinkingSteps, type ThinkingStep } from "@/components/chat/ThinkingSteps";
+import { useGPS, useBattery, useNetworkInfo } from "@/hooks/useSensors";
+import { useWeather } from "@/hooks/useWeather";
+import { useSensorContext } from "@/hooks/useSensorContext";
 
 interface FilePreview {
   id: string;
