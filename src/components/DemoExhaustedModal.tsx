@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, MessageSquare, ArrowRight, Calculator, Tractor, BookOpen } from 'lucide-react';
-import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 interface DemoExhaustedModalProps {
   open: boolean;
