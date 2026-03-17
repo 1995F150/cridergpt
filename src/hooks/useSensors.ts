@@ -205,3 +205,62 @@ export function useNetworkInfo() {
 
   return info;
 }
+
+export function useAmbientLight() {
+  const [lux, setLux] = useState<number | null>(null);
+  const [isActive, setIsActive] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const sensorRef = useRef<any>(null);
+
+  const start = useCallback(() => {
+    if (!('AmbientLightSensor' in window)) {
+      setError('AmbientLightSensor not supported (Chrome Android only)');
+      return;
+    }
+    try {
+      const sensor = new (window as any).AmbientLightSensor();
+      sensor.addEventListener('reading', () => setLux(sensor.illuminance));
+      sensor.addEventListener('error', (e: any) => setError(e.error?.message || 'Sensor error'));
+      sensor.start();
+      sensorRef.current = sensor;
+      setIsActive(true);
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || 'Failed to start light sensor');
+    }
+  }, []);
+
+  const stop = useCallback(() => {
+    if (sensorRef.current) {
+      sensorRef.current.stop();
+      sensorRef.current = null;
+    }
+    setIsActive(false);
+  }, []);
+
+  useEffect(() => () => stop(), [stop]);
+
+  return { lux, isActive, error, start, stop };
+}
+
+export function useShakeDetection(onShake: () => void, threshold = 15) {
+  const lastAccRef = useRef({ x: 0, y: 0, z: 0 });
+
+  useEffect(() => {
+    const handler = (e: DeviceMotionEvent) => {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc || acc.x === null || acc.y === null || acc.z === null) return;
+
+      const last = lastAccRef.current;
+      const delta = Math.abs(acc.x - last.x) + Math.abs(acc.y - last.y) + Math.abs(acc.z - last.z);
+      lastAccRef.current = { x: acc.x, y: acc.y, z: acc.z };
+
+      if (delta > threshold) {
+        onShake();
+      }
+    };
+
+    window.addEventListener('devicemotion', handler);
+    return () => window.removeEventListener('devicemotion', handler);
+  }, [onShake, threshold]);
+}
