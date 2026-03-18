@@ -203,6 +203,36 @@ const AGI_TOOLS = [
         required: ["mod_name"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_scrape",
+      description: "Read and extract content from any website URL. Use when the user pastes a URL, asks you to read a webpage, look up information from a specific site, or needs current data from the internet. Returns clean markdown text of the page content.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "The full URL to scrape (e.g., 'https://example.com/article')" },
+          question: { type: "string", description: "Optional: what the user wants to know from the page (helps focus the summary)" }
+        },
+        required: ["url"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Search the web for current information using Firecrawl. Use when the user asks about current events, needs up-to-date info, or asks questions you don't know the answer to.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "The search query" },
+          limit: { type: "number", description: "Number of results (default 5, max 10)" }
+        },
+        required: ["query"]
+      }
+    }
   }
 ];
 
