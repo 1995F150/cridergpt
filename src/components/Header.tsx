@@ -9,6 +9,7 @@ import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { OfflineStatusBadge } from "@/components/OfflineIndicator";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
@@ -20,6 +21,13 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { isInstallable, promptInstall } = usePWAInstall();
+  const { plan, isActive } = useSubscriptionStatus();
+
+  const planBadgeConfig: Record<string, { label: string; className: string }> = {
+    plus: { label: 'Plus', className: 'bg-cyber-blue/20 text-cyber-blue border-cyber-blue/30' },
+    pro: { label: 'Pro', className: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+    lifetime: { label: '🏆 Lifetime', className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+  };
 
   const handleAuthAction = () => {
     if (user) {
@@ -60,6 +68,11 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
           <Badge variant="secondary" className="bg-cyber-blue/10 text-cyber-blue border-cyber-blue/20 hidden sm:flex">
             AI Assistant
           </Badge>
+          {user && isActive && planBadgeConfig[plan] && (
+            <Badge variant="outline" className={`hidden sm:flex ${planBadgeConfig[plan].className}`}>
+              {planBadgeConfig[plan].label}
+            </Badge>
+          )}
         </div>
 
         <div className="flex items-center space-x-2 md:space-x-4">
