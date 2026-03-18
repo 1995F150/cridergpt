@@ -203,6 +203,36 @@ const AGI_TOOLS = [
         required: ["mod_name"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_scrape",
+      description: "Read and extract content from any website URL. Use when the user pastes a URL, asks you to read a webpage, look up information from a specific site, or needs current data from the internet. Returns clean markdown text of the page content.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "The full URL to scrape (e.g., 'https://example.com/article')" },
+          question: { type: "string", description: "Optional: what the user wants to know from the page (helps focus the summary)" }
+        },
+        required: ["url"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Search the web for current information using Firecrawl. Use when the user asks about current events, needs up-to-date info, or asks questions you don't know the answer to.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "The search query" },
+          limit: { type: "number", description: "Number of results (default 5, max 10)" }
+        },
+        required: ["query"]
+      }
+    }
   }
 ];
 
@@ -503,6 +533,97 @@ async function executeTool(
       }
     }
 
+    case "web_scrape": {
+      try {
+        const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+        if (!FIRECRAWL_API_KEY) {
+          return { result: "Web scraping is not configured. The Firecrawl connector needs to be set up.", status_emoji: "❌", status_text: "Scraper not configured" };
+        }
+
+        let targetUrl = (args.url || "").trim();
+        if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+          targetUrl = `https://${targetUrl}`;
+        }
+
+        const scrapeResp = await fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: targetUrl,
+            formats: ["markdown"],
+            onlyMainContent: true,
+          }),
+        });
+
+        const scrapeData = await scrapeResp.json();
+        if (!scrapeResp.ok) {
+          return { result: `Failed to scrape ${targetUrl}: ${scrapeData.error || scrapeResp.status}`, status_emoji: "❌", status_text: "Scrape failed" };
+        }
+
+        const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
+        const title = scrapeData.data?.metadata?.title || scrapeData.metadata?.title || targetUrl;
+        
+        // Truncate to avoid token overflow
+        const truncated = markdown.length > 8000 ? markdown.substring(0, 8000) + "\n\n...(content truncated)" : markdown;
+        const questionNote = args.question ? `\n\nUser's question about this page: "${args.question}"` : "";
+
+        return { 
+          result: `**Page: ${title}**\nURL: ${targetUrl}\n\n${truncated}${questionNote}`, 
+          status_emoji: "🌐", 
+          status_text: `Read: ${title.substring(0, 40)}` 
+        };
+      } catch (e: any) {
+        return { result: `Error scraping website: ${e.message}`, status_emoji: "❌", status_text: "Scrape error" };
+      }
+    }
+
+    case "web_search": {
+      try {
+        const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+        if (!FIRECRAWL_API_KEY) {
+          return { result: "Web search is not configured. The Firecrawl connector needs to be set up.", status_emoji: "❌", status_text: "Search not configured" };
+        }
+
+        const searchResp = await fetch("https://api.firecrawl.dev/v1/search", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: args.query,
+            limit: Math.min(args.limit || 5, 10),
+          }),
+        });
+
+        const searchData = await searchResp.json();
+        if (!searchResp.ok) {
+          return { result: `Search failed: ${searchData.error || searchResp.status}`, status_emoji: "❌", status_text: "Search failed" };
+        }
+
+        const results = searchData.data || [];
+        if (!results.length) {
+          return { result: `No results found for "${args.query}".`, status_emoji: "🔍", status_text: "No results" };
+        }
+
+        const formatted = results.map((r: any, i: number) => {
+          const snippet = r.markdown ? r.markdown.substring(0, 300) + "..." : (r.description || "No preview");
+          return `**${i + 1}. ${r.title || "Untitled"}**\n${r.url}\n${snippet}`;
+        }).join("\n\n");
+
+        return { 
+          result: `Found ${results.length} results for "${args.query}":\n\n${formatted}`, 
+          status_emoji: "🔍", 
+          status_text: `${results.length} results found` 
+        };
+      } catch (e: any) {
+        return { result: `Search error: ${e.message}`, status_emoji: "❌", status_text: "Search error" };
+      }
+    }
+
     default:
       return { result: `Unknown tool: ${toolName}`, status_emoji: "❓", status_text: "Unknown tool" };
   }
@@ -588,6 +709,8 @@ You can also directly access the user's app features:
 - **spending_summary**: Get spending group totals and category breakdowns. Use when they ask about budgets, expenses, or "how much did we spend?"
 - **usage_check**: Check the user's plan limits and current usage (tokens, TTS, images). Use when they ask "am I running low?" or about their plan.
 - **create_mod_zip**: Generate a Farming Simulator mod as a downloadable ZIP file. Use when the user asks to create/make an FS mod, script mod, placeable, or fillType. You write the actual LUA/XML code and package it up.
+- **web_scrape**: Read any website URL and extract its content. Use PROACTIVELY when the user pastes a URL or asks about content from a specific website. Just grab the page and summarize it.
+- **web_search**: Search the web for current information. Use when the user asks about current events, news, prices, weather, or anything you're unsure about. Don't guess — search.
 
 ## Rules
 1. Use tools WITHOUT asking permission — just do it
