@@ -28,8 +28,9 @@ export function buildSensorContext(snapshot: SensorSnapshot): string {
 
   if (snapshot.weather) {
     const w = snapshot.weather;
-    parts.push(`🌡️ Weather: ${w.temperature}°F (${w.temperatureC}°C), ${w.description}` +
+    parts.push(`🌡️ Weather: ${w.temperature}°F (feels like ${w.feelsLike}°F), ${w.description}` +
       (w.humidity ? `, ${w.humidity}% humidity` : '') +
+      (w.pressure ? `, ${w.pressure} hPa` : '') +
       `, wind ${w.windSpeed} mph`);
   }
 
