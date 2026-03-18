@@ -3,10 +3,13 @@ import { useState, useEffect, useCallback } from 'react';
 export interface WeatherData {
   temperature: number; // Fahrenheit
   temperatureC: number;
+  feelsLike: number; // Fahrenheit (apparent temperature)
+  feelsLikeC: number;
   windSpeed: number; // mph
   windDirection: number;
   weatherCode: number;
   humidity?: number;
+  pressure?: number; // hPa
   isDay: boolean;
   description: string;
   lastUpdated: number;
