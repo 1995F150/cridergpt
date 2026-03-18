@@ -1,55 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { SEO } from '@/components/SEO';
 import { trackPageView, trackFeatureUse } from '@/utils/analytics';
 import { NavigationSidebar } from '@/components/NavigationSidebar';
 import { MobileNavigation } from '@/components/MobileNavigation';
 import { Header } from '@/components/Header';
 import { SystemChecker } from '@/components/SystemChecker';
-import ChatPanel from '@/components/panels/ChatPanel';
-import { CalculatorPanel } from '@/components/panels/CalculatorPanel';
-import { CalendarPanel } from '@/components/panels/CalendarPanel';
-import { VisionMemoryPanel } from '@/components/panels/VisionMemoryPanel';
-import { FilesPanel } from '@/components/panels/FilesPanel';
-import { GalleryPanel } from '@/components/panels/GalleryPanel';
-import { CodePanel } from '@/components/panels/CodePanel';
-import { MapBuilderPanel } from '@/components/panels/MapBuilderPanel';
-import { MediaPanel } from '@/components/panels/MediaPanel';
-import { ProjectPanel } from '@/components/panels/ProjectPanel';
-import { ContactPanel } from '@/components/panels/ContactPanel';
-import { ProfilePanel } from '@/components/panels/ProfilePanel';
-import { PaymentPanel } from '@/components/panels/PaymentPanel';
-import { UpdatesPanel } from '@/components/panels/UpdatesPanel';
-import { TimelinePanel } from '@/components/panels/TimelinePanel';
-import { MemorialPanel } from '@/components/panels/MemorialPanel';
-import { FFAPanel } from '@/components/panels/FFAPanel';
-import { AIImagePanel } from '@/components/panels/AIImagePanel';
-import { DocumentAIPanel } from '@/components/panels/DocumentAIPanel';
-import { PlanPanel } from '@/components/panels/PlanPanel';
-import { AppConverterPanel } from '@/components/panels/AppConverterPanel';
-import { CloudGamingPanel } from '@/components/panels/CloudGamingPanel';
-import { Model3DConverterPanel } from '@/components/panels/Model3DConverterPanel';
-import { StudioPanel } from '@/components/panels/StudioPanel';
-import { ModToolsPanel } from '@/components/panels/ModToolsPanel';
-import { ZipToExePanel } from '@/components/panels/ZipToExePanel';
-import { CodeEditorPanel } from '@/components/panels/CodeEditorPanel';
 import { Footer } from '@/components/Footer';
-
 import { NotificationPermissionModal } from '@/components/NotificationPermissionModal';
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { AdminPanel } from '@/components/panels/AdminPanel';
-import { GuardianPanel } from '@/components/panels/GuardianPanel';
-import { LivestockPanel } from '@/components/panels/LivestockPanel';
-import { ReceiptPanel } from '@/components/panels/ReceiptPanel';
-import AgentSwarmPanel from '@/components/panels/AgentSwarmPanel';
-import { VoiceStudioPanel } from '@/components/panels/VoiceStudioPanel';
-import { SharedSpendingPanel } from '@/components/panels/SharedSpendingPanel';
-import { USBPanel } from '@/components/panels/USBPanel';
-import { RDR2GuidePanel } from '@/components/panels/RDR2GuidePanel';
-import { SensorPanel } from '@/components/panels/SensorPanel';
-import { FrequencyPanel } from '@/components/panels/FrequencyPanel';
+import { PanelLoadingFallback } from '@/components/panels/PanelLoadingFallback';
+
+// Lazy-load all panels for faster initial page load
+const ChatPanel = lazy(() => import('@/components/panels/ChatPanel'));
+const CalculatorPanel = lazy(() => import('@/components/panels/CalculatorPanel').then(m => ({ default: m.CalculatorPanel })));
+const CalendarPanel = lazy(() => import('@/components/panels/CalendarPanel').then(m => ({ default: m.CalendarPanel })));
+const VisionMemoryPanel = lazy(() => import('@/components/panels/VisionMemoryPanel').then(m => ({ default: m.VisionMemoryPanel })));
+const FilesPanel = lazy(() => import('@/components/panels/FilesPanel').then(m => ({ default: m.FilesPanel })));
+const GalleryPanel = lazy(() => import('@/components/panels/GalleryPanel').then(m => ({ default: m.GalleryPanel })));
+const CodePanel = lazy(() => import('@/components/panels/CodePanel').then(m => ({ default: m.CodePanel })));
+const MapBuilderPanel = lazy(() => import('@/components/panels/MapBuilderPanel').then(m => ({ default: m.MapBuilderPanel })));
+const MediaPanel = lazy(() => import('@/components/panels/MediaPanel').then(m => ({ default: m.MediaPanel })));
+const ProjectPanel = lazy(() => import('@/components/panels/ProjectPanel').then(m => ({ default: m.ProjectPanel })));
+const ContactPanel = lazy(() => import('@/components/panels/ContactPanel').then(m => ({ default: m.ContactPanel })));
+const ProfilePanel = lazy(() => import('@/components/panels/ProfilePanel').then(m => ({ default: m.ProfilePanel })));
+const PaymentPanel = lazy(() => import('@/components/panels/PaymentPanel').then(m => ({ default: m.PaymentPanel })));
+const UpdatesPanel = lazy(() => import('@/components/panels/UpdatesPanel').then(m => ({ default: m.UpdatesPanel })));
+const TimelinePanel = lazy(() => import('@/components/panels/TimelinePanel').then(m => ({ default: m.TimelinePanel })));
+const MemorialPanel = lazy(() => import('@/components/panels/MemorialPanel').then(m => ({ default: m.MemorialPanel })));
+const FFAPanel = lazy(() => import('@/components/panels/FFAPanel').then(m => ({ default: m.FFAPanel })));
+const AIImagePanel = lazy(() => import('@/components/panels/AIImagePanel').then(m => ({ default: m.AIImagePanel })));
+const DocumentAIPanel = lazy(() => import('@/components/panels/DocumentAIPanel').then(m => ({ default: m.DocumentAIPanel })));
+const PlanPanel = lazy(() => import('@/components/panels/PlanPanel').then(m => ({ default: m.PlanPanel })));
+const AppConverterPanel = lazy(() => import('@/components/panels/AppConverterPanel').then(m => ({ default: m.AppConverterPanel })));
+const CloudGamingPanel = lazy(() => import('@/components/panels/CloudGamingPanel').then(m => ({ default: m.CloudGamingPanel })));
+const Model3DConverterPanel = lazy(() => import('@/components/panels/Model3DConverterPanel').then(m => ({ default: m.Model3DConverterPanel })));
+const StudioPanel = lazy(() => import('@/components/panels/StudioPanel').then(m => ({ default: m.StudioPanel })));
+const ModToolsPanel = lazy(() => import('@/components/panels/ModToolsPanel').then(m => ({ default: m.ModToolsPanel })));
+const ZipToExePanel = lazy(() => import('@/components/panels/ZipToExePanel').then(m => ({ default: m.ZipToExePanel })));
+const CodeEditorPanel = lazy(() => import('@/components/panels/CodeEditorPanel').then(m => ({ default: m.CodeEditorPanel })));
+const AdminPanel = lazy(() => import('@/components/panels/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const GuardianPanel = lazy(() => import('@/components/panels/GuardianPanel').then(m => ({ default: m.GuardianPanel })));
+const LivestockPanel = lazy(() => import('@/components/panels/LivestockPanel').then(m => ({ default: m.LivestockPanel })));
+const ReceiptPanel = lazy(() => import('@/components/panels/ReceiptPanel').then(m => ({ default: m.ReceiptPanel })));
+const AgentSwarmPanel = lazy(() => import('@/components/panels/AgentSwarmPanel'));
+const VoiceStudioPanel = lazy(() => import('@/components/panels/VoiceStudioPanel').then(m => ({ default: m.VoiceStudioPanel })));
+const SharedSpendingPanel = lazy(() => import('@/components/panels/SharedSpendingPanel').then(m => ({ default: m.SharedSpendingPanel })));
+const USBPanel = lazy(() => import('@/components/panels/USBPanel').then(m => ({ default: m.USBPanel })));
+const RDR2GuidePanel = lazy(() => import('@/components/panels/RDR2GuidePanel').then(m => ({ default: m.RDR2GuidePanel })));
+const SensorPanel = lazy(() => import('@/components/panels/SensorPanel').then(m => ({ default: m.SensorPanel })));
+const FrequencyPanel = lazy(() => import('@/components/panels/FrequencyPanel').then(m => ({ default: m.FrequencyPanel })));
 
 export type PanelType = 
   | 'chat' 
@@ -118,7 +120,7 @@ export default function Index() {
         const timer = setTimeout(() => {
           setShowNotificationModal(true);
           localStorage.setItem('notification-modal-shown', 'true');
-        }, 3000); // Show after 3 seconds
+        }, 3000);
 
         return () => clearTimeout(timer);
       }
@@ -139,6 +141,50 @@ export default function Index() {
   useEffect(() => {
     trackPageView(`/${activePanel}`, `${activePanel.charAt(0).toUpperCase() + activePanel.slice(1)} | CriderGPT`);
   }, []);
+
+  const renderPanel = () => {
+    switch (activePanel) {
+      case 'chat': return <ChatPanel />;
+      case 'vision-memory': return <VisionMemoryPanel />;
+      case 'calculators': return <CalculatorPanel />;
+      case 'calendar': return <CalendarPanel />;
+      case 'files': return <FilesPanel />;
+      case 'gallery': return <GalleryPanel />;
+      case 'code': return <CodePanel />;
+      case 'maps': return <MapBuilderPanel />;
+      case 'media': return <MediaPanel />;
+      case 'projects': return <ProjectPanel />;
+      case 'contact': return <ContactPanel />;
+      case 'profile': return <ProfilePanel />;
+      case 'payment': return <PaymentPanel />;
+      case 'updates': return <UpdatesPanel />;
+      case 'timeline': return <TimelinePanel />;
+      case 'memorial': return <MemorialPanel />;
+      case 'ffa': return <FFAPanel />;
+      case 'mod-tools': return <ModToolsPanel />;
+      case 'ai-image': return <AIImagePanel />;
+      case 'document-ai': return <DocumentAIPanel />;
+      case 'plan': return <PlanPanel />;
+      case 'app-converter': return <AppConverterPanel />;
+      case 'cloud-gaming': return <CloudGamingPanel />;
+      case '3d-converter': return isDeveloper ? <Model3DConverterPanel /> : null;
+      case 'studio': return <StudioPanel />;
+      case 'zip-to-exe': return <ZipToExePanel />;
+      case 'code-editor': return <CodeEditorPanel />;
+      case 'admin': return isAdmin ? <AdminPanel /> : null;
+      case 'guardian': return <GuardianPanel />;
+      case 'livestock': return <LivestockPanel />;
+      case 'receipts': return <ReceiptPanel />;
+      case 'agent-swarm': return <AgentSwarmPanel />;
+      case 'voice-studio': return <VoiceStudioPanel />;
+      case 'shared-spending': return <SharedSpendingPanel />;
+      case 'usb-hub': return <USBPanel />;
+      case 'rdr2-guide': return <RDR2GuidePanel />;
+      case 'sensors': return <SensorPanel />;
+      case 'frequency': return <FrequencyPanel />;
+      default: return <ChatPanel />;
+    }
+  };
 
   return (
     <>
@@ -170,44 +216,9 @@ export default function Index() {
           
           <main className="flex-1 overflow-auto bg-background">
             <div className="h-full">
-              {activePanel === 'chat' && <ChatPanel />}
-              {activePanel === 'vision-memory' && <VisionMemoryPanel />}
-              {activePanel === 'calculators' && <CalculatorPanel />}
-              {activePanel === 'calendar' && <CalendarPanel />}
-              {activePanel === 'files' && <FilesPanel />}
-              {activePanel === 'gallery' && <GalleryPanel />}
-              {activePanel === 'code' && <CodePanel />}
-              {activePanel === 'maps' && <MapBuilderPanel />}
-              {activePanel === 'media' && <MediaPanel />}
-              {activePanel === 'projects' && <ProjectPanel />}
-              {activePanel === 'contact' && <ContactPanel />}
-              {activePanel === 'profile' && <ProfilePanel />}
-              {activePanel === 'payment' && <PaymentPanel />}
-              {activePanel === 'updates' && <UpdatesPanel />}
-              {activePanel === 'timeline' && <TimelinePanel />}
-              {activePanel === 'memorial' && <MemorialPanel />}
-              {activePanel === 'ffa' && <FFAPanel />}
-              {activePanel === 'mod-tools' && <ModToolsPanel />}
-              {activePanel === 'ai-image' && <AIImagePanel />}
-              {activePanel === 'document-ai' && <DocumentAIPanel />}
-              {activePanel === 'plan' && <PlanPanel />}
-              {activePanel === 'app-converter' && <AppConverterPanel />}
-              {activePanel === 'cloud-gaming' && <CloudGamingPanel />}
-              {activePanel === '3d-converter' && isDeveloper && <Model3DConverterPanel />}
-              {activePanel === 'studio' && <StudioPanel />}
-              {activePanel === 'zip-to-exe' && <ZipToExePanel />}
-              {activePanel === 'code-editor' && <CodeEditorPanel />}
-              {activePanel === 'admin' && isAdmin && <AdminPanel />}
-              {activePanel === 'guardian' && <GuardianPanel />}
-              {activePanel === 'livestock' && <LivestockPanel />}
-              {activePanel === 'receipts' && <ReceiptPanel />}
-              {activePanel === 'agent-swarm' && <AgentSwarmPanel />}
-              {activePanel === 'voice-studio' && <VoiceStudioPanel />}
-              {activePanel === 'shared-spending' && <SharedSpendingPanel />}
-              {activePanel === 'usb-hub' && <USBPanel />}
-              {activePanel === 'rdr2-guide' && <RDR2GuidePanel />}
-              {activePanel === 'sensors' && <SensorPanel />}
-              {activePanel === 'frequency' && <FrequencyPanel />}
+              <Suspense fallback={<PanelLoadingFallback />}>
+                {renderPanel()}
+              </Suspense>
             </div>
 
             {/* SEO Content for Search Engines — only shown to guests */}
