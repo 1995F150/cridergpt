@@ -4,7 +4,7 @@
   <!-- Homepage (Official App) -->
   <url>
     <loc>https://cridergpt.lovable.app/</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -12,7 +12,7 @@
   <!-- AI Chat Assistant -->
   <url>
     <loc>https://cridergpt.lovable.app/chat</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -20,7 +20,7 @@
   <!-- Calculators -->
   <url>
     <loc>https://cridergpt.lovable.app/calculators</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -28,23 +28,7 @@
   <!-- FFA Dashboard -->
   <url>
     <loc>https://cridergpt.lovable.app/ffa</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- AI Image Generator -->
-  <url>
-    <loc>https://cridergpt.lovable.app/ai-image</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Document AI -->
-  <url>
-    <loc>https://cridergpt.lovable.app/document-ai</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -52,15 +36,39 @@
   <!-- Livestock Manager -->
   <url>
     <loc>https://cridergpt.lovable.app/livestock</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- Cloud Gaming -->
+  <!-- AI Image Generator -->
   <url>
-    <loc>https://cridergpt.lovable.app/cloud-gaming</loc>
-    <lastmod>2026-03-17</lastmod>
+    <loc>https://cridergpt.lovable.app/ai-image</loc>
+    <lastmod>2026-03-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- RDR2 Guide (SEO Magnet) -->
+  <url>
+    <loc>https://cridergpt.lovable.app/rdr2-guide</loc>
+    <lastmod>2026-03-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- FS25 Mod Tools -->
+  <url>
+    <loc>https://cridergpt.lovable.app/mod-tools</loc>
+    <lastmod>2026-03-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Voice Studio -->
+  <url>
+    <loc>https://cridergpt.lovable.app/voice-studio</loc>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -68,97 +76,89 @@
   <!-- Calendar -->
   <url>
     <loc>https://cridergpt.lovable.app/calendar</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Invoices -->
+  <!-- Snapchat Lens Page -->
   <url>
-    <loc>https://cridergpt.lovable.app/invoices</loc>
-    <lastmod>2026-03-17</lastmod>
+    <loc>https://cridergpt.lovable.app/snapchat-lens</loc>
+    <lastmod>2026-03-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Guardian Dashboard -->
+  <url>
+    <loc>https://cridergpt.lovable.app/guardian</loc>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Code Generator -->
+  <!-- Shared Spending -->
   <url>
-    <loc>https://cridergpt.lovable.app/code</loc>
-    <lastmod>2026-03-17</lastmod>
+    <loc>https://cridergpt.lovable.app/shared-spending</loc>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Map Builder -->
+  <!-- Receipt Scanner -->
   <url>
-    <loc>https://cridergpt.lovable.app/maps</loc>
-    <lastmod>2026-03-17</lastmod>
+    <loc>https://cridergpt.lovable.app/receipts</loc>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+
+  <!-- Frequency Generator -->
+  <url>
+    <loc>https://cridergpt.lovable.app/frequency</loc>
+    <lastmod>2026-03-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Sensor Dashboard -->
+  <url>
+    <loc>https://cridergpt.lovable.app/sensors</loc>
+    <lastmod>2026-03-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 
   <!-- Projects -->
   <url>
     <loc>https://cridergpt.lovable.app/projects</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 
-  <!-- Community -->
+  <!-- Pricing & Plans -->
   <url>
-    <loc>https://cridergpt.lovable.app/social</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <!-- Gallery -->
-  <url>
-    <loc>https://cridergpt.lovable.app/gallery</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <!-- Media -->
-  <url>
-    <loc>https://cridergpt.lovable.app/media</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <!-- Profile -->
-  <url>
-    <loc>https://cridergpt.lovable.app/profile</loc>
-    <lastmod>2026-03-17</lastmod>
+    <loc>https://cridergpt.lovable.app/plan</loc>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.6</priority>
   </url>
 
   <!-- Contact -->
   <url>
     <loc>https://cridergpt.lovable.app/contact</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
-  <!-- Payment -->
+  <!-- Auth -->
   <url>
-    <loc>https://cridergpt.lovable.app/payment</loc>
-    <lastmod>2026-03-17</lastmod>
+    <loc>https://cridergpt.lovable.app/auth</loc>
+    <lastmod>2026-03-18</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <!-- Plan -->
-  <url>
-    <loc>https://cridergpt.lovable.app/plan</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.4</priority>
   </url>
 
 </urlset>
