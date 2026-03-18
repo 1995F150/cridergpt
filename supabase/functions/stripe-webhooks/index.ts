@@ -245,6 +245,60 @@ serve(async (req) => {
             const plan = getPlanFromAmount(price.unit_amount || 0);
             await updateUserSubscription(customerId, plan, subscription.id, priceId);
           }
+        } else if (session.mode === 'payment' && session.payment_status === 'paid') {
+          // Handle one-time payment (lifetime plan)
+          const planName = session.metadata?.planName;
+          console.log(`💎 One-time payment completed: planName=${planName}, customerId=${customerId}`);
+          
+          if (planName === 'lifetime') {
+            // Get customer email to find user
+            const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+            const email = customer.email;
+            
+            if (email) {
+              const { data: authUser } = await supabase.auth.admin.listUsers();
+              const user = authUser?.users?.find(u => u.email === email);
+              
+              if (user) {
+                // Update user to lifetime plan
+                await supabase.from('ai_usage').upsert({
+                  user_id: user.id,
+                  email: email,
+                  user_plan: 'lifetime',
+                  updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+                
+                // Update profiles tier
+                await supabase.from('profiles').update({
+                  tier: 'lifetime',
+                  stripe_customer_id: customerId,
+                }).eq('user_id', user.id);
+                
+                // Update user_subscriptions
+                await supabase.from('user_subscriptions').upsert({
+                  user_id: user.id,
+                  email: email,
+                  plan_name: 'lifetime',
+                  plan_status: 'active',
+                  stripe_customer_id: customerId,
+                  updated_at: new Date().toISOString(),
+                  metadata: { lifetime: true, payment_intent: session.payment_intent }
+                }, { onConflict: 'user_id' });
+                
+                // Increment lifetime plan count
+                await supabase.rpc('increment_lifetime_count' as any);
+                
+                // Send notification
+                await supabase.from('feature_notifications').insert({
+                  user_id: user.id,
+                  notification_type: 'subscription_updated',
+                  data: { new_plan: 'lifetime', lifetime: true }
+                });
+                
+                console.log(`🏆 Lifetime plan activated for ${email}`);
+              }
+            }
+          }
         }
         break;
       }

@@ -9,6 +9,7 @@ import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { OfflineStatusBadge } from "@/components/OfflineIndicator";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
