@@ -25,6 +25,7 @@ import Cancel from "./pages/Cancel";
 import SystemDiagnostics from "./pages/SystemDiagnostics";
 import TTSPolicyPage from "./pages/TTSPolicyPage";
 import UserAgreement from "./pages/UserAgreement";
+import SnapchatLensPage from "./pages/SnapchatLensPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
