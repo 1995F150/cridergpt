@@ -44,47 +44,11 @@ export const seoConfig: Record<string, SEOConfig> = {
     keywords: "CriderGPT calendar, farm calendar, event manager, schedule planner, CriderGPT events",
     canonical: "https://cridergpt.lovable.app/calendar"
   },
-  invoices: {
-    title: "Invoice Creator — CriderGPT Official App",
-    description: "Create professional invoices for your business. Track payments, manage expenses, and generate reports — all inside CriderGPT.",
-    keywords: "CriderGPT invoices, invoice creator, farm invoices, free invoice app, payment tracking",
-    canonical: "https://cridergpt.lovable.app/invoices"
-  },
-  code: {
-    title: "Code Generator — CriderGPT Official App",
-    description: "Generate custom code and scripts for FS22/FS25 mods or any project. Built-in code editor and AI-powered generation.",
-    keywords: "CriderGPT code generator, FS25 scripts, FS22 code, mod development, AI code generator",
-    canonical: "https://cridergpt.lovable.app/code"
-  },
-  maps: {
-    title: "Map Builder — CriderGPT Official App",
-    description: "Design and plan custom farming maps for FS25. Visualize field layouts, production chains, and optimize your farm.",
-    keywords: "CriderGPT map builder, FS25 map, farm planning, field layout, map designer",
-    canonical: "https://cridergpt.lovable.app/maps"
-  },
-  "document-ai": {
-    title: "Document AI — CriderGPT Official App",
-    description: "Upload and analyze documents with AI. Extract data from PDFs, images, and text files — get instant insights inside CriderGPT.",
-    keywords: "CriderGPT document AI, PDF analysis, document reader, AI data extraction, document scanner",
-    canonical: "https://cridergpt.lovable.app/document-ai"
-  },
-  "cloud-gaming": {
-    title: "Cloud Gaming — CriderGPT Official App",
-    description: "Access cloud gaming services for Farming Simulator and more. Quick links to GeForce NOW, Xbox Cloud, and other platforms.",
-    keywords: "CriderGPT cloud gaming, FS25 cloud, GeForce NOW, Xbox Cloud Gaming, stream Farming Simulator",
-    canonical: "https://cridergpt.lovable.app/cloud-gaming"
-  },
-  projects: {
-    title: "Project Manager — CriderGPT Official App",
-    description: "Manage projects, track progress, and stay organized with CriderGPT's built-in project management tools.",
-    keywords: "CriderGPT projects, project manager, task tracker, farm project planner",
-    canonical: "https://cridergpt.lovable.app/projects"
-  },
-  social: {
-    title: "Community — CriderGPT Official App",
-    description: "Connect with other CriderGPT users, share experiences, and collaborate on farming projects in the community hub.",
-    keywords: "CriderGPT community, CriderGPT social, farming community, FS25 community",
-    canonical: "https://cridergpt.lovable.app/social"
+  livestock: {
+    title: "Livestock Manager — Track Animals & Health Records | CriderGPT",
+    description: "Track your animals, health records, vaccinations, weights, and breeding history. Full livestock management for FFA members and farmers — free inside CriderGPT.",
+    keywords: "CriderGPT livestock, animal tracker, livestock management, cattle tracker, farm animals app, FFA livestock, SAE animal tracking",
+    canonical: "https://cridergpt.lovable.app/livestock"
   },
   "rdr2-guide": {
     title: "RDR2 Guide — Crafting Recipes, Tutorials & PC Mods | CriderGPT",
@@ -93,11 +57,72 @@ export const seoConfig: Record<string, SEOConfig> = {
     canonical: "https://cridergpt.lovable.app/rdr2-guide",
     ogImage: "https://cridergpt.lovable.app/lovable-uploads/1b1242ff-1483-4ec4-ba1d-41b6c2478a76.png"
   },
-  livestock: {
-    title: "Livestock Manager — CriderGPT Official App",
-    description: "Track your animals, health records, production data, and breeding history. Full livestock management inside CriderGPT.",
-    keywords: "CriderGPT livestock, animal tracker, livestock management, cattle tracker, farm animals app",
-    canonical: "https://cridergpt.lovable.app/livestock"
+  "voice-studio": {
+    title: "Voice Studio — AI Voice Cloning & Music | CriderGPT",
+    description: "Clone voices, generate speech, and create music with AI. CriderGPT's Voice Studio lets you build custom voice profiles and audio content.",
+    keywords: "AI voice cloning, text to speech, voice studio, CriderGPT voice, AI music generator, voice synthesis",
+    canonical: "https://cridergpt.lovable.app/voice-studio"
+  },
+  "mod-tools": {
+    title: "FS25 Mod Tools — Build & Debug Farming Simulator Mods | CriderGPT",
+    description: "Create, edit, and debug Farming Simulator 22/25 mods. ZIP packaging, XML analysis, and AI-powered mod consulting built into CriderGPT.",
+    keywords: "FS25 mod tools, Farming Simulator mod creator, FS22 mod builder, mod XML editor, Farming Simulator modding, CriderGPT mod tools",
+    canonical: "https://cridergpt.lovable.app/mod-tools"
+  },
+  guardian: {
+    title: "Guardian Dashboard — Parental Controls | CriderGPT",
+    description: "Monitor your child's CriderGPT usage with the Guardian Dashboard. Set content filters, view activity timelines, and get real-time alerts.",
+    keywords: "CriderGPT parental controls, guardian dashboard, child safety AI, family controls, content monitoring",
+    canonical: "https://cridergpt.lovable.app/guardian"
+  },
+  "shared-spending": {
+    title: "Shared Spending Tracker — Split Bills & Expenses | CriderGPT",
+    description: "Track shared expenses with friends, roommates, or family. Split bills, log payments, and keep spending groups organized inside CriderGPT.",
+    keywords: "shared spending, split bills, expense tracker, group expenses, CriderGPT spending tracker",
+    canonical: "https://cridergpt.lovable.app/shared-spending"
+  },
+  receipts: {
+    title: "Receipt Scanner — AI Receipt Analysis | CriderGPT",
+    description: "Scan and organize receipts with AI. Extract totals, dates, and items automatically for expense tracking and FFA record books.",
+    keywords: "receipt scanner, AI receipt reader, expense tracking, CriderGPT receipts, FFA expense log",
+    canonical: "https://cridergpt.lovable.app/receipts"
+  },
+  frequency: {
+    title: "Frequency Generator — Audio Tones & Sound Tools | CriderGPT",
+    description: "Generate precise audio frequencies and tones. Useful for testing speakers, tuning instruments, and audio diagnostics.",
+    keywords: "frequency generator, tone generator, audio tools, sound generator, Hz generator, CriderGPT frequency",
+    canonical: "https://cridergpt.lovable.app/frequency"
+  },
+  sensors: {
+    title: "Sensor Dashboard — Device Sensor Monitoring | CriderGPT",
+    description: "Monitor your device's sensors in real-time. Accelerometer, gyroscope, compass, and environmental data all in one dashboard.",
+    keywords: "sensor dashboard, device sensors, accelerometer, gyroscope, compass app, CriderGPT sensors",
+    canonical: "https://cridergpt.lovable.app/sensors"
+  },
+  "snapchat-lens": {
+    title: "Vibe Check Bot — CriderGPT Snapchat Lens",
+    description: "Try the Vibe Check Bot Snapchat Lens by CriderGPT! AI-powered personality quiz filter. Scan the Snapcode or tap to try it now.",
+    keywords: "CriderGPT Snapchat lens, Vibe Check Bot, Snapchat AI filter, CriderGPT filter, personality quiz Snapchat, CriderGPT snap",
+    canonical: "https://cridergpt.lovable.app/snapchat-lens",
+    ogImage: "https://cridergpt.lovable.app/lovable-uploads/1b1242ff-1483-4ec4-ba1d-41b6c2478a76.png"
+  },
+  plan: {
+    title: "Pricing & Plans — CriderGPT Official App",
+    description: "Choose your CriderGPT plan. Free, Plus, Pro, or Lifetime access. AI chat, calculators, FFA tools, livestock tracking, and more.",
+    keywords: "CriderGPT pricing, CriderGPT plans, CriderGPT free, CriderGPT pro, CriderGPT lifetime, AI app pricing",
+    canonical: "https://cridergpt.lovable.app/plan"
+  },
+  projects: {
+    title: "Project Manager — CriderGPT Official App",
+    description: "Manage projects, track progress, and stay organized with CriderGPT's built-in project management tools.",
+    keywords: "CriderGPT projects, project manager, task tracker, farm project planner",
+    canonical: "https://cridergpt.lovable.app/projects"
+  },
+  contact: {
+    title: "Contact — CriderGPT Official App",
+    description: "Get in touch with the CriderGPT team. Report bugs, request features, or say hello to Jessie Crider.",
+    keywords: "CriderGPT contact, CriderGPT support, contact Jessie Crider, CriderGPT feedback",
+    canonical: "https://cridergpt.lovable.app/contact"
   }
 };
 
