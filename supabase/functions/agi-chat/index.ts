@@ -533,6 +533,97 @@ async function executeTool(
       }
     }
 
+    case "web_scrape": {
+      try {
+        const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+        if (!FIRECRAWL_API_KEY) {
+          return { result: "Web scraping is not configured. The Firecrawl connector needs to be set up.", status_emoji: "❌", status_text: "Scraper not configured" };
+        }
+
+        let targetUrl = (args.url || "").trim();
+        if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+          targetUrl = `https://${targetUrl}`;
+        }
+
+        const scrapeResp = await fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: targetUrl,
+            formats: ["markdown"],
+            onlyMainContent: true,
+          }),
+        });
+
+        const scrapeData = await scrapeResp.json();
+        if (!scrapeResp.ok) {
+          return { result: `Failed to scrape ${targetUrl}: ${scrapeData.error || scrapeResp.status}`, status_emoji: "❌", status_text: "Scrape failed" };
+        }
+
+        const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
+        const title = scrapeData.data?.metadata?.title || scrapeData.metadata?.title || targetUrl;
+        
+        // Truncate to avoid token overflow
+        const truncated = markdown.length > 8000 ? markdown.substring(0, 8000) + "\n\n...(content truncated)" : markdown;
+        const questionNote = args.question ? `\n\nUser's question about this page: "${args.question}"` : "";
+
+        return { 
+          result: `**Page: ${title}**\nURL: ${targetUrl}\n\n${truncated}${questionNote}`, 
+          status_emoji: "🌐", 
+          status_text: `Read: ${title.substring(0, 40)}` 
+        };
+      } catch (e: any) {
+        return { result: `Error scraping website: ${e.message}`, status_emoji: "❌", status_text: "Scrape error" };
+      }
+    }
+
+    case "web_search": {
+      try {
+        const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+        if (!FIRECRAWL_API_KEY) {
+          return { result: "Web search is not configured. The Firecrawl connector needs to be set up.", status_emoji: "❌", status_text: "Search not configured" };
+        }
+
+        const searchResp = await fetch("https://api.firecrawl.dev/v1/search", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: args.query,
+            limit: Math.min(args.limit || 5, 10),
+          }),
+        });
+
+        const searchData = await searchResp.json();
+        if (!searchResp.ok) {
+          return { result: `Search failed: ${searchData.error || searchResp.status}`, status_emoji: "❌", status_text: "Search failed" };
+        }
+
+        const results = searchData.data || [];
+        if (!results.length) {
+          return { result: `No results found for "${args.query}".`, status_emoji: "🔍", status_text: "No results" };
+        }
+
+        const formatted = results.map((r: any, i: number) => {
+          const snippet = r.markdown ? r.markdown.substring(0, 300) + "..." : (r.description || "No preview");
+          return `**${i + 1}. ${r.title || "Untitled"}**\n${r.url}\n${snippet}`;
+        }).join("\n\n");
+
+        return { 
+          result: `Found ${results.length} results for "${args.query}":\n\n${formatted}`, 
+          status_emoji: "🔍", 
+          status_text: `${results.length} results found` 
+        };
+      } catch (e: any) {
+        return { result: `Search error: ${e.message}`, status_emoji: "❌", status_text: "Search error" };
+      }
+    }
+
     default:
       return { result: `Unknown tool: ${toolName}`, status_emoji: "❓", status_text: "Unknown tool" };
   }
