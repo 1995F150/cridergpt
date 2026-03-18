@@ -3,10 +3,13 @@ import { useState, useEffect, useCallback } from 'react';
 export interface WeatherData {
   temperature: number; // Fahrenheit
   temperatureC: number;
+  feelsLike: number; // Fahrenheit (apparent temperature)
+  feelsLikeC: number;
   windSpeed: number; // mph
   windDirection: number;
   weatherCode: number;
   humidity?: number;
+  pressure?: number; // hPa
   isDay: boolean;
   description: string;
   lastUpdated: number;
@@ -51,19 +54,24 @@ export function useWeather(latitude: number | null, longitude: number | null) {
     setError(null);
 
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,is_day&temperature_unit=fahrenheit&wind_speed_unit=mph`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day&temperature_unit=fahrenheit&wind_speed_unit=mph&models=best_match`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Weather API error');
       const json = await res.json();
       const c = json.current;
 
+      const toC = (f: number) => Math.round((f - 32) * 5 / 9 * 10) / 10;
+
       setData({
-        temperature: c.temperature_2m,
-        temperatureC: Math.round((c.temperature_2m - 32) * 5 / 9 * 10) / 10,
+        temperature: Math.round(c.temperature_2m * 10) / 10,
+        temperatureC: toC(c.temperature_2m),
+        feelsLike: Math.round(c.apparent_temperature * 10) / 10,
+        feelsLikeC: toC(c.apparent_temperature),
         windSpeed: c.wind_speed_10m,
         windDirection: c.wind_direction_10m,
         weatherCode: c.weather_code,
         humidity: c.relative_humidity_2m,
+        pressure: c.surface_pressure,
         isDay: c.is_day === 1,
         description: WEATHER_CODES[c.weather_code] || 'Unknown',
         lastUpdated: Date.now(),
