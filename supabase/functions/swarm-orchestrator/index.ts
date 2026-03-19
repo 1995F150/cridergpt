@@ -231,14 +231,21 @@ async function runAgent(
 
     const userPrompt = `SWARM OBJECTIVE: ${objective}\n\nYOUR SPECIFIC TASK: ${task.prompt}${fileContext}`;
 
-    const response = await fetch(AI_GATEWAY, {
+    // Use OpenAI if available, otherwise fall back to Lovable AI Gateway
+    const OPENAI_KEY = Deno.env.get('OPENAI_API_KEY');
+    const useOpenAI = !!OPENAI_KEY;
+    const apiUrl = useOpenAI ? OPENAI_API_URL : AI_GATEWAY;
+    const authKey = useOpenAI ? OPENAI_KEY : apiKey;
+    const modelToUse = useOpenAI ? 'gpt-4o-mini' : (task.model || 'google/gemini-3-flash-preview');
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${authKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: task.model || 'google/gemini-3-flash-preview',
+        model: modelToUse,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
