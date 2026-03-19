@@ -512,9 +512,9 @@ export default function AgentSwarmPanel() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium">Select Agents ({selectedRoles.length}/18)</p>
+              <p className="text-sm font-medium">Select Agents ({selectedRoles.length}/150)</p>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={selectAll} className="text-xs h-7">All 18</Button>
+                <Button variant="ghost" size="sm" onClick={selectAll} className="text-xs h-7">All {ALL_ROLES.length}</Button>
                 <Button variant="ghost" size="sm" onClick={clearAll} className="text-xs h-7">Clear</Button>
               </div>
             </div>
