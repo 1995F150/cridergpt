@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
 const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
