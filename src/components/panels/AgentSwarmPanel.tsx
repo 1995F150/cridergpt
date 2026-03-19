@@ -411,7 +411,7 @@ export default function AgentSwarmPanel() {
         <div className="flex items-center gap-2">
           <Brain className="h-6 w-6 text-primary" />
           <h2 className="text-xl font-bold">Agent Swarm</h2>
-          <Badge variant="secondary" className="text-xs">Up to 18 agents</Badge>
+          <Badge variant="secondary" className="text-xs">Up to 150 agents</Badge>
         </div>
         <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
           <History className="h-4 w-4 mr-1" />
