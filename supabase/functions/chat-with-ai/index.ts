@@ -770,15 +770,28 @@ serve(async (req) => {
       messages.push({ role: 'user', content: message });
     }
 
-    // Call Lovable AI Gateway
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Call OpenAI API (fallback to Lovable AI Gateway if no OpenAI key)
+    const useOpenAI = !!OPENAI_API_KEY;
+    const apiUrl = useOpenAI 
+      ? 'https://api.openai.com/v1/chat/completions' 
+      : 'https://ai.gateway.lovable.dev/v1/chat/completions';
+    const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
+    const defaultModel = useOpenAI 
+      ? (imageData ? 'gpt-4o' : 'gpt-4o-mini') 
+      : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash');
+
+    if (!apiKey) {
+      throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
+    }
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: imageData ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash',
+        model: defaultModel,
         messages,
         max_tokens: 2000,
       }),
