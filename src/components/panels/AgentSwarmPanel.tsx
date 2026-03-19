@@ -291,7 +291,7 @@ export default function AgentSwarmPanel() {
     setSelectedRoles(prev =>
       prev.includes(role)
         ? prev.filter(r => r !== role)
-        : prev.length < 18
+        : prev.length < 150
           ? [...prev, role]
           : prev
     );
