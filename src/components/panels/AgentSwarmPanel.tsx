@@ -348,7 +348,7 @@ export default function AgentSwarmPanel() {
       const agents = selectedRoles.map(role => ({
         role,
         prompt: objective,
-        model: 'google/gemini-3-flash-preview',
+        model: 'gpt-4o-mini',
       }));
 
       // Prepare file context for agents
