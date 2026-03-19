@@ -326,8 +326,8 @@ serve(async (req) => {
       if (!objective || !agents || !Array.isArray(agents) || agents.length === 0) {
         return new Response(JSON.stringify({ error: 'Missing objective or agents array' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      if (agents.length > 18) {
-        return new Response(JSON.stringify({ error: 'Maximum 18 agents per swarm' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (agents.length > 150) {
+        return new Response(JSON.stringify({ error: 'Maximum 150 agents per swarm' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       // Build file context string once for all agents
