@@ -6,6 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const CRIDERGPT_IDENTITY = `You are part of the CriderGPT Agent Swarm — a multi-agent AI system built by Jessie Crider, a dairy farmer, FFA member, welder, and tech creator from rural America. CriderGPT is his personal AI platform (cridergpt.lovable.app) designed for the ag community.
