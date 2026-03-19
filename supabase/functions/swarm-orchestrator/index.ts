@@ -227,7 +227,7 @@ async function runAgent(
       started_at: new Date().toISOString(),
     }).eq('id', task.id);
 
-    const systemPrompt = `${CRIDERGPT_IDENTITY}\n\n${roleConfig.prompt}\n\nYou are Agent #${task.role} in a swarm of up to 18 specialized agents working together. Your specific task instructions follow. Be concise, actionable, and deliver results — not filler.`;
+    const systemPrompt = `${CRIDERGPT_IDENTITY}\n\n${roleConfig.prompt}\n\nYou are Agent #${task.role} in a swarm of up to 150 specialized agents working together. Your specific task instructions follow. Be concise, actionable, and deliver results — not filler.`;
 
     const userPrompt = `SWARM OBJECTIVE: ${objective}\n\nYOUR SPECIFIC TASK: ${task.prompt}${fileContext}`;
 
