@@ -224,11 +224,14 @@ export default function Index() {
             {/* SEO Content for Search Engines — only shown to guests */}
             {!user && activePanel === 'chat' && (
               <section className="border-t border-border bg-card px-4 py-8 md:px-8 md:py-12">
-                <div className="max-w-3xl mx-auto space-y-6">
-                  <h2 className="text-lg md:text-xl font-bold text-foreground">What is CriderGPT?</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    CriderGPT is a free AI assistant built for agriculture, welding, FFA, and practical trades. Created by Jessie Crider — FFA Historian 2025–2026 from Southwest Virginia — it combines real-world knowledge with AI to help farmers, students, and tradespeople get answers fast. From soil health calculators and crop rotation planners to welding rod guides and voltage drop calculators, CriderGPT has 30+ built-in tools designed for people who work with their hands.
-                  </p>
+                <div className="max-w-3xl mx-auto space-y-8">
+                  <div className="space-y-3">
+                    <h2 className="text-lg md:text-xl font-bold text-foreground">What is CriderGPT?</h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      CriderGPT is a free AI assistant built for agriculture, welding, FFA, and practical trades. Created by Jessie Crider — FFA Historian 2025–2026 from Southwest Virginia — it combines real-world knowledge with AI to help farmers, students, and tradespeople get answers fast. From soil health calculators and crop rotation planners to welding rod guides and voltage drop calculators, CriderGPT has 30+ built-in tools designed for people who work with their hands.
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
                     {[
                       { title: "AI Chat", desc: "Ask about farming, welding, or code" },
@@ -241,6 +244,20 @@ export default function Index() {
                         <p className="text-xs text-muted-foreground mt-1">{f.desc}</p>
                       </div>
                     ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <h2 className="text-lg md:text-xl font-bold text-foreground">Who is CriderGPT for?</h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Whether you're an FFA member working on your SAE project, a farmer planning crop rotations, a welder comparing rod types, or a student who needs homework help — CriderGPT is your free AI partner. It also includes livestock management, receipt scanning, a frequency generator, shared spending tracker, and even an RDR2 game guide.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h2 className="text-lg md:text-xl font-bold text-foreground">CriderGPT on Snapchat</h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Follow <strong className="text-foreground">@cridergpt_lense</strong> on Snapchat for AR lenses and filters. Our lenses have reached over 105,000 users — try the Vibe Check Bot, Soft Glow Up, Desert Drive, and more. Jessie Crider is a verified Snapchat developer building AR experiences through Lens Studio.
+                    </p>
                   </div>
                 </div>
               </section>
