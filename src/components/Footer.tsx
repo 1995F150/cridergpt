@@ -7,7 +7,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4">
           <div className="text-center md:text-left">
             <div className="text-xs md:text-sm text-muted-foreground">
-              © 2025 Jessie Crider — All Rights Reserved.
+              © {new Date().getFullYear()} Jessie Crider — All Rights Reserved.
             </div>
             <div className="text-xs text-muted-foreground mt-1 hidden sm:block">
               This AI system (CriderGPT) is original work. Do not copy, modify, or redistribute without permission.
@@ -16,13 +16,25 @@ export function Footer() {
           
           <div className="flex gap-4 text-xs">
             <Link 
+              to="/snapchat-lens" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              Snapchat Lenses
+            </Link>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
+            <Link 
               to="/tts-policy" 
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               TTS Policy
             </Link>
             <span className="text-muted-foreground hidden sm:inline">•</span>
-            <span className="text-muted-foreground hidden sm:inline">Early Release Version</span>
+            <Link 
+              to="/user-agreement" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              Terms
+            </Link>
           </div>
         </div>
       </div>
