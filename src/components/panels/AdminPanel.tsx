@@ -215,6 +215,13 @@ export function AdminPanel() {
             Snapchat
           </TabsTrigger>
           <TabsTrigger 
+            value="nfc-writer" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Nfc className="h-4 w-4" />
+            NFC Writer
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
