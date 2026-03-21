@@ -24,6 +24,7 @@ import { LearningDashboard } from '@/components/admin/LearningDashboard';
 import { AndroidBuildSystem } from '@/components/admin/AndroidBuildSystem';
 import { ConversationImporter } from '@/components/admin/ConversationImporter';
 import { SnapchatAnalytics } from '@/components/admin/SnapchatAnalytics';
+import { NFCTagWriter } from '@/components/admin/NFCTagWriter';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
