@@ -319,6 +319,10 @@ export function AdminPanel() {
         <TabsContent value="snapchat">
           <SnapchatAnalytics />
         </TabsContent>
+
+        <TabsContent value="nfc-writer">
+          <NFCTagWriter />
+        </TabsContent>
       </Tabs>
     </div>
   );
