@@ -83,7 +83,7 @@ export default function SnapchatLensPage() {
               <Button
                 size="lg"
                 className="bg-[#FFFC00] text-black hover:bg-[#FFFC00]/90 font-bold text-base gap-2"
-                onClick={() => window.open('https://www.snapchat.com/lens/cridergpt-vibe-check', '_blank')}
+                onClick={() => window.open('https://www.snapchat.com/unlock/?type=SNAPCODE&uuid=69214abb13a347b2a0b85923e2b99c02&metadata=01', '_blank')}
               >
                 <Camera className="h-5 w-5" />
                 Try on Snapchat
