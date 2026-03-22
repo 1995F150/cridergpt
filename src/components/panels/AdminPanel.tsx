@@ -223,6 +223,13 @@ export function AdminPanel() {
             NFC Writer
           </TabsTrigger>
           <TabsTrigger 
+            value="filter-orders" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Package className="h-4 w-4" />
+            Filter Orders
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
