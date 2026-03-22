@@ -124,10 +124,10 @@ export default function CustomFilters() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO 
-        title="Custom Snapchat Filters | CriderGPT" 
-        description="Get custom Snapchat filters made by a verified Snap Dev. Basic glow $5-$10, Animated $15-$25, Full custom $30-$40. Lifetime use, done right." 
-      />
+      <Helmet>
+        <title>Custom Snapchat Filters | CriderGPT</title>
+        <meta name="description" content="Get custom Snapchat filters made by a verified Snap Dev. Basic glow $5-$10, Animated $15-$25, Full custom $30-$40. Lifetime use, done right." />
+      </Helmet>
 
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">

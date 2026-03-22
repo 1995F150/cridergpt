@@ -331,6 +331,10 @@ export function AdminPanel() {
         <TabsContent value="nfc-writer">
           <NFCTagWriter />
         </TabsContent>
+
+        <TabsContent value="filter-orders">
+          <FilterOrdersManager />
+        </TabsContent>
       </Tabs>
     </div>
   );
