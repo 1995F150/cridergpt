@@ -46,6 +46,7 @@ export default function CustomFilters() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [payingNow, setPayingNow] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -55,7 +56,40 @@ export default function CustomFilters() {
     payment_method: '',
   });
 
+  // Check for payment success/cancel from URL
+  const params = new URLSearchParams(window.location.search);
+  const paymentStatus = params.get('payment');
+
   const tier = FILTER_TIERS.find(t => t.id === selectedTier);
+
+  const handleStripeCheckout = async (orderId?: string) => {
+    if (!tier || !form.email.trim()) return;
+    
+    setPayingNow(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('filter-checkout', {
+        body: {
+          order_id: orderId || null,
+          amount: tier.min, // Start at minimum tier price
+          customer_email: form.email.trim(),
+          customer_name: form.name.trim(),
+          filter_type: selectedTier,
+          mode: 'checkout',
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to start checkout');
+    } finally {
+      setPayingNow(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +100,7 @@ export default function CustomFilters() {
 
     setSubmitting(true);
     try {
-      const { error } = await (supabase as any)
+      const { data: insertedOrder, error } = await (supabase as any)
         .from('filter_orders')
         .insert({
           customer_name: form.name.trim(),
@@ -80,9 +114,18 @@ export default function CustomFilters() {
           payment_method: form.payment_method || null,
           payment_status: 'pending',
           status: 'new',
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // If they chose Stripe, redirect to checkout immediately
+      if (form.payment_method === 'stripe' && insertedOrder) {
+        await handleStripeCheckout(insertedOrder.id);
+        return;
+      }
+
       setSubmitted(true);
       toast.success('Request submitted! I\'ll get back to you soon 🔥');
     } catch (err: any) {
@@ -91,6 +134,30 @@ export default function CustomFilters() {
       setSubmitting(false);
     }
   };
+
+  // Payment success screen
+  if (paymentStatus === 'success') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Helmet><title>Payment Successful | CriderGPT Custom Filters</title></Helmet>
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="p-8 space-y-4">
+            <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
+            <h2 className="text-2xl font-bold">Payment Received! 💰🔥</h2>
+            <p className="text-muted-foreground">
+              You're all set! I'll start working on your custom filter and deliver it ASAP.
+            </p>
+            <p className="text-sm text-muted-foreground">Typical turnaround: 1–3 days</p>
+            <Link to="/custom-filters">
+              <Button variant="outline" className="w-full gap-2 mt-4">
+                <ArrowLeft className="h-4 w-4" /> Back to Custom Filters
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
@@ -271,14 +338,25 @@ export default function CustomFilters() {
                   </Select>
                 </div>
 
-                <Button type="submit" disabled={submitting} className="w-full gap-2" size="lg">
-                  {submitting ? 'Submitting...' : (
-                    <><Send className="h-4 w-4" /> Submit Request</>
-                  )}
-                </Button>
+                {form.payment_method === 'stripe' ? (
+                  <Button type="submit" disabled={submitting || payingNow} className="w-full gap-2" size="lg">
+                    {submitting || payingNow ? 'Processing...' : (
+                      <><CreditCard className="h-4 w-4" /> Submit & Pay with Card</>
+                    )}
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={submitting} className="w-full gap-2" size="lg">
+                    {submitting ? 'Submitting...' : (
+                      <><Send className="h-4 w-4" /> Submit Request</>
+                    )}
+                  </Button>
+                )}
 
                 <p className="text-xs text-center text-muted-foreground">
-                  I'll reach out with a quote and payment details. No charge until you approve the design.
+                  {form.payment_method === 'stripe' 
+                    ? "You'll be redirected to a secure Stripe checkout page."
+                    : "I'll reach out with a quote and payment details. No charge until you approve the design."
+                  }
                 </p>
               </form>
             </CardContent>

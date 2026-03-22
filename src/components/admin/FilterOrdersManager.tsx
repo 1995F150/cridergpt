@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Package, DollarSign, Eye, CheckCircle2, Clock, Truck, XCircle } from 'lucide-react';
+import { Loader2, Package, DollarSign, Eye, CheckCircle2, Clock, Truck, XCircle, Link2, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FilterOrder {
@@ -210,7 +210,40 @@ export function FilterOrdersManager() {
                         <label className="text-xs font-medium mb-1 block">Admin Notes</label>
                         <Textarea rows={2} placeholder="Internal notes..." value={edit.admin_notes} onChange={e => setEditData(p => ({ ...p, [order.id]: { ...p[order.id], admin_notes: e.target.value } }))} />
                       </div>
-                      <Button onClick={() => handleUpdate(order.id)} size="sm">Save Changes</Button>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button onClick={() => handleUpdate(order.id)} size="sm">Save Changes</Button>
+                        {edit.agreed_price && parseFloat(edit.agreed_price) > 0 && order.payment_status !== 'paid' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="gap-1.5"
+                            onClick={async () => {
+                              try {
+                                const { data, error } = await supabase.functions.invoke('filter-checkout', {
+                                  body: {
+                                    order_id: order.id,
+                                    amount: parseFloat(edit.agreed_price),
+                                    customer_email: order.customer_email,
+                                    customer_name: order.customer_name,
+                                    filter_type: order.filter_type,
+                                    mode: 'payment_link',
+                                  },
+                                });
+                                if (error) throw error;
+                                if (data?.url) {
+                                  await navigator.clipboard.writeText(data.url);
+                                  toast.success('Payment link copied! Send it to the customer.');
+                                }
+                              } catch (err: any) {
+                                toast.error(err.message || 'Failed to generate link');
+                              }
+                            }}
+                          >
+                            <CreditCard className="h-3.5 w-3.5" />
+                            Generate Payment Link (${edit.agreed_price})
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </CardContent>
