@@ -26,6 +26,7 @@ import SystemDiagnostics from "./pages/SystemDiagnostics";
 import TTSPolicyPage from "./pages/TTSPolicyPage";
 import UserAgreement from "./pages/UserAgreement";
 import SnapchatLensPage from "./pages/SnapchatLensPage";
+import CustomFilters from "./pages/CustomFilters";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,6 +110,7 @@ const App = () => {
                       <Route path="/system-diagnostics" element={<SystemDiagnostics />} />
                       <Route path="/tts-policy" element={<TTSPolicyPage />} />
                       <Route path="/snapchat-lens" element={<SnapchatLensPage />} />
+                      <Route path="/custom-filters" element={<CustomFilters />} />
                       <Route path="/user-agreement" element={<UserAgreement />} />
                       
                       {/* Home route - now public, handles guest and authenticated users */}

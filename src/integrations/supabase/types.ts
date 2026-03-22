@@ -1208,6 +1208,72 @@ export type Database = {
         }
         Relationships: []
       }
+      filter_orders: {
+        Row: {
+          admin_notes: string | null
+          agreed_price: number | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          customer_snapchat: string | null
+          delivery_url: string | null
+          description: string
+          filter_type: string
+          id: string
+          payment_method: string | null
+          payment_status: string
+          price_range_max: number
+          price_range_min: number
+          reference_images: string[] | null
+          status: string
+          stripe_payment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          agreed_price?: number | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          customer_snapchat?: string | null
+          delivery_url?: string | null
+          description: string
+          filter_type: string
+          id?: string
+          payment_method?: string | null
+          payment_status?: string
+          price_range_max?: number
+          price_range_min?: number
+          reference_images?: string[] | null
+          status?: string
+          stripe_payment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          agreed_price?: number | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          customer_snapchat?: string | null
+          delivery_url?: string | null
+          description?: string
+          filter_type?: string
+          id?: string
+          payment_method?: string | null
+          payment_status?: string
+          price_range_max?: number
+          price_range_min?: number
+          reference_images?: string[] | null
+          status?: string
+          stripe_payment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       founders: {
         Row: {
           added_at: string | null
