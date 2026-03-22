@@ -26,6 +26,7 @@ import SystemDiagnostics from "./pages/SystemDiagnostics";
 import TTSPolicyPage from "./pages/TTSPolicyPage";
 import UserAgreement from "./pages/UserAgreement";
 import SnapchatLensPage from "./pages/SnapchatLensPage";
+import CustomFilters from "./pages/CustomFilters";
 
 const queryClient = new QueryClient({
   defaultOptions: {
