@@ -338,14 +338,25 @@ export default function CustomFilters() {
                   </Select>
                 </div>
 
-                <Button type="submit" disabled={submitting} className="w-full gap-2" size="lg">
-                  {submitting ? 'Submitting...' : (
-                    <><Send className="h-4 w-4" /> Submit Request</>
-                  )}
-                </Button>
+                {form.payment_method === 'stripe' ? (
+                  <Button type="submit" disabled={submitting || payingNow} className="w-full gap-2" size="lg">
+                    {submitting || payingNow ? 'Processing...' : (
+                      <><CreditCard className="h-4 w-4" /> Submit & Pay with Card</>
+                    )}
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={submitting} className="w-full gap-2" size="lg">
+                    {submitting ? 'Submitting...' : (
+                      <><Send className="h-4 w-4" /> Submit Request</>
+                    )}
+                  </Button>
+                )}
 
                 <p className="text-xs text-center text-muted-foreground">
-                  I'll reach out with a quote and payment details. No charge until you approve the design.
+                  {form.payment_method === 'stripe' 
+                    ? "You'll be redirected to a secure Stripe checkout page."
+                    : "I'll reach out with a quote and payment details. No charge until you approve the design."
+                  }
                 </p>
               </form>
             </CardContent>
