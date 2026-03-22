@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Package, DollarSign, Eye, CheckCircle2, Clock, Truck, XCircle } from 'lucide-react';
+import { Loader2, Package, DollarSign, Eye, CheckCircle2, Clock, Truck, XCircle, Link2, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FilterOrder {
