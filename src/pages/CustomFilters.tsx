@@ -95,7 +95,7 @@ export default function CustomFilters() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <SEO title="Request Submitted | CriderGPT Custom Filters" description="Your custom Snapchat filter request has been submitted." />
+        <Helmet><title>Request Submitted | CriderGPT Custom Filters</title></Helmet>
         <Card className="max-w-md w-full text-center">
           <CardContent className="p-8 space-y-4">
             <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
