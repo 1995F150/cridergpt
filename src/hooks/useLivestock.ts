@@ -319,8 +319,10 @@ export function useLivestock() {
       });
 
       if (invokeError) {
-        toast.error(invokeError.message || 'Scan failed');
-        return { error: invokeError.message, status: 500 };
+        // Try to extract a meaningful message from the response
+        const errMsg = result?.error || invokeError.message || 'Scan failed';
+        toast.error(errMsg);
+        return { error: errMsg, status: 500 };
       }
 
       // Handle unregistered pool tag
