@@ -54,8 +54,35 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
       const ndef = new (window as any).NDEFReader();
       await ndef.scan();
       setScanning(true);
-      ndef.addEventListener('reading', ({ serialNumber }: any) => {
-        handleScan(serialNumber);
+      ndef.addEventListener('reading', ({ message, serialNumber }: any) => {
+        // Read the NDEF text record (plain text tag ID written to the tag)
+        let tagId = '';
+        if (message?.records) {
+          for (const record of message.records) {
+            if (record.recordType === 'text') {
+              const decoder = new TextDecoder(record.encoding || 'utf-8');
+              tagId = decoder.decode(record.data).trim();
+              break;
+            } else if (record.recordType === 'url' || record.recordType === 'unknown') {
+              // Fallback: try to decode any record as text
+              try {
+                const decoder = new TextDecoder('utf-8');
+                const decoded = decoder.decode(record.data).trim();
+                if (decoded.startsWith('CriderGPT-') || decoded.length > 3) {
+                  tagId = decoded;
+                  break;
+                }
+              } catch {}
+            }
+          }
+        }
+        // Fallback to serial number if no text record found
+        if (!tagId) {
+          tagId = serialNumber || '';
+        }
+        if (tagId) {
+          handleScan(tagId);
+        }
       });
     } catch (err) {
       console.error('NFC scan failed:', err);

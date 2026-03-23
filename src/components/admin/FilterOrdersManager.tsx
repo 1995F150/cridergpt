@@ -43,9 +43,9 @@ const statusConfig: Record<string, { color: string; icon: any }> = {
 };
 
 const filterTypeLabels: Record<string, string> = {
-  basic_glow: 'Basic Glow ($5-$10)',
-  animated_chrome: 'Animated/Chrome ($15-$25)',
-  full_custom: 'Full Custom ($30-$40)',
+  basic_glow: 'Basic Glow ($3-$5)',
+  animated_chrome: 'Animated/Chrome ($7-$12)',
+  full_custom: 'Full Custom ($15-$25)',
 };
 
 export function FilterOrdersManager() {
