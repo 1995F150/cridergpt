@@ -23,6 +23,13 @@ export function Footer() {
             </Link>
             <span className="text-muted-foreground hidden sm:inline">•</span>
             <Link 
+              to="/custom-filters" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              Custom Filters
+            </Link>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
+            <Link 
               to="/tts-policy" 
               className="text-muted-foreground hover:text-primary transition-colors"
             >
