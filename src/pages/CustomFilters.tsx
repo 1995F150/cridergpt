@@ -15,8 +15,8 @@ const FILTER_TIERS = [
   {
     id: 'basic_glow',
     name: 'Basic Glow / Aesthetic',
-    price: '$5 – $10',
-    min: 5, max: 10,
+    price: '$3 – $5',
+    min: 3, max: 5,
     icon: Sparkles,
     color: 'from-pink-500 to-purple-500',
     features: ['Color grading', 'Soft glow effects', 'Aesthetic overlays', 'Lifetime use'],
@@ -24,8 +24,8 @@ const FILTER_TIERS = [
   {
     id: 'animated_chrome',
     name: 'Animated / Truck Chrome',
-    price: '$15 – $25',
-    min: 15, max: 25,
+    price: '$7 – $12',
+    min: 7, max: 12,
     icon: Zap,
     color: 'from-blue-500 to-cyan-500',
     popular: true,
@@ -34,8 +34,8 @@ const FILTER_TIERS = [
   {
     id: 'full_custom',
     name: 'Full Custom / Advanced',
-    price: '$30 – $40',
-    min: 30, max: 40,
+    price: '$15 – $25',
+    min: 15, max: 25,
     icon: Crown,
     color: 'from-amber-500 to-orange-500',
     features: ['Fully custom design', 'Advanced animations', 'Interactive elements', 'Priority delivery', 'Lifetime use'],
