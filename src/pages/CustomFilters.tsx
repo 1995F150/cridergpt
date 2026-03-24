@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Ghost, Sparkles, Zap, Crown, Send, CheckCircle2, MessageCircle, CreditCard, ArrowLeft } from 'lucide-react';
+import { Ghost, Sparkles, Zap, Crown, Send, CheckCircle2, MessageCircle, CreditCard, ArrowLeft, Award, LogIn } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
@@ -15,8 +16,7 @@ const FILTER_TIERS = [
   {
     id: 'basic_glow',
     name: 'Basic Glow / Aesthetic',
-    price: '$3 – $5',
-    min: 3, max: 5,
+    price: 5,
     icon: Sparkles,
     color: 'from-pink-500 to-purple-500',
     features: ['Color grading', 'Soft glow effects', 'Aesthetic overlays', 'Lifetime use'],
@@ -24,8 +24,7 @@ const FILTER_TIERS = [
   {
     id: 'animated_chrome',
     name: 'Animated / Truck Chrome',
-    price: '$7 – $12',
-    min: 7, max: 12,
+    price: 10,
     icon: Zap,
     color: 'from-blue-500 to-cyan-500',
     popular: true,
@@ -34,19 +33,23 @@ const FILTER_TIERS = [
   {
     id: 'full_custom',
     name: 'Full Custom / Advanced',
-    price: '$15 – $25',
-    min: 15, max: 25,
+    price: 20,
     icon: Crown,
     color: 'from-amber-500 to-orange-500',
     features: ['Fully custom design', 'Advanced animations', 'Interactive elements', 'Priority delivery', 'Lifetime use'],
   },
 ];
 
+const LOYALTY_THRESHOLD = 3;
+const LOYALTY_DISCOUNT_PERCENT = 15;
+
 export default function CustomFilters() {
+  const { user } = useAuth();
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [payingNow, setPayingNow] = useState(false);
+  const [completedOrders, setCompletedOrders] = useState(0);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -56,21 +59,44 @@ export default function CustomFilters() {
     payment_method: '',
   });
 
-  // Check for payment success/cancel from URL
   const params = new URLSearchParams(window.location.search);
   const paymentStatus = params.get('payment');
 
   const tier = FILTER_TIERS.find(t => t.id === selectedTier);
+  const hasLoyaltyDiscount = user && completedOrders >= LOYALTY_THRESHOLD;
+  const discountAmount = hasLoyaltyDiscount && tier ? +(tier.price * LOYALTY_DISCOUNT_PERCENT / 100).toFixed(2) : 0;
+  const finalPrice = tier ? +(tier.price - discountAmount).toFixed(2) : 0;
+
+  // Fetch completed order count for signed-in users
+  useEffect(() => {
+    if (!user) { setCompletedOrders(0); return; }
+    const fetchCount = async () => {
+      const { count } = await (supabase as any)
+        .from('filter_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('payment_status', 'paid');
+      setCompletedOrders(count || 0);
+    };
+    fetchCount();
+  }, [user]);
+
+  // Pre-fill email from auth
+  useEffect(() => {
+    if (user?.email && !form.email) {
+      setForm(f => ({ ...f, email: user.email! }));
+    }
+  }, [user]);
 
   const handleStripeCheckout = async (orderId?: string) => {
     if (!tier || !form.email.trim()) return;
-    
+
     setPayingNow(true);
     try {
       const { data, error } = await supabase.functions.invoke('filter-checkout', {
         body: {
           order_id: orderId || null,
-          amount: tier.min, // Start at minimum tier price
+          amount: finalPrice,
           customer_email: form.email.trim(),
           customer_name: form.name.trim(),
           filter_type: selectedTier,
@@ -93,7 +119,7 @@ export default function CustomFilters() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTier || !form.name.trim() || !form.email.trim() || !form.description.trim()) {
+    if (!selectedTier || !tier || !form.name.trim() || !form.email.trim() || !form.description.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -109,18 +135,21 @@ export default function CustomFilters() {
           customer_phone: form.phone.trim() || null,
           filter_type: selectedTier,
           description: form.description.trim(),
-          price_range_min: tier?.min || 5,
-          price_range_max: tier?.max || 10,
+          price_range_min: tier.price,
+          price_range_max: tier.price,
+          agreed_price: finalPrice,
           payment_method: form.payment_method || null,
           payment_status: 'pending',
           status: 'new',
+          user_id: user?.id || null,
+          discount_applied: discountAmount,
+          discount_reason: hasLoyaltyDiscount ? `Loyalty ${LOYALTY_DISCOUNT_PERCENT}% (${completedOrders} orders)` : null,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // If they chose Stripe, redirect to checkout immediately
       if (form.payment_method === 'stripe' && insertedOrder) {
         await handleStripeCheckout(insertedOrder.id);
         return;
@@ -168,13 +197,11 @@ export default function CustomFilters() {
             <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
             <h2 className="text-2xl font-bold">Request Received! 🔥</h2>
             <p className="text-muted-foreground">
-              I'll review your request and hit you up on {form.snapchat ? 'Snapchat' : 'email'} with a quote and next steps.
+              I'll review your request and hit you up on {form.snapchat ? 'Snapchat' : 'email'} with next steps.
             </p>
-            <p className="text-sm text-muted-foreground">
-              Typical turnaround: 1–3 days
-            </p>
+            <p className="text-sm text-muted-foreground">Typical turnaround: 1–3 days</p>
             <div className="flex flex-col gap-2 pt-4">
-              <Button onClick={() => { setSubmitted(false); setSelectedTier(null); setForm({ name: '', email: '', snapchat: '', phone: '', description: '', payment_method: '' }); }}>
+              <Button onClick={() => { setSubmitted(false); setSelectedTier(null); setForm({ name: '', email: user?.email || '', snapchat: '', phone: '', description: '', payment_method: '' }); }}>
                 Submit Another Request
               </Button>
               <Link to="/">
@@ -193,7 +220,7 @@ export default function CustomFilters() {
     <div className="min-h-screen bg-background">
       <Helmet>
         <title>Custom Snapchat Filters | CriderGPT</title>
-        <meta name="description" content="Get custom Snapchat filters made by a verified Snap Dev. Basic glow $5-$10, Animated $15-$25, Full custom $30-$40. Lifetime use, done right." />
+        <meta name="description" content="Get custom Snapchat filters made by a verified Snap Dev. Fixed pricing, loyalty discounts after 3 purchases. Lifetime use, done right." />
       </Helmet>
 
       {/* Header */}
@@ -202,9 +229,28 @@ export default function CustomFilters() {
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" /> CriderGPT
           </Link>
-          <Badge variant="outline" className="gap-1">
-            <Ghost className="h-3 w-3" /> Snap Dev
-          </Badge>
+          <div className="flex items-center gap-2">
+            {user ? (
+              hasLoyaltyDiscount ? (
+                <Badge className="gap-1 bg-amber-500/20 text-amber-400 border-amber-500/30">
+                  <Award className="h-3 w-3" /> {LOYALTY_DISCOUNT_PERCENT}% Loyalty Discount
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1 text-xs">
+                  {completedOrders}/{LOYALTY_THRESHOLD} orders for discount
+                </Badge>
+              )
+            ) : (
+              <Link to="/auth">
+                <Badge variant="outline" className="gap-1 cursor-pointer hover:bg-primary/10">
+                  <LogIn className="h-3 w-3" /> Sign in for discounts
+                </Badge>
+              </Link>
+            )}
+            <Badge variant="outline" className="gap-1">
+              <Ghost className="h-3 w-3" /> Snap Dev
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -218,15 +264,22 @@ export default function CustomFilters() {
             Your Style. Your Filter. 😎
           </h1>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            Lifetime use, done right 💥 Made by a verified Snapchat developer with 141K+ reach. DM me what you want and I'll make it happen.
+            Lifetime use, done right 💥 Made by a verified Snapchat developer with 141K+ reach. Pick your tier and pay the fixed price — no surprises.
           </p>
+          {!user && (
+            <p className="text-sm text-primary">
+              <Link to="/auth" className="underline hover:no-underline">Sign in</Link> to unlock {LOYALTY_DISCOUNT_PERCENT}% loyalty discounts after {LOYALTY_THRESHOLD} purchases!
+            </p>
+          )}
         </div>
 
-        {/* Pricing Tiers */}
+        {/* Pricing Tiers — Fixed Prices */}
         <div className="grid sm:grid-cols-3 gap-4">
           {FILTER_TIERS.map((t) => {
             const Icon = t.icon;
             const isSelected = selectedTier === t.id;
+            const showDiscount = hasLoyaltyDiscount;
+            const discPrice = +(t.price * (1 - LOYALTY_DISCOUNT_PERCENT / 100)).toFixed(2);
             return (
               <button
                 key={t.id}
@@ -246,7 +299,14 @@ export default function CustomFilters() {
                   <Icon className="h-5 w-5 text-white" />
                 </div>
                 <h3 className="font-semibold text-sm">{t.name}</h3>
-                <p className="text-xl font-bold mt-1">{t.price}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className={`text-xl font-bold ${showDiscount ? 'line-through text-muted-foreground text-base' : ''}`}>
+                    ${t.price}
+                  </p>
+                  {showDiscount && (
+                    <p className="text-xl font-bold text-green-500">${discPrice}</p>
+                  )}
+                </div>
                 <ul className="mt-3 space-y-1">
                   {t.features.map((f, i) => (
                     <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -260,12 +320,24 @@ export default function CustomFilters() {
         </div>
 
         {/* Request Form */}
-        {selectedTier && (
+        {selectedTier && tier && (
           <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Send className="h-5 w-5" />
-                Request Your Filter — {tier?.name}
+              <CardTitle className="text-lg flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Send className="h-5 w-5" />
+                  Request — {tier.name}
+                </span>
+                <span className="text-right">
+                  {hasLoyaltyDiscount ? (
+                    <span className="flex items-center gap-2">
+                      <span className="line-through text-muted-foreground text-sm">${tier.price}</span>
+                      <span className="text-green-500 font-bold">${finalPrice}</span>
+                    </span>
+                  ) : (
+                    <span className="font-bold">${finalPrice}</span>
+                  )}
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -315,12 +387,16 @@ export default function CustomFilters() {
                     value={form.description}
                     onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                     rows={4}
+                    maxLength={1000}
                     required
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {form.description.length}/1000 — This is for describing your filter only. Price is set by the tier above.
+                  </p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Preferred Payment Method</label>
+                  <label className="text-sm font-medium mb-1 block">Payment Method</label>
                   <Select value={form.payment_method} onValueChange={v => setForm(f => ({ ...f, payment_method: v }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="How do you want to pay?" />
@@ -338,24 +414,33 @@ export default function CustomFilters() {
                   </Select>
                 </div>
 
+                {hasLoyaltyDiscount && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm">
+                    <Award className="h-4 w-4 text-green-500 shrink-0" />
+                    <span className="text-green-400">
+                      {LOYALTY_DISCOUNT_PERCENT}% loyalty discount applied! You've completed {completedOrders} orders.
+                    </span>
+                  </div>
+                )}
+
                 {form.payment_method === 'stripe' ? (
                   <Button type="submit" disabled={submitting || payingNow} className="w-full gap-2" size="lg">
                     {submitting || payingNow ? 'Processing...' : (
-                      <><CreditCard className="h-4 w-4" /> Submit & Pay with Card</>
+                      <><CreditCard className="h-4 w-4" /> Pay ${finalPrice} with Card</>
                     )}
                   </Button>
                 ) : (
                   <Button type="submit" disabled={submitting} className="w-full gap-2" size="lg">
                     {submitting ? 'Submitting...' : (
-                      <><Send className="h-4 w-4" /> Submit Request</>
+                      <><Send className="h-4 w-4" /> Submit Request — ${finalPrice}</>
                     )}
                   </Button>
                 )}
 
                 <p className="text-xs text-center text-muted-foreground">
-                  {form.payment_method === 'stripe' 
+                  {form.payment_method === 'stripe'
                     ? "You'll be redirected to a secure Stripe checkout page."
-                    : "I'll reach out with a quote and payment details. No charge until you approve the design."
+                    : "I'll reach out with payment details. Price is fixed by tier — no hidden fees."
                   }
                 </p>
               </form>

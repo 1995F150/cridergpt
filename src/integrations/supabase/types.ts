@@ -1219,6 +1219,8 @@ export type Database = {
           customer_snapchat: string | null
           delivery_url: string | null
           description: string
+          discount_applied: number | null
+          discount_reason: string | null
           filter_type: string
           id: string
           payment_method: string | null
@@ -1229,6 +1231,7 @@ export type Database = {
           status: string
           stripe_payment_id: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -1240,6 +1243,8 @@ export type Database = {
           customer_snapchat?: string | null
           delivery_url?: string | null
           description: string
+          discount_applied?: number | null
+          discount_reason?: string | null
           filter_type: string
           id?: string
           payment_method?: string | null
@@ -1250,6 +1255,7 @@ export type Database = {
           status?: string
           stripe_payment_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -1261,6 +1267,8 @@ export type Database = {
           customer_snapchat?: string | null
           delivery_url?: string | null
           description?: string
+          discount_applied?: number | null
+          discount_reason?: string | null
           filter_type?: string
           id?: string
           payment_method?: string | null
@@ -1271,6 +1279,7 @@ export type Database = {
           status?: string
           stripe_payment_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
