@@ -23,31 +23,31 @@ const STATIC_PLANS: PlanConfiguration[] = [
     plan_name: 'free',
     plan_display_name: 'CriderGPT Free',
     price_monthly: 0,
-    features: ['15 messages/day', '5 TTS requests/day', 'Basic support', '1 project'],
+    features: ['15 messages/day', '5 TTS requests/day', 'GPT-3.5 Turbo model', 'Basic support', '1 project', 'System updates'],
     limits: { messages: 15, tts: 5, projects: 1, api_keys: 1, file_upload_mb: 10 },
     sort_order: 1
   },
   {
     plan_name: 'plus',
     plan_display_name: 'CriderGPT Plus',
-    price_monthly: 9,
-    features: ['100 messages/day', '100 TTS requests/day', 'Priority support', 'File upload', '5 projects'],
+    price_monthly: 3,
+    features: ['100 messages/day', '100 TTS requests/day', 'GPT-4o Mini model', 'Priority support', 'File upload (50MB)', '5 projects', 'Backend code generator'],
     limits: { messages: 100, tts: 100, projects: 5, api_keys: 3, file_upload_mb: 50 },
     sort_order: 2
   },
   {
     plan_name: 'pro',
     plan_display_name: 'CriderGPT Pro',
-    price_monthly: 19,
-    features: ['500 messages/day', 'Unlimited TTS', 'Priority support', 'Advanced features', '10 projects'],
+    price_monthly: 7,
+    features: ['500 messages/day', 'Unlimited TTS', 'GPT-4o model', 'Priority support', 'Advanced analytics', 'File upload (100MB)', '10 projects', 'Mod deployment', 'Automation tools'],
     limits: { messages: 500, tts: 999999, projects: 10, api_keys: 5, file_upload_mb: 100 },
     sort_order: 3
   },
   {
     plan_name: 'lifetime',
     plan_display_name: 'CriderGPT Lifetime',
-    price_monthly: 100,
-    features: ['Unlimited messages', 'Unlimited TTS', 'Priority support', 'All features forever', 'Unlimited projects'],
+    price_monthly: 30,
+    features: ['Unlimited messages forever', 'Unlimited TTS forever', 'GPT-4o model', 'All current & future features', 'Unlimited projects', 'Founder badge', 'No monthly fees ever'],
     limits: { messages: 9999999, tts: 9999999, projects: 999, api_keys: 99, file_upload_mb: 500 },
     sort_order: 4
   }

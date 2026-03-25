@@ -13,11 +13,11 @@ export function PaymentPanel() {
   const [loading, setLoading] = useState<string | null>(null);
   const { plans } = usePlanConfigurations();
 
-  // Stripe price IDs
+  // Stripe price IDs (updated March 2026)
   const priceIdMap: Record<string, string> = {
-    plus: "price_1Rell1P90uC07RqG5S4mEjHC",
-    pro: "price_1RellmP90uC07RqGFSDHaCwu",
-    lifetime: "price_1SAGoNP90uC07RqGhogvN43V",
+    plus: "price_1TExZhP90uC07RqGdJ8loF2z",
+    pro: "price_1TExa8P90uC07RqGHYMMlGbX",
+    lifetime: "price_1TExaUP90uC07RqG1CX0lf9B",
   };
 
   const iconMap: Record<string, React.ReactNode> = {
@@ -99,7 +99,7 @@ export function PaymentPanel() {
     allPlans.push({
       plan_name: "lifetime",
       plan_display_name: "Lifetime Founder",
-      price_monthly: 100,
+      price_monthly: 30,
       features: [
         "Unlimited messages forever",
         "Unlimited TTS forever",
