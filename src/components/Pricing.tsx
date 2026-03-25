@@ -208,7 +208,7 @@ useEffect(() => {
                 ) : plan.plan_name === "lifetime" && !isLifetimeAvailable() ? (
                   "Sold Out"
                 ) : plan.plan_name === "lifetime" ? (
-                  "Buy Lifetime — $100 one-time"
+                  "Buy Lifetime — $30 one-time"
                 ) : (
                   "Subscribe Now"
                 )}

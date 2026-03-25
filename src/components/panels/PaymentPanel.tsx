@@ -99,7 +99,7 @@ export function PaymentPanel() {
     allPlans.push({
       plan_name: "lifetime",
       plan_display_name: "Lifetime Founder",
-      price_monthly: 100,
+      price_monthly: 30,
       features: [
         "Unlimited messages forever",
         "Unlimited TTS forever",
