@@ -23,14 +23,14 @@ useEffect(() => {
   return () => authListener.subscription.unsubscribe();
 }, []);
 
-  // Stripe Price IDs
+  // Stripe Price IDs (updated March 2026)
   const priceIdMap: Record<string, string> = {
-    plus: "price_1QWi0fIJp5CmkQf3fE8NSFZE",
-    pro: "price_1QWi1AIJp5CmkQf3Y8wQEP2V",
-    lifetime: "price_1SAGoNP90uC07RqGhogvN43V",
+    plus: "price_1TExZhP90uC07RqGdJ8loF2z",
+    pro: "price_1TExa8P90uC07RqGHYMMlGbX",
+    lifetime: "price_1TExaUP90uC07RqG1CX0lf9B",
   };
 
-  const lifetimePrice = 100; // one-time USD
+  const lifetimePrice = 30; // one-time USD
 
   const handlePlanSelect = async (planName: string) => {
     if (planName === "lifetime" && !isLifetimeAvailable()) {
