@@ -23,7 +23,7 @@ const STATIC_PLANS: PlanConfiguration[] = [
     plan_name: 'free',
     plan_display_name: 'CriderGPT Free',
     price_monthly: 0,
-    features: ['15 messages/day', '5 TTS requests/day', 'Basic support', '1 project'],
+    features: ['15 messages/day', '5 TTS requests/day', 'GPT-3.5 Turbo model', 'Basic support', '1 project', 'System updates'],
     limits: { messages: 15, tts: 5, projects: 1, api_keys: 1, file_upload_mb: 10 },
     sort_order: 1
   },
