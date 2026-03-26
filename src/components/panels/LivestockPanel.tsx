@@ -56,6 +56,7 @@ export function LivestockPanel() {
             onAddHealth={addHealthRecord}
             onAddNote={addNote}
             onAddTag={addTag}
+            onDelete={deleteAnimal}
           />
         </div>
       </ScrollArea>
