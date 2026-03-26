@@ -360,7 +360,9 @@ export function PlanPanel() {
               {plans.map(plan => (
                 <div key={plan.plan_name} className="text-center font-medium capitalize">
                   {plan.plan_display_name}
-                  <div className="text-2xl font-bold text-primary">${plan.price_monthly}/mo</div>
+                  <div className="text-2xl font-bold text-primary">
+                    ${plan.price_monthly}{plan.plan_name === 'lifetime' ? ' one-time' : '/mo'}
+                  </div>
                 </div>
               ))}
               
