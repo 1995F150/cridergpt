@@ -60,7 +60,7 @@ const featureRequirements: FeatureRequirement[] = [
     freeAccess: false,
     pluAccess: true,
     proAccess: true,
-    requirement: "20 documents/month on Plu, Unlimited on Pro"
+    requirement: "20 documents/month on Plus, Unlimited on Pro"
   },
   {
     feature: "Invoicing System",
