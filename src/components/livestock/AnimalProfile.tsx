@@ -71,6 +71,9 @@ export function AnimalProfile({
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
+        </Button>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-2xl">{emoji}</span>
             <h2 className="text-xl font-bold text-foreground">{animal.name || animal.animal_id}</h2>
             <Badge variant="outline" className="text-xs">{animal.animal_id}</Badge>
