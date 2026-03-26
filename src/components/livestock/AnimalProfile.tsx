@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Smartphone } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Smartphone, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { LivestockAnimal, LivestockWeight, LivestockHealthRecord, LivestockNote, LivestockTag } from '@/hooks/useLivestock';
 
@@ -22,6 +23,7 @@ interface AnimalProfileProps {
   onAddHealth: (animalId: string, record: any) => Promise<void>;
   onAddNote: (animalId: string, content: string, noteType?: string) => Promise<void>;
   onAddTag: (animalId: string, tagNumber: string, tagType?: string, tagLocation?: string) => Promise<void>;
+  onDelete?: (animalId: string) => Promise<void>;
 }
 
 const speciesEmoji: Record<string, string> = {
