@@ -72,11 +72,7 @@ export function ProfileMenu({
       <DropdownMenuSeparator />
       
       <DropdownMenuItem disabled>
-        <span className="text-xs text-muted-foreground">CriderRank: Level 3</span>
-      </DropdownMenuItem>
-      
-      <DropdownMenuItem disabled>
-        <span className="text-xs text-muted-foreground">Built by Jessie Crider</span>
+        <span className="text-xs text-muted-foreground">CriderGPT — Built by Jessie Crider</span>
       </DropdownMenuItem>
       
       <DropdownMenuSeparator />

@@ -52,7 +52,7 @@ const featureRequirements: FeatureRequirement[] = [
     freeAccess: false,
     pluAccess: true,
     proAccess: true,
-    requirement: "10 images/month on Plu, Unlimited on Pro"
+    requirement: "10 images/month on Plus, Unlimited on Pro"
   },
   {
     feature: "Document Analyzer",
@@ -60,7 +60,7 @@ const featureRequirements: FeatureRequirement[] = [
     freeAccess: false,
     pluAccess: true,
     proAccess: true,
-    requirement: "20 documents/month on Plu, Unlimited on Pro"
+    requirement: "20 documents/month on Plus, Unlimited on Pro"
   },
   {
     feature: "Invoicing System",
@@ -200,9 +200,10 @@ export function PlanPanel() {
   }
 
   const currentPlan = subscriptionData?.plan || 'free';
-  const planName = (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plu' : 'Free');
-  const planIcon = isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap;
-  const planColor = isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500';
+  const isLifetime = currentPlan === 'lifetime';
+  const planName = isLifetime ? 'Lifetime' : (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plus' : 'Free');
+  const planIcon = isLifetime ? Crown : (isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap);
+  const planColor = isLifetime ? 'text-yellow-500' : (isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500');
   const PlanIcon = planIcon;
 
   const messageUsagePercent = subscriptionData ? Math.min((subscriptionData.messagesUsed / subscriptionData.messageLimit) * 100, 100) : 0;
@@ -234,8 +235,9 @@ export function PlanPanel() {
           </div>
           <p className="text-muted-foreground">
             {currentPlan === 'free' && 'Basic features with limited usage'}
-            {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits - CriderGPT Plu'}
-            {currentPlan === 'pro' && 'All features with unlimited access - CriderGPT Pro'}
+            {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits — CriderGPT Plus ($3/mo)'}
+            {currentPlan === 'pro' && 'Full power with advanced features — CriderGPT Pro ($7/mo)'}
+            {currentPlan === 'lifetime' && 'Unlimited everything forever — CriderGPT Lifetime Founder'}
           </p>
         </CardHeader>
       </Card>
@@ -358,7 +360,9 @@ export function PlanPanel() {
               {plans.map(plan => (
                 <div key={plan.plan_name} className="text-center font-medium capitalize">
                   {plan.plan_display_name}
-                  <div className="text-2xl font-bold text-primary">${plan.price_monthly}/mo</div>
+                  <div className="text-2xl font-bold text-primary">
+                    ${plan.price_monthly}{plan.plan_name === 'lifetime' ? ' one-time' : '/mo'}
+                  </div>
                 </div>
               ))}
               

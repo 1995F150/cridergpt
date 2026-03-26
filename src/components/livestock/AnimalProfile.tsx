@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Smartphone } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Smartphone, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { LivestockAnimal, LivestockWeight, LivestockHealthRecord, LivestockNote, LivestockTag } from '@/hooks/useLivestock';
 
@@ -22,6 +23,7 @@ interface AnimalProfileProps {
   onAddHealth: (animalId: string, record: any) => Promise<void>;
   onAddNote: (animalId: string, content: string, noteType?: string) => Promise<void>;
   onAddTag: (animalId: string, tagNumber: string, tagType?: string, tagLocation?: string) => Promise<void>;
+  onDelete?: (animalId: string) => Promise<void>;
 }
 
 const speciesEmoji: Record<string, string> = {
@@ -40,7 +42,7 @@ function getAge(birthDate: string | null): string {
 
 export function AnimalProfile({
   animal, weights, healthRecords, notes, tags,
-  onBack, onAddWeight, onAddHealth, onAddNote, onAddTag,
+  onBack, onAddWeight, onAddHealth, onAddNote, onAddTag, onDelete,
 }: AnimalProfileProps) {
   const [newWeight, setNewWeight] = useState('');
   const [weightNotes, setWeightNotes] = useState('');
@@ -100,6 +102,32 @@ export function AnimalProfile({
             {animal.breed || animal.species} · {animal.sex === 'male' ? '♂ Male' : animal.sex === 'female' ? '♀ Female' : ''} · Age: {getAge(animal.birth_date)}
           </p>
         </div>
+        {onDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {animal.name || animal.animal_id}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this animal and all its records (weights, health, notes, tags). This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => onDelete(animal.id)}
+                >
+                  Delete Animal
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Quick Stats */}

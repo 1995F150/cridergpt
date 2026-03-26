@@ -353,6 +353,31 @@ export function useLivestock() {
     }
   };
 
+  // Delete an animal and all related records
+  const deleteAnimal = async (animalId: string) => {
+    if (!user) return;
+    try {
+      // Delete related records first
+      await Promise.all([
+        db.from('livestock_weights').delete().eq('animal_id', animalId),
+        db.from('livestock_health_records').delete().eq('animal_id', animalId),
+        db.from('livestock_notes').delete().eq('animal_id', animalId),
+        db.from('livestock_tags').delete().eq('animal_id', animalId),
+        db.from('livestock_scan_logs').delete().eq('animal_id', animalId),
+      ]);
+      
+      const { error } = await db.from('livestock_animals').delete().eq('id', animalId);
+      if (error) throw error;
+      
+      setAnimals(prev => prev.filter(a => a.id !== animalId));
+      setSelectedAnimal(null);
+      toast.success('Animal deleted successfully');
+    } catch (err: any) {
+      console.error('Delete animal error:', err);
+      toast.error('Failed to delete animal');
+    }
+  };
+
   // Get scan history
   const getScanHistory = async (animalId?: string) => {
     try {
@@ -369,7 +394,7 @@ export function useLivestock() {
 
   return {
     animals, loading, selectedAnimal, weights, healthRecords, notes, tags,
-    addAnimal, addWeight, addHealthRecord, addNote, addTag,
+    addAnimal, addWeight, addHealthRecord, addNote, addTag, deleteAnimal,
     selectAnimal, lookupByTag, fetchAnimals, setSelectedAnimal,
     scanCard, getScanHistory,
   };

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { APP_VERSION } from "@/config/appVersion";
 
 export function Footer() {
   return (
@@ -14,7 +15,8 @@ export function Footer() {
             </div>
           </div>
           
-          <div className="flex gap-4 text-xs">
+          <div className="flex items-center gap-4 text-xs">
+            <span className="text-muted-foreground/60">v{APP_VERSION}</span>
             <Link 
               to="/snapchat-lens" 
               className="text-muted-foreground hover:text-primary transition-colors"
@@ -27,13 +29,6 @@ export function Footer() {
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               Custom Filters
-            </Link>
-            <span className="text-muted-foreground hidden sm:inline">•</span>
-            <Link 
-              to="/tts-policy" 
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              TTS Policy
             </Link>
             <span className="text-muted-foreground hidden sm:inline">•</span>
             <Link 

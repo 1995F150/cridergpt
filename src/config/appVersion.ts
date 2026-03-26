@@ -1,14 +1,14 @@
-export const APP_VERSION = "5.0.0";
-export const VERSION_NAME = "Message System & Admin Fixes";
-export const RELEASE_DATE = "2025-01-24";
+export const APP_VERSION = "6.0.0";
+export const VERSION_NAME = "Pricing Overhaul & Stability Update";
+export const RELEASE_DATE = "2026-03-26";
 
 export const VERSION_FEATURES = [
-  "📨 DAILY MESSAGE LIMITS - 15 free / 100 plus / 500 pro messages per day",
-  "🔧 ADMIN PLAN SYNC - Plan changes now sync across all tables",
-  "📄 SMART PDF GENERATION - Distinguishes chat export vs custom documents",
-  "🖼️ GALLERY SIGNED URLS - Fixed image loading with proper authentication",
-  "📤 FILE UPLOAD FIXES - PDF, Audio, Video uploads now work in chat",
-  "🔄 INSTANT UPDATES - No more cookie clearing needed (network-first caching)",
-  "🧹 STREAMLINED NAVIGATION - Removed redundant Code, Maps, Document AI panels",
-  "💬 MESSAGE UI - All UI updated from tokens to messages"
+  "💰 NEW PRICING - Plus $3/mo, Pro $7/mo, Lifetime $30 one-time",
+  "🔧 SIGNUP FIX - Resolved 500 database errors on new user registration",
+  "📊 PLAN SYNC - Database pricing now matches frontend across all panels",
+  "🐄 LIVESTOCK DELETE - Added delete/reset for animal IDs",
+  "🧹 REMOVED DEAD FEATURES - App Converter removed from navigation",
+  "📝 USER AGREEMENT - Updated branding to CriderGPT",
+  "🔄 FOOTER VERSION - Version number now displayed in footer",
+  "👤 PROFILE CLEANUP - Removed placeholder data from profile menu"
 ];
