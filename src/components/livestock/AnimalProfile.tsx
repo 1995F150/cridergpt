@@ -42,7 +42,7 @@ function getAge(birthDate: string | null): string {
 
 export function AnimalProfile({
   animal, weights, healthRecords, notes, tags,
-  onBack, onAddWeight, onAddHealth, onAddNote, onAddTag,
+  onBack, onAddWeight, onAddHealth, onAddNote, onAddTag, onDelete,
 }: AnimalProfileProps) {
   const [newWeight, setNewWeight] = useState('');
   const [weightNotes, setWeightNotes] = useState('');
