@@ -235,8 +235,9 @@ export function PlanPanel() {
           </div>
           <p className="text-muted-foreground">
             {currentPlan === 'free' && 'Basic features with limited usage'}
-            {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits - CriderGPT Plu'}
-            {currentPlan === 'pro' && 'All features with unlimited access - CriderGPT Pro'}
+            {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits — CriderGPT Plus ($3/mo)'}
+            {currentPlan === 'pro' && 'Full power with advanced features — CriderGPT Pro ($7/mo)'}
+            {currentPlan === 'lifetime' && 'Unlimited everything forever — CriderGPT Lifetime Founder'}
           </p>
         </CardHeader>
       </Card>
