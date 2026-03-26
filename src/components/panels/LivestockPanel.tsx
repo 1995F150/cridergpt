@@ -17,7 +17,7 @@ export function LivestockPanel() {
   const { user } = useAuth();
   const {
     animals, loading, selectedAnimal, weights, healthRecords, notes, tags,
-    addAnimal, addWeight, addHealthRecord, addNote, addTag,
+    addAnimal, addWeight, addHealthRecord, addNote, addTag, deleteAnimal,
     selectAnimal, setSelectedAnimal, scanCard,
   } = useLivestock();
   
