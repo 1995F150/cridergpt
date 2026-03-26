@@ -200,9 +200,10 @@ export function PlanPanel() {
   }
 
   const currentPlan = subscriptionData?.plan || 'free';
-  const planName = (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plu' : 'Free');
-  const planIcon = isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap;
-  const planColor = isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500';
+  const isLifetime = currentPlan === 'lifetime';
+  const planName = isLifetime ? 'Lifetime' : (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plus' : 'Free');
+  const planIcon = isLifetime ? Crown : (isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap);
+  const planColor = isLifetime ? 'text-yellow-500' : (isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500');
   const PlanIcon = planIcon;
 
   const messageUsagePercent = subscriptionData ? Math.min((subscriptionData.messagesUsed / subscriptionData.messageLimit) * 100, 100) : 0;
