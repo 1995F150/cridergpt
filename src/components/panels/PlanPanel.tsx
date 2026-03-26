@@ -52,7 +52,7 @@ const featureRequirements: FeatureRequirement[] = [
     freeAccess: false,
     pluAccess: true,
     proAccess: true,
-    requirement: "10 images/month on Plu, Unlimited on Pro"
+    requirement: "10 images/month on Plus, Unlimited on Pro"
   },
   {
     feature: "Document Analyzer",
