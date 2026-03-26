@@ -71,9 +71,6 @@ export function AnimalProfile({
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-2xl">{emoji}</span>
             <h2 className="text-xl font-bold text-foreground">{animal.name || animal.animal_id}</h2>
             <Badge variant="outline" className="text-xs">{animal.animal_id}</Badge>
@@ -105,6 +102,32 @@ export function AnimalProfile({
             {animal.breed || animal.species} · {animal.sex === 'male' ? '♂ Male' : animal.sex === 'female' ? '♀ Female' : ''} · Age: {getAge(animal.birth_date)}
           </p>
         </div>
+        {onDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {animal.name || animal.animal_id}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this animal and all its records (weights, health, notes, tags). This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => onDelete(animal.id)}
+                >
+                  Delete Animal
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Quick Stats */}
