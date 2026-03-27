@@ -538,8 +538,6 @@ export default function CustomFilters() {
                       <SelectItem value="stripe">
                         <span className="flex items-center gap-2"><CreditCard className="h-4 w-4" /> Card (Stripe)</span>
                       </SelectItem>
-                      <SelectItem value="venmo">Venmo</SelectItem>
-                      <SelectItem value="cashapp">Cash App</SelectItem>
                       <SelectItem value="other">
                         <span className="flex items-center gap-2"><MessageCircle className="h-4 w-4" /> DM me to discuss</span>
                       </SelectItem>
