@@ -201,6 +201,15 @@ export default function CustomFilters() {
         return;
       }
 
+      if (form.payment_method === 'cashapp' && insertedOrder && !isBogoEligible) {
+        // Open Cash App payment link with the final price in a new tab
+        const cashAppUrl = `https://cash.app/$1995f150black/${finalPrice}`;
+        window.open(cashAppUrl, '_blank');
+        toast.success('Cash App opened! After sending payment, your order is submitted.');
+        setSubmitted(true);
+        return;
+      }
+
       setSubmitted(true);
       toast.success('Request submitted! I\'ll get back to you soon 🔥');
     } catch (err: any) {
