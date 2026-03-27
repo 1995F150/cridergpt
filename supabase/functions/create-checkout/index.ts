@@ -1,13 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Helper logging function for enhanced debugging
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
@@ -23,32 +22,27 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
-      logStep("ERROR: STRIPE_SECRET_KEY is not set");
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
-    logStep("Stripe key verified");
 
     const { priceId, planName } = await req.json();
     logStep("Request body parsed", { priceId, planName });
     
     if (!priceId) {
-      logStep("ERROR: Price ID is required");
       throw new Error("Price ID is required");
     }
 
-    // Initialize Stripe
     const stripe = new Stripe(stripeKey, {
-      apiVersion: "2023-10-16",
+      apiVersion: "2025-08-27.basil",
     });
-    logStep("Stripe client initialized");
 
-    // Initialize Supabase client for database operations
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
     );
 
-    // Check lifetime plan availability if this is a lifetime purchase
+    // Check lifetime plan availability if applicable
     if (planName === 'lifetime') {
       const { data: lifetimeConfig, error: configError } = await supabaseClient
         .from('lifetime_plan_config')
@@ -62,55 +56,39 @@ serve(async (req) => {
       }
 
       if (lifetimeConfig.lifetime_plan_count >= lifetimeConfig.max_lifetime_buyers) {
-        logStep("ERROR: Lifetime plan sold out", { 
-          current: lifetimeConfig.lifetime_plan_count, 
-          max: lifetimeConfig.max_lifetime_buyers 
-        });
-        throw new Error("Lifetime Founder Plan is sold out. Thanks to our 35 early supporters!");
+        throw new Error("Lifetime Founder Plan is sold out.");
       }
 
       if (lifetimeConfig.promotion_end_date) {
         const endDate = new Date(lifetimeConfig.promotion_end_date);
-        const now = new Date();
-        if (now > endDate) {
-          logStep("ERROR: Lifetime plan promotion ended");
+        if (new Date() > endDate) {
           throw new Error("Lifetime Founder Plan promotion has ended");
         }
       }
 
-      logStep("Lifetime plan availability confirmed", {
-        slots_remaining: lifetimeConfig.max_lifetime_buyers - lifetimeConfig.lifetime_plan_count
-      });
+      logStep("Lifetime plan availability confirmed");
     }
 
     // Get authenticated user
-    logStep("Authenticating user");
-
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      logStep("ERROR: No authorization header provided");
       throw new Error("No authorization header provided");
     }
 
     const token = authHeader.replace("Bearer ", "");
-    logStep("Authenticating user with token");
-    
     const { data, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError) {
-      logStep("ERROR: Authentication failed", { error: userError.message });
       throw new Error(`Authentication error: ${userError.message}`);
     }
     
     const user = data.user;
     if (!user?.email) {
-      logStep("ERROR: User not authenticated or no email");
       throw new Error("User not authenticated or email not available");
     }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Check if customer already exists
-    logStep("Checking for existing Stripe customer");
+    // Check if customer already exists in Stripe
     const customers = await stripe.customers.list({
       email: user.email,
       limit: 1,
@@ -120,23 +98,13 @@ serve(async (req) => {
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Found existing customer", { customerId });
-    } else {
-      logStep("No existing customer found");
     }
 
-    // Get origin for URLs
-    const origin = req.headers.get("origin") || "https://your-app.lovable.app";
-    logStep("Setting up checkout session", { origin });
+    const origin = req.headers.get("origin") || "https://cridergpt.lovable.app";
 
-    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       mode: planName === 'lifetime' ? "payment" : "subscription",
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -146,11 +114,9 @@ serve(async (req) => {
         planName: planName || 'unknown',
       },
       allow_promotion_codes: true,
-      billing_address_collection: "auto",
-      payment_method_collection: "always",
     });
 
-    logStep("Checkout session created successfully", { sessionId: session.id, url: session.url });
+    logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
     return new Response(
       JSON.stringify({ url: session.url }),
@@ -161,8 +127,7 @@ serve(async (req) => {
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in create-checkout", { message: errorMessage });
-    console.error("Error creating checkout session:", error);
+    logStep("ERROR", { message: errorMessage });
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {

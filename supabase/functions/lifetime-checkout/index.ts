@@ -1,14 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const logStep = (step: string, details?: any) => {
-  console.log(`[${new Date().toISOString()}] ${step}`, details ? JSON.stringify(details, null, 2) : '');
+  console.log(`[LIFETIME-CHECKOUT] ${step}`, details ? JSON.stringify(details) : '');
 };
 
 serve(async (req) => {
@@ -17,122 +17,64 @@ serve(async (req) => {
   }
 
   try {
-    logStep('Starting lifetime checkout process');
+    logStep('Starting lifetime checkout');
     
     const { priceId } = await req.json();
-    logStep('Received request', { priceId });
+    if (!priceId) throw new Error('Price ID is required');
 
-    if (!priceId) {
-      throw new Error('Price ID is required');
-    }
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeKey) throw new Error('Stripe secret key not found');
 
-    // Initialize Stripe
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecretKey) {
-      throw new Error('Stripe secret key not found');
-    }
+    const stripe = new Stripe(stripeKey, { apiVersion: '2025-08-27.basil' });
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-    });
-
-    // Initialize Supabase
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
     );
 
-    // Get user from auth header
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
+    if (!authHeader) throw new Error('No authorization header');
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (userError || !user) {
-      logStep('User authentication failed', userError);
-      throw new Error('User authentication failed');
-    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user?.email) throw new Error('User authentication failed');
 
     logStep('User authenticated', { userId: user.id, email: user.email });
 
-    // Check lifetime plan availability
+    // Check lifetime availability
     const { data: lifetimeConfig, error: configError } = await supabase
       .from('lifetime_plan_config')
       .select('*')
       .eq('is_active', true)
       .single();
 
-    if (configError || !lifetimeConfig) {
-      throw new Error('Lifetime plan configuration not found');
-    }
+    if (configError || !lifetimeConfig) throw new Error('Lifetime plan configuration not found');
 
-    logStep('Lifetime config loaded', lifetimeConfig);
-
-    // Check if lifetime plan is still available
-    const slotsRemaining = lifetimeConfig.max_lifetime_buyers - lifetimeConfig.lifetime_plan_count;
-    if (slotsRemaining <= 0) {
+    if (lifetimeConfig.lifetime_plan_count >= lifetimeConfig.max_lifetime_buyers) {
       throw new Error('Lifetime plan is sold out');
     }
 
-    // Check if promotion has ended
-    if (lifetimeConfig.promotion_end_date) {
-      const endDate = new Date(lifetimeConfig.promotion_end_date);
-      const now = new Date();
-      if (now > endDate) {
-        throw new Error('Lifetime plan promotion has ended');
-      }
+    if (lifetimeConfig.promotion_end_date && new Date() > new Date(lifetimeConfig.promotion_end_date)) {
+      throw new Error('Lifetime plan promotion has ended');
     }
 
-    // Check for existing Stripe customer
-    let stripeCustomerId: string;
-    
-    const { data: existingCustomer } = await supabase
-      .from('customers')
-      .select('stripe_customer_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (existingCustomer?.stripe_customer_id) {
-      stripeCustomerId = existingCustomer.stripe_customer_id;
-      logStep('Using existing customer', { stripeCustomerId });
-    } else {
-      // Create new Stripe customer
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          user_id: user.id,
-        },
-      });
-      stripeCustomerId = customer.id;
-      logStep('Created new customer', { stripeCustomerId });
-
-      // Save customer to database
-      await supabase
-        .from('customers')
-        .insert({
-          user_id: user.id,
-          stripe_customer_id: stripeCustomerId,
-          email: user.email,
-        });
+    // Find or create Stripe customer
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let customerId;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
     }
 
-    // Create one-time payment checkout session for lifetime plan
+    const origin = req.headers.get('origin') || 'https://cridergpt.lovable.app';
+
     const checkoutSession = await stripe.checkout.sessions.create({
-      customer: stripeCustomerId,
-      mode: 'payment', // Changed from 'subscription' to 'payment' for one-time purchase
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      success_url: `${req.headers.get('origin')}/success?session_id={CHECKOUT_SESSION_ID}&plan=lifetime`,
-      cancel_url: `${req.headers.get('origin')}/cancel`,
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
+      mode: 'payment',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}&plan=lifetime`,
+      cancel_url: `${origin}/cancel`,
       metadata: {
         user_id: user.id,
         plan_name: 'lifetime',
@@ -141,32 +83,18 @@ serve(async (req) => {
       allow_promotion_codes: true,
     });
 
-    logStep('Checkout session created', { 
-      sessionId: checkoutSession.id,
-      url: checkoutSession.url 
-    });
+    logStep('Checkout session created', { sessionId: checkoutSession.id });
 
     return new Response(
-      JSON.stringify({ 
-        sessionUrl: checkoutSession.url,
-        sessionId: checkoutSession.id
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      JSON.stringify({ sessionUrl: checkoutSession.url, url: checkoutSession.url, sessionId: checkoutSession.id }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
-
   } catch (error) {
-    logStep('Error in lifetime checkout', { error: (error as Error).message });
-    console.error('Lifetime checkout error:', error);
-    
+    const msg = (error as Error).message;
+    logStep('Error', { error: msg });
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
+      JSON.stringify({ error: msg }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
