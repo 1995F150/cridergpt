@@ -538,6 +538,7 @@ export default function CustomFilters() {
                       <SelectItem value="stripe">
                         <span className="flex items-center gap-2"><CreditCard className="h-4 w-4" /> Card (Stripe)</span>
                       </SelectItem>
+                      <SelectItem value="cashapp">Cash App</SelectItem>
                       <SelectItem value="other">
                         <span className="flex items-center gap-2"><MessageCircle className="h-4 w-4" /> DM me to discuss</span>
                       </SelectItem>
@@ -563,6 +564,19 @@ export default function CustomFilters() {
                   </div>
                 )}
 
+                {form.payment_method === 'cashapp' && !isBogoEligible && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm">
+                    <CreditCard className="h-4 w-4 text-green-500 shrink-0" />
+                    <span className="text-green-400">
+                      Send <strong>${finalPrice}</strong> to{' '}
+                      <a href="https://cash.app/$1995f150black" target="_blank" rel="noopener noreferrer" className="underline font-semibold">
+                        $1995f150black
+                      </a>{' '}
+                      on Cash App, then submit your request below.
+                    </span>
+                  </div>
+                )}
+
                 {form.payment_method === 'stripe' ? (
                   <Button type="submit" disabled={submitting || payingNow} className="w-full gap-2" size="lg">
                     {submitting || payingNow ? 'Processing...' : isBogoEligible ? (
@@ -575,6 +589,8 @@ export default function CustomFilters() {
                   <Button type="submit" disabled={submitting} className="w-full gap-2" size="lg">
                     {submitting ? 'Submitting...' : isBogoEligible ? (
                       <><Gift className="h-4 w-4" /> Claim FREE Filter</>
+                    ) : form.payment_method === 'cashapp' ? (
+                      <><Send className="h-4 w-4" /> Submit Request — ${finalPrice} via Cash App</>
                     ) : (
                       <><Send className="h-4 w-4" /> Submit Request — ${finalPrice}</>
                     )}
@@ -584,6 +600,8 @@ export default function CustomFilters() {
                 <p className="text-xs text-center text-muted-foreground">
                   {form.payment_method === 'stripe'
                     ? "You'll be redirected to a secure Stripe checkout page."
+                    : form.payment_method === 'cashapp'
+                    ? "Send payment to $1995f150black on Cash App, then submit your request."
                     : "I'll reach out with payment details. Price adjusts based on filter complexity."
                   }
                 </p>
