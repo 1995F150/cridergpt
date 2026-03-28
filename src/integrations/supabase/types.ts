@@ -3613,21 +3613,6 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
-        Row: {
-          id: string
-          username: string
-        }
-        Insert: {
-          id?: string
-          username: string
-        }
-        Update: {
-          id?: string
-          username?: string
-        }
-        Relationships: []
-      }
       vision_memory: {
         Row: {
           ai_response: string
