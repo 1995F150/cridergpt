@@ -224,6 +224,32 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
         ))}
       </div>
 
+      {/* AI Infrastructure Stats */}
+      <Card className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-primary/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
+            AI Infrastructure Stats
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.totalMemories.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">AI Memories</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.totalCorpusEntries.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Corpus Entries</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.localAnswerCount}</div>
+              <p className="text-xs text-muted-foreground">Local Answers</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Activity Feed & Quick Actions */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Real-Time Activity Feed */}
