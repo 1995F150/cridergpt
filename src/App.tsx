@@ -27,6 +27,7 @@ import TTSPolicyPage from "./pages/TTSPolicyPage";
 import UserAgreement from "./pages/UserAgreement";
 import SnapchatLensPage from "./pages/SnapchatLensPage";
 import CustomFilters from "./pages/CustomFilters";
+import SmartIDStore from "./pages/SmartIDStore";
 
 const queryClient = new QueryClient({
   defaultOptions: {
