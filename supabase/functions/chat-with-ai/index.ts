@@ -944,10 +944,11 @@ serve(async (req) => {
       }
     }
 
-    console.log('AI response generated successfully');
+    console.log(`AI response generated successfully (source: ${responseSource})`);
 
     return new Response(JSON.stringify({
       response: aiResponse,
+      source: responseSource,
       usage: {
         used: (usage?.messages_sent || 0) + 1,
         limit: messageLimit,
