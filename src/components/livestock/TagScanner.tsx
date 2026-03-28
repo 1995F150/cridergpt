@@ -61,10 +61,17 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
           for (const record of message.records) {
             if (record.recordType === 'text') {
               const decoder = new TextDecoder(record.encoding || 'utf-8');
-              tagId = decoder.decode(record.data).trim();
+              let raw = decoder.decode(record.data).trim();
+              // Decode CGPT: encrypted prefix for backward compatibility
+              if (raw.startsWith('CGPT:')) {
+                try {
+                  const decoded = JSON.parse(atob(raw.slice(5)));
+                  raw = decoded.id || raw;
+                } catch {}
+              }
+              tagId = raw;
               break;
             } else if (record.recordType === 'url' || record.recordType === 'unknown') {
-              // Fallback: try to decode any record as text
               try {
                 const decoder = new TextDecoder('utf-8');
                 const decoded = decoder.decode(record.data).trim();

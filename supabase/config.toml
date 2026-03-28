@@ -66,5 +66,8 @@ verify_jwt = false
 [functions.process-mod-zip]
 verify_jwt = false
 
+[functions.device-api]
+verify_jwt = false
+
 [functions.firecrawl-scrape]
 verify_jwt = false

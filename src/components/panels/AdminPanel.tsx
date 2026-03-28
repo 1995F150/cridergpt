@@ -343,6 +343,10 @@ export function AdminPanel() {
         <TabsContent value="filter-orders">
           <FilterOrdersManager />
         </TabsContent>
+
+        <TabsContent value="devices">
+          <DeviceManager />
+        </TabsContent>
       </Tabs>
     </div>
   );

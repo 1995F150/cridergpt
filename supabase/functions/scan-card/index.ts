@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
         .from('livestock_tag_pool')
         .select('*')
         .eq('tag_id', tagId)
-        .eq('status', 'available')
+        .in('status', ['available', 'programmed'])
         .maybeSingle()
 
       await db.from('livestock_scan_logs').insert({
