@@ -125,7 +125,7 @@ const navigationGroups: NavGroup[] = [
   {
     label: 'STORE',
     items: [
-      { id: 'store', label: 'Smart ID Store', icon: Tag },
+      { id: 'store', label: 'Smart ID Store', icon: Tag, external: true, url: '/store' },
     ]
   },
   {
