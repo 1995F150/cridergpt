@@ -765,31 +765,75 @@ serve(async (req) => {
       }
     }
 
+    // === LOCAL-FIRST AI INFRASTRUCTURE: Check local corpus before calling external API ===
+    let localAnswer: string | null = null;
+    let responseSource = 'openai';
+
+    if (message && userId) {
+      try {
+        // Search training corpus for keyword matches
+        const searchTerms = message.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3).slice(0, 5);
+        
+        if (searchTerms.length > 0) {
+          const { data: corpusMatches } = await supabase
+            .from('cridergpt_training_corpus')
+            .select('content, topic, category')
+            .or(searchTerms.map((t: string) => `content.ilike.%${t}%`).join(','))
+            .limit(3);
+
+          if (corpusMatches && corpusMatches.length > 0) {
+            // Check if any match is highly relevant (topic matches)
+            const topicMatch = corpusMatches.find((m: any) => {
+              const topic = (m.topic || '').toLowerCase();
+              return searchTerms.some((t: string) => topic.includes(t));
+            });
+
+            if (topicMatch) {
+              // Strong match — use as direct answer
+              localAnswer = topicMatch.content;
+              responseSource = 'cridergpt-local';
+              console.log('LOCAL MATCH found in training corpus:', topicMatch.topic);
+            }
+          }
+        }
+      } catch (localErr) {
+        console.log('Local corpus search skipped:', localErr);
+      }
+    }
+
     // Build messages array
     const sensorInfo = sensor_context ? `\n${sensor_context}` : '';
     const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext + sensorInfo;
     
-    const messages: any[] = [
-      { role: 'system', content: systemPrompt }
-    ];
+    let aiResponse: string;
 
-    // Add conversation history if provided
-    if (conversation_history && Array.isArray(conversation_history)) {
-      messages.push(...conversation_history.slice(-20)); // Last 20 messages for continuity
-    }
-
-    // Add current message with optional image
-    if (imageData) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: message || 'Analyze this image' },
-          { type: 'image_url', image_url: { url: imageData } }
-        ]
-      });
+    if (localAnswer) {
+      // Use local answer directly
+      aiResponse = localAnswer;
+      console.log('Serving response from LOCAL corpus');
     } else {
-      messages.push({ role: 'user', content: message });
-    }
+      // Fall back to external API
+      const messages: any[] = [
+        { role: 'system', content: systemPrompt }
+      ];
+
+      // Add conversation history if provided
+      if (conversation_history && Array.isArray(conversation_history)) {
+        messages.push(...conversation_history.slice(-20));
+      }
+
+      // Add current message with optional image
+      if (imageData) {
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'text', text: message || 'Analyze this image' },
+            { type: 'image_url', image_url: { url: imageData } }
+          ]
+        });
+      } else {
+        messages.push({ role: 'user', content: message });
+      }
 
     // Call OpenAI API (fallback to Lovable AI Gateway if no OpenAI key)
     const useOpenAI = !!OPENAI_API_KEY;
