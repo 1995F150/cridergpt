@@ -150,6 +150,9 @@ export function AdminPanel() {
           <TabsTrigger value="products" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Lightbulb className="h-4 w-4" /> Products
           </TabsTrigger>
+          <TabsTrigger value="tag-orders" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Tag className="h-4 w-4" /> Tag Orders
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4" /> Settings
           </TabsTrigger>
