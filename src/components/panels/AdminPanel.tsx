@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, Bot, Brain, Smartphone, FileJson, Ghost, Nfc, Package } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, Bot, Brain, Smartphone, FileJson, Ghost, Nfc, Package, Cpu } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
@@ -26,6 +26,7 @@ import { ConversationImporter } from '@/components/admin/ConversationImporter';
 import { SnapchatAnalytics } from '@/components/admin/SnapchatAnalytics';
 import { NFCTagWriter } from '@/components/admin/NFCTagWriter';
 import { FilterOrdersManager } from '@/components/admin/FilterOrdersManager';
+import { DeviceManager } from '@/components/admin/DeviceManager';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
@@ -230,6 +231,13 @@ export function AdminPanel() {
             Filter Orders
           </TabsTrigger>
           <TabsTrigger 
+            value="devices" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Cpu className="h-4 w-4" />
+            Devices
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
@@ -334,6 +342,10 @@ export function AdminPanel() {
 
         <TabsContent value="filter-orders">
           <FilterOrdersManager />
+        </TabsContent>
+
+        <TabsContent value="devices">
+          <DeviceManager />
         </TabsContent>
       </Tabs>
     </div>

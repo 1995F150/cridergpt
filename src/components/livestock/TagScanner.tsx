@@ -61,10 +61,17 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
           for (const record of message.records) {
             if (record.recordType === 'text') {
               const decoder = new TextDecoder(record.encoding || 'utf-8');
-              tagId = decoder.decode(record.data).trim();
+              let raw = decoder.decode(record.data).trim();
+              // Decode CGPT: encrypted prefix for backward compatibility
+              if (raw.startsWith('CGPT:')) {
+                try {
+                  const decoded = JSON.parse(atob(raw.slice(5)));
+                  raw = decoded.id || raw;
+                } catch {}
+              }
+              tagId = raw;
               break;
             } else if (record.recordType === 'url' || record.recordType === 'unknown') {
-              // Fallback: try to decode any record as text
               try {
                 const decoder = new TextDecoder('utf-8');
                 const decoded = decoder.decode(record.data).trim();
@@ -145,13 +152,15 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
         )}
 
         {/* Unregistered pool tag — prompt to register */}
-        {scanResult?.status === 'unregistered' && (
+        {(scanResult?.status === 'unregistered' || scanResult?.status === 'programmed') && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
             <p className="text-sm font-medium text-primary">
               📡 Tag recognized: <span className="font-mono">{scanResult.tag_id}</span>
             </p>
             <p className="text-xs text-muted-foreground">
-              This tag is available and ready to be assigned to a new animal.
+              {scanResult.status === 'programmed'
+                ? 'This tag is programmed and ready to be assigned to an animal.'
+                : 'This tag is available and ready to be assigned to a new animal.'}
             </p>
             {onRegisterAnimal && (
               <Button

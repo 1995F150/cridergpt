@@ -33,8 +33,14 @@ Deno.serve(async (req) => {
 
     const db = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 2. Parse request — accept tag_id or card_id (backward compat)
     const body = await req.json()
+
+    // ─── Device API mode (action-based routing for Raspberry Pi) ───
+    if (body.action === 'heartbeat' || body.action === 'scan') {
+      return await handleDeviceAction(req, body, db, corsHeaders)
+    }
+
+    // ─── Normal user scan mode ───
     const tagId = (body.tag_id || body.card_id || '').trim()
     if (!tagId) {
       return new Response(JSON.stringify({ error: 'tag_id is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -60,7 +66,7 @@ Deno.serve(async (req) => {
         .from('livestock_tag_pool')
         .select('*')
         .eq('tag_id', tagId)
-        .eq('status', 'available')
+        .in('status', ['available', 'programmed'])
         .maybeSingle()
 
       await db.from('livestock_scan_logs').insert({
@@ -72,10 +78,13 @@ Deno.serve(async (req) => {
       })
 
       if (poolTag) {
+        const isProgrammed = poolTag.status === 'programmed'
         return new Response(JSON.stringify({
-          status: 'unregistered',
+          status: isProgrammed ? 'programmed' : 'unregistered',
           tag_id: tagId,
-          message: 'Tag recognized from pool. Ready to register a new animal.',
+          message: isProgrammed
+            ? 'Tag is programmed and ready to register.'
+            : 'Tag recognized from pool. Ready to register a new animal.',
         }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
@@ -131,3 +140,73 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
+
+// ─── Device API handler for Raspberry Pi scanners ───────────────────────────
+async function handleDeviceAction(req: Request, body: any, db: any, corsHeaders: Record<string, string>) {
+  const authHeader = req.headers.get('Authorization') || ''
+  const token = authHeader.replace('Bearer ', '').trim()
+  if (!token) {
+    return new Response(JSON.stringify({ error: 'Device token required' }), {
+      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+
+  const tokenHash = btoa(token)
+  const { data: device, error: deviceError } = await db
+    .from('livestock_devices')
+    .select('*')
+    .eq('device_token', tokenHash)
+    .maybeSingle()
+
+  if (deviceError || !device) {
+    return new Response(JSON.stringify({ error: 'Invalid device token' }), {
+      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+
+  if (body.action === 'heartbeat') {
+    await db.from('livestock_devices').update({ last_heartbeat: new Date().toISOString(), status: 'online' }).eq('id', device.id)
+    await db.from('livestock_device_logs').insert({ device_id: device.id, event_type: 'heartbeat', payload: { timestamp: new Date().toISOString() } })
+    return new Response(JSON.stringify({ status: 'ok', device_name: device.device_name, commands: [] }), {
+      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+
+  if (body.action === 'scan') {
+    const tagId = (body.tag_id || '').trim()
+    if (!tagId) {
+      return new Response(JSON.stringify({ error: 'tag_id is required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    const { data: animal } = await db.from('livestock_animals').select('*').eq('tag_id', tagId).maybeSingle()
+
+    if (!animal) {
+      const { data: poolTag } = await db.from('livestock_tag_pool').select('*').eq('tag_id', tagId).maybeSingle()
+      await db.from('livestock_device_logs').insert({ device_id: device.id, event_type: 'scan', payload: { tag_id: tagId, result: poolTag ? poolTag.status : 'not_found' } })
+
+      if (poolTag) {
+        const msg = poolTag.status === 'programmed' ? 'Tag is programmed and ready to register.' : 'Tag recognized from pool.'
+        return new Response(JSON.stringify({ status: poolTag.status === 'programmed' ? 'programmed' : 'unregistered', tag_id: tagId, message: msg }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+      return new Response(JSON.stringify({ error: 'Tag ID not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    const [weightsRes, healthRes, notesRes] = await Promise.all([
+      db.from('livestock_weights').select('*').eq('animal_id', animal.id).order('recorded_at', { ascending: false }),
+      db.from('livestock_health_records').select('*').eq('animal_id', animal.id).order('recorded_at', { ascending: false }),
+      db.from('livestock_notes').select('*').eq('animal_id', animal.id).order('created_at', { ascending: false }),
+    ])
+
+    await db.from('livestock_device_logs').insert({ device_id: device.id, event_type: 'scan', payload: { tag_id: tagId, animal_id: animal.id, result: 'success' } })
+
+    return new Response(JSON.stringify({
+      animal, weights: weightsRes.data || [], health_records: healthRes.data || [], notes: notesRes.data || [], scan_timestamp: new Date().toISOString(),
+    }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  }
+
+  return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+}

@@ -1644,6 +1644,74 @@ export type Database = {
         }
         Relationships: []
       }
+      livestock_device_logs: {
+        Row: {
+          created_at: string | null
+          device_id: string
+          event_type: string
+          id: string
+          payload: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_id: string
+          event_type: string
+          id?: string
+          payload?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string
+          event_type?: string
+          id?: string
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livestock_device_logs_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "livestock_devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      livestock_devices: {
+        Row: {
+          created_at: string | null
+          device_name: string
+          device_token: string
+          device_type: string | null
+          id: string
+          last_heartbeat: string | null
+          metadata: Json | null
+          owner_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_name: string
+          device_token: string
+          device_type?: string | null
+          id?: string
+          last_heartbeat?: string | null
+          metadata?: Json | null
+          owner_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_name?: string
+          device_token?: string
+          device_type?: string | null
+          id?: string
+          last_heartbeat?: string | null
+          metadata?: Json | null
+          owner_id?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       livestock_health_records: {
         Row: {
           administered_by: string | null
@@ -1816,6 +1884,9 @@ export type Database = {
           assigned_to_animal: string | null
           created_at: string
           id: string
+          nfc_locked: boolean | null
+          nfc_written_at: string | null
+          nfc_written_by: string | null
           status: string
           tag_id: string
         }
@@ -1825,6 +1896,9 @@ export type Database = {
           assigned_to_animal?: string | null
           created_at?: string
           id?: string
+          nfc_locked?: boolean | null
+          nfc_written_at?: string | null
+          nfc_written_by?: string | null
           status?: string
           tag_id: string
         }
@@ -1834,6 +1908,9 @@ export type Database = {
           assigned_to_animal?: string | null
           created_at?: string
           id?: string
+          nfc_locked?: boolean | null
+          nfc_written_at?: string | null
+          nfc_written_by?: string | null
           status?: string
           tag_id?: string
         }
