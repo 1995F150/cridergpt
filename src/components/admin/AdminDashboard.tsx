@@ -77,6 +77,20 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
         
         const totalTokens = usageData?.reduce((sum, u) => sum + (u.tokens_used || 0), 0) || 0;
 
+        // Fetch AI infrastructure stats
+        const { count: memoryCount } = await supabase
+          .from('ai_memory')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: corpusCount } = await (supabase as any)
+          .from('cridergpt_training_corpus')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: localCount } = await supabase
+          .from('ai_memory')
+          .select('*', { count: 'exact', head: true })
+          .eq('source', 'local_corpus');
+
         setStats({
           totalUsers: userCount || 0,
           activeSubscriptions: subCount || 0,
@@ -84,6 +98,9 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
           totalMessages: messageCount || 0,
           todaySignups: todayCount || 0,
           totalTokensUsed: totalTokens,
+          totalMemories: memoryCount || 0,
+          totalCorpusEntries: corpusCount || 0,
+          localAnswerCount: localCount || 0,
         });
       } catch (error) {
         console.error('Error fetching admin stats:', error);
