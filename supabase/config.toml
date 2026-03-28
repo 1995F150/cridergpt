@@ -15,9 +15,6 @@ verify_jwt = false
 [functions.demo-chat]
 verify_jwt = false
 
-[functions.generate-image]
-verify_jwt = false
-
 [functions.generate-ai-image]
 verify_jwt = false
 
@@ -27,16 +24,10 @@ verify_jwt = false
 [functions.send-broadcast]
 verify_jwt = false
 
-[functions.migrate-character-photos]
-verify_jwt = false
-
 [functions.document-ai-analysis]
 verify_jwt = false
 
 [functions.scan-card]
-verify_jwt = false
-
-[functions.agent-poll]
 verify_jwt = false
 
 [functions.swarm-orchestrator]
@@ -51,12 +42,6 @@ verify_jwt = false
 [functions.tiktok-post-video]
 verify_jwt = false
 
-[functions.self-learn]
-verify_jwt = false
-
-[functions.android-build]
-verify_jwt = false
-
 [functions.agi-chat]
 verify_jwt = false
 
@@ -65,7 +50,6 @@ verify_jwt = false
 
 [functions.process-mod-zip]
 verify_jwt = false
-
 
 [functions.firecrawl-scrape]
 verify_jwt = false
