@@ -12,7 +12,8 @@ export default function SnapchatSignInButton() {
     try {
       setLoading(true);
 
-      const redirectUri = `${window.location.origin}/auth`;
+      // Always use published URL to match Snapchat Developer Portal redirect URI
+      const redirectUri = 'https://cridergpt.lovable.app/auth';
 
       // Get Snapchat OAuth URL from edge function
       const { data, error } = await supabase.functions.invoke('snapchat-auth', {
@@ -42,24 +43,54 @@ export default function SnapchatSignInButton() {
           sessionStorage.setItem('snap_oauth_state', data.state);
         }
 
-        // Poll for popup close
+        // Poll for popup close or error
         const checkPopup = setInterval(async () => {
+          try {
+            // Check if popup navigated back to our domain with a code
+            if (popup && !popup.closed) {
+              try {
+                const popupUrl = popup.location?.href;
+                if (popupUrl?.includes(window.location.origin)) {
+                  const popupParams = new URLSearchParams(new URL(popupUrl).search);
+                  const code = popupParams.get('code');
+                  const error = popupParams.get('error');
+                  
+                  if (code) {
+                    clearInterval(checkPopup);
+                    popup.close();
+                    setLoading(false);
+                    await exchangeSnapchatCode(code, redirectUri);
+                    return;
+                  }
+                  if (error) {
+                    clearInterval(checkPopup);
+                    popup.close();
+                    setLoading(false);
+                    toast({
+                      title: 'Snapchat Login Failed',
+                      description: 'Authorization was denied or an error occurred. Please try again.',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+                }
+              } catch {
+                // Cross-origin - popup still on Snapchat domain, keep waiting
+              }
+            }
+          } catch {
+            // Ignore cross-origin errors
+          }
+
           if (popup?.closed) {
             clearInterval(checkPopup);
             setLoading(false);
-
-            // Check URL params for Snapchat code
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            
-            if (code) {
-              await exchangeSnapchatCode(code, redirectUri);
-            }
           }
         }, 500);
 
         setTimeout(() => {
           clearInterval(checkPopup);
+          if (popup && !popup.closed) popup.close();
           setLoading(false);
         }, 120000);
       }

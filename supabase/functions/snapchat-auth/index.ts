@@ -26,6 +26,10 @@ serve(async (req) => {
       
       const authUrl = `https://accounts.snapchat.com/accounts/oauth2/auth?client_id=${SNAPCHAT_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}&state=${state}`;
 
+      console.log('[snapchat-auth] Generated OAuth URL:', authUrl);
+      console.log('[snapchat-auth] redirect_uri:', redirect_uri);
+      console.log('[snapchat-auth] client_id:', SNAPCHAT_CLIENT_ID?.substring(0, 8) + '...');
+
       return new Response(JSON.stringify({ url: authUrl, state }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
