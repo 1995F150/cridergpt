@@ -194,6 +194,7 @@ export function AdminPanel() {
         <TabsContent value="filter-orders"><FilterOrdersManager /></TabsContent>
         <TabsContent value="devices"><DeviceManager /></TabsContent>
         <TabsContent value="products"><ProductIdeasTracker /></TabsContent>
+        <TabsContent value="tag-orders"><TagOrdersManager /></TabsContent>
       </Tabs>
     </div>
   );
