@@ -82,7 +82,7 @@ def send_heartbeat():
     while running:
         try:
             resp = requests.post(
-                f"{API_URL}/functions/v1/device-api",
+                f"{API_URL}/functions/v1/scan-card",
                 json={"action": "heartbeat"},
                 headers=HEADERS,
                 timeout=10,
