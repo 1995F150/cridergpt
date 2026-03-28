@@ -72,10 +72,13 @@ Deno.serve(async (req) => {
       })
 
       if (poolTag) {
+        const isProgrammed = poolTag.status === 'programmed'
         return new Response(JSON.stringify({
-          status: 'unregistered',
+          status: isProgrammed ? 'programmed' : 'unregistered',
           tag_id: tagId,
-          message: 'Tag recognized from pool. Ready to register a new animal.',
+          message: isProgrammed
+            ? 'Tag is programmed and ready to register.'
+            : 'Tag recognized from pool. Ready to register a new animal.',
         }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
