@@ -65,6 +65,28 @@ export interface LivestockTag {
   is_primary: boolean;
 }
 
+export interface LivestockAccessPermissions {
+  view_records?: boolean;
+  add_notes?: boolean;
+  add_weights?: boolean;
+  add_health?: boolean;
+  manage_tags?: boolean;
+  grantee_email?: string;
+  [key: string]: any;
+}
+
+export interface LivestockAccessGrant {
+  id: string;
+  owner_id: string;
+  granted_to: string;
+  role: string;
+  animal_ids: string[] | null;
+  permissions: LivestockAccessPermissions;
+  granted_at: string;
+  expires_at: string | null;
+  revoked_at: string | null;
+}
+
 function generateAnimalId(species: string): string {
   const prefix = species.substring(0, 3).toUpperCase();
   const num = Math.floor(Math.random() * 9000) + 1000;
@@ -83,6 +105,8 @@ export function useLivestock() {
   const [healthRecords, setHealthRecords] = useState<LivestockHealthRecord[]>([]);
   const [notes, setNotes] = useState<LivestockNote[]>([]);
   const [tags, setTags] = useState<LivestockTag[]>([]);
+  const [sharedAccess, setSharedAccess] = useState<LivestockAccessGrant[]>([]);
+  const [accessLoading, setAccessLoading] = useState(false);
 
   const fetchAnimals = useCallback(async () => {
     if (!user) return;
@@ -255,20 +279,39 @@ export function useLivestock() {
   };
 
   const fetchAnimalDetails = async (animalId: string) => {
+    if (!user) return;
+
     try {
-      const [weightsRes, healthRes, notesRes, tagsRes] = await Promise.all([
+      setAccessLoading(true);
+
+      const [weightsRes, healthRes, notesRes, tagsRes, accessRes] = await Promise.all([
         db.from('livestock_weights').select('*').eq('animal_id', animalId).order('recorded_at', { ascending: false }),
         db.from('livestock_health_records').select('*').eq('animal_id', animalId).order('recorded_at', { ascending: false }),
         db.from('livestock_notes').select('*').eq('animal_id', animalId).order('created_at', { ascending: false }),
         db.from('livestock_tags').select('*').eq('animal_id', animalId),
+        db
+          .from('livestock_access')
+          .select('*')
+          .eq('owner_id', user.id)
+          .is('revoked_at', null)
+          .order('granted_at', { ascending: false }),
       ]);
 
       setWeights(weightsRes.data || []);
       setHealthRecords(healthRes.data || []);
       setNotes(notesRes.data || []);
       setTags(tagsRes.data || []);
+
+      const activeAccess = (accessRes.data || []).filter((entry: LivestockAccessGrant) => {
+        if (!entry.animal_ids || entry.animal_ids.length === 0) return true;
+        return entry.animal_ids.includes(animalId);
+      });
+      setSharedAccess(activeAccess);
     } catch (err) {
       console.error('Error fetching animal details:', err);
+      setSharedAccess([]);
+    } finally {
+      setAccessLoading(false);
     }
   };
 
@@ -342,6 +385,7 @@ export function useLivestock() {
         setHealthRecords(result.health_records || []);
         setNotes(result.notes || []);
         setTags(result.tags || []);
+        setSharedAccess([]);
       }
 
       toast.success('Tag scanned successfully! 📡');
@@ -357,24 +401,127 @@ export function useLivestock() {
   const deleteAnimal = async (animalId: string) => {
     if (!user) return;
     try {
+      const { data: animalToDelete, error: animalLookupError } = await db
+        .from('livestock_animals')
+        .select('tag_id')
+        .eq('id', animalId)
+        .single();
+
+      if (animalLookupError) throw animalLookupError;
+
       // Delete related records first
-      await Promise.all([
+      const cleanupResults = await Promise.all([
         db.from('livestock_weights').delete().eq('animal_id', animalId),
         db.from('livestock_health_records').delete().eq('animal_id', animalId),
         db.from('livestock_notes').delete().eq('animal_id', animalId),
         db.from('livestock_tags').delete().eq('animal_id', animalId),
         db.from('livestock_scan_logs').delete().eq('animal_id', animalId),
       ]);
+
+      const cleanupError = cleanupResults.find((result: any) => result?.error)?.error;
+      if (cleanupError) throw cleanupError;
       
       const { error } = await db.from('livestock_animals').delete().eq('id', animalId);
       if (error) throw error;
+
+      // Fallback reset in app layer (DB trigger also handles this).
+      if (animalToDelete?.tag_id) {
+        const { error: poolResetError } = await db
+          .from('livestock_tag_pool')
+          .update({
+            status: 'available',
+            assigned_to_animal: null,
+            assigned_by: null,
+            assigned_at: null,
+          })
+          .eq('tag_id', animalToDelete.tag_id);
+
+        if (poolResetError) {
+          console.warn('Pool reset fallback failed:', poolResetError);
+        }
+      }
       
       setAnimals(prev => prev.filter(a => a.id !== animalId));
       setSelectedAnimal(null);
+      setSharedAccess([]);
       toast.success('Animal deleted successfully');
     } catch (err: any) {
       console.error('Delete animal error:', err);
       toast.error('Failed to delete animal');
+    }
+  };
+
+  const grantAccessToAnimal = async (
+    animalId: string,
+    email: string,
+    role: string = 'farm_worker',
+    permissions: LivestockAccessPermissions = {
+      view_records: true,
+      add_notes: true,
+      add_weights: true,
+      add_health: true,
+      manage_tags: false,
+    }
+  ) => {
+    if (!user) return false;
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      toast.error('Please enter an email address');
+      return false;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-livestock-access', {
+        body: {
+          action: 'grant',
+          animal_id: animalId,
+          email: normalizedEmail,
+          role,
+          permissions,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return false;
+      }
+
+      toast.success(`Access granted to ${normalizedEmail}`);
+
+      if (selectedAnimal?.id === animalId) {
+        await fetchAnimalDetails(animalId);
+      }
+
+      return true;
+    } catch (err: any) {
+      console.error('Grant access error:', err);
+      toast.error(err.message || 'Failed to grant access');
+      return false;
+    }
+  };
+
+  const revokeAccess = async (accessId: string, animalId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await db
+        .from('livestock_access')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('id', accessId)
+        .eq('owner_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Access revoked');
+
+      if (selectedAnimal?.id === animalId) {
+        await fetchAnimalDetails(animalId);
+      }
+    } catch (err: any) {
+      console.error('Revoke access error:', err);
+      toast.error('Failed to revoke access');
     }
   };
 
@@ -393,9 +540,9 @@ export function useLivestock() {
   };
 
   return {
-    animals, loading, selectedAnimal, weights, healthRecords, notes, tags,
+    animals, loading, selectedAnimal, weights, healthRecords, notes, tags, sharedAccess, accessLoading,
     addAnimal, addWeight, addHealthRecord, addNote, addTag, deleteAnimal,
     selectAnimal, lookupByTag, fetchAnimals, setSelectedAnimal,
-    scanCard, getScanHistory,
+    scanCard, getScanHistory, grantAccessToAnimal, revokeAccess,
   };
 }
