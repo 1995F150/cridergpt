@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
 
-    const { priceId, planName, quantity, action } = await req.json();
+    const { priceId, planName, quantity, action, shippingAddress } = await req.json();
     logStep("Request body parsed", { priceId, planName, quantity, action });
     
     if (!priceId) {
@@ -126,10 +126,13 @@ serve(async (req) => {
       await supabaseClient.from('tag_orders').insert({
         customer_id: user.id,
         customer_email: user.email,
+        customer_name: shippingAddress?.fullName || null,
         quantity: orderQuantity,
         unit_price: unitPrice,
         total_price: unitPrice * orderQuantity,
         stripe_session_id: session.id,
+        shipping_address: shippingAddress || null,
+        notes: shippingAddress?.notes || null,
         status: 'pending',
       });
       logStep("Tag order created", { quantity: orderQuantity, sessionId: session.id });
