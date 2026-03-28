@@ -122,6 +122,12 @@ const navigationGroups: NavGroup[] = [
     ]
   },
   {
+    label: 'STORE',
+    items: [
+      { id: 'store', label: 'Smart ID Store', icon: Tag },
+    ]
+  },
+  {
     label: 'INFO',
     items: [
       { id: 'updates', label: 'Updates', icon: Bell },
