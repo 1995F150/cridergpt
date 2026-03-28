@@ -26,6 +26,7 @@ import { ConversationImporter } from '@/components/admin/ConversationImporter';
 import { SnapchatAnalytics } from '@/components/admin/SnapchatAnalytics';
 import { NFCTagWriter } from '@/components/admin/NFCTagWriter';
 import { FilterOrdersManager } from '@/components/admin/FilterOrdersManager';
+import { DeviceManager } from '@/components/admin/DeviceManager';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
