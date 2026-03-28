@@ -284,6 +284,37 @@ export default function SmartIDStore() {
           </Card>
         </div>
 
+        {/* How It Works */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">How the Smart ID System Works</h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { step: '1', title: 'Attach the Tag', desc: 'Apply the NFC ear tag to your animal just like a regular ear tag. The embedded NFC chip is protected by a weather-resistant clear coat.' },
+              { step: '2', title: 'Scan with Your Phone', desc: 'Hold any NFC-capable phone near the tag. It instantly opens the animal\'s digital profile — no app download needed.' },
+              { step: '3', title: 'Track Everything', desc: 'Log health records, weights, medications, vet visits, and notes. All data syncs to CriderGPT\'s livestock management system.' },
+            ].map((s, i) => (
+              <Card key={i} className="border-border/50">
+                <CardContent className="p-4 space-y-2">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">{s.step}</div>
+                  <h4 className="font-semibold">{s.title}</h4>
+                  <p className="text-sm text-muted-foreground">{s.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="rounded-2xl overflow-hidden border border-border">
+            <img
+              src="/images/smart-tag-system-preview.jpg"
+              alt="CriderGPT Smart ID system — animal profile, health records, weight tracking, and NFC tag scanning interface"
+              className="w-full object-cover"
+              loading="lazy"
+            />
+            <div className="bg-card p-3 text-center">
+              <p className="text-sm text-muted-foreground">The CriderGPT Smart ID system — manage your entire herd from your phone</p>
+            </div>
+          </div>
+        </div>
+
         {/* FAQ */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold flex items-center gap-2"><HelpCircle className="h-5 w-5" /> Frequently Asked Questions</h3>
