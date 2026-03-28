@@ -117,14 +117,26 @@ export default function SmartIDStore() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* Hero */}
-        <div className="text-center space-y-4">
-          <Badge className="bg-primary/10 text-primary text-sm px-4 py-1">Now Available</Badge>
-          <h2 className="text-3xl md:text-4xl font-bold">Smart Livestock Tags</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            NFC-enabled ear tags for instant digital herd management. Scan, track, and manage your livestock from your phone.
-          </p>
-          <div className="text-4xl font-bold text-primary">$3.50 <span className="text-lg font-normal text-muted-foreground">per tag</span></div>
+        {/* Product Photo + Hero */}
+        <div className="grid md:grid-cols-2 gap-6 items-center">
+          <div className="relative rounded-2xl overflow-hidden border border-border bg-card">
+            <img
+              src="/images/smart-tag-product.jpg"
+              alt="CriderGPT Smart NFC Livestock Ear Tag — red ear tag with embedded NFC chip"
+              className="w-full aspect-square object-cover"
+              loading="eager"
+            />
+            <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs">NFC Enabled</Badge>
+          </div>
+          <div className="space-y-4 text-center md:text-left">
+            <Badge className="bg-primary/10 text-primary text-sm px-4 py-1">Now Available</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold">Smart Livestock Tags</h2>
+            <p className="text-lg text-muted-foreground">
+              NFC-enabled ear tags for instant digital herd management. Scan, track, and manage your livestock from your phone.
+            </p>
+            <div className="text-4xl font-bold text-primary">$3.50 <span className="text-lg font-normal text-muted-foreground">per tag</span></div>
+            <p className="text-sm text-muted-foreground">Hand-assembled • Weather-resistant clear coat • Ships to your door</p>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
@@ -270,6 +282,37 @@ export default function SmartIDStore() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* How It Works */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">How the Smart ID System Works</h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { step: '1', title: 'Attach the Tag', desc: 'Apply the NFC ear tag to your animal just like a regular ear tag. The embedded NFC chip is protected by a weather-resistant clear coat.' },
+              { step: '2', title: 'Scan with Your Phone', desc: 'Hold any NFC-capable phone near the tag. It instantly opens the animal\'s digital profile — no app download needed.' },
+              { step: '3', title: 'Track Everything', desc: 'Log health records, weights, medications, vet visits, and notes. All data syncs to CriderGPT\'s livestock management system.' },
+            ].map((s, i) => (
+              <Card key={i} className="border-border/50">
+                <CardContent className="p-4 space-y-2">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">{s.step}</div>
+                  <h4 className="font-semibold">{s.title}</h4>
+                  <p className="text-sm text-muted-foreground">{s.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="rounded-2xl overflow-hidden border border-border">
+            <img
+              src="/images/smart-tag-system-preview.jpg"
+              alt="CriderGPT Smart ID system — animal profile, health records, weight tracking, and NFC tag scanning interface"
+              className="w-full object-cover"
+              loading="lazy"
+            />
+            <div className="bg-card p-3 text-center">
+              <p className="text-sm text-muted-foreground">The CriderGPT Smart ID system — manage your entire herd from your phone</p>
+            </div>
+          </div>
         </div>
 
         {/* FAQ */}
