@@ -116,219 +116,171 @@ export default function SmartIDStore() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* Product Photo + Hero */}
-        <div className="grid md:grid-cols-2 gap-6 items-center">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Product Photo + Hero — compact */}
+        <div className="grid md:grid-cols-2 gap-4 items-center">
           <div className="relative rounded-2xl overflow-hidden border border-border bg-card">
             <img
               src="/images/smart-tag-product.jpg"
-              alt="CriderGPT Smart NFC Livestock Ear Tag — red ear tag with embedded NFC chip"
+              alt="CriderGPT Smart NFC Livestock Ear Tag"
               className="w-full aspect-square object-cover"
               loading="eager"
             />
             <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs">NFC Enabled</Badge>
           </div>
-          <div className="space-y-4 text-center md:text-left">
-            <Badge className="bg-primary/10 text-primary text-sm px-4 py-1">Now Available</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold">Smart Livestock Tags</h2>
-            <p className="text-lg text-muted-foreground">
-              NFC-enabled ear tags for instant digital herd management. Scan, track, and manage your livestock from your phone.
+          <div className="space-y-3 text-center md:text-left">
+            <h2 className="text-2xl md:text-3xl font-bold">Smart Livestock Tags</h2>
+            <p className="text-muted-foreground">
+              NFC ear tags — scan with your phone to instantly view animal records, health history & weights.
             </p>
-            <div className="text-4xl font-bold text-primary">$3.50 <span className="text-lg font-normal text-muted-foreground">per tag</span></div>
-            <p className="text-sm text-muted-foreground">Hand-assembled • Weather-resistant clear coat • Ships to your door</p>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Features */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">What You Get</h3>
-            {[
-              { icon: Tag, title: 'NFC-Enabled Ear Tag', desc: 'Embedded NFC sticker for instant phone scanning' },
-              { icon: Shield, title: 'Weather-Resistant Coating', desc: 'Clear coat protection against rain, mud, and sun' },
-              { icon: Smartphone, title: 'Smart ID Integration', desc: 'Links to CriderGPT for full digital animal profiles' },
-              { icon: Droplets, title: 'Durable Design', desc: 'Built for everyday farm use and harsh conditions' },
-              { icon: Truck, title: 'Shipped to Your Door', desc: 'Hand-assembled and mailed directly to your address' },
-            ].map((f, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <f.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">{f.title}</p>
-                  <p className="text-sm text-muted-foreground">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Order Card */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> Order Tags</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Quantity */}
-              <div>
-                <Label className="mb-2 block">Quantity</Label>
-                <div className="flex items-center gap-3">
-                  <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-24 text-center text-lg font-semibold"
-                  />
-                  <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Shipping Address */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Shipping Info</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => setPickupPreferred(!pickupPreferred)}
-                  >
-                    {pickupPreferred ? 'Switch to shipping' : 'Prefer local pickup?'}
-                  </Button>
-                </div>
-
-                <div>
-                  <Label className="text-xs">Full Name</Label>
-                  <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" maxLength={100} />
-                </div>
-
-                {!pickupPreferred && (
-                  <>
-                    <div>
-                      <Label className="text-xs">Address Line 1</Label>
-                      <Input value={addressLine1} onChange={e => setAddressLine1(e.target.value)} placeholder="123 Farm Rd" maxLength={200} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Address Line 2 (optional)</Label>
-                      <Input value={addressLine2} onChange={e => setAddressLine2(e.target.value)} placeholder="Apt, Suite, etc." maxLength={200} />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <Label className="text-xs">City</Label>
-                        <Input value={city} onChange={e => setCity(e.target.value)} placeholder="City" maxLength={100} />
-                      </div>
-                      <div>
-                        <Label className="text-xs">State</Label>
-                        <Input value={state} onChange={e => setState(e.target.value)} placeholder="TN" maxLength={2} />
-                      </div>
-                      <div>
-                        <Label className="text-xs">ZIP</Label>
-                        <Input value={zip} onChange={e => setZip(e.target.value)} placeholder="37xxx" maxLength={10} />
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Phone (optional)</Label>
-                      <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(555) 123-4567" maxLength={20} />
-                    </div>
-                  </>
-                )}
-
-                {pickupPreferred && (
-                  <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-                    You'll be contacted after purchase to arrange local pickup at a mail office or agreed location.
-                  </p>
-                )}
-
-                <div>
-                  <Label className="text-xs">Order Notes (optional)</Label>
-                  <Textarea
-                    value={orderNotes}
-                    onChange={e => setOrderNotes(e.target.value)}
-                    placeholder="Any special requests..."
-                    maxLength={500}
-                    className="h-16"
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Price Summary */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{quantity} × ${UNIT_PRICE.toFixed(2)}</span>
-                  <span>${totalPrice}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Shipping costs may vary — you'll be contacted if additional shipping fees apply.</p>
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total</span>
-                  <span className="text-primary">${totalPrice}</span>
-                </div>
-              </div>
-
-              <Button className="w-full h-12 text-lg" onClick={handleCheckout} disabled={loading}>
-                {loading ? 'Processing...' : `Buy Now — $${totalPrice}`}
-              </Button>
-
-              <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
-                <CheckCircle2 className="h-3 w-3" /> Secure checkout via Stripe
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* How It Works */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">How the Smart ID System Works</h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              { step: '1', title: 'Attach the Tag', desc: 'Apply the NFC ear tag to your animal just like a regular ear tag. The embedded NFC chip is protected by a weather-resistant clear coat.' },
-              { step: '2', title: 'Scan with Your Phone', desc: 'Hold any NFC-capable phone near the tag. It instantly opens the animal\'s digital profile — no app download needed.' },
-              { step: '3', title: 'Track Everything', desc: 'Log health records, weights, medications, vet visits, and notes. All data syncs to CriderGPT\'s livestock management system.' },
-            ].map((s, i) => (
-              <Card key={i} className="border-border/50">
-                <CardContent className="p-4 space-y-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">{s.step}</div>
-                  <h4 className="font-semibold">{s.title}</h4>
-                  <p className="text-sm text-muted-foreground">{s.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <div className="rounded-2xl overflow-hidden border border-border">
-            <img
-              src="/images/smart-tag-system-preview.jpg"
-              alt="CriderGPT Smart ID system — animal profile, health records, weight tracking, and NFC tag scanning interface"
-              className="w-full object-cover"
-              loading="lazy"
-            />
-            <div className="bg-card p-3 text-center">
-              <p className="text-sm text-muted-foreground">The CriderGPT Smart ID system — manage your entire herd from your phone</p>
+            <div className="text-3xl font-bold text-primary">$3.50 <span className="text-base font-normal text-muted-foreground">/ tag</span></div>
+            <div className="flex flex-wrap gap-2 justify-center md:justify-start text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Weather-resistant</span>
+              <span className="flex items-center gap-1"><Smartphone className="h-3 w-3" /> Works with any phone</span>
+              <span className="flex items-center gap-1"><Truck className="h-3 w-3" /> Ships to your door</span>
             </div>
           </div>
         </div>
 
-        {/* FAQ */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold flex items-center gap-2"><HelpCircle className="h-5 w-5" /> Frequently Asked Questions</h3>
-          <div className="grid gap-3">
-            {faqs.map((faq, i) => (
-              <Card key={i}>
-                <CardContent className="p-4">
-                  <p className="font-medium mb-1">{faq.q}</p>
-                  <p className="text-sm text-muted-foreground">{faq.a}</p>
-                </CardContent>
-              </Card>
-            ))}
+        {/* How it works — 3 short steps */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { step: '1', title: 'Attach', desc: 'Put on ear like a regular tag' },
+            { step: '2', title: 'Scan', desc: 'Tap phone to read NFC chip' },
+            { step: '3', title: 'Track', desc: 'Health, weight & records sync' },
+          ].map((s, i) => (
+            <Card key={i} className="border-border/50">
+              <CardContent className="p-3 text-center space-y-1">
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs mx-auto">{s.step}</div>
+                <p className="text-sm font-semibold">{s.title}</p>
+                <p className="text-[11px] text-muted-foreground">{s.desc}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Order Card — the main focus */}
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> Order Tags</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Quantity */}
+            <div>
+              <Label className="mb-2 block">Quantity</Label>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Input
+                  type="number"
+                  min={1}
+                  value={quantity}
+                  onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-24 text-center text-lg font-semibold"
+                />
+                <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Shipping */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Shipping</Label>
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setPickupPreferred(!pickupPreferred)}>
+                  {pickupPreferred ? 'Ship instead' : 'Post office pickup?'}
+                </Button>
+              </div>
+
+              <div>
+                <Label className="text-xs">Full Name</Label>
+                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" maxLength={100} />
+              </div>
+
+              {!pickupPreferred && (
+                <>
+                  <div>
+                    <Label className="text-xs">Address</Label>
+                    <Input value={addressLine1} onChange={e => setAddressLine1(e.target.value)} placeholder="123 Farm Rd" maxLength={200} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-xs">City</Label>
+                      <Input value={city} onChange={e => setCity(e.target.value)} placeholder="City" maxLength={100} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">State</Label>
+                      <Input value={state} onChange={e => setState(e.target.value)} placeholder="VA" maxLength={2} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">ZIP</Label>
+                      <Input value={zip} onChange={e => setZip(e.target.value)} placeholder="24xxx" maxLength={10} />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {pickupPreferred && (
+                <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                  We'll contact you to arrange pickup at your local post office.
+                </p>
+              )}
+
+              <div>
+                <Label className="text-xs">Notes (optional)</Label>
+                <Textarea value={orderNotes} onChange={e => setOrderNotes(e.target.value)} placeholder="Any special requests..." maxLength={500} className="h-14" />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Total */}
+            <div className="flex justify-between font-bold text-lg">
+              <span>{quantity} tags</span>
+              <span className="text-primary">${totalPrice}</span>
+            </div>
+
+            <Button className="w-full h-12 text-lg" onClick={handleCheckout} disabled={loading}>
+              {loading ? 'Processing...' : `Buy Now — $${totalPrice}`}
+            </Button>
+
+            <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> Secure checkout via Stripe • 5-10 day shipping
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* System preview image */}
+        <div className="rounded-2xl overflow-hidden border border-border">
+          <img
+            src="/images/smart-tag-system-preview.jpg"
+            alt="CriderGPT Smart ID system interface"
+            className="w-full object-cover"
+            loading="lazy"
+          />
+          <div className="bg-card p-2 text-center">
+            <p className="text-xs text-muted-foreground">What you see when you scan a tag — full animal profile on your phone</p>
           </div>
         </div>
+
+        {/* Compact FAQ — collapsible style */}
+        <details className="group">
+          <summary className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
+            <HelpCircle className="h-4 w-4" /> Frequently Asked Questions
+          </summary>
+          <div className="mt-3 space-y-2">
+            {faqs.map((faq, i) => (
+              <div key={i} className="border border-border rounded-lg p-3">
+                <p className="text-sm font-medium">{faq.q}</p>
+                <p className="text-xs text-muted-foreground mt-1">{faq.a}</p>
+              </div>
+            ))}
+          </div>
+        </details>
       </div>
     </div>
   );
