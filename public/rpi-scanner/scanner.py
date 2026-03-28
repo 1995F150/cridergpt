@@ -105,7 +105,7 @@ def send_scan(tag_id: str):
     """Send a scanned tag ID to the backend."""
     try:
         resp = requests.post(
-            f"{API_URL}/functions/v1/device-api",
+            f"{API_URL}/functions/v1/scan-card",
             json={"action": "scan", "tag_id": tag_id},
             headers=HEADERS,
             timeout=10,
