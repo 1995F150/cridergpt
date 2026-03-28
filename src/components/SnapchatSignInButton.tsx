@@ -12,7 +12,8 @@ export default function SnapchatSignInButton() {
     try {
       setLoading(true);
 
-      const redirectUri = `${window.location.origin}/auth`;
+      // Always use published URL to match Snapchat Developer Portal redirect URI
+      const redirectUri = 'https://cridergpt.lovable.app/auth';
 
       // Get Snapchat OAuth URL from edge function
       const { data, error } = await supabase.functions.invoke('snapchat-auth', {
