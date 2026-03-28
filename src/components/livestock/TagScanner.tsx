@@ -152,13 +152,15 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
         )}
 
         {/* Unregistered pool tag — prompt to register */}
-        {scanResult?.status === 'unregistered' && (
+        {(scanResult?.status === 'unregistered' || scanResult?.status === 'programmed') && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
             <p className="text-sm font-medium text-primary">
               📡 Tag recognized: <span className="font-mono">{scanResult.tag_id}</span>
             </p>
             <p className="text-xs text-muted-foreground">
-              This tag is available and ready to be assigned to a new animal.
+              {scanResult.status === 'programmed'
+                ? 'This tag is programmed and ready to be assigned to an animal.'
+                : 'This tag is available and ready to be assigned to a new animal.'}
             </p>
             {onRegisterAnimal && (
               <Button
