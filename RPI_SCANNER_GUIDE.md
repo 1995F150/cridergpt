@@ -1,5 +1,7 @@
 # CriderGPT Raspberry Pi NFC Scanner — Setup Guide
 
+> **Note**: The device API is built into the `scan-card` edge function using action-based routing (`action: 'heartbeat'` or `action: 'scan'`). No separate endpoint is needed.
+
 ## Overview
 
 This guide walks you through setting up a **Raspberry Pi** as a physical NFC scanner for your CriderGPT Livestock Smart ID system. The Pi reads NFC tags (stickers, fobs, ear tags) and sends the tag ID to your CriderGPT backend to pull up animal profiles in real-time.
