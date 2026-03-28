@@ -16,9 +16,9 @@ import { useAuth } from '@/contexts/AuthContext';
 export function LivestockPanel() {
   const { user } = useAuth();
   const {
-    animals, loading, selectedAnimal, weights, healthRecords, notes, tags,
+    animals, loading, selectedAnimal, weights, healthRecords, notes, tags, sharedAccess, accessLoading,
     addAnimal, addWeight, addHealthRecord, addNote, addTag, deleteAnimal,
-    selectAnimal, setSelectedAnimal, scanCard,
+    selectAnimal, setSelectedAnimal, scanCard, grantAccessToAnimal, revokeAccess,
   } = useLivestock();
   
   const [speciesFilter, setSpeciesFilter] = useState<string>('all');
@@ -57,6 +57,10 @@ export function LivestockPanel() {
             onAddNote={addNote}
             onAddTag={addTag}
             onDelete={deleteAnimal}
+            sharedAccess={sharedAccess}
+            accessLoading={accessLoading}
+            onGrantAccess={grantAccessToAnimal}
+            onRevokeAccess={revokeAccess}
           />
         </div>
       </ScrollArea>
