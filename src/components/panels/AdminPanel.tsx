@@ -189,6 +189,7 @@ export function AdminPanel() {
         <TabsContent value="nfc-writer"><NFCTagWriter /></TabsContent>
         <TabsContent value="filter-orders"><FilterOrdersManager /></TabsContent>
         <TabsContent value="devices"><DeviceManager /></TabsContent>
+        <TabsContent value="products"><ProductIdeasTracker /></TabsContent>
       </Tabs>
     </div>
   );

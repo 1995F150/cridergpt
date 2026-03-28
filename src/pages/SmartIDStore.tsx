@@ -56,7 +56,7 @@ export default function SmartIDStore() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Smart Livestock Tags — CriderGPT Store" description="NFC-enabled smart ear tags for digital herd management. $3.50 each. Works with the CriderGPT Smart ID system." />
+      <SEO page="store" />
 
       {/* Header */}
       <div className="border-b border-border bg-card">

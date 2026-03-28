@@ -37,7 +37,8 @@ import {
   AudioLines,
   HandCoins,
   Usb,
-  Radar
+  Radar,
+  Tag
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';

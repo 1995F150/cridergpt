@@ -113,6 +113,7 @@ const App = () => {
                       <Route path="/snapchat-lens" element={<SnapchatLensPage />} />
                       <Route path="/custom-filters" element={<CustomFilters />} />
                       <Route path="/user-agreement" element={<UserAgreement />} />
+                      <Route path="/store" element={<SmartIDStore />} />
                       
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />
