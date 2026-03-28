@@ -894,7 +894,8 @@ serve(async (req) => {
 
     // Store interaction in ai_memory
     if (userId) {
-      const category = message?.toLowerCase().includes('farm') ? 'farming' :
+      const category = responseSource === 'cridergpt-local' ? 'self_answer' :
+                      message?.toLowerCase().includes('farm') ? 'farming' :
                       message?.toLowerCase().includes('weld') ? 'welding' :
                       message?.toLowerCase().includes('truck') ? 'vehicles' :
                       message?.toLowerCase().includes('ffa') ? 'ffa' :
@@ -907,7 +908,7 @@ serve(async (req) => {
           category,
           topic: message?.substring(0, 100) || 'Image analysis',
           details: aiResponse.substring(0, 500),
-          source: imageData ? 'image' : 'conversation',
+          source: responseSource === 'cridergpt-local' ? 'local_corpus' : (imageData ? 'image' : 'conversation'),
         });
     }
 
