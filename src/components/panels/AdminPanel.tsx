@@ -231,6 +231,13 @@ export function AdminPanel() {
             Filter Orders
           </TabsTrigger>
           <TabsTrigger 
+            value="devices" 
+            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Cpu className="h-4 w-4" />
+            Devices
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
