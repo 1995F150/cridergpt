@@ -117,14 +117,26 @@ export default function SmartIDStore() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* Hero */}
-        <div className="text-center space-y-4">
-          <Badge className="bg-primary/10 text-primary text-sm px-4 py-1">Now Available</Badge>
-          <h2 className="text-3xl md:text-4xl font-bold">Smart Livestock Tags</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            NFC-enabled ear tags for instant digital herd management. Scan, track, and manage your livestock from your phone.
-          </p>
-          <div className="text-4xl font-bold text-primary">$3.50 <span className="text-lg font-normal text-muted-foreground">per tag</span></div>
+        {/* Product Photo + Hero */}
+        <div className="grid md:grid-cols-2 gap-6 items-center">
+          <div className="relative rounded-2xl overflow-hidden border border-border bg-card">
+            <img
+              src="/images/smart-tag-product.jpg"
+              alt="CriderGPT Smart NFC Livestock Ear Tag — red ear tag with embedded NFC chip"
+              className="w-full aspect-square object-cover"
+              loading="eager"
+            />
+            <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs">NFC Enabled</Badge>
+          </div>
+          <div className="space-y-4 text-center md:text-left">
+            <Badge className="bg-primary/10 text-primary text-sm px-4 py-1">Now Available</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold">Smart Livestock Tags</h2>
+            <p className="text-lg text-muted-foreground">
+              NFC-enabled ear tags for instant digital herd management. Scan, track, and manage your livestock from your phone.
+            </p>
+            <div className="text-4xl font-bold text-primary">$3.50 <span className="text-lg font-normal text-muted-foreground">per tag</span></div>
+            <p className="text-sm text-muted-foreground">Hand-assembled • Weather-resistant clear coat • Ships to your door</p>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
