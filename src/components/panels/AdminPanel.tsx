@@ -25,6 +25,7 @@ import { NFCTagWriter } from '@/components/admin/NFCTagWriter';
 import { FilterOrdersManager } from '@/components/admin/FilterOrdersManager';
 import { DeviceManager } from '@/components/admin/DeviceManager';
 import { ProductIdeasTracker } from '@/components/admin/ProductIdeasTracker';
+import { TagOrdersManager } from '@/components/admin/TagOrdersManager';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
