@@ -102,18 +102,15 @@ useEffect(() => {
   return (
     <section className="py-16 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-green-600 mb-4">
-            ✅ Site Restored – CriderGPT Dashboard Safe Mode
-          </h1>
-        </div>
-
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-cyber-blue to-tech-accent bg-clip-text text-transparent">
-            Choose Your Plan
+            Simple, Affordable Plans
           </h2>
           <p className="text-muted-foreground text-lg">
-            Unlock the full potential of CriderGPT with our flexible pricing options
+            Start free. Upgrade when you need more AI power, livestock tracking & premium tools.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            ✅ All plans include 30+ calculators, FFA tools & community features
           </p>
         </div>
 
