@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, MessageSquare, CreditCard, AlertTriangle, Activity, TrendingUp, ArrowRight, Shield } from 'lucide-react';
+import { Users, MessageSquare, CreditCard, AlertTriangle, Activity, TrendingUp, ArrowRight, Shield, Brain, Database, Cpu } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityFeed } from './ActivityFeed';
@@ -13,6 +13,9 @@ interface DashboardStats {
   totalMessages: number;
   todaySignups: number;
   totalTokensUsed: number;
+  totalMemories: number;
+  totalCorpusEntries: number;
+  localAnswerCount: number;
 }
 
 interface AdminDashboardProps {
