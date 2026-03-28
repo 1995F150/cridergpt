@@ -25,8 +25,8 @@ serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
 
-    const { priceId, planName } = await req.json();
-    logStep("Request body parsed", { priceId, planName });
+    const { priceId, planName, quantity, action } = await req.json();
+    logStep("Request body parsed", { priceId, planName, quantity, action });
     
     if (!priceId) {
       throw new Error("Price ID is required");
@@ -102,9 +102,12 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://cridergpt.lovable.app";
 
+    const isTagOrder = action === 'tag-order';
+    const orderQuantity = isTagOrder ? (quantity || 1) : 1;
+
     const session = await stripe.checkout.sessions.create({
-      mode: planName === 'lifetime' ? "payment" : "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+      mode: isTagOrder || planName === 'lifetime' ? "payment" : "subscription",
+      line_items: [{ price: priceId, quantity: orderQuantity }],
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -112,9 +115,25 @@ serve(async (req) => {
       metadata: {
         userId: user.id,
         planName: planName || 'unknown',
+        ...(isTagOrder && { action: 'tag-order', quantity: String(orderQuantity) }),
       },
       allow_promotion_codes: true,
     });
+
+    // If tag order, insert into tag_orders table
+    if (isTagOrder) {
+      const unitPrice = 3.50;
+      await supabaseClient.from('tag_orders').insert({
+        customer_id: user.id,
+        customer_email: user.email,
+        quantity: orderQuantity,
+        unit_price: unitPrice,
+        total_price: unitPrice * orderQuantity,
+        stripe_session_id: session.id,
+        status: 'pending',
+      });
+      logStep("Tag order created", { quantity: orderQuantity, sessionId: session.id });
+    }
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 

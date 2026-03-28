@@ -37,7 +37,8 @@ import {
   AudioLines,
   HandCoins,
   Usb,
-  Radar
+  Radar,
+  Tag
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
@@ -119,6 +120,12 @@ const navigationGroups: NavGroup[] = [
       { id: 'sensors', label: 'Sensors', icon: Radar },
       { id: 'frequency', label: 'Frequency Tools', icon: AudioLines },
       { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
+    ]
+  },
+  {
+    label: 'STORE',
+    items: [
+      { id: 'store', label: 'Smart ID Store', icon: Tag, external: true, url: '/store' },
     ]
   },
   {

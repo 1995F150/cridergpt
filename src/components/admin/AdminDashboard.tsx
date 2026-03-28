@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, MessageSquare, CreditCard, AlertTriangle, Activity, TrendingUp, ArrowRight, Shield } from 'lucide-react';
+import { Users, MessageSquare, CreditCard, AlertTriangle, Activity, TrendingUp, ArrowRight, Shield, Brain, Database, Cpu } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityFeed } from './ActivityFeed';
@@ -13,6 +13,9 @@ interface DashboardStats {
   totalMessages: number;
   todaySignups: number;
   totalTokensUsed: number;
+  totalMemories: number;
+  totalCorpusEntries: number;
+  localAnswerCount: number;
 }
 
 interface AdminDashboardProps {
@@ -28,6 +31,9 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
     totalMessages: 0,
     todaySignups: 0,
     totalTokensUsed: 0,
+    totalMemories: 0,
+    totalCorpusEntries: 0,
+    localAnswerCount: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -71,6 +77,20 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
         
         const totalTokens = usageData?.reduce((sum, u) => sum + (u.tokens_used || 0), 0) || 0;
 
+        // Fetch AI infrastructure stats
+        const { count: memoryCount } = await supabase
+          .from('ai_memory')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: corpusCount } = await (supabase as any)
+          .from('cridergpt_training_corpus')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: localCount } = await supabase
+          .from('ai_memory')
+          .select('*', { count: 'exact', head: true })
+          .eq('source', 'local_corpus');
+
         setStats({
           totalUsers: userCount || 0,
           activeSubscriptions: subCount || 0,
@@ -78,6 +98,9 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
           totalMessages: messageCount || 0,
           todaySignups: todayCount || 0,
           totalTokensUsed: totalTokens,
+          totalMemories: memoryCount || 0,
+          totalCorpusEntries: corpusCount || 0,
+          localAnswerCount: localCount || 0,
         });
       } catch (error) {
         console.error('Error fetching admin stats:', error);
@@ -200,6 +223,32 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
           </Card>
         ))}
       </div>
+
+      {/* AI Infrastructure Stats */}
+      <Card className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-primary/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
+            AI Infrastructure Stats
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.totalMemories.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">AI Memories</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.totalCorpusEntries.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Corpus Entries</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.localAnswerCount}</div>
+              <p className="text-xs text-muted-foreground">Local Answers</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Activity Feed & Quick Actions */}
       <div className="grid gap-6 lg:grid-cols-2">

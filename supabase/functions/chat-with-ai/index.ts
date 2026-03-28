@@ -765,90 +765,137 @@ serve(async (req) => {
       }
     }
 
+    // === LOCAL-FIRST AI INFRASTRUCTURE: Check local corpus before calling external API ===
+    let localAnswer: string | null = null;
+    let responseSource = 'openai';
+
+    if (message && userId) {
+      try {
+        // Search training corpus for keyword matches
+        const searchTerms = message.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3).slice(0, 5);
+        
+        if (searchTerms.length > 0) {
+          const { data: corpusMatches } = await supabase
+            .from('cridergpt_training_corpus')
+            .select('content, topic, category')
+            .or(searchTerms.map((t: string) => `content.ilike.%${t}%`).join(','))
+            .limit(3);
+
+          if (corpusMatches && corpusMatches.length > 0) {
+            // Check if any match is highly relevant (topic matches)
+            const topicMatch = corpusMatches.find((m: any) => {
+              const topic = (m.topic || '').toLowerCase();
+              return searchTerms.some((t: string) => topic.includes(t));
+            });
+
+            if (topicMatch) {
+              // Strong match — use as direct answer
+              localAnswer = topicMatch.content;
+              responseSource = 'cridergpt-local';
+              console.log('LOCAL MATCH found in training corpus:', topicMatch.topic);
+            }
+          }
+        }
+      } catch (localErr) {
+        console.log('Local corpus search skipped:', localErr);
+      }
+    }
+
     // Build messages array
     const sensorInfo = sensor_context ? `\n${sensor_context}` : '';
     const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext + sensorInfo;
     
-    const messages: any[] = [
-      { role: 'system', content: systemPrompt }
-    ];
+    let aiResponse: string;
 
-    // Add conversation history if provided
-    if (conversation_history && Array.isArray(conversation_history)) {
-      messages.push(...conversation_history.slice(-20)); // Last 20 messages for continuity
-    }
-
-    // Add current message with optional image
-    if (imageData) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: message || 'Analyze this image' },
-          { type: 'image_url', image_url: { url: imageData } }
-        ]
-      });
+    if (localAnswer) {
+      // Use local answer directly
+      aiResponse = localAnswer;
+      console.log('Serving response from LOCAL corpus');
     } else {
-      messages.push({ role: 'user', content: message });
-    }
+      // Fall back to external API
+      const messages: any[] = [
+        { role: 'system', content: systemPrompt }
+      ];
 
-    // Call OpenAI API (fallback to Lovable AI Gateway if no OpenAI key)
-    const useOpenAI = !!OPENAI_API_KEY;
-    const apiUrl = useOpenAI 
-      ? 'https://api.openai.com/v1/chat/completions' 
-      : 'https://ai.gateway.lovable.dev/v1/chat/completions';
-    const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
-    const defaultModel = useOpenAI 
-      ? (imageData ? 'gpt-4o' : 'gpt-4o-mini') 
-      : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash');
-
-    if (!apiKey) {
-      throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
-    }
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: defaultModel,
-        messages,
-        max_tokens: 2000,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ 
-          error: "Rate limited. Please try again in a moment." 
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      // Add conversation history if provided
+      if (conversation_history && Array.isArray(conversation_history)) {
+        messages.push(...conversation_history.slice(-20));
       }
-      
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ 
-          error: "AI credits exhausted. Please add credits." 
-        }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
 
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || 'No response generated';
+      // Add current message with optional image
+      if (imageData) {
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'text', text: message || 'Analyze this image' },
+            { type: 'image_url', image_url: { url: imageData } }
+          ]
+        });
+      } else {
+        messages.push({ role: 'user', content: message });
+      }
+
+      // Call OpenAI API (fallback to Lovable AI Gateway if no OpenAI key)
+      const useOpenAI = !!OPENAI_API_KEY;
+      const apiUrl = useOpenAI 
+        ? 'https://api.openai.com/v1/chat/completions' 
+        : 'https://ai.gateway.lovable.dev/v1/chat/completions';
+      const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
+      const defaultModel = useOpenAI 
+        ? (imageData ? 'gpt-4o' : 'gpt-4o-mini') 
+        : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash');
+
+      if (!apiKey) {
+        throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: defaultModel,
+          messages,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI Gateway error:', response.status, errorText);
+        
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ 
+            error: "Rate limited. Please try again in a moment." 
+          }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ 
+            error: "AI credits exhausted. Please add credits." 
+          }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        throw new Error(`AI Gateway error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      aiResponse = data.choices?.[0]?.message?.content || 'No response generated';
+      responseSource = useOpenAI ? 'openai' : 'gateway';
+    } // end else (external API)
 
     // Store interaction in ai_memory
     if (userId) {
-      const category = message?.toLowerCase().includes('farm') ? 'farming' :
+      const category = responseSource === 'cridergpt-local' ? 'self_answer' :
+                      message?.toLowerCase().includes('farm') ? 'farming' :
                       message?.toLowerCase().includes('weld') ? 'welding' :
                       message?.toLowerCase().includes('truck') ? 'vehicles' :
                       message?.toLowerCase().includes('ffa') ? 'ffa' :
@@ -861,7 +908,7 @@ serve(async (req) => {
           category,
           topic: message?.substring(0, 100) || 'Image analysis',
           details: aiResponse.substring(0, 500),
-          source: imageData ? 'image' : 'conversation',
+          source: responseSource === 'cridergpt-local' ? 'local_corpus' : (imageData ? 'image' : 'conversation'),
         });
     }
 
@@ -897,10 +944,11 @@ serve(async (req) => {
       }
     }
 
-    console.log('AI response generated successfully');
+    console.log(`AI response generated successfully (source: ${responseSource})`);
 
     return new Response(JSON.stringify({
       response: aiResponse,
+      source: responseSource,
       usage: {
         used: (usage?.messages_sent || 0) + 1,
         limit: messageLimit,
