@@ -33,8 +33,14 @@ Deno.serve(async (req) => {
 
     const db = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 2. Parse request — accept tag_id or card_id (backward compat)
     const body = await req.json()
+
+    // ─── Device API mode (action-based routing for Raspberry Pi) ───
+    if (body.action === 'heartbeat' || body.action === 'scan') {
+      return await handleDeviceAction(req, body, db, corsHeaders)
+    }
+
+    // ─── Normal user scan mode ───
     const tagId = (body.tag_id || body.card_id || '').trim()
     if (!tagId) {
       return new Response(JSON.stringify({ error: 'tag_id is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
