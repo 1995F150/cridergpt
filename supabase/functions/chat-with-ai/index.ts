@@ -835,60 +835,62 @@ serve(async (req) => {
         messages.push({ role: 'user', content: message });
       }
 
-    // Call OpenAI API (fallback to Lovable AI Gateway if no OpenAI key)
-    const useOpenAI = !!OPENAI_API_KEY;
-    const apiUrl = useOpenAI 
-      ? 'https://api.openai.com/v1/chat/completions' 
-      : 'https://ai.gateway.lovable.dev/v1/chat/completions';
-    const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
-    const defaultModel = useOpenAI 
-      ? (imageData ? 'gpt-4o' : 'gpt-4o-mini') 
-      : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash');
+      // Call OpenAI API (fallback to Lovable AI Gateway if no OpenAI key)
+      const useOpenAI = !!OPENAI_API_KEY;
+      const apiUrl = useOpenAI 
+        ? 'https://api.openai.com/v1/chat/completions' 
+        : 'https://ai.gateway.lovable.dev/v1/chat/completions';
+      const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
+      const defaultModel = useOpenAI 
+        ? (imageData ? 'gpt-4o' : 'gpt-4o-mini') 
+        : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash');
 
-    if (!apiKey) {
-      throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
-    }
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: defaultModel,
-        messages,
-        max_tokens: 2000,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ 
-          error: "Rate limited. Please try again in a moment." 
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      if (!apiKey) {
+        throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
       }
-      
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ 
-          error: "AI credits exhausted. Please add credits." 
-        }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
 
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || 'No response generated';
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: defaultModel,
+          messages,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI Gateway error:', response.status, errorText);
+        
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ 
+            error: "Rate limited. Please try again in a moment." 
+          }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ 
+            error: "AI credits exhausted. Please add credits." 
+          }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        throw new Error(`AI Gateway error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      aiResponse = data.choices?.[0]?.message?.content || 'No response generated';
+      responseSource = useOpenAI ? 'openai' : 'gateway';
+    } // end else (external API)
 
     // Store interaction in ai_memory
     if (userId) {
