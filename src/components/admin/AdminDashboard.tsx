@@ -31,6 +31,9 @@ export function AdminDashboard({ onNavigateToTab }: AdminDashboardProps) {
     totalMessages: 0,
     todaySignups: 0,
     totalTokensUsed: 0,
+    totalMemories: 0,
+    totalCorpusEntries: 0,
+    localAnswerCount: 0,
   });
   const [loading, setLoading] = useState(true);
 
