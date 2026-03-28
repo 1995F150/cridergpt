@@ -1,50 +1,45 @@
 
 
-# Integrate CriderGPT FFA Expert Persona & Roast Mode
+## Snapchat OAuth "Failed to load authorization data" Fix
 
-## What's Changing
+### What's happening
+The screenshot shows Snapchat's own error page: **"Authorization Error - Failed to load authorization data"**. This error comes from Snapchat's servers before any code on your side runs. It means Snapchat rejected the OAuth request before even showing a login screen.
 
-The existing system prompt already has Jessie's voice, Gen Z flow, and writing style matching. The new persona adds **specific functional roles** and **behavioral constraints** that need to be merged in.
+### Root causes (in order of likelihood)
 
-## New Additions to System Prompt (lines ~427-446 in chat-with-ai/index.ts)
+1. **Redirect URI mismatch**: The redirect URI sent in the request (`https://cridergpt.lovable.app/auth`) must be registered **exactly** in the Snapchat Developer Portal (Snap Kit dashboard). Even a trailing slash difference will cause this error.
 
-Insert a new section after the existing "Topics you know well" block (around line 436) that adds:
+2. **Snapchat App not in "Live" mode**: If the Snap Kit app is still in Development/Staging mode, only whitelisted test accounts can authorize. All other users see this error.
 
-### 1. FFA Expert Identity Block
-- "You are an expert AI for FFA members, ag students, and the rural community"
-- "Think 'the smartest kid in the barn' — supportive of SAE projects but with a witty edge"
+3. **Invalid or expired Client ID**: The `SNAPCHAT_CLIENT_ID` secret may be stale or from a deleted/disabled Snap Kit app.
 
-### 2. Roast/Rate Mode (Photo Interactions)
-- When users upload photos of farms, trucks, equipment → provide honest, humorous "Jessie-style" commentary
-- Be punchy, share-worthy, and entertaining
-- This augments the existing image analysis rules (line 438-440)
+### Plan
 
-### 3. FFA Record Book & SAE Support
-- Transform messy notes ("bought 5 calves for 800 each today") into formal, structured record-book entries
-- Track SAE projects: weights, feed ratios, expenses, labor hours
+#### Step 1: Snapchat Developer Portal configuration (manual - you need to do this)
+You need to verify these settings at [kit.snapchat.com](https://kit.snapchat.com):
+- **Redirect URIs**: Add exactly `https://cridergpt.lovable.app/auth` (no trailing slash)
+- **App Status**: Set to **Live** (not Development)
+- **Login Kit**: Ensure Login Kit is enabled with the scopes: `user.display_name`, `user.bitmoji.avatar`, `user.external_id`
+- **Confidential OAuth Client**: Confirm your app type matches (Web application)
 
-### 4. AI Homework/Essay Support  
-- Write essays that sound human, not AI — match the student's natural voice
-- Avoid "over-polished" AI cliches while keeping ag technical accuracy
+#### Step 2: Code hardening (I will implement)
+- Update the `SnapchatSignInButton` to show a user-friendly error message instead of a blank popup if Snapchat returns an error page
+- Add the published URL as the redirect URI (currently uses `window.location.origin` which would differ on preview vs published)
+- Add error logging to the edge function to capture the exact URL being generated for debugging
 
-### 5. Livestock Record-Keeping
-- Mobile-first logger behavior — when given tag numbers, weights, vaccinations → organize into exportable tables
+#### Step 3: Redeploy edge function
+- Redeploy `snapchat-auth` after any code changes
 
-### 6. FS22/FS25 Mod Consulting
-- Act as technical consultant — analyze mod structures, suggest XML fixes, help build/tweak mods
+### Technical details
+- File: `src/components/SnapchatSignInButton.tsx` - hardcode published redirect URI for production
+- File: `supabase/functions/snapchat-auth/index.ts` - add request URL logging
+- The scopes format in the current code uses full URLs (`https://auth.snapchat.com/oauth2/api/user.display_name`) which is correct for Snap Kit v2
 
-### 7. Strict Behavioral Constraints
-- Never sound like a generic corporate AI
-- If a user is being lazy with farm management, give gentle witty pushback
-- Prioritize scannability: bold text and bullet points
+### What you need to check right now
+Go to [kit.snapchat.com](https://kit.snapchat.com) and confirm:
+1. Your app exists and is **Live**
+2. `https://cridergpt.lovable.app/auth` is listed as a Redirect URI
+3. Login Kit is toggled ON
 
-## File to Modify
-
-| File | Change |
-|------|--------|
-| `supabase/functions/chat-with-ai/index.ts` | Insert persona block into SYSTEM_PROMPT (~lines 427-446) |
-
-## What's NOT Changing
-- All existing voice matching, writing style, identity recognition, memory system, and owner-only code access stays exactly as-is
-- This is purely additive — merging new role definitions into the existing prompt
+Once you confirm the portal settings, I'll implement the code fixes.
 
