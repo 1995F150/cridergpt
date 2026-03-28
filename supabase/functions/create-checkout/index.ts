@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
 
-    const { priceId, planName, quantity, action } = await req.json();
+    const { priceId, planName, quantity, action, shippingAddress } = await req.json();
     logStep("Request body parsed", { priceId, planName, quantity, action });
     
     if (!priceId) {
