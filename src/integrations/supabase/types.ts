@@ -2390,6 +2390,57 @@ export type Database = {
           },
         ]
       }
+      product_ideas: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          est_cost: number | null
+          id: string
+          is_patented: boolean | null
+          is_public: boolean | null
+          materials: Json | null
+          notes: string | null
+          sell_price: number | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          est_cost?: number | null
+          id?: string
+          is_patented?: boolean | null
+          is_public?: boolean | null
+          materials?: Json | null
+          notes?: string | null
+          sell_price?: number | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          est_cost?: number | null
+          id?: string
+          is_patented?: boolean | null
+          is_public?: boolean | null
+          materials?: Json | null
+          notes?: string | null
+          sell_price?: number | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
@@ -3064,6 +3115,54 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           whitelist_ips?: string[] | null
+        }
+        Relationships: []
+      }
+      tag_orders: {
+        Row: {
+          created_at: string | null
+          customer_email: string
+          customer_id: string | null
+          customer_name: string | null
+          id: string
+          notes: string | null
+          quantity: number
+          shipping_address: Json | null
+          status: string | null
+          stripe_session_id: string | null
+          total_price: number | null
+          unit_price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_email: string
+          customer_id?: string | null
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          quantity: number
+          shipping_address?: Json | null
+          status?: string | null
+          stripe_session_id?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_email?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          shipping_address?: Json | null
+          status?: string | null
+          stripe_session_id?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
