@@ -8,9 +8,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Smartphone, Trash2 } from 'lucide-react';
+import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Smartphone, Trash2, Users, UserMinus } from 'lucide-react';
 import { toast } from 'sonner';
-import type { LivestockAnimal, LivestockWeight, LivestockHealthRecord, LivestockNote, LivestockTag } from '@/hooks/useLivestock';
+import type {
+  LivestockAnimal,
+  LivestockWeight,
+  LivestockHealthRecord,
+  LivestockNote,
+  LivestockTag,
+  LivestockAccessGrant,
+  LivestockAccessPermissions,
+} from '@/hooks/useLivestock';
 
 interface AnimalProfileProps {
   animal: LivestockAnimal;
@@ -24,6 +32,15 @@ interface AnimalProfileProps {
   onAddNote: (animalId: string, content: string, noteType?: string) => Promise<void>;
   onAddTag: (animalId: string, tagNumber: string, tagType?: string, tagLocation?: string) => Promise<void>;
   onDelete?: (animalId: string) => Promise<void>;
+  sharedAccess?: LivestockAccessGrant[];
+  accessLoading?: boolean;
+  onGrantAccess?: (
+    animalId: string,
+    email: string,
+    role?: string,
+    permissions?: LivestockAccessPermissions
+  ) => Promise<boolean>;
+  onRevokeAccess?: (accessId: string, animalId: string) => Promise<void>;
 }
 
 const speciesEmoji: Record<string, string> = {
@@ -43,6 +60,10 @@ function getAge(birthDate: string | null): string {
 export function AnimalProfile({
   animal, weights, healthRecords, notes, tags,
   onBack, onAddWeight, onAddHealth, onAddNote, onAddTag, onDelete,
+  sharedAccess = [],
+  accessLoading = false,
+  onGrantAccess,
+  onRevokeAccess,
 }: AnimalProfileProps) {
   const [newWeight, setNewWeight] = useState('');
   const [weightNotes, setWeightNotes] = useState('');
@@ -58,6 +79,9 @@ export function AnimalProfile({
   const [healthMed, setHealthMed] = useState('');
   const [healthDosage, setHealthDosage] = useState('');
   const [healthVet, setHealthVet] = useState('');
+  const [shareEmail, setShareEmail] = useState('');
+  const [shareRole, setShareRole] = useState('farm_worker');
+  const [sharing, setSharing] = useState(false);
 
   const latestWeight = weights[0]?.weight_lbs;
   const emoji = speciesEmoji[animal.species] || '🐾';
@@ -153,6 +177,90 @@ export function AnimalProfile({
           <p className="text-xs text-muted-foreground">Weigh-ins</p>
         </CardContent></Card>
       </div>
+
+      {onGrantAccess && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-4 w-4" /> Shared Farm Access
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
+                <Label>Farmer email</Label>
+                <Input
+                  type="email"
+                  placeholder="farmer@email.com"
+                  value={shareEmail}
+                  onChange={(e) => setShareEmail(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+              <div>
+                <Label>Role</Label>
+                <Select value={shareRole} onValueChange={setShareRole}>
+                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="farm_worker">Farm Worker</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="vet">Vet</SelectItem>
+                    <SelectItem value="buyer">Buyer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              className="w-full h-11"
+              disabled={!shareEmail.trim() || sharing}
+              onClick={async () => {
+                if (!onGrantAccess) return;
+                setSharing(true);
+                const granted = await onGrantAccess(animal.id, shareEmail.trim(), shareRole, {
+                  view_records: true,
+                  add_notes: true,
+                  add_weights: true,
+                  add_health: true,
+                  manage_tags: shareRole === 'manager',
+                });
+                setSharing(false);
+                if (granted) setShareEmail('');
+              }}
+            >
+              {sharing ? 'Granting access...' : 'Grant Access'}
+            </Button>
+
+            {accessLoading ? (
+              <p className="text-sm text-muted-foreground">Loading shared access...</p>
+            ) : sharedAccess.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Only you have access right now.</p>
+            ) : (
+              <div className="space-y-2">
+                {sharedAccess.map((access) => (
+                  <div key={access.id} className="flex items-center justify-between rounded-md border p-3">
+                    <div>
+                      <p className="text-sm font-medium">{access.permissions?.grantee_email || access.granted_to}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{access.role.replace('_', ' ')}</p>
+                    </div>
+                    {onRevokeAccess && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => onRevokeAccess(access.id, animal.id)}
+                      >
+                        <UserMinus className="h-3.5 w-3.5 mr-1" /> Revoke
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabs — 4 tabs: Health, Weight, Notes, Tags */}
       <Tabs defaultValue="health" className="space-y-4">
