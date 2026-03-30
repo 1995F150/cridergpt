@@ -5,6 +5,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
+// Auto-generate new tag IDs into the pool
+async function autoGeneratePoolIds(db: any, count: number = 50, userId?: string) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const newTags: { tag_id: string; status: string; generated_by: string | null }[] = [];
+
+  for (let i = 0; i < count; i++) {
+    let suffix = '';
+    for (let j = 0; j < 6; j++) {
+      suffix += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const tagId = `CriderGPT-${suffix}`;
+    newTags.push({ tag_id: tagId, status: 'available', generated_by: userId || null });
+  }
+
+  // Insert, ignoring duplicates
+  const { data, error } = await db
+    .from('livestock_tag_pool')
+    .upsert(newTags, { onConflict: 'tag_id', ignoreDuplicates: true })
+    .select('tag_id');
+
+  if (error) {
+    console.error('Auto-generate pool error:', error);
+  }
+
+  console.log(`Auto-generated ${newTags.length} new tag IDs into pool`);
+  return data || [];
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -88,7 +116,39 @@ Deno.serve(async (req) => {
         }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
+      // Tag not found anywhere — check if pool is empty and auto-generate
+      const { count: availableCount } = await db
+        .from('livestock_tag_pool')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['available', 'programmed'])
+
+      if (availableCount !== null && availableCount < 10) {
+        console.log(`Pool low (${availableCount} remaining), auto-generating 50 new IDs`)
+        await autoGeneratePoolIds(db, 50, userId)
+      }
+
       return new Response(JSON.stringify({ error: 'Tag ID not found. No animal is registered with this ID.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // Duplicate check — ensure the tag_id hasn't been double-assigned
+    const { count: assignCount } = await db
+      .from('livestock_animals')
+      .select('*', { count: 'exact', head: true })
+      .eq('tag_id', tagId)
+    
+    if (assignCount && assignCount > 1) {
+      console.error(`DUPLICATE TAG DETECTED: ${tagId} assigned to ${assignCount} animals`)
+      await db.from('livestock_scan_logs').insert({
+        card_id: tagId,
+        scanned_by: userId,
+        animal_id: animal.id,
+        result: 'duplicate_detected',
+        ip_address: ipAddress,
+      })
+      return new Response(JSON.stringify({ 
+        error: 'Duplicate tag detected. This tag ID is assigned to multiple animals. Please contact admin.',
+        animal,
+      }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     // 4. Authorization check
