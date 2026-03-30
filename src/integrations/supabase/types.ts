@@ -2902,6 +2902,113 @@ export type Database = {
         }
         Relationships: []
       }
+      store_products: {
+        Row: {
+          category: string
+          compare_at_price: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_digital: boolean
+          metadata: Json | null
+          price: number
+          stock_quantity: number
+          stripe_price_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          compare_at_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_digital?: boolean
+          metadata?: Json | null
+          price?: number
+          stock_quantity?: number
+          stripe_price_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          compare_at_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_digital?: boolean
+          metadata?: Json | null
+          price?: number
+          stock_quantity?: number
+          stripe_price_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_purchases: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string | null
+          quantity: number
+          shipping_address: Json | null
+          status: string
+          stripe_session_id: string | null
+          total_price: number
+          unit_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          shipping_address?: Json | null
+          status?: string
+          stripe_session_id?: string | null
+          total_price: number
+          unit_price: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          shipping_address?: Json | null
+          status?: string
+          stripe_session_id?: string | null
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "store_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null
