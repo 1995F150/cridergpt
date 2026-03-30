@@ -2402,6 +2402,7 @@ export type Database = {
           is_public: boolean | null
           materials: Json | null
           notes: string | null
+          production_quantity: number
           sell_price: number | null
           status: string | null
           title: string
@@ -2418,6 +2419,7 @@ export type Database = {
           is_public?: boolean | null
           materials?: Json | null
           notes?: string | null
+          production_quantity?: number
           sell_price?: number | null
           status?: string | null
           title: string
@@ -2434,6 +2436,7 @@ export type Database = {
           is_public?: boolean | null
           materials?: Json | null
           notes?: string | null
+          production_quantity?: number
           sell_price?: number | null
           status?: string | null
           title?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.product_ideas ADD COLUMN IF NOT EXISTS production_quantity integer NOT NULL DEFAULT 100;
