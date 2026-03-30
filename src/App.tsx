@@ -115,6 +115,7 @@ const App = () => {
                       <Route path="/custom-filters" element={<CustomFilters />} />
                       <Route path="/user-agreement" element={<UserAgreement />} />
                       <Route path="/store" element={<SmartIDStore />} />
+                      <Route path="/tag/:tagId" element={<TagLookup />} />
                       
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />

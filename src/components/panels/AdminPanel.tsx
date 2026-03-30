@@ -199,6 +199,7 @@ export function AdminPanel() {
         <TabsContent value="devices"><DeviceManager /></TabsContent>
         <TabsContent value="products"><ProductIdeasTracker /></TabsContent>
         <TabsContent value="tag-orders"><TagOrdersManager /></TabsContent>
+        <TabsContent value="store-products"><StoreProductsManager /></TabsContent>
       </Tabs>
     </div>
   );
