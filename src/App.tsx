@@ -28,6 +28,7 @@ import UserAgreement from "./pages/UserAgreement";
 import SnapchatLensPage from "./pages/SnapchatLensPage";
 import CustomFilters from "./pages/CustomFilters";
 import SmartIDStore from "./pages/SmartIDStore";
+import TagLookup from "./pages/TagLookup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -114,6 +115,7 @@ const App = () => {
                       <Route path="/custom-filters" element={<CustomFilters />} />
                       <Route path="/user-agreement" element={<UserAgreement />} />
                       <Route path="/store" element={<SmartIDStore />} />
+                      <Route path="/tag/:tagId" element={<TagLookup />} />
                       
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />
