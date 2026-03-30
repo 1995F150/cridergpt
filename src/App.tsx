@@ -28,6 +28,7 @@ import UserAgreement from "./pages/UserAgreement";
 import SnapchatLensPage from "./pages/SnapchatLensPage";
 import CustomFilters from "./pages/CustomFilters";
 import SmartIDStore from "./pages/SmartIDStore";
+import TagLookup from "./pages/TagLookup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
