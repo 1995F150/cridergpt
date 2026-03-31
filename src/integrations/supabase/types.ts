@@ -2902,6 +2902,78 @@ export type Database = {
         }
         Relationships: []
       }
+      store_cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      store_orders: {
+        Row: {
+          created_at: string
+          discount: number
+          id: string
+          items: Json
+          notes: string | null
+          shipping_address: Json | null
+          status: string
+          stripe_session_id: string | null
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          discount?: number
+          id?: string
+          items?: Json
+          notes?: string | null
+          shipping_address?: Json | null
+          status?: string
+          stripe_session_id?: string | null
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          discount?: number
+          id?: string
+          items?: Json
+          notes?: string | null
+          shipping_address?: Json | null
+          status?: string
+          stripe_session_id?: string | null
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       store_products: {
         Row: {
           category: string
@@ -2909,6 +2981,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          free_shipping: boolean | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -2917,6 +2990,7 @@ export type Database = {
           price: number
           stock_quantity: number
           stripe_price_id: string | null
+          tags: string[] | null
           title: string
           updated_at: string
         }
@@ -2926,6 +3000,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          free_shipping?: boolean | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -2934,6 +3009,7 @@ export type Database = {
           price?: number
           stock_quantity?: number
           stripe_price_id?: string | null
+          tags?: string[] | null
           title: string
           updated_at?: string
         }
@@ -2943,6 +3019,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          free_shipping?: boolean | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -2951,6 +3028,7 @@ export type Database = {
           price?: number
           stock_quantity?: number
           stripe_price_id?: string | null
+          tags?: string[] | null
           title?: string
           updated_at?: string
         }

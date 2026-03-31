@@ -1,0 +1,286 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { ShoppingCart as CartIcon, Minus, Plus, Trash2, Loader2, MapPin, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+
+interface CartItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  product?: {
+    id: string;
+    title: string;
+    price: number;
+    image_url: string | null;
+    stock_quantity: number;
+    stripe_price_id: string | null;
+    free_shipping: boolean;
+    category: string;
+  };
+}
+
+export function ShoppingCartDrawer() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [showShipping, setShowShipping] = useState(false);
+
+  // Shipping fields
+  const [fullName, setFullName] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+
+  const fetchCart = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data } = await (supabase as any)
+      .from('store_cart_items')
+      .select('id, product_id, quantity')
+      .eq('user_id', user.id);
+
+    if (data && data.length > 0) {
+      const productIds = data.map((d: any) => d.product_id);
+      const { data: products } = await (supabase as any)
+        .from('store_products')
+        .select('id, title, price, image_url, stock_quantity, stripe_price_id, free_shipping, category')
+        .in('id', productIds);
+
+      const productMap = new Map((products || []).map((p: any) => [p.id, p]));
+      setItems(data.map((d: any) => ({ ...d, product: productMap.get(d.product_id) })));
+    } else {
+      setItems([]);
+    }
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => { if (open && user) fetchCart(); }, [open, user, fetchCart]);
+
+  const updateQuantity = async (itemId: string, qty: number) => {
+    if (qty <= 0) {
+      await (supabase as any).from('store_cart_items').delete().eq('id', itemId);
+    } else {
+      await (supabase as any).from('store_cart_items').update({ quantity: qty, updated_at: new Date().toISOString() }).eq('id', itemId);
+    }
+    fetchCart();
+  };
+
+  const clearCart = async () => {
+    if (!user) return;
+    await (supabase as any).from('store_cart_items').delete().eq('user_id', user.id);
+    setItems([]);
+  };
+
+  const subtotal = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  const cartCount = items.reduce((s, i) => s + i.quantity, 0);
+  const hasPhysical = items.some(i => i.product && !i.product.category?.includes('digital'));
+
+  const handleCheckout = async () => {
+    if (!user) { navigate('/auth'); return; }
+    if (items.length === 0) return;
+
+    if (hasPhysical && !showShipping) {
+      setShowShipping(true);
+      return;
+    }
+
+    if (hasPhysical) {
+      if (!fullName.trim() || !addressLine1.trim() || !city.trim() || !state.trim() || !zip.trim()) {
+        toast({ title: 'Complete shipping address', variant: 'destructive' });
+        return;
+      }
+    }
+
+    setCheckoutLoading(true);
+    try {
+      // For single-product carts, use the product's stripe_price_id
+      // For multi-product, we send the first item (can be enhanced later with multi-line-item support)
+      const firstItem = items[0];
+      if (!firstItem.product?.stripe_price_id) {
+        toast({ title: 'Product not available for checkout', variant: 'destructive' });
+        setCheckoutLoading(false);
+        return;
+      }
+
+      const shippingAddress = hasPhysical ? {
+        fullName: fullName.trim(),
+        line1: addressLine1.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        zip: zip.trim(),
+        notes: orderNotes.trim(),
+        method: 'ship',
+      } : null;
+
+      // Process each item as a separate checkout (or first item for now)
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          priceId: firstItem.product.stripe_price_id,
+          planName: 'store-order',
+          quantity: firstItem.quantity,
+          action: 'tag-order',
+          shippingAddress,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        // Create order record
+        await (supabase as any).from('store_orders').insert({
+          user_id: user.id,
+          items: items.map(i => ({
+            product_id: i.product_id,
+            title: i.product?.title,
+            price: i.product?.price,
+            quantity: i.quantity,
+          })),
+          subtotal,
+          total: subtotal,
+          status: 'pending',
+          stripe_session_id: null,
+          shipping_address: shippingAddress,
+          notes: orderNotes.trim() || null,
+        });
+
+        await clearCart();
+        window.open(data.url, '_blank');
+        setOpen(false);
+      }
+    } catch (err: any) {
+      toast({ title: 'Checkout failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="icon" className="relative">
+          <CartIcon className="h-5 w-5" />
+          {cartCount > 0 && (
+            <Badge className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center text-[10px] px-1">
+              {cartCount}
+            </Badge>
+          )}
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="w-full sm:max-w-md flex flex-col">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <CartIcon className="h-5 w-5" /> Shopping Cart
+            {cartCount > 0 && <Badge variant="secondary">{cartCount} items</Badge>}
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="flex-1 overflow-y-auto py-4 space-y-3">
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : !user ? (
+            <div className="text-center py-8 space-y-3">
+              <p className="text-muted-foreground text-sm">Sign in to save items to your cart</p>
+              <Button onClick={() => { navigate('/auth'); setOpen(false); }}>Sign In</Button>
+            </div>
+          ) : items.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">Your cart is empty</p>
+          ) : (
+            items.map(item => (
+              <div key={item.id} className="flex gap-3 p-3 border rounded-lg">
+                {item.product?.image_url ? (
+                  <img src={item.product.image_url} alt="" className="h-16 w-16 rounded object-cover flex-shrink-0" />
+                ) : (
+                  <div className="h-16 w-16 rounded bg-muted flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-sm font-medium line-clamp-1">{item.product?.title}</p>
+                  <p className="text-sm font-bold text-primary">${(item.product?.price || 0).toFixed(2)}</p>
+                  {item.quantity > (item.product?.stock_quantity || 0) && (
+                    <p className="text-[11px] text-amber-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> Custom order — extra time needed
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto text-destructive" onClick={() => updateQuantity(item.id, 0)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+
+          {showShipping && hasPhysical && items.length > 0 && (
+            <div className="space-y-3 pt-2">
+              <Separator />
+              <Label className="flex items-center gap-2 text-sm font-semibold"><MapPin className="h-4 w-4" /> Shipping Address</Label>
+              <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} />
+              <Input placeholder="Street Address" value={addressLine1} onChange={e => setAddressLine1(e.target.value)} />
+              <div className="grid grid-cols-3 gap-2">
+                <Input placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
+                <Input placeholder="State" value={state} onChange={e => setState(e.target.value)} maxLength={2} />
+                <Input placeholder="ZIP" value={zip} onChange={e => setZip(e.target.value)} maxLength={10} />
+              </div>
+              <Textarea placeholder="Order notes (optional)" value={orderNotes} onChange={e => setOrderNotes(e.target.value)} className="h-14" />
+            </div>
+          )}
+        </div>
+
+        {items.length > 0 && user && (
+          <div className="border-t pt-4 space-y-3">
+            <div className="flex justify-between font-bold">
+              <span>Total</span>
+              <span className="text-primary">${subtotal.toFixed(2)}</span>
+            </div>
+            <Button className="w-full h-11" onClick={handleCheckout} disabled={checkoutLoading}>
+              {checkoutLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processing...</> : showShipping ? `Pay $${subtotal.toFixed(2)}` : 'Proceed to Checkout'}
+            </Button>
+            <Button variant="ghost" size="sm" className="w-full text-xs" onClick={clearCart}>Clear Cart</Button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// Hook to add items to cart from anywhere
+export async function addToCart(userId: string, productId: string, quantity: number = 1) {
+  // Upsert: if exists, increment quantity
+  const { data: existing } = await (supabase as any)
+    .from('store_cart_items')
+    .select('id, quantity')
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (existing) {
+    await (supabase as any)
+      .from('store_cart_items')
+      .update({ quantity: existing.quantity + quantity, updated_at: new Date().toISOString() })
+      .eq('id', existing.id);
+  } else {
+    await (supabase as any)
+      .from('store_cart_items')
+      .insert({ user_id: userId, product_id: productId, quantity });
+  }
+}
