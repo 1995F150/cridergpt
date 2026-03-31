@@ -27,6 +27,8 @@ import { DeviceManager } from '@/components/admin/DeviceManager';
 import { ProductIdeasTracker } from '@/components/admin/ProductIdeasTracker';
 import { TagOrdersManager } from '@/components/admin/TagOrdersManager';
 import { StoreProductsManager } from '@/components/admin/StoreProductsManager';
+import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator';
+import { BarcodeGenerator } from '@/components/admin/BarcodeGenerator';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
