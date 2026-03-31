@@ -1,145 +1,109 @@
 
 
-## Combined Plan: Product Ideas Tracker + Smart ID Store + AI Infrastructure Foundation
+## Plan: CriderGPT Official Store Overhaul + Admin Tools
 
-Three features to build in one pass. Minimal edge function usage since you're near the limit.
-
----
-
-### Feature 1: Product Ideas Tracker (Admin + Team)
-
-A new "Products" tab in the Admin Panel for tracking physical product ideas, materials, build status, and notes. Accessible to admin and moderator roles.
-
-**Database: New table `product_ideas`**
-```
-id            uuid PK
-created_by    uuid NOT NULL (references auth.users)
-title         text NOT NULL
-description   text
-category      text DEFAULT 'general' (livestock, electronics, accessories, general)
-status        text DEFAULT 'idea' (idea, researching, materials_bought, prototyping, built, selling, shelved)
-materials     jsonb DEFAULT '[]' (array of {name, cost, bought: bool})
-est_cost      numeric(10,2)
-sell_price    numeric(10,2)
-notes         text
-is_patented   boolean DEFAULT false
-is_public     boolean DEFAULT false (hidden until released)
-created_at    timestamptz DEFAULT now()
-updated_at    timestamptz DEFAULT now()
-```
-
-**RLS**: Admin and moderator roles can CRUD via `has_role()`. No public access.
-
-**UI**: `src/components/admin/ProductIdeasTracker.tsx`
-- Card grid showing each product idea with status badge, cost/price, materials checklist
-- Add/edit modal with all fields
-- Filter by status and category
-- Materials sub-list with checkboxes for "bought" status and running cost total
-- Patent/copyright toggle per item
-
-**Admin Panel**: Add "Products" tab with a Lightbulb icon.
+This is a large feature set. Here's the breakdown organized by priority.
 
 ---
 
-### Feature 2: Smart ID Store (Public Product Page + Stripe Checkout)
+### 1. Transform Store into a Multi-Product Storefront
 
-A public-facing product page for selling physical NFC cow tags at $3.50 each. Uses existing Stripe integration.
+**Current state**: `/store` only sells Smart ID tags with a hardcoded product.
 
-**Database: New table `tag_orders`**
-```
-id            uuid PK
-customer_id   uuid (references auth.users, nullable for guest)
-customer_email text NOT NULL
-customer_name text
-quantity      integer NOT NULL
-unit_price    numeric(10,2) DEFAULT 3.50
-total_price   numeric(10,2)
-status        text DEFAULT 'pending' (pending, paid, processing, shipped, delivered)
-shipping_address jsonb
-stripe_session_id text
-notes         text
-created_at    timestamptz DEFAULT now()
-updated_at    timestamptz DEFAULT now()
-```
+**Changes to `SmartIDStore.tsx` (rename concept to "CriderGPT Store")**:
+- Fetch all active products from `store_products` table and display them in a grid (Amazon-style product cards with image, title, price, stock badge, "Add to Cart" button)
+- Each product card shows stock count (e.g., "12 in stock", "Low stock", "Made to order")
+- Smart ID tags show "FREE SHIPPING" badge
+- If quantity exceeds stock, show warning: "Custom order — allow extra production time"
+- Product detail view when clicking a product card
 
-**RLS**: Users can read their own orders. Admin can read all.
+### 2. Shopping Cart System
 
-**Stripe**: Create a new product "CriderGPT Smart Livestock Tag" at $3.50/unit using Stripe tools. Use `mode: "payment"` for one-time purchase.
+**New DB table**: `store_cart_items` (user_id, product_id, quantity, created_at)
+- Cart persists for signed-in users across sessions
+- Cart icon in store header with item count badge
+- Cart drawer/page showing items, quantities, totals
+- "Checkout" button processes all cart items via Stripe
+- Update `create-checkout` edge function to handle multi-product cart checkout
 
-**Edge function**: Reuse or extend existing `create-checkout` to handle tag orders with dynamic quantity. Add an action parameter (`action: 'tag-order'`) to avoid creating a new function. After checkout, insert into `tag_orders`.
+### 3. Order History & Recommendations
 
-**New page**: `src/pages/SmartIDStore.tsx`
-- Hero section: "Smart Livestock Tags — $3.50 each"
-- Product description: NFC-enabled, weather-coated, works with CriderGPT Smart ID system
-- Quantity selector
-- "Buy Now" button → Stripe checkout
-- FAQ section (how it works, what you need, compatibility)
+**New DB table**: `store_orders` (id, user_id, items JSONB, total, status, stripe_session_id, shipping_address, created_at)
+- Order history page accessible from store profile
+- "You might also like" section based on past order categories
+- Reuse existing `tag_orders` data where applicable
 
-**New route**: `/store` in App.tsx
+### 4. Stock Visibility on Store
 
-**Navigation**: Add "Smart ID Store" link to the sidebar under a new "STORE" group (public, not admin-restricted). Also add a link on the Livestock panel.
+- Store product cards pull `stock_quantity` from `store_products`
+- When quantity selector exceeds stock, show amber warning about custom/backorder
+- Admin sets stock via existing `StoreProductsManager`
 
-**Admin visibility**: Tag orders show up in the existing FilterOrdersManager or a new sub-tab under Admin.
+### 5. Admin QR Code Generator
+
+**New component**: `src/components/admin/QRCodeGenerator.tsx`
+- Uses `qrcode` npm library (client-side generation)
+- Options: URL input, image embed (logo overlay), custom foreground/background colors
+- Edge styles: square, rounded, dots
+- Name each QR code, save as PNG download
+- Gallery of previously generated QR codes (saved to localStorage or Supabase storage)
+
+### 6. Admin Barcode Generator
+
+**New component**: `src/components/admin/BarcodeGenerator.tsx`
+- Uses `jsbarcode` npm library
+- Generate standard UPC/EAN/Code128 barcodes for physical products
+- Name and save as PNG
+- Add to Admin panel as a new tab
+
+### 7. SEO for Store
+
+**Changes to `src/config/seo.ts`**:
+- Add `store` SEO entry with keywords: "CriderGPT store, buy smart livestock tags, NFC ear tags, farm equipment store, livestock supplies online, smart ID tags for cattle"
+
+**Changes to `public/sitemap.xml`**:
+- Add `/store` URL entry
+
+**Structured data**: Add `Product` schema to store page for Google Shopping visibility
+
+### 8. Store Discounts for Signed-In Users
+
+- Show "Sign in to save X%" messaging on products
+- Discount logic in checkout edge function based on user plan tier
 
 ---
 
-### Feature 3: AI Infrastructure Foundation (No Voice Cloning)
-
-Build the groundwork for your own AI system that uses your existing `ai_memory` and `cridergpt_training_corpus` data before calling external APIs.
-
-**Architecture**: Modify the existing `chat-with-ai` edge function to add a "local-first" layer:
+### Database Migrations Needed
 
 ```text
-User Message
-    │
-    ▼
-┌─────────────────────┐
-│ 1. Search ai_memory  │  ← keyword/semantic match
-│ 2. Search corpus     │  ← cridergpt_training_corpus
-│ 3. Check patterns    │  ← tool_pattern memories
-└─────────┬───────────┘
-          │
-    Has confident match?
-    ┌─────┴─────┐
-    │ YES       │ NO
-    ▼           ▼
-Return local   Call OpenAI/Gateway
-answer         (existing flow)
+1. store_cart_items (user_id UUID, product_id UUID FK, quantity INT, created_at)
+2. store_orders (id UUID, user_id UUID, items JSONB, total NUMERIC, status TEXT, stripe_session_id, shipping_address JSONB, created_at)
+3. RLS policies for both tables (users see only their own data)
 ```
 
-**Changes to `chat-with-ai/index.ts`**:
-- Before calling OpenAI, query `ai_memory` and `cridergpt_training_corpus` for matches against the user's message
-- If corpus has a high-confidence match (exact topic or keyword), inject it as context or return it directly
-- Add a `source` field to responses: `"cridergpt-local"` vs `"openai"` vs `"gateway"` so you can track how often your own data answers questions
-- Store successful local-answer patterns back to `ai_memory` with category `self_answer`
+### New Dependencies
+- `qrcode` (QR generation)
+- `jsbarcode` (barcode generation)
 
-**No new edge functions needed** — this modifies the existing `chat-with-ai` function.
+### Files Created/Modified
 
-**Admin visibility**: Add a simple "AI Stats" card to the Admin Dashboard showing:
-- Total memories count
-- Total corpus entries
-- Local answer rate (% of responses served from local data vs API)
-- Last training data import date
+| Action | File |
+|--------|------|
+| Major rewrite | `src/pages/SmartIDStore.tsx` — multi-product storefront |
+| New | `src/components/store/ProductCard.tsx` |
+| New | `src/components/store/ShoppingCart.tsx` |
+| New | `src/components/store/OrderHistory.tsx` |
+| New | `src/components/admin/QRCodeGenerator.tsx` |
+| New | `src/components/admin/BarcodeGenerator.tsx` |
+| Edit | `src/components/panels/AdminPanel.tsx` — add QR + Barcode tabs |
+| Edit | `src/config/seo.ts` — add store SEO |
+| Edit | `public/sitemap.xml` — add /store |
+| Edit | `supabase/functions/create-checkout/index.ts` — multi-item cart support |
+| New | Migration for `store_cart_items`, `store_orders` |
 
-**Future-ready**: This lays the foundation. When you later self-host Ollama/Llama, you swap the OpenAI call for a local model call — the memory/corpus lookup layer stays the same.
-
----
-
-### Files to Create/Edit
-
-| File | Action |
-|------|--------|
-| Migration SQL | `product_ideas` table, `tag_orders` table, RLS policies |
-| `src/components/admin/ProductIdeasTracker.tsx` | New — product ideas CRUD UI |
-| `src/components/panels/AdminPanel.tsx` | Add "Products" tab |
-| `src/pages/SmartIDStore.tsx` | New — public store page |
-| `src/App.tsx` | Add `/store` route |
-| `src/components/NavigationSidebar.tsx` | Add "Store" nav item |
-| `supabase/functions/chat-with-ai/index.ts` | Add local-first memory/corpus lookup layer |
-| `supabase/functions/create-checkout/index.ts` | Add tag-order checkout action |
-| `src/components/admin/AdminDashboard.tsx` | Add AI Stats card |
-
-**Stripe**: Will create a product + price ($3.50 one-time) using Stripe tools before building the checkout flow.
-
-**Edge function count**: Zero new functions. All changes go into existing functions.
+### Technical Notes
+- QR and barcode generation happen entirely client-side (no edge function needed)
+- Cart uses Supabase for persistence so it survives across devices
+- Stock warnings are purely informational — orders over stock are allowed as "custom orders"
+- Product recommendations use simple category matching from order history
 
