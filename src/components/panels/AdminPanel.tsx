@@ -208,6 +208,8 @@ export function AdminPanel() {
         <TabsContent value="products"><ProductIdeasTracker /></TabsContent>
         <TabsContent value="tag-orders"><TagOrdersManager /></TabsContent>
         <TabsContent value="store-products"><StoreProductsManager /></TabsContent>
+        <TabsContent value="qr-generator"><QRCodeGenerator /></TabsContent>
+        <TabsContent value="barcode-generator"><BarcodeGenerator /></TabsContent>
       </Tabs>
     </div>
   );
