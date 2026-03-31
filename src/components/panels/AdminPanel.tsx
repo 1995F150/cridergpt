@@ -159,6 +159,12 @@ export function AdminPanel() {
           <TabsTrigger value="store-products" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <ShoppingBag className="h-4 w-4" /> Store
           </TabsTrigger>
+          <TabsTrigger value="qr-generator" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <QrCode className="h-4 w-4" /> QR Codes
+          </TabsTrigger>
+          <TabsTrigger value="barcode-generator" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Barcode className="h-4 w-4" /> Barcodes
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4" /> Settings
           </TabsTrigger>
