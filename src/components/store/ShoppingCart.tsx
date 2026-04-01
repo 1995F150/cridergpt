@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ShoppingCart as CartIcon, Minus, Plus, Trash2, Loader2, MapPin, AlertTriangle } from 'lucide-react';
+import { ShoppingCart as CartIcon, Minus, Plus, Trash2, Loader2, MapPin, AlertTriangle, Clock, Truck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ interface CartItem {
     stripe_price_id: string | null;
     free_shipping: boolean;
     category: string;
+    production_rate: number | null;
   };
 }
 
@@ -37,9 +38,9 @@ export function ShoppingCartDrawer() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [showShipping, setShowShipping] = useState(false);
 
-  // Shipping fields
   const [fullName, setFullName] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
@@ -57,7 +58,7 @@ export function ShoppingCartDrawer() {
       const productIds = data.map((d: any) => d.product_id);
       const { data: products } = await (supabase as any)
         .from('store_products')
-        .select('id, title, price, image_url, stock_quantity, stripe_price_id, free_shipping, category')
+        .select('id, title, price, image_url, stock_quantity, stripe_price_id, free_shipping, category, production_rate')
         .in('id', productIds);
 
       const productMap = new Map((products || []).map((p: any) => [p.id, p]));
@@ -89,6 +90,14 @@ export function ShoppingCartDrawer() {
   const cartCount = items.reduce((s, i) => s + i.quantity, 0);
   const hasPhysical = items.some(i => i.product && !i.product.category?.includes('digital'));
 
+  const getItemProductionInfo = (item: CartItem) => {
+    if (!item.product || item.quantity <= item.product.stock_quantity) return null;
+    const needed = item.quantity - item.product.stock_quantity;
+    const rate = item.product.production_rate || 20;
+    const days = Math.ceil(needed / rate);
+    return { needed, days, inStock: item.product.stock_quantity };
+  };
+
   const handleCheckout = async () => {
     if (!user) { navigate('/auth'); return; }
     if (items.length === 0) return;
@@ -100,15 +109,13 @@ export function ShoppingCartDrawer() {
 
     if (hasPhysical) {
       if (!fullName.trim() || !addressLine1.trim() || !city.trim() || !state.trim() || !zip.trim()) {
-        toast({ title: 'Complete shipping address', variant: 'destructive' });
+        toast({ title: 'Complete shipping address', description: 'Full Name, Address, City, State, and ZIP are required.', variant: 'destructive' });
         return;
       }
     }
 
     setCheckoutLoading(true);
     try {
-      // For single-product carts, use the product's stripe_price_id
-      // For multi-product, we send the first item (can be enhanced later with multi-line-item support)
       const firstItem = items[0];
       if (!firstItem.product?.stripe_price_id) {
         toast({ title: 'Product not available for checkout', variant: 'destructive' });
@@ -119,6 +126,7 @@ export function ShoppingCartDrawer() {
       const shippingAddress = hasPhysical ? {
         fullName: fullName.trim(),
         line1: addressLine1.trim(),
+        line2: addressLine2.trim() || undefined,
         city: city.trim(),
         state: state.trim(),
         zip: zip.trim(),
@@ -126,7 +134,6 @@ export function ShoppingCartDrawer() {
         method: 'ship',
       } : null;
 
-      // Process each item as a separate checkout (or first item for now)
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           priceId: firstItem.product.stripe_price_id,
@@ -139,7 +146,6 @@ export function ShoppingCartDrawer() {
 
       if (error) throw error;
       if (data?.url) {
-        // Create order record
         await (supabase as any).from('store_orders').insert({
           user_id: user.id,
           items: items.map(i => ({
@@ -198,48 +204,61 @@ export function ShoppingCartDrawer() {
           ) : items.length === 0 ? (
             <p className="text-center text-muted-foreground py-8 text-sm">Your cart is empty</p>
           ) : (
-            items.map(item => (
-              <div key={item.id} className="flex gap-3 p-3 border rounded-lg">
-                {item.product?.image_url ? (
-                  <img src={item.product.image_url} alt="" className="h-16 w-16 rounded object-cover flex-shrink-0" />
-                ) : (
-                  <div className="h-16 w-16 rounded bg-muted flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-sm font-medium line-clamp-1">{item.product?.title}</p>
-                  <p className="text-sm font-bold text-primary">${(item.product?.price || 0).toFixed(2)}</p>
-                  {item.quantity > (item.product?.stock_quantity || 0) && (
-                    <p className="text-[11px] text-amber-600 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" /> Custom order — extra time needed
-                    </p>
+            items.map(item => {
+              const prodInfo = getItemProductionInfo(item);
+              return (
+                <div key={item.id} className="flex gap-3 p-3 border rounded-lg">
+                  {item.product?.image_url ? (
+                    <img src={item.product.image_url} alt="" className="h-16 w-16 rounded object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="h-16 w-16 rounded bg-muted flex-shrink-0" />
                   )}
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto text-destructive" onClick={() => updateQuantity(item.id, 0)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm font-medium line-clamp-1">{item.product?.title}</p>
+                    <p className="text-sm font-bold text-primary">${(item.product?.price || 0).toFixed(2)}</p>
+                    {prodInfo && (
+                      <p className="text-[10px] text-amber-600 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 rounded px-1.5 py-0.5">
+                        <Clock className="h-3 w-3" />
+                        {prodInfo.inStock > 0
+                          ? `${prodInfo.inStock} ship now, ${prodInfo.needed} in ~${prodInfo.days}d`
+                          : `Production: ~${prodInfo.days} day${prodInfo.days > 1 ? 's' : ''}`
+                        }
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
+                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto text-destructive" onClick={() => updateQuantity(item.id, 0)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
           {showShipping && hasPhysical && items.length > 0 && (
             <div className="space-y-3 pt-2">
               <Separator />
+              <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-2 text-center">
+                <p className="text-xs font-medium text-green-700 dark:text-green-400 flex items-center justify-center gap-1">
+                  <Truck className="h-3.5 w-3.5" /> FREE SHIPPING on all orders!
+                </p>
+              </div>
               <Label className="flex items-center gap-2 text-sm font-semibold"><MapPin className="h-4 w-4" /> Shipping Address</Label>
-              <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} />
-              <Input placeholder="Street Address" value={addressLine1} onChange={e => setAddressLine1(e.target.value)} />
+              <Input placeholder="Full Name *" value={fullName} onChange={e => setFullName(e.target.value)} />
+              <Input placeholder="Address Line 1 *" value={addressLine1} onChange={e => setAddressLine1(e.target.value)} />
+              <Input placeholder="Address Line 2 (optional)" value={addressLine2} onChange={e => setAddressLine2(e.target.value)} />
               <div className="grid grid-cols-3 gap-2">
-                <Input placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
-                <Input placeholder="State" value={state} onChange={e => setState(e.target.value)} maxLength={2} />
-                <Input placeholder="ZIP" value={zip} onChange={e => setZip(e.target.value)} maxLength={10} />
+                <Input placeholder="City *" value={city} onChange={e => setCity(e.target.value)} />
+                <Input placeholder="State *" value={state} onChange={e => setState(e.target.value)} maxLength={2} />
+                <Input placeholder="ZIP *" value={zip} onChange={e => setZip(e.target.value)} maxLength={10} />
               </div>
               <Textarea placeholder="Order notes (optional)" value={orderNotes} onChange={e => setOrderNotes(e.target.value)} className="h-14" />
             </div>
@@ -248,6 +267,15 @@ export function ShoppingCartDrawer() {
 
         {items.length > 0 && user && (
           <div className="border-t pt-4 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm text-green-600">
+              <span>Shipping</span>
+              <span>FREE</span>
+            </div>
+            <Separator />
             <div className="flex justify-between font-bold">
               <span>Total</span>
               <span className="text-primary">${subtotal.toFixed(2)}</span>
@@ -263,9 +291,7 @@ export function ShoppingCartDrawer() {
   );
 }
 
-// Hook to add items to cart from anywhere
 export async function addToCart(userId: string, productId: string, quantity: number = 1) {
-  // Upsert: if exists, increment quantity
   const { data: existing } = await (supabase as any)
     .from('store_cart_items')
     .select('id, quantity')

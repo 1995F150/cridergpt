@@ -4,32 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Search, Store, User, Loader2, Sparkles } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Search, Store, User, Loader2, Sparkles, Clock, Truck, SortAsc } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
-import { ProductCard } from '@/components/store/ProductCard';
+import { ProductCard, StoreProduct, getStockInfo, getProductionEstimate } from '@/components/store/ProductCard';
 import { ShoppingCartDrawer, addToCart } from '@/components/store/ShoppingCart';
 import { OrderHistory } from '@/components/store/OrderHistory';
-
-interface StoreProduct {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string;
-  price: number;
-  compare_at_price: number | null;
-  image_url: string | null;
-  stock_quantity: number;
-  is_active: boolean;
-  is_digital: boolean;
-  stripe_price_id: string | null;
-  free_shipping: boolean;
-  tags: string[];
-}
+import { ProductReviews } from '@/components/store/ProductReviews';
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: 'All Products',
@@ -40,11 +26,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   bundles: 'Bundles',
 };
 
+type SortOption = 'newest' | 'price-low' | 'price-high' | 'name';
+
 export default function SmartIDStore() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<SortOption>('newest');
   const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(null);
   const [quantity, setQuantity] = useState(1);
   const { user } = useAuth();
@@ -62,11 +51,20 @@ export default function SmartIDStore() {
     })();
   }, []);
 
-  const filtered = products.filter(p => {
-    if (category !== 'all' && p.category !== category) return false;
-    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = products
+    .filter(p => {
+      if (category !== 'all' && p.category !== category) return false;
+      if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sort) {
+        case 'price-low': return a.price - b.price;
+        case 'price-high': return b.price - a.price;
+        case 'name': return a.title.localeCompare(b.title);
+        default: return 0; // already sorted by newest
+      }
+    });
 
   const categories = ['all', ...new Set(products.map(p => p.category))];
 
@@ -93,10 +91,11 @@ export default function SmartIDStore() {
     setQuantity(1);
   };
 
-  // Recommendations based on first product category
   const recommendations = selectedProduct
     ? products.filter(p => p.id !== selectedProduct.id && p.category === selectedProduct.category).slice(0, 4)
     : [];
+
+  const productionEstimate = selectedProduct ? getProductionEstimate(selectedProduct, quantity) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,6 +126,11 @@ export default function SmartIDStore() {
         </div>
       </div>
 
+      {/* Free Shipping Banner */}
+      <div className="bg-green-600 text-white text-center py-1.5 text-xs font-medium flex items-center justify-center gap-1.5">
+        <Truck className="h-3.5 w-3.5" /> FREE SHIPPING on all orders! Ensure shipping info is complete.
+      </div>
+
       {/* Product Detail Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedProduct(null)}>
@@ -146,6 +150,7 @@ export default function SmartIDStore() {
                 <div>
                   <Badge variant="outline" className="text-[10px] mb-2">{selectedProduct.category}</Badge>
                   <h2 className="text-xl font-bold">{selectedProduct.title}</h2>
+                  {selectedProduct.sku && <p className="text-[10px] text-muted-foreground">SKU: {selectedProduct.sku}</p>}
                 </div>
                 {selectedProduct.description && (
                   <p className="text-sm text-muted-foreground">{selectedProduct.description}</p>
@@ -156,9 +161,12 @@ export default function SmartIDStore() {
                     <span className="text-sm text-muted-foreground line-through">${selectedProduct.compare_at_price.toFixed(2)}</span>
                   )}
                 </div>
-                <p className={`text-sm font-medium ${selectedProduct.stock_quantity > 10 ? 'text-green-600' : selectedProduct.stock_quantity > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>
-                  {selectedProduct.stock_quantity > 10 ? `${selectedProduct.stock_quantity} in stock` : selectedProduct.stock_quantity > 0 ? `Only ${selectedProduct.stock_quantity} left` : 'Made to order'}
-                </p>
+
+                {/* Stock info */}
+                {(() => {
+                  const stock = getStockInfo(selectedProduct);
+                  return <p className={`text-sm font-medium ${stock.color}`}>{stock.label}</p>;
+                })()}
 
                 {/* Quantity */}
                 <div className="flex items-center gap-3">
@@ -166,11 +174,22 @@ export default function SmartIDStore() {
                   <Input type="number" min={1} value={quantity} onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))} className="w-20 text-center" />
                   <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>+</Button>
                 </div>
-                {quantity > selectedProduct.stock_quantity && selectedProduct.stock_quantity > 0 && (
-                  <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2">
-                    ⚠️ Custom order — exceeds stock. Allow extra production time.
-                  </p>
+
+                {/* Production estimate */}
+                {productionEstimate && (
+                  <div className="text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-1">
+                    <p className="font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" /> Custom Order — Split Shipment
+                    </p>
+                    <p className="text-amber-600 dark:text-amber-500">
+                      {productionEstimate.inStock > 0
+                        ? `${productionEstimate.inStock} ship immediately. ${productionEstimate.needed} need production (~${productionEstimate.days} day${productionEstimate.days > 1 ? 's' : ''}).`
+                        : `${productionEstimate.needed} units need production. Estimated ~${productionEstimate.days} day${productionEstimate.days > 1 ? 's' : ''}.`
+                      }
+                    </p>
+                  </div>
                 )}
+
                 <div className="text-lg font-bold flex justify-between">
                   <span>Total</span>
                   <span className="text-primary">${(selectedProduct.price * quantity).toFixed(2)}</span>
@@ -185,6 +204,12 @@ export default function SmartIDStore() {
                 </Button>
               </div>
             </div>
+
+            {/* Reviews */}
+            <div className="border-t p-4">
+              <ProductReviews productId={selectedProduct.id} />
+            </div>
+
             {/* Recommendations */}
             {recommendations.length > 0 && (
               <div className="border-t p-4">
@@ -212,11 +237,25 @@ export default function SmartIDStore() {
           </TabsList>
 
           <TabsContent value="shop" className="space-y-4">
-            {/* Search + Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            {/* Search + Filters + Sort */}
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+                </div>
+                <Select value={sort} onValueChange={v => setSort(v as SortOption)}>
+                  <SelectTrigger className="w-full sm:w-44">
+                    <SortAsc className="h-4 w-4 mr-1" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="name">Name A-Z</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex gap-1.5 flex-wrap">
                 {categories.map(c => (
