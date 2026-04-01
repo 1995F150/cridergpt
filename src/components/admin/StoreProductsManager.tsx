@@ -34,6 +34,7 @@ const CATEGORIES = ['smart-id', 'accessories', 'equipment', 'digital', 'bundles'
 const defaultForm = {
   title: '', description: '', category: 'smart-id', price: '', compare_at_price: '',
   image_url: '', stock_quantity: '0', is_active: true, is_digital: false, stripe_price_id: '',
+  production_rate: '20', sku: '',
 };
 
 export function StoreProductsManager() {
