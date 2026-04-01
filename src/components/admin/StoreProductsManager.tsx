@@ -111,6 +111,8 @@ export function StoreProductsManager() {
       is_active: p.is_active,
       is_digital: p.is_digital,
       stripe_price_id: p.stripe_price_id || '',
+      production_rate: (p as any).production_rate?.toString() || '20',
+      sku: (p as any).sku || '',
     });
     setDialogOpen(true);
   };
