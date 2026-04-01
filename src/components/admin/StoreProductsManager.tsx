@@ -34,6 +34,7 @@ const CATEGORIES = ['smart-id', 'accessories', 'equipment', 'digital', 'bundles'
 const defaultForm = {
   title: '', description: '', category: 'smart-id', price: '', compare_at_price: '',
   image_url: '', stock_quantity: '0', is_active: true, is_digital: false, stripe_price_id: '',
+  production_rate: '20', sku: '',
 };
 
 export function StoreProductsManager() {
@@ -68,6 +69,8 @@ export function StoreProductsManager() {
       is_active: form.is_active,
       is_digital: form.is_digital,
       stripe_price_id: form.stripe_price_id || null,
+      production_rate: parseInt(form.production_rate) || 20,
+      sku: form.sku || null,
     };
 
     if (editingId) {
@@ -108,6 +111,8 @@ export function StoreProductsManager() {
       is_active: p.is_active,
       is_digital: p.is_digital,
       stripe_price_id: p.stripe_price_id || '',
+      production_rate: (p as any).production_rate?.toString() || '20',
+      sku: (p as any).sku || '',
     });
     setDialogOpen(true);
   };
@@ -157,6 +162,10 @@ export function StoreProductsManager() {
               </div>
               <div><Label>Image URL</Label><Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." /></div>
               <div><Label>Stripe Price ID</Label><Input value={form.stripe_price_id} onChange={e => setForm(f => ({ ...f, stripe_price_id: e.target.value }))} placeholder="price_xxx" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Production Rate (units/day)</Label><Input type="number" value={form.production_rate} onChange={e => setForm(f => ({ ...f, production_rate: e.target.value }))} /></div>
+                <div><Label>SKU</Label><Input value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} placeholder="Optional" /></div>
+              </div>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} /><Label>Active</Label></div>
                 <div className="flex items-center gap-2"><Switch checked={form.is_digital} onCheckedChange={v => setForm(f => ({ ...f, is_digital: v }))} /><Label>Digital Product</Label></div>

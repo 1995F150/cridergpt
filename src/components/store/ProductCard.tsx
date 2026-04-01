@@ -1,9 +1,9 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Truck, Package } from 'lucide-react';
+import { ShoppingCart, Truck, Package, Clock } from 'lucide-react';
 
-interface StoreProduct {
+export interface StoreProduct {
   id: string;
   title: string;
   description: string | null;
@@ -17,6 +17,8 @@ interface StoreProduct {
   stripe_price_id: string | null;
   free_shipping: boolean;
   tags: string[];
+  production_rate: number | null;
+  sku: string | null;
 }
 
 interface ProductCardProps {
@@ -25,18 +27,22 @@ interface ProductCardProps {
   onViewDetails: (product: StoreProduct) => void;
 }
 
-export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCardProps) {
-  const stockLabel = product.stock_quantity > 10
-    ? `${product.stock_quantity} in stock`
-    : product.stock_quantity > 0
-    ? `Only ${product.stock_quantity} left`
-    : 'Made to order';
+export function getStockInfo(product: StoreProduct) {
+  if (product.stock_quantity > 10) return { label: `${product.stock_quantity} in stock`, color: 'text-green-600', level: 'high' as const };
+  if (product.stock_quantity > 0) return { label: `Only ${product.stock_quantity} left`, color: 'text-amber-600', level: 'low' as const };
+  return { label: 'Made to order', color: 'text-muted-foreground', level: 'none' as const };
+}
 
-  const stockColor = product.stock_quantity > 10
-    ? 'text-green-600'
-    : product.stock_quantity > 0
-    ? 'text-amber-600'
-    : 'text-muted-foreground';
+export function getProductionEstimate(product: StoreProduct, quantity: number) {
+  if (quantity <= product.stock_quantity) return null;
+  const needed = quantity - product.stock_quantity;
+  const rate = product.production_rate || 20;
+  const days = Math.ceil(needed / rate);
+  return { needed, days, inStock: product.stock_quantity };
+}
+
+export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCardProps) {
+  const stock = getStockInfo(product);
 
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-shadow cursor-pointer border-border/60">
@@ -65,6 +71,20 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
             </Badge>
           )}
         </div>
+        {stock.level === 'low' && (
+          <div className="absolute bottom-2 left-2">
+            <Badge variant="outline" className="bg-background/80 backdrop-blur text-[10px] text-amber-600 border-amber-300">
+              Limited stock
+            </Badge>
+          </div>
+        )}
+        {stock.level === 'none' && (
+          <div className="absolute bottom-2 left-2">
+            <Badge variant="outline" className="bg-background/80 backdrop-blur text-[10px] gap-1">
+              <Clock className="h-3 w-3" /> Made to order
+            </Badge>
+          </div>
+        )}
       </div>
 
       <CardContent className="p-3 space-y-2">
@@ -83,7 +103,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
           )}
         </div>
 
-        <p className={`text-[11px] font-medium ${stockColor}`}>{stockLabel}</p>
+        <p className={`text-[11px] font-medium ${stock.color}`}>{stock.label}</p>
 
         <Button
           className="w-full h-9 text-xs gap-1.5"

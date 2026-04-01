@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ClipboardList, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { ClipboardList, Package, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -25,7 +25,8 @@ interface Order {
 const statusColors: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800',
   paid: 'bg-green-100 text-green-800',
-  shipped: 'bg-blue-100 text-blue-800',
+  processing: 'bg-blue-100 text-blue-800',
+  shipped: 'bg-blue-200 text-blue-900',
   delivered: 'bg-green-200 text-green-900',
   cancelled: 'bg-red-100 text-red-800',
 };
@@ -79,7 +80,7 @@ export function OrderHistory() {
                       {(order.items as OrderItem[]).length} item{(order.items as OrderItem[]).length !== 1 ? 's' : ''} — ${order.total.toFixed(2)}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      {new Date(order.created_at).toLocaleDateString()}
+                      Order #{order.id.slice(0, 8).toUpperCase()} · {new Date(order.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -98,6 +99,19 @@ export function OrderHistory() {
                       <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Shipping</span>
+                    <span>FREE</span>
+                  </div>
+                  {order.shipping_address && (
+                    <div className="text-xs text-muted-foreground pt-1 border-t flex items-start gap-1">
+                      <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                      <span>
+                        {order.shipping_address.fullName}, {order.shipping_address.line1}
+                        {order.shipping_address.line2 ? `, ${order.shipping_address.line2}` : ''}, {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.zip}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

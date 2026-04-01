@@ -2988,6 +2988,8 @@ export type Database = {
           is_digital: boolean
           metadata: Json | null
           price: number
+          production_rate: number | null
+          sku: string | null
           stock_quantity: number
           stripe_price_id: string | null
           tags: string[] | null
@@ -3007,6 +3009,8 @@ export type Database = {
           is_digital?: boolean
           metadata?: Json | null
           price?: number
+          production_rate?: number | null
+          sku?: string | null
           stock_quantity?: number
           stripe_price_id?: string | null
           tags?: string[] | null
@@ -3026,6 +3030,8 @@ export type Database = {
           is_digital?: boolean
           metadata?: Json | null
           price?: number
+          production_rate?: number | null
+          sku?: string | null
           stock_quantity?: number
           stripe_price_id?: string | null
           tags?: string[] | null
@@ -3080,6 +3086,60 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "store_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "store_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_reviews: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          id: string
+          order_id: string | null
+          product_id: string
+          rating: number
+          title: string | null
+          updated_at: string | null
+          user_id: string
+          verified_purchase: boolean | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          product_id: string
+          rating: number
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+          verified_purchase?: boolean | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verified_purchase?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "store_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_reviews_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "store_products"
