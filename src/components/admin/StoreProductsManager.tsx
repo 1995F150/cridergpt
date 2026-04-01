@@ -69,6 +69,8 @@ export function StoreProductsManager() {
       is_active: form.is_active,
       is_digital: form.is_digital,
       stripe_price_id: form.stripe_price_id || null,
+      production_rate: parseInt(form.production_rate) || 20,
+      sku: form.sku || null,
     };
 
     if (editingId) {
