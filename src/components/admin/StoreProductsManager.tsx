@@ -162,6 +162,10 @@ export function StoreProductsManager() {
               </div>
               <div><Label>Image URL</Label><Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." /></div>
               <div><Label>Stripe Price ID</Label><Input value={form.stripe_price_id} onChange={e => setForm(f => ({ ...f, stripe_price_id: e.target.value }))} placeholder="price_xxx" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Production Rate (units/day)</Label><Input type="number" value={form.production_rate} onChange={e => setForm(f => ({ ...f, production_rate: e.target.value }))} /></div>
+                <div><Label>SKU</Label><Input value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} placeholder="Optional" /></div>
+              </div>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} /><Label>Active</Label></div>
                 <div className="flex items-center gap-2"><Switch checked={form.is_digital} onCheckedChange={v => setForm(f => ({ ...f, is_digital: v }))} /><Label>Digital Product</Label></div>
