@@ -127,8 +127,15 @@ export const seoConfig: Record<string, SEOConfig> = {
   store: {
     title: "CriderGPT Store — Smart Livestock Tags, NFC Ear Tags & Farm Supplies",
     description: "Shop the official CriderGPT Store. Buy Smart NFC livestock ear tags, farm equipment, and accessories. Free shipping on Smart ID tags. Track animals with a phone tap.",
-    keywords: "CriderGPT store, buy smart livestock tags, NFC ear tags, farm equipment store, livestock supplies online, smart ID tags for cattle, NFC cattle tags, livestock tracking tags, buy NFC tags, farm supplies, CriderGPT products, livestock management tools",
+    keywords: "CriderGPT store, buy smart livestock tags, NFC ear tags, farm equipment store, livestock supplies online, smart ID tags for cattle, NFC cattle tags, smart animal ID tags, livestock tracking tags, buy NFC tags, farm supplies, CriderGPT products, livestock management tools",
     canonical: "https://cridergpt.lovable.app/store",
+    ogImage: "https://cridergpt.lovable.app/lovable-uploads/1b1242ff-1483-4ec4-ba1d-41b6c2478a76.png"
+  },
+  "custom-filters": {
+    title: "Custom Snapchat Filters from $5 | CriderGPT",
+    description: "Order custom Snapchat filters and lenses starting at $5. Made by a verified Snap developer with 141K+ reach. BOGO deals, loyalty discounts, and lifetime use included.",
+    keywords: "custom snapchat filter, snapchat lens maker, custom snap filter, buy snapchat filter, cheap snapchat filter, custom geofilter, snapchat developer, truck chrome snapchat filter, Snapchat lens creator, CriderGPT filters",
+    canonical: "https://cridergpt.lovable.app/custom-filters",
     ogImage: "https://cridergpt.lovable.app/lovable-uploads/1b1242ff-1483-4ec4-ba1d-41b6c2478a76.png"
   }
 };

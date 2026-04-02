@@ -168,6 +168,14 @@ export default function CustomFilters() {
 
     setSubmitting(true);
     try {
+      // For Stripe payments, go straight to checkout without pre-inserting
+      // The filter-checkout edge function handles order creation after payment
+      if (form.payment_method === 'stripe') {
+        await handleStripeCheckout();
+        return;
+      }
+
+      // For non-Stripe methods (cashapp, no payment method), insert the order
       const { data: insertedOrder, error } = await (supabase as any)
         .from('filter_orders')
         .insert({
@@ -181,7 +189,7 @@ export default function CustomFilters() {
           price_range_max: tier.price + complexity.surcharge,
           agreed_price: finalPrice,
           payment_method: form.payment_method || null,
-          payment_status: 'pending',
+          payment_status: isBogoEligible ? 'paid' : 'pending',
           status: 'new',
           user_id: user?.id || null,
           discount_applied: discountAmount,
@@ -196,13 +204,7 @@ export default function CustomFilters() {
 
       if (error) throw error;
 
-      if (form.payment_method === 'stripe' && insertedOrder) {
-        await handleStripeCheckout(insertedOrder.id);
-        return;
-      }
-
       if (form.payment_method === 'cashapp' && insertedOrder && !isBogoEligible) {
-        // Open Cash App payment link with the final price in a new tab
         const cashAppUrl = `https://cash.app/$1995f150black/${finalPrice}`;
         window.open(cashAppUrl, '_blank');
         toast.success('Cash App opened! After sending payment, your order is submitted.');

@@ -16,6 +16,7 @@ import { ProductCard, StoreProduct, getStockInfo, getProductionEstimate } from '
 import { ShoppingCartDrawer, addToCart } from '@/components/store/ShoppingCart';
 import { OrderHistory } from '@/components/store/OrderHistory';
 import { ProductReviews } from '@/components/store/ProductReviews';
+import { ProfileDropdown } from '@/components/ProfileDropdown';
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: 'All Products',
@@ -116,7 +117,9 @@ export default function SmartIDStore() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!user && (
+            {user ? (
+              <ProfileDropdown />
+            ) : (
               <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => navigate('/auth')}>
                 <User className="h-3.5 w-3.5" /> Sign in for discounts
               </Button>

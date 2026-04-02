@@ -46,7 +46,6 @@ function getWebhookSecret(eventType: string): string {
 async function updateUserSubscription(customerId: string, plan: string, subscriptionId?: string, priceId?: string) {
   console.log(`🔄 Updating user subscription: customerId=${customerId}, plan=${plan}, subscriptionId=${subscriptionId}`);
   
-  // Get customer from Stripe to find email
   const customer = await stripe.customers.retrieve(customerId);
   if (!customer || customer.deleted) {
     console.error('❌ Customer not found or deleted');
@@ -63,7 +62,6 @@ async function updateUserSubscription(customerId: string, plan: string, subscrip
   
   console.log(`🔍 Looking for user with email: ${email}`);
   
-  // Get user_id from auth.users by email
   const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
   let targetUserId = null;
   
@@ -80,7 +78,6 @@ async function updateUserSubscription(customerId: string, plan: string, subscrip
     return;
   }
   
-  // Get subscription details if we have subscription ID
   let subscriptionData = null;
   if (subscriptionId) {
     try {
@@ -91,7 +88,6 @@ async function updateUserSubscription(customerId: string, plan: string, subscrip
     }
   }
   
-  // Prepare subscription update data
   const subscriptionUpdate = {
     user_id: targetUserId,
     email: email,
@@ -115,7 +111,6 @@ async function updateUserSubscription(customerId: string, plan: string, subscrip
   
   console.log(`💾 Updating user_subscriptions table for user ${targetUserId}`);
   
-  // Update user_subscriptions table with complete subscription info
   const { error: subscriptionError } = await supabase
     .from('user_subscriptions')
     .upsert(subscriptionUpdate, { 
@@ -130,7 +125,6 @@ async function updateUserSubscription(customerId: string, plan: string, subscrip
   
   console.log(`✅ Successfully updated subscription for user ${targetUserId} (${email}) to ${plan}`);
   
-  // Also update ai_usage table for backward compatibility
   const { error: usageError } = await supabase
     .from('ai_usage')
     .upsert({
@@ -149,7 +143,6 @@ async function updateUserSubscription(customerId: string, plan: string, subscrip
     console.log('✅ Also updated ai_usage table for backward compatibility');
   }
   
-  // Send real-time notification for immediate frontend update
   const notificationData = {
     user_id: targetUserId,
     notification_type: 'subscription_updated',
@@ -174,6 +167,116 @@ async function updateUserSubscription(customerId: string, plan: string, subscrip
   }
 }
 
+// Handle paid tag/store orders from checkout.session.completed
+async function handlePaidOrder(session: Stripe.Checkout.Session) {
+  const metadata = session.metadata || {};
+  const action = metadata.action;
+  const userId = metadata.userId;
+  const customerId = session.customer as string;
+
+  if (!userId) {
+    console.log('⚠️ No userId in session metadata, skipping order creation');
+    return;
+  }
+
+  // Get customer email
+  let email = session.customer_email || session.customer_details?.email;
+  if (!email && customerId) {
+    try {
+      const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+      email = customer.email || undefined;
+    } catch (_) {}
+  }
+
+  const now = new Date().toISOString();
+
+  if (action === 'tag-order') {
+    const qty = parseInt(metadata.quantity || '1');
+    let shippingAddress = null;
+    let customerName = metadata.customerName || null;
+    try { shippingAddress = metadata.shippingAddress ? JSON.parse(metadata.shippingAddress) : null; } catch (_) {}
+    if (!customerName && shippingAddress?.fullName) customerName = shippingAddress.fullName;
+
+    const unitPrice = 3.50;
+    // Idempotent: check if order already exists for this session
+    const { data: existing } = await supabase
+      .from('tag_orders')
+      .select('id')
+      .eq('stripe_session_id', session.id)
+      .maybeSingle();
+
+    if (existing) {
+      console.log(`⚠️ Tag order already exists for session ${session.id}`);
+      return;
+    }
+
+    const { error } = await supabase.from('tag_orders').insert({
+      customer_id: userId,
+      customer_email: email || null,
+      customer_name: customerName,
+      quantity: qty,
+      unit_price: unitPrice,
+      total_price: unitPrice * qty,
+      stripe_session_id: session.id,
+      stripe_payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+      shipping_address: shippingAddress,
+      notes: shippingAddress?.notes || null,
+      status: 'pending',
+      payment_status: 'paid',
+      paid_at: now,
+    });
+
+    if (error) {
+      console.error('❌ Failed to create tag order:', error);
+    } else {
+      console.log(`✅ Tag order created (paid) for session ${session.id}, qty=${qty}`);
+    }
+
+  } else if (action === 'store-order') {
+    let cartItems = null;
+    let shippingAddress = null;
+    try { cartItems = metadata.cartItems ? JSON.parse(metadata.cartItems) : null; } catch (_) {}
+    try { shippingAddress = metadata.shippingAddress ? JSON.parse(metadata.shippingAddress) : null; } catch (_) {}
+
+    // Idempotent check
+    const { data: existing } = await supabase
+      .from('store_orders')
+      .select('id')
+      .eq('stripe_session_id', session.id)
+      .maybeSingle();
+
+    if (existing) {
+      console.log(`⚠️ Store order already exists for session ${session.id}`);
+      return;
+    }
+
+    const total = (session.amount_total || 0) / 100;
+
+    const { error } = await supabase.from('store_orders').insert({
+      user_id: userId,
+      items: cartItems || [],
+      subtotal: total,
+      total: total,
+      status: 'pending',
+      stripe_session_id: session.id,
+      stripe_payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+      shipping_address: shippingAddress,
+      notes: shippingAddress?.notes || null,
+      payment_status: 'paid',
+      paid_at: now,
+    });
+
+    if (error) {
+      console.error('❌ Failed to create store order:', error);
+    } else {
+      console.log(`✅ Store order created (paid) for session ${session.id}`);
+    }
+
+    // Clear cart after successful payment
+    await supabase.from('store_cart_items').delete().eq('user_id', userId);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -187,7 +290,6 @@ serve(async (req) => {
       throw new Error('No stripe signature found');
     }
 
-    // Parse the event first to get the type
     const event = JSON.parse(body) as Stripe.Event;
     const webhookSecret = getWebhookSecret(event.type);
     
@@ -196,7 +298,6 @@ serve(async (req) => {
       return new Response('Event type not configured', { status: 200 });
     }
 
-    // Verify the webhook signature
     let verifiedEvent: Stripe.Event;
     try {
       verifiedEvent = stripe.webhooks.constructEvent(body, signature, webhookSecret);
@@ -207,7 +308,6 @@ serve(async (req) => {
 
     console.log(`🎯 Processing webhook event: ${verifiedEvent.type}`);
 
-    // Handle different event types
     switch (verifiedEvent.type) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
@@ -236,7 +336,6 @@ serve(async (req) => {
         const customerId = session.customer as string;
         
         if (session.mode === 'subscription' && session.subscription) {
-          // Handle subscription checkout
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
           const priceId = subscription.items.data[0]?.price.id;
           
@@ -246,12 +345,14 @@ serve(async (req) => {
             await updateUserSubscription(customerId, plan, subscription.id, priceId);
           }
         } else if (session.mode === 'payment' && session.payment_status === 'paid') {
-          // Handle one-time payment (lifetime plan)
           const planName = session.metadata?.planName;
-          console.log(`💎 One-time payment completed: planName=${planName}, customerId=${customerId}`);
+          const action = session.metadata?.action;
+          console.log(`💎 One-time payment completed: planName=${planName}, action=${action}, customerId=${customerId}`);
           
-          if (planName === 'lifetime') {
-            // Get customer email to find user
+          // Handle tag orders and store orders
+          if (action === 'tag-order' || action === 'store-order') {
+            await handlePaidOrder(session);
+          } else if (planName === 'lifetime') {
             const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
             const email = customer.email;
             
@@ -260,7 +361,6 @@ serve(async (req) => {
               const user = authUser?.users?.find(u => u.email === email);
               
               if (user) {
-                // Update user to lifetime plan
                 await supabase.from('ai_usage').upsert({
                   user_id: user.id,
                   email: email,
@@ -268,13 +368,11 @@ serve(async (req) => {
                   updated_at: new Date().toISOString()
                 }, { onConflict: 'user_id' });
                 
-                // Update profiles tier
                 await supabase.from('profiles').update({
                   tier: 'lifetime',
                   stripe_customer_id: customerId,
                 }).eq('user_id', user.id);
                 
-                // Update user_subscriptions
                 await supabase.from('user_subscriptions').upsert({
                   user_id: user.id,
                   email: email,
@@ -285,10 +383,8 @@ serve(async (req) => {
                   metadata: { lifetime: true, payment_intent: session.payment_intent }
                 }, { onConflict: 'user_id' });
                 
-                // Increment lifetime plan count
                 await supabase.rpc('increment_lifetime_count' as any);
                 
-                // Send notification
                 await supabase.from('feature_notifications').insert({
                   user_id: user.id,
                   notification_type: 'subscription_updated',
@@ -306,7 +402,6 @@ serve(async (req) => {
       case 'invoice.payment_failed': {
         const invoice = verifiedEvent.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
-        // Downgrade to free plan on payment failure
         await updateUserSubscription(customerId, 'free');
         break;
       }

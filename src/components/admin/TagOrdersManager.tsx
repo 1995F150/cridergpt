@@ -39,6 +39,7 @@ export function TagOrdersManager() {
     const { data, error } = await (supabase as any)
       .from('tag_orders')
       .select('*')
+      .eq('payment_status', 'paid')
       .order('created_at', { ascending: false });
 
     if (error) {

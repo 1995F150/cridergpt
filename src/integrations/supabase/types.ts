@@ -2936,8 +2936,11 @@ export type Database = {
           id: string
           items: Json
           notes: string | null
+          paid_at: string | null
+          payment_status: string
           shipping_address: Json | null
           status: string
+          stripe_payment_intent: string | null
           stripe_session_id: string | null
           subtotal: number
           total: number
@@ -2950,8 +2953,11 @@ export type Database = {
           id?: string
           items?: Json
           notes?: string | null
+          paid_at?: string | null
+          payment_status?: string
           shipping_address?: Json | null
           status?: string
+          stripe_payment_intent?: string | null
           stripe_session_id?: string | null
           subtotal?: number
           total?: number
@@ -2964,8 +2970,11 @@ export type Database = {
           id?: string
           items?: Json
           notes?: string | null
+          paid_at?: string | null
+          payment_status?: string
           shipping_address?: Json | null
           status?: string
+          stripe_payment_intent?: string | null
           stripe_session_id?: string | null
           subtotal?: number
           total?: number
@@ -3374,9 +3383,12 @@ export type Database = {
           customer_name: string | null
           id: string
           notes: string | null
+          paid_at: string | null
+          payment_status: string
           quantity: number
           shipping_address: Json | null
           status: string | null
+          stripe_payment_intent: string | null
           stripe_session_id: string | null
           total_price: number | null
           unit_price: number | null
@@ -3389,9 +3401,12 @@ export type Database = {
           customer_name?: string | null
           id?: string
           notes?: string | null
+          paid_at?: string | null
+          payment_status?: string
           quantity: number
           shipping_address?: Json | null
           status?: string | null
+          stripe_payment_intent?: string | null
           stripe_session_id?: string | null
           total_price?: number | null
           unit_price?: number | null
@@ -3404,9 +3419,12 @@ export type Database = {
           customer_name?: string | null
           id?: string
           notes?: string | null
+          paid_at?: string | null
+          payment_status?: string
           quantity?: number
           shipping_address?: Json | null
           status?: string | null
+          stripe_payment_intent?: string | null
           stripe_session_id?: string | null
           total_price?: number | null
           unit_price?: number | null
