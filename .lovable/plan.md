@@ -1,109 +1,136 @@
 
+Goal: fix the fake/unpaid order problem, restore signed-in store account UI, and strengthen store + custom filter discoverability under the CriderGPT brand.
 
-## Plan: CriderGPT Official Store Overhaul + Admin Tools
+What I found
+1. Unpaid orders are being created too early.
+- `supabase/functions/create-checkout/index.ts` inserts into `tag_orders` before Stripe payment is completed.
+- `src/components/store/ShoppingCart.tsx` also inserts into `store_orders` before payment, then opens Stripe.
+- `src/pages/CustomFilters.tsx` inserts `filter_orders` before Stripe payment too.
+- Result: cancelled checkout sessions still leave “pending” admin orders.
 
-This is a large feature set. Here's the breakdown organized by priority.
+2. The store cart checkout is not truly a full cart checkout.
+- `ShoppingCart.tsx` only sends the first cart item to `create-checkout`.
+- It hardcodes `action: 'tag-order'`, so general store purchases can get mixed into tag orders.
 
----
+3. The signed-in account UI is missing on `/store`.
+- `SmartIDStore.tsx` uses a custom header and does not render `ProfileDropdown`, so signed-in users do not see their avatar/account controls there.
 
-### 1. Transform Store into a Multi-Product Storefront
+4. SEO is partly in place, but not enough to guarantee growth.
+- `/store` already has a CriderGPT title, so Google likely has stale indexing or weak route authority.
+- `/custom-filters` uses page-level Helmet tags, but its SEO is not centralized like the main app.
+- Keyword improvements can help, but no code change can promise 5,000 views/week by itself.
 
-**Current state**: `/store` only sells Smart ID tags with a hardcoded product.
+Implementation plan
 
-**Changes to `SmartIDStore.tsx` (rename concept to "CriderGPT Store")**:
-- Fetch all active products from `store_products` table and display them in a grid (Amazon-style product cards with image, title, price, stock badge, "Add to Cart" button)
-- Each product card shows stock count (e.g., "12 in stock", "Low stock", "Made to order")
-- Smart ID tags show "FREE SHIPPING" badge
-- If quantity exceeds stock, show warning: "Custom order — allow extra production time"
-- Product detail view when clicking a product card
+1. Secure payment-confirmed order flow
+- Add explicit payment lifecycle fields to store/tag/filter order tables, such as:
+  - `payment_status`
+  - `checkout_status`
+  - `paid_at`
+  - optional `stripe_payment_intent`
+- Change the flow so orders are not admin-visible unless Stripe confirms payment.
+- Keep unpaid sessions as hidden drafts/internal records only if needed for reconciliation.
+- Remove the client-side pre-payment insert from `ShoppingCart.tsx`.
+- Update the custom filter flow to follow the same rule so unpaid filter requests do not show as real orders either.
 
-### 2. Shopping Cart System
+2. Fix webhook-based confirmation
+- Update Stripe webhook handling so `checkout.session.completed` is the source of truth for:
+  - marking orders paid
+  - promoting hidden drafts into visible admin/customer orders
+  - storing Stripe session/payment info
+- Also handle failed/expired checkout states so abandoned sessions never appear as real orders.
+- Make webhook updates idempotent by matching on `stripe_session_id`.
 
-**New DB table**: `store_cart_items` (user_id, product_id, quantity, created_at)
-- Cart persists for signed-in users across sessions
-- Cart icon in store header with item count badge
-- Cart drawer/page showing items, quantities, totals
-- "Checkout" button processes all cart items via Stripe
-- Update `create-checkout` edge function to handle multi-product cart checkout
+3. Fix store checkout correctness
+- Update `create-checkout` to support actual multi-item store carts instead of only the first product.
+- Separate checkout types clearly:
+  - Smart ID tag order
+  - general store cart order
+  - custom filter payment
+- Ensure tag orders only contain Smart ID tag purchases.
+- Ensure store orders keep full item snapshots for order history and reviews.
 
-### 3. Order History & Recommendations
+4. Fix admin visibility
+- Update `TagOrdersManager` to only show paid/confirmed tag orders.
+- Update filter order admin views the same way.
+- Recalculate admin revenue cards from paid orders only, not drafts/cancelled attempts.
 
-**New DB table**: `store_orders` (id, user_id, items JSONB, total, status, stripe_session_id, shipping_address, created_at)
-- Order history page accessible from store profile
-- "You might also like" section based on past order categories
-- Reuse existing `tag_orders` data where applicable
+5. Restore signed-in store account controls
+- Add authenticated account UI to the `/store` header using the existing auth state and `ProfileDropdown`.
+- Keep the sign-in CTA for logged-out users.
+- Make sure mobile store view also shows account access cleanly beside the cart.
+- Keep checkout gated to signed-in users.
 
-### 4. Stock Visibility on Store
+6. Improve CriderGPT Store branding in search
+- Strengthen `/store` metadata so Google sees:
+  - “CriderGPT Store” as the primary route title
+  - official-brand wording in title/description
+  - collection/product structured data
+- Add centralized SEO config for `/custom-filters` too, so that business page also strengthens branded search traffic.
+- Update sitemap freshness and ensure internal links point to `/store` and `/custom-filters`.
+- Add stronger route-level schema:
+  - `CollectionPage` / `Product`
+  - `Service` / `FAQPage` for custom filters
+  - breadcrumbs where helpful
+- Audit any remaining generic or off-brand snippets so the route consistently appears as CriderGPT, not anything else.
 
-- Store product cards pull `stock_quantity` from `store_products`
-- When quantity selector exceeds stock, show amber warning about custom/backorder
-- Admin sets stock via existing `StoreProductsManager`
+7. Improve discovery content, not just keywords
+- Expand indexable copy on `/store` and `/custom-filters` with natural search phrases users actually type:
+  - smart livestock tags
+  - NFC cattle tags
+  - smart animal ID tags
+  - custom Snapchat filters
+  - Snapchat lens creator
+  - truck chrome Snapchat filter
+- Add short FAQ/content blocks so the pages have more searchable context, not just product cards.
+- Keep expectations realistic: this improves technical SEO and click-through, but traffic growth also depends on content, backlinks, Search Console indexing, and regular updates.
 
-### 5. Admin QR Code Generator
+Technical details
+- Files likely touched:
+  - `src/components/store/ShoppingCart.tsx`
+  - `src/pages/SmartIDStore.tsx`
+  - `src/pages/CustomFilters.tsx`
+  - `src/components/admin/TagOrdersManager.tsx`
+  - `src/components/admin/FilterOrdersManager.tsx`
+  - `supabase/functions/create-checkout/index.ts`
+  - `supabase/functions/stripe-webhooks/index.ts`
+  - possibly `supabase/functions/stripe-webhook-checkout/index.ts` if still used
+  - `src/config/seo.ts`
+  - `src/components/SEO.tsx`
+  - `public/sitemap.xml`
+  - new migration(s) for payment lifecycle columns
 
-**New component**: `src/components/admin/QRCodeGenerator.tsx`
-- Uses `qrcode` npm library (client-side generation)
-- Options: URL input, image embed (logo overlay), custom foreground/background colors
-- Edge styles: square, rounded, dots
-- Name each QR code, save as PNG download
-- Gallery of previously generated QR codes (saved to localStorage or Supabase storage)
+- Important design choice:
+  - unpaid checkouts may still exist internally as hidden drafts for Stripe/session tracking,
+  - but they will not show in admin panels or customer order history unless payment is confirmed.
 
-### 6. Admin Barcode Generator
+Validation checklist after implementation
+1. Start checkout, cancel in Stripe:
+- no visible tag order in admin
+- no visible store order in order history
+- no visible filter order as paid/real work
 
-**New component**: `src/components/admin/BarcodeGenerator.tsx`
-- Uses `jsbarcode` npm library
-- Generate standard UPC/EAN/Code128 barcodes for physical products
-- Name and save as PNG
-- Add to Admin panel as a new tab
+2. Complete payment successfully:
+- order appears once
+- admin sees it as paid/confirmed
+- customer sees it in order history
 
-### 7. SEO for Store
+3. Multi-item cart:
+- all items are included in Stripe checkout
+- order history shows all purchased items correctly
 
-**Changes to `src/config/seo.ts`**:
-- Add `store` SEO entry with keywords: "CriderGPT store, buy smart livestock tags, NFC ear tags, farm equipment store, livestock supplies online, smart ID tags for cattle"
+4. Signed-in store experience:
+- avatar/profile controls appear on `/store`
+- account access works on mobile and desktop
 
-**Changes to `public/sitemap.xml`**:
-- Add `/store` URL entry
+5. SEO sanity check:
+- `/store` page title/source says “CriderGPT Store”
+- `/custom-filters` has branded metadata and schema
+- sitemap/canonicals are aligned
 
-**Structured data**: Add `Product` schema to store page for Google Shopping visibility
-
-### 8. Store Discounts for Signed-In Users
-
-- Show "Sign in to save X%" messaging on products
-- Discount logic in checkout edge function based on user plan tier
-
----
-
-### Database Migrations Needed
-
-```text
-1. store_cart_items (user_id UUID, product_id UUID FK, quantity INT, created_at)
-2. store_orders (id UUID, user_id UUID, items JSONB, total NUMERIC, status TEXT, stripe_session_id, shipping_address JSONB, created_at)
-3. RLS policies for both tables (users see only their own data)
-```
-
-### New Dependencies
-- `qrcode` (QR generation)
-- `jsbarcode` (barcode generation)
-
-### Files Created/Modified
-
-| Action | File |
-|--------|------|
-| Major rewrite | `src/pages/SmartIDStore.tsx` — multi-product storefront |
-| New | `src/components/store/ProductCard.tsx` |
-| New | `src/components/store/ShoppingCart.tsx` |
-| New | `src/components/store/OrderHistory.tsx` |
-| New | `src/components/admin/QRCodeGenerator.tsx` |
-| New | `src/components/admin/BarcodeGenerator.tsx` |
-| Edit | `src/components/panels/AdminPanel.tsx` — add QR + Barcode tabs |
-| Edit | `src/config/seo.ts` — add store SEO |
-| Edit | `public/sitemap.xml` — add /store |
-| Edit | `supabase/functions/create-checkout/index.ts` — multi-item cart support |
-| New | Migration for `store_cart_items`, `store_orders` |
-
-### Technical Notes
-- QR and barcode generation happen entirely client-side (no edge function needed)
-- Cart uses Supabase for persistence so it survives across devices
-- Stock warnings are purely informational — orders over stock are allowed as "custom orders"
-- Product recommendations use simple category matching from order history
-
+Priority order
+1. Payment/order visibility fix
+2. Webhook confirmation fix
+3. Multi-item cart correction
+4. Store account/avatar UI
+5. SEO/branding improvements for store + custom filters
