@@ -116,9 +116,19 @@ export function ShoppingCartDrawer() {
 
     setCheckoutLoading(true);
     try {
-      const firstItem = items[0];
-      if (!firstItem.product?.stripe_price_id) {
-        toast({ title: 'Product not available for checkout', variant: 'destructive' });
+      // Build cart items payload for multi-item checkout
+      const cartItemsPayload = items
+        .filter(i => i.product?.stripe_price_id)
+        .map(i => ({
+          product_id: i.product_id,
+          title: i.product?.title,
+          price: i.product?.price,
+          quantity: i.quantity,
+          stripe_price_id: i.product?.stripe_price_id,
+        }));
+
+      if (cartItemsPayload.length === 0) {
+        toast({ title: 'No products available for checkout', variant: 'destructive' });
         setCheckoutLoading(false);
         return;
       }
@@ -136,33 +146,18 @@ export function ShoppingCartDrawer() {
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
-          priceId: firstItem.product.stripe_price_id,
+          priceId: cartItemsPayload[0].stripe_price_id,
           planName: 'store-order',
-          quantity: firstItem.quantity,
-          action: 'tag-order',
+          quantity: cartItemsPayload[0].quantity,
+          action: 'store-order',
           shippingAddress,
+          cartItems: cartItemsPayload,
         },
       });
 
       if (error) throw error;
       if (data?.url) {
-        await (supabase as any).from('store_orders').insert({
-          user_id: user.id,
-          items: items.map(i => ({
-            product_id: i.product_id,
-            title: i.product?.title,
-            price: i.product?.price,
-            quantity: i.quantity,
-          })),
-          subtotal,
-          total: subtotal,
-          status: 'pending',
-          stripe_session_id: null,
-          shipping_address: shippingAddress,
-          notes: orderNotes.trim() || null,
-        });
-
-        await clearCart();
+        // DO NOT insert order here — webhook creates it after payment confirmation
         window.open(data.url, '_blank');
         setOpen(false);
       }

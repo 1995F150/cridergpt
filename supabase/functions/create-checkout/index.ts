@@ -25,11 +25,11 @@ serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
 
-    const { priceId, planName, quantity, action, shippingAddress } = await req.json();
+    const { priceId, planName, quantity, action, shippingAddress, cartItems } = await req.json();
     logStep("Request body parsed", { priceId, planName, quantity, action });
     
-    if (!priceId) {
-      throw new Error("Price ID is required");
+    if (!priceId && !cartItems?.length) {
+      throw new Error("Price ID or cart items are required");
     }
 
     const stripe = new Stripe(stripeKey, {
@@ -103,11 +103,29 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://cridergpt.lovable.app";
 
     const isTagOrder = action === 'tag-order';
+    const isStoreOrder = action === 'store-order';
     const orderQuantity = isTagOrder ? (quantity || 1) : 1;
 
+    // Build line items
+    let lineItems;
+    if (isStoreOrder && cartItems?.length) {
+      // Multi-item store cart checkout
+      lineItems = cartItems
+        .filter((item: any) => item.stripe_price_id)
+        .map((item: any) => ({
+          price: item.stripe_price_id,
+          quantity: item.quantity || 1,
+        }));
+      if (lineItems.length === 0) {
+        throw new Error("No valid products in cart");
+      }
+    } else {
+      lineItems = [{ price: priceId, quantity: orderQuantity }];
+    }
+
     const session = await stripe.checkout.sessions.create({
-      mode: isTagOrder || planName === 'lifetime' ? "payment" : "subscription",
-      line_items: [{ price: priceId, quantity: orderQuantity }],
+      mode: isTagOrder || isStoreOrder || planName === 'lifetime' ? "payment" : "subscription",
+      line_items: lineItems,
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -115,28 +133,23 @@ serve(async (req) => {
       metadata: {
         userId: user.id,
         planName: planName || 'unknown',
-        ...(isTagOrder && { action: 'tag-order', quantity: String(orderQuantity) }),
+        ...(isTagOrder && {
+          action: 'tag-order',
+          quantity: String(orderQuantity),
+          shippingAddress: shippingAddress ? JSON.stringify(shippingAddress) : undefined,
+          customerName: shippingAddress?.fullName || undefined,
+        }),
+        ...(isStoreOrder && {
+          action: 'store-order',
+          cartItems: cartItems ? JSON.stringify(cartItems) : undefined,
+          shippingAddress: shippingAddress ? JSON.stringify(shippingAddress) : undefined,
+        }),
       },
       allow_promotion_codes: true,
     });
 
-    // If tag order, insert into tag_orders table
-    if (isTagOrder) {
-      const unitPrice = 3.50;
-      await supabaseClient.from('tag_orders').insert({
-        customer_id: user.id,
-        customer_email: user.email,
-        customer_name: shippingAddress?.fullName || null,
-        quantity: orderQuantity,
-        unit_price: unitPrice,
-        total_price: unitPrice * orderQuantity,
-        stripe_session_id: session.id,
-        shipping_address: shippingAddress || null,
-        notes: shippingAddress?.notes || null,
-        status: 'pending',
-      });
-      logStep("Tag order created", { quantity: orderQuantity, sessionId: session.id });
-    }
+    // DO NOT insert orders here — orders are created only after payment
+    // is confirmed via the stripe-webhooks checkout.session.completed handler.
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
