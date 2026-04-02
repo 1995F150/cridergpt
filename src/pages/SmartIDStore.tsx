@@ -16,6 +16,7 @@ import { ProductCard, StoreProduct, getStockInfo, getProductionEstimate } from '
 import { ShoppingCartDrawer, addToCart } from '@/components/store/ShoppingCart';
 import { OrderHistory } from '@/components/store/OrderHistory';
 import { ProductReviews } from '@/components/store/ProductReviews';
+import { ProfileDropdown } from '@/components/ProfileDropdown';
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: 'All Products',
