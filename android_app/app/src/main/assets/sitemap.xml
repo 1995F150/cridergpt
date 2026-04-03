@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <!-- Homepage (Official App) -->
+  <url>
+    <loc>https://cridergpt.lovable.app/</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Auth / Sign Up -->
+  <url>
+    <loc>https://cridergpt.lovable.app/auth</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Snapchat Lens Page -->
+  <url>
+    <loc>https://cridergpt.lovable.app/snapchat-lens</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- RDR2 Guide (SEO Magnet) -->
+  <url>
+    <loc>https://cridergpt.lovable.app/rdr2-guide</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- User Agreement -->
+  <url>
+    <loc>https://cridergpt.lovable.app/user-agreement</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- TTS Policy -->
+  <url>
+    <loc>https://cridergpt.lovable.app/tts-policy</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- System Diagnostics -->
+  <url>
+    <loc>https://cridergpt.lovable.app/system-diagnostics</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- CriderGPT Store -->
+  <url>
+    <loc>https://cridergpt.lovable.app/store</loc>
+    <lastmod>2026-04-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Custom Snapchat Filters -->
+  <url>
+    <loc>https://cridergpt.lovable.app/custom-filters</loc>
+    <lastmod>2026-04-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_chat"
+        android:icon="@drawable/ic_chat"
+        android:title="@string/title_chat" />
+
+    <item
+        android:id="@+id/navigation_livestock"
+        android:icon="@drawable/ic_livestock"
+        android:title="@string/title_livestock" />
+
+    <item
+        android:id="@+id/navigation_smart_id"
+        android:icon="@drawable/ic_smart_id"
+        android:title="@string/title_smart_id" />
+
+    <item
+        android:id="@+id/navigation_calculators"
+        android:icon="@drawable/ic_calculator"
+        android:title="@string/title_calculators" />
+
+    <item
+        android:id="@+id/navigation_calendar"
+        android:icon="@drawable/ic_calendar"
+        android:title="@string/title_calendar" />
+
+</menu>

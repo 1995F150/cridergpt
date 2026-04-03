@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@id/navigation_chat">
+
+    <fragment
+        android:id="@+id/navigation_chat"
+        android:name="com.cridergpt.android.ui.chat.ChatFragment"
+        android:label="Chat"
+        tools:layout="@layout/fragment_chat" />
+
+    <fragment
+        android:id="@+id/navigation_livestock"
+        android:name="com.cridergpt.android.ui.livestock.LivestockFragment"
+        android:label="Livestock"
+        tools:layout="@layout/fragment_livestock" />
+
+    <fragment
+        android:id="@+id/navigation_smart_id"
+        android:name="com.cridergpt.android.ui.smartid.SmartIdFragment"
+        android:label="Smart ID"
+        tools:layout="@layout/fragment_smart_id" />
+
+    <fragment
+        android:id="@+id/navigation_calculators"
+        android:name="com.cridergpt.android.ui.calculators.CalculatorsFragment"
+        android:label="Calculators"
+        tools:layout="@layout/fragment_calculators" />
+
+    <fragment
+        android:id="@+id/navigation_calendar"
+        android:name="com.cridergpt.android.ui.calendar.CalendarFragment"
+        android:label="Calendar"
+        tools:layout="@layout/fragment_calendar" />
+
+    <fragment
+        android:id="@+id/navigation_auth"
+        android:name="com.cridergpt.android.ui.auth.AuthFragment"
+        android:label="Authentication"
+        tools:layout="@layout/fragment_auth" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.cridergpt.android.ui.profile.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />
+
+</navigation>

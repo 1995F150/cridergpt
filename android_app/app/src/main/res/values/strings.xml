@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">CriderGPT</string>
+    <string name="title_chat">Chat</string>
+    <string name="title_livestock">Livestock</string>
+    <string name="title_smart_id">Smart ID</string>
+    <string name="title_calculators">Calculators</string>
+    <string name="title_calendar">Calendar</string>
+    <string name="title_profile">Profile</string>
+    <string name="title_sign_out">Sign Out</string>
+    <string name="title_settings">Settings</string>
+</resources>

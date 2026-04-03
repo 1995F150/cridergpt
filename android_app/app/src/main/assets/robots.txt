@@ -1,0 +1,53 @@
+# CriderGPT Robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://cridergpt.lovable.app/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Disallow private/internal areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /private/
+Disallow: /profile
+Disallow: /payment
+
+# Allow all public features for indexing
+Allow: /chat
+Allow: /calculators
+Allow: /ffa
+Allow: /livestock
+Allow: /ai-image
+Allow: /rdr2-guide
+Allow: /mod-tools
+Allow: /voice-studio
+Allow: /calendar
+Allow: /guardian
+Allow: /shared-spending
+Allow: /receipts
+Allow: /frequency
+Allow: /sensors
+Allow: /snapchat-lens
+Allow: /plan
+Allow: /contact
+Allow: /auth
+
+# Specific bot permissions
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Snapchat
+Allow: /

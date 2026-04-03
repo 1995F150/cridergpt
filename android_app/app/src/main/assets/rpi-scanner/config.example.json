@@ -1,0 +1,6 @@
+{
+  "api_url": "https://udpldrrpebdyuiqdtqnq.supabase.co",
+  "device_token": "PASTE_YOUR_DEVICE_TOKEN_HERE",
+  "heartbeat_interval": 60,
+  "play_sound": true
+}
