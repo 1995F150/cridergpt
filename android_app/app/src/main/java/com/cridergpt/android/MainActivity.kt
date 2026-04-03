@@ -1,5 +1,6 @@
 package com.cridergpt.android
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -8,6 +9,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.cridergpt.android.databinding.ActivityMainBinding
+import com.cridergpt.android.utils.NfcManager
 import com.cridergpt.android.viewmodels.AuthViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -15,6 +17,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val authViewModel: AuthViewModel by viewModels()
+    private lateinit var nfcManager: NfcManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +62,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Initialize NFC Manager
+        nfcManager = NfcManager(this)
+
+        // Handle NFC intent if app was launched by NFC
+        intent?.let { handleIntent(it) }
+
         // Observe auth state
         authViewModel.user.observe(this) { user ->
             if (user == null) {
@@ -66,5 +75,26 @@ class MainActivity : AppCompatActivity() {
                 navController.navigate(R.id.navigation_auth)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        nfcManager.handleNfcIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Start NFC scanning when activity is resumed
+        nfcManager.startScanning(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Stop NFC scanning when activity is paused
+        nfcManager.stopScanning(this)
     }
 }

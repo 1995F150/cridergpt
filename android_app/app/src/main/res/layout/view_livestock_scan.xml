@@ -16,9 +16,10 @@
         android:layout_marginBottom="16dp" />
 
     <TextView
+        android:id="@+id/text_scan_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scan an RFID tag to identify or register an animal"
+        android:text="Tap scan button to start NFC scanning"
         android:textSize="16sp"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginBottom="32dp"

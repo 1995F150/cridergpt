@@ -19,6 +19,7 @@ class LivestockFragment : Fragment() {
     private val binding get() = _binding!!
     private val livestockViewModel: LivestockViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
+    private lateinit var nfcManager: NfcManager
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,8 +33,10 @@ class LivestockFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        nfcManager = NfcManager(requireContext())
         setupTabs()
         observeViewModels()
+        observeNfcState()
         loadData()
     }
 
@@ -74,7 +77,6 @@ class LivestockFragment : Fragment() {
     }
 
     private fun showScanView() {
-        // TODO: Implement scan view with camera/tag scanner
         binding.containerContent.removeAllViews()
 
         val scanView = layoutInflater.inflate(
@@ -83,6 +85,19 @@ class LivestockFragment : Fragment() {
             false
         )
         binding.containerContent.addView(scanView)
+
+        // Set up scan button
+        scanView.findViewById<android.widget.Button>(com.cridergpt.android.R.id.button_scan)
+            ?.setOnClickListener {
+                if (nfcManager.isNfcAvailable() && nfcManager.isNfcEnabled()) {
+                    // NFC is ready, show scanning message
+                    scanView.findViewById<android.widget.TextView>(com.cridergpt.android.R.id.text_scan_status)?.text =
+                        "Ready to scan. Bring NFC tag close to device."
+                } else {
+                    scanView.findViewById<android.widget.TextView>(com.cridergpt.android.R.id.text_scan_status)?.text =
+                        "NFC not available or disabled"
+                }
+            }
     }
 
     private fun showStatsView() {
@@ -105,6 +120,44 @@ class LivestockFragment : Fragment() {
         livestockViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             // TODO: Show loading indicator
         }
+    }
+
+    private fun observeNfcState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            nfcManager.nfcState.collect { state ->
+                when (state) {
+                    is NfcManager.NfcState.TagDetected -> {
+                        // Handle detected tag
+                        handleNfcTagDetected(state.tagId, state.tagData)
+                    }
+                    is NfcManager.NfcState.Error -> {
+                        // Show error message
+                        showNfcError(state.message)
+                    }
+                    else -> {
+                        // Handle other states if needed
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleNfcTagDetected(tagId: String, tagData: String?) {
+        // Process the detected NFC tag
+        livestockViewModel.scanTag(tagId)
+
+        // Show success message
+        showNfcSuccess("Tag detected: $tagId")
+
+        // TODO: Navigate to add animal form or show animal details
+    }
+
+    private fun showNfcSuccess(message: String) {
+        // TODO: Show success toast or update UI
+    }
+
+    private fun showNfcError(message: String) {
+        // TODO: Show error toast or update UI
     }
 
     private fun loadData() {
