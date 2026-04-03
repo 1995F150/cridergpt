@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ShoppingCart as CartIcon, Minus, Plus, Trash2, Loader2, MapPin, AlertTriangle, Clock, Truck } from 'lucide-react';
+import { ShoppingCart as CartIcon, Minus, Plus, Trash2, Loader2, MapPin, AlertTriangle, Clock, Truck, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
