@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ShoppingCart as CartIcon, Minus, Plus, Trash2, Loader2, MapPin, AlertTriangle, Clock, Truck } from 'lucide-react';
+import { ShoppingCart as CartIcon, Minus, Plus, Trash2, Loader2, MapPin, AlertTriangle, Clock, Truck, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -246,15 +246,29 @@ export function ShoppingCartDrawer() {
                   <Truck className="h-3.5 w-3.5" /> FREE SHIPPING on all orders!
                 </p>
               </div>
-              <Label className="flex items-center gap-2 text-sm font-semibold"><MapPin className="h-4 w-4" /> Shipping Address</Label>
-              <Input placeholder="Full Name *" value={fullName} onChange={e => setFullName(e.target.value)} />
-              <Input placeholder="Address Line 1 *" value={addressLine1} onChange={e => setAddressLine1(e.target.value)} />
-              <Input placeholder="Address Line 2 (optional)" value={addressLine2} onChange={e => setAddressLine2(e.target.value)} />
-              <div className="grid grid-cols-3 gap-2">
-                <Input placeholder="City *" value={city} onChange={e => setCity(e.target.value)} />
-                <Input placeholder="State *" value={state} onChange={e => setState(e.target.value)} maxLength={2} />
-                <Input placeholder="ZIP *" value={zip} onChange={e => setZip(e.target.value)} maxLength={10} />
+
+              {/* Your Name */}
+              <div className="space-y-1">
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5" /> Your Name
+                </Label>
+                <Input placeholder="First & Last Name *" value={fullName} onChange={e => setFullName(e.target.value)} />
               </div>
+
+              {/* Shipping Address */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4" /> Shipping Address
+                </Label>
+                <Input placeholder="Street Address *" value={addressLine1} onChange={e => setAddressLine1(e.target.value)} />
+                <Input placeholder="Apt, Suite, Unit (optional)" value={addressLine2} onChange={e => setAddressLine2(e.target.value)} />
+                <div className="grid grid-cols-3 gap-2">
+                  <Input placeholder="City *" value={city} onChange={e => setCity(e.target.value)} />
+                  <Input placeholder="State *" value={state} onChange={e => setState(e.target.value)} maxLength={2} />
+                  <Input placeholder="ZIP *" value={zip} onChange={e => setZip(e.target.value)} maxLength={10} />
+                </div>
+              </div>
+
               <Textarea placeholder="Order notes (optional)" value={orderNotes} onChange={e => setOrderNotes(e.target.value)} className="h-14" />
             </div>
           )}
