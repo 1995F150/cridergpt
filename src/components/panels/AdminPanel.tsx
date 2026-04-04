@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt } from 'lucide-react';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
