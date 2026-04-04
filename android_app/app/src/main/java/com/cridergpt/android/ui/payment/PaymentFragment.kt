@@ -32,8 +32,8 @@ class PaymentFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize Stripe - use your Stripe publishable key
-        val publishableKey = "pk_live_YOUR_PUBLISHABLE_KEY" // Replace with your actual key
+        // Initialize Stripe with live publishable key
+        val publishableKey = "pk_live_51RekRVP90uC07RqGYRkKlmLsiLZmARTDDeIs2vXZrgR1tbwTJJhS9MZoId5LmW7r3b1AQPeXinndKlmNFn4YgUvo00LSihA1B5"
         paymentViewModel.initializeStripe(publishableKey)
 
         setupObservers()
