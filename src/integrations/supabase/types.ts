@@ -1438,6 +1438,66 @@ export type Database = {
           },
         ]
       }
+      iap_purchases: {
+        Row: {
+          amount_cents: number | null
+          created_at: string
+          currency: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          original_transaction_id: string | null
+          platform: string
+          product_id: string
+          product_type: string
+          purchase_token: string | null
+          receipt_data: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          original_transaction_id?: string | null
+          platform: string
+          product_id: string
+          product_type: string
+          purchase_token?: string | null
+          receipt_data?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          original_transaction_id?: string | null
+          platform?: string
+          product_id?: string
+          product_type?: string
+          purchase_token?: string | null
+          receipt_data?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       imported_messages: {
         Row: {
           content: string
