@@ -166,6 +166,9 @@ export function AdminPanel() {
           <TabsTrigger value="barcode-generator" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Barcode className="h-4 w-4" /> Barcodes
           </TabsTrigger>
+          <TabsTrigger value="pos" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Receipt className="h-4 w-4" /> POS
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4" /> Settings
           </TabsTrigger>
