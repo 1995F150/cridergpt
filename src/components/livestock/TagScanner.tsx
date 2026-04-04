@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Scan, Wifi, Smartphone, PlusCircle } from 'lucide-react';
+import { Scan, Wifi, Smartphone, PlusCircle, Apple, AlertTriangle } from 'lucide-react';
 
 interface TagScannerProps {
   onTagScanned: (tagId: string) => Promise<any>;
   onRegisterAnimal?: (tagId: string) => void;
 }
+
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) {
   const [manualTag, setManualTag] = useState('');
@@ -16,10 +18,12 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
   const [nfcSupported, setNfcSupported] = useState(false);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [isAppleDevice, setIsAppleDevice] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if ('NDEFReader' in window) setNfcSupported(true);
+    setIsAppleDevice(isIOS());
   }, []);
 
   useEffect(() => {
@@ -55,14 +59,12 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
       await ndef.scan();
       setScanning(true);
       ndef.addEventListener('reading', ({ message, serialNumber }: any) => {
-        // Read the NDEF text record (plain text tag ID written to the tag)
         let tagId = '';
         if (message?.records) {
           for (const record of message.records) {
             if (record.recordType === 'text') {
               const decoder = new TextDecoder(record.encoding || 'utf-8');
               let raw = decoder.decode(record.data).trim();
-              // Decode CGPT: encrypted prefix for backward compatibility
               if (raw.startsWith('CGPT:')) {
                 try {
                   const decoded = JSON.parse(atob(raw.slice(5)));
@@ -83,7 +85,6 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
             }
           }
         }
-        // Fallback to serial number if no text record found
         if (!tagId) {
           tagId = serialNumber || '';
         }
@@ -107,6 +108,11 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
               <Wifi className="h-3 w-3" /> NFC Ready
             </Badge>
           )}
+          {isAppleDevice && !nfcSupported && (
+            <Badge variant="outline" className="text-xs ml-auto flex items-center gap-1 border-amber-500/50 text-amber-600">
+              <Apple className="h-3 w-3" /> iPhone
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -114,29 +120,48 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
           Scan an NFC tag, key fob, or type a CriderGPT Tag ID to pull up the animal profile.
         </p>
 
+        {/* Always-visible manual scan input */}
         <div className="flex gap-2">
           <Input
             ref={inputRef}
             placeholder="Tag ID (e.g. CriderGPT-A7X9K2)"
             value={manualTag}
             onChange={e => setManualTag(e.target.value)}
-            className="h-12 text-lg font-mono flex-1"
+            className="h-14 text-lg font-mono flex-1"
             autoComplete="off"
           />
           <Button
             onClick={() => handleScan(manualTag.trim())}
             disabled={!manualTag.trim() || scanning}
-            className="h-12 px-6"
+            className="h-14 px-6 text-base"
           >
-            {scanning ? 'Scanning...' : 'Scan'}
+            {scanning ? 'Scanning...' : '📡 Scan'}
           </Button>
         </div>
 
+        {/* NFC tap button for Android/Chrome */}
         {nfcSupported && (
-          <Button variant="outline" className="w-full h-12" onClick={startNfcScan} disabled={scanning}>
-            <Smartphone className="h-4 w-4 mr-2" />
+          <Button variant="outline" className="w-full h-14 text-base" onClick={startNfcScan} disabled={scanning}>
+            <Smartphone className="h-5 w-5 mr-2" />
             Tap NFC Tag with Phone
           </Button>
+        )}
+
+        {/* iPhone-specific guidance */}
+        {isAppleDevice && !nfcSupported && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 space-y-2">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-semibold text-sm">
+              <AlertTriangle className="h-4 w-4" />
+              iPhone NFC Scanning
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>iPhones don't support browser NFC scanning. Use one of these methods instead:</p>
+              <p>• <strong>Type the Tag ID</strong> — Enter the CriderGPT tag ID printed on the tag above and tap Scan</p>
+              <p>• <strong>USB RFID Reader</strong> — Plug a USB/Lightning RFID reader into your iPhone, the scanned ID will auto-fill</p>
+              <p>• <strong>NFC Tools App</strong> — Use the free "NFC Tools" app from the App Store to read the tag, then copy the ID here</p>
+              <p>• <strong>Use an Android phone</strong> — Android Chrome supports direct NFC scanning from the browser</p>
+            </div>
+          </div>
         )}
 
         {lastScanned && (
@@ -151,7 +176,6 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
           </div>
         )}
 
-        {/* Unregistered pool tag — prompt to register */}
         {(scanResult?.status === 'unregistered' || scanResult?.status === 'programmed') && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
             <p className="text-sm font-medium text-primary">
@@ -181,10 +205,10 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
         )}
 
         <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
-          <p className="font-semibold">📡 Hardware Connection Guide:</p>
+          <p className="font-semibold">📡 How to Scan:</p>
           <p>• <strong>USB RFID Reader:</strong> Plug in → focus input → scan tag → auto-fills</p>
           <p>• <strong>Bluetooth RFID:</strong> Pair via settings → same as USB</p>
-          <p>• <strong>Phone NFC:</strong> Tap NFC button → hold tag/fob to phone</p>
+          {!isAppleDevice && <p>• <strong>Phone NFC:</strong> Tap NFC button → hold tag/fob to phone</p>}
           <p>• <strong>Manual:</strong> Type the CriderGPT Tag ID and press Scan</p>
         </div>
       </CardContent>
