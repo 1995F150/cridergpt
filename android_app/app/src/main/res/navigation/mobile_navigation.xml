@@ -47,4 +47,57 @@
         android:label="Profile"
         tools:layout="@layout/fragment_profile" />
 
+    <!-- Admin Panel -->
+    <fragment
+        android:id="@+id/navigation_admin"
+        android:name="com.cridergpt.android.ui.admin.AdminFragment"
+        android:label="Admin"
+        tools:layout="@layout/fragment_admin">
+        <action
+            android:id="@+id/action_admin_to_user_management"
+            app:destination="@id/fragment_user_management" />
+        <action
+            android:id="@+id/action_admin_to_subscription_manager"
+            app:destination="@id/fragment_subscription_manager" />
+        <action
+            android:id="@+id/action_admin_to_content_moderation"
+            app:destination="@id/fragment_content_moderation" />
+        <action
+            android:id="@+id/action_admin_to_system_logs"
+            app:destination="@id/fragment_system_logs" />
+        <action
+            android:id="@+id/action_admin_to_analytics"
+            app:destination="@id/fragment_analytics" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragment_user_management"
+        android:name="com.cridergpt.android.ui.admin.UserManagementFragment"
+        android:label="User Management"
+        tools:layout="@layout/fragment_user_management" />
+
+    <fragment
+        android:id="@+id/fragment_subscription_manager"
+        android:name="com.cridergpt.android.ui.admin.SubscriptionManagerFragment"
+        android:label="Subscription Manager"
+        tools:layout="@layout/fragment_subscription_manager" />
+
+    <fragment
+        android:id="@+id/fragment_content_moderation"
+        android:name="com.cridergpt.android.ui.admin.ContentModerationFragment"
+        android:label="Content Moderation"
+        tools:layout="@layout/fragment_content_moderation" />
+
+    <fragment
+        android:id="@+id/fragment_system_logs"
+        android:name="com.cridergpt.android.ui.admin.SystemLogsFragment"
+        android:label="System Logs"
+        tools:layout="@layout/fragment_system_logs" />
+
+    <fragment
+        android:id="@+id/fragment_analytics"
+        android:name="com.cridergpt.android.ui.admin.AnalyticsFragment"
+        android:label="Analytics"
+        tools:layout="@layout/fragment_analytics" />
+
 </navigation>

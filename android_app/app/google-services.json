@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "565532483262",
+    "project_id": "cridergpt-android",
+    "storage_bucket": "cridergpt-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:565532483262:android:580c051816df29d204c8ef",
+        "android_client_info": {
+          "package_name": "com.cridergpt.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAd_GKG8s5660yFI5H__InAWVuX9p4RgR0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

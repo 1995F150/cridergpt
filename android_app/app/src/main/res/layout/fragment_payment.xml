@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Subscription Management"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Subscription Status Card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:background="@drawable/rounded_card"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Current Plan"
+                    android:textSize="14sp"
+                    android:textColor="#666"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/subscriptionStatusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Free Plan"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Temporary: Using Stripe for payments (until June 2026)\nThen migrating to Google Play Billing"
+                    android:textSize="12sp"
+                    android:textColor="#999"
+                    android:layout_marginBottom="12dp" />
+
+            </LinearLayout>
+
+            <!-- Plan Features -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:background="@drawable/rounded_card"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Premium Features"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="• Unlimited AI Conversations\n• Priority Support\n• Advanced Analytics\n• GPS Context Integration\n• Offline Mode"
+                    android:textSize="13sp"
+                    android:linksClickable="false" />
+
+            </LinearLayout>
+
+            <!-- Action Buttons -->
+            <Button
+                android:id="@+id/buttonUpgradePlan"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Upgrade to Premium"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/button_primary" />
+
+            <Button
+                android:id="@+id/buttonManageSubscription"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Manage Subscription"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/button_secondary"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/buttonCancelSubscription"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Cancel Subscription"
+                android:textSize="16sp"
+                android:textColor="#F44336"
+                android:background="@drawable/button_secondary"
+                android:visibility="gone" />
+
+            <!-- Info Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:background="@drawable/rounded_card"
+                android:layout_marginTop="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Payment Information"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Billing is handled securely through Stripe. Your payment information is encrypted and never stored on our servers."
+                    android:textSize="12sp"
+                    android:textColor="#666" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>
