@@ -21,6 +21,9 @@ class ChatViewModel : ViewModel() {
     private val _messages = MutableLiveData<List<ChatMessage>>()
     val messages: LiveData<List<ChatMessage>> = _messages
 
+    private val _assistantNotification = MutableLiveData<String?>()
+    val assistantNotification: LiveData<String?> = _assistantNotification
+
     private val _users = MutableLiveData<List<ChatUser>>()
     val users: LiveData<List<ChatUser>> = _users
 
@@ -109,6 +112,17 @@ class ChatViewModel : ViewModel() {
 
                 val currentMessages = _messages.value.orEmpty()
                 _messages.value = currentMessages + newMessage
+
+                val assistantMessage = ChatMessage(
+                    id = "assistant_${System.currentTimeMillis()}",
+                    content = "AI result ready. Tap the chat to view the full response.",
+                    role = "assistant",
+                    createdAt = "2024-01-01T00:00:01Z",
+                    userId = "assistant"
+                )
+
+                _messages.value = _messages.value.orEmpty() + assistantMessage
+                _assistantNotification.value = assistantMessage.content
             } catch (e: Exception) {
                 // Handle error
             }
@@ -140,5 +154,9 @@ class ChatViewModel : ViewModel() {
     fun selectConversation(conversationId: String, userId: String) {
         _currentConversationId.value = conversationId
         loadMessages(conversationId, userId)
+    }
+
+    fun clearAssistantNotification() {
+        _assistantNotification.value = null
     }
 }

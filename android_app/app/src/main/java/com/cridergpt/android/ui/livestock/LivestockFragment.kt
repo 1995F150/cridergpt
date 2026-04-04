@@ -4,10 +4,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.cridergpt.android.databinding.FragmentLivestockBinding
+import com.cridergpt.android.utils.NfcManager
 import com.cridergpt.android.viewmodels.AuthViewModel
 import com.cridergpt.android.viewmodels.LivestockViewModel
 import com.google.android.material.tabs.TabLayout
@@ -20,6 +24,7 @@ class LivestockFragment : Fragment() {
     private val livestockViewModel: LivestockViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
     private lateinit var nfcManager: NfcManager
+    private var scanStatusTextView: TextView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -86,16 +91,17 @@ class LivestockFragment : Fragment() {
         )
         binding.containerContent.addView(scanView)
 
+        scanStatusTextView = scanView.findViewById(com.cridergpt.android.R.id.text_scan_status)
+
         // Set up scan button
-        scanView.findViewById<android.widget.Button>(com.cridergpt.android.R.id.button_scan)
+        scanView.findViewById<Button>(com.cridergpt.android.R.id.button_scan)
             ?.setOnClickListener {
                 if (nfcManager.isNfcAvailable() && nfcManager.isNfcEnabled()) {
-                    // NFC is ready, show scanning message
-                    scanView.findViewById<android.widget.TextView>(com.cridergpt.android.R.id.text_scan_status)?.text =
-                        "Ready to scan. Bring NFC tag close to device."
+                    scanStatusTextView?.text = "Ready to scan. Bring NFC tag close to device."
                 } else {
-                    scanView.findViewById<android.widget.TextView>(com.cridergpt.android.R.id.text_scan_status)?.text =
-                        "NFC not available or disabled"
+                    val message = "NFC not available or disabled"
+                    scanStatusTextView?.text = message
+                    showToast(message)
                 }
             }
     }
@@ -153,11 +159,17 @@ class LivestockFragment : Fragment() {
     }
 
     private fun showNfcSuccess(message: String) {
-        // TODO: Show success toast or update UI
+        scanStatusTextView?.text = message
+        showToast(message)
     }
 
     private fun showNfcError(message: String) {
-        // TODO: Show error toast or update UI
+        scanStatusTextView?.text = message
+        showToast(message)
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     private fun loadData() {
@@ -169,5 +181,6 @@ class LivestockFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        scanStatusTextView = null
     }
 }
