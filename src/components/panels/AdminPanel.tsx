@@ -29,6 +29,7 @@ import { TagOrdersManager } from '@/components/admin/TagOrdersManager';
 import { StoreProductsManager } from '@/components/admin/StoreProductsManager';
 import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator';
 import { BarcodeGenerator } from '@/components/admin/BarcodeGenerator';
+import { PointOfSale } from '@/components/admin/PointOfSale';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
