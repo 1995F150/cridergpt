@@ -134,6 +134,12 @@ export default function SmartIDStore() {
         <Truck className="h-3.5 w-3.5" /> FREE SHIPPING on all orders! Ensure shipping info is complete.
       </div>
 
+      {/* iPhone App Notice */}
+      <div className="bg-amber-500/90 text-white text-center py-2 px-4 text-xs font-medium flex items-center justify-center gap-2">
+        <span className="bg-white/20 rounded px-1.5 py-0.5 text-[10px] font-bold">iOS</span>
+        iPhone app with NFC support launches June 6, 2025. Smart ID NFC scanning is currently available on Android only.
+      </div>
+
       {/* Product Detail Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedProduct(null)}>
