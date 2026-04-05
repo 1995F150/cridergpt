@@ -3,17 +3,24 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'app.cridergpt.android',
   appName: 'CriderGPT',
-  webDir: 'dist', // Corrected to 'dist' to match Vite's output
+  webDir: 'dist',
   
   server: {
     androidScheme: 'https',
+    iosScheme: 'https',
     cleartext: true
   },
   
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true // Disable in production
+    webContentsDebuggingEnabled: true
+  },
+
+  ios: {
+    contentInset: 'automatic',
+    preferredContentMode: 'mobile',
+    scheme: 'CriderGPT',
   },
   
   plugins: {

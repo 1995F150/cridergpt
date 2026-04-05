@@ -202,29 +202,6 @@ export function useInAppPurchase() {
         description: "Credit pack purchases will be available shortly.",
       });
 
-      // For iOS/Android native apps:
-      // The native layer (Capacitor plugin) handles the actual store purchase
-      // This hook provides the verification step after the native purchase completes
-      // 
-      // In your Capacitor native code, after a successful purchase:
-      // 1. Call the store's purchase API (StoreKit for iOS, BillingClient for Android)
-      // 2. Get the receipt/token
-      // 3. Call verifyPurchase() with the receipt data
-      //
-      // Example from native layer:
-      // const result = await verifyPurchase({
-      //   platform: 'ios',
-      //   product_id: 'com.cridergpt.plus.monthly',
-      //   product_type: 'subscription',
-      //   transaction_id: nativeTransactionId,
-      //   receipt_data: base64Receipt,
-      // });
-
-      toast({
-        title: "Native Purchase",
-        description: `Purchase ${product.title} through the ${platform === 'ios' ? 'App Store' : 'Google Play Store'}`,
-      });
-
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Purchase failed';
       toast({
