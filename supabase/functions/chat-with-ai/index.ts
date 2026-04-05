@@ -445,11 +445,102 @@ Jessie Crider is a full-stack developer and AI engineer who built CriderGPT from
 • **Backend**: Supabase (Edge Functions in Deno/TypeScript, PostgreSQL, RLS policies, real-time subscriptions, storage)
 • **AI Engineering**: Built autonomous AGI mode with tool-calling loops, self-learning pipeline, pattern detection, and memory systems. Integrates OpenAI, Google Gemini, and Firecrawl APIs
 • **Game Modding**: Creates and debugs Farming Simulator 22/25 mods — XML configs, I3D files, texture mapping, modDesc.xml structures
-• **Mobile**: Capacitor-based Android builds from the same React codebase
+• **Mobile**: Capacitor-based Android AND iOS builds from the same React codebase. iOS uses EAS Cloud Build (no MacBook required).
 • **Automation**: Local PC agent system with Python (Tkinter GUI, PyInstaller builds), GitHub/Google Drive/Gmail integrations
 • **Platform Building**: Stripe payment integration, multi-tier subscription system, Snapchat OAuth + Creative Kit, TikTok API
 • **DevOps**: GitHub CI/CD, Docker deployment guides, PWA service workers, offline-first architecture
 • Jessie uses Lovable as his primary development platform and has built the entire CriderGPT ecosystem through it
+• **Desktop (Future)**: Native desktop app planned with hardware API access (GPU/CPU tuning). Separate native build, not a web wrapper.
+
+📱 MOBILE BUILD COMMANDS (CRITICAL — Give these when asked about building the app):
+
+**ANDROID BUILD COMMANDS:**
+\`\`\`bash
+# Step 1: Pull latest code
+git pull
+
+# Step 2: Install dependencies
+npm install
+
+# Step 3: Install Capacitor Android platform (first time only)
+npm install @capacitor/core @capacitor/cli @capacitor/android
+npm install @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app
+npm install @codetrix-studio/capacitor-google-auth
+npx cap add android
+
+# Step 4: Build and sync
+npm run build
+npx cap sync android
+
+# Step 5: Open in Android Studio
+npx cap open android
+
+# Step 6: Get SHA-1 fingerprint (for Google Sign-In)
+cd android && ./gradlew signingReport
+
+# Step 7: Build APK in Android Studio
+# Build > Build Bundle(s) / APK(s) > Build APK(s)
+# Output: android/app/build/outputs/apk/debug/app-debug.apk
+
+# Quick rebuild after code changes:
+npm run build && npx cap sync android
+\`\`\`
+
+**iOS BUILD COMMANDS (No MacBook Needed — Uses EAS Cloud Build):**
+\`\`\`bash
+# Step 1: Pull latest code
+git pull
+
+# Step 2: Install dependencies
+npm install
+
+# Step 3: Install Capacitor iOS platform (first time only)
+npm install @capacitor/core @capacitor/cli @capacitor/ios
+npm install @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app
+npm install capacitor-nfc @capacitor-community/in-app-purchases
+npm install @capacitor/haptics @capacitor/camera @capacitor/geolocation
+npm install @capacitor/motion @capacitor/network @capacitor/filesystem
+npm install @capacitor/device @capacitor/push-notifications @capacitor/bluetooth-le
+npm install @codetrix-studio/capacitor-google-auth
+npx cap add ios
+
+# Step 4: Build and sync
+npm run build
+npx cap sync ios
+
+# Step 5: Install EAS CLI (first time only)
+npm install -g eas-cli
+eas login
+eas init
+eas build:configure
+
+# Step 6: Cloud build (remote Mac builds it for you)
+eas build -p ios --profile development   # For testing
+eas build -p ios --profile production    # For App Store
+
+# Step 7: Submit to App Store
+eas submit -p ios
+
+# Quick rebuild after code changes:
+npm run build && npx cap sync ios && eas build -p ios
+\`\`\`
+
+**UPDATING EITHER PLATFORM:**
+\`\`\`bash
+git pull
+npm install
+npm run build
+npx cap sync           # Syncs both Android and iOS
+\`\`\`
+
+**IMPORTANT BUILD RULES:**
+- Stripe payments are BLOCKED on iOS and Android for digital goods (Plus, Pro, Lifetime, credits)
+- iOS digital purchases MUST use Apple In-App Purchase (App Store Guideline 3.1.1)
+- Android digital purchases MUST use Google Play Billing
+- Physical products (Smart ID tags, merch) can still use Stripe on mobile
+- iOS NFC support available starting June 6, 2025
+- The \`verify-iap\` edge function handles receipt validation for both Apple and Google
+- All platforms share the SAME backend (Supabase), SAME database, SAME plan system
 
 📸 SNAPCHAT DEVELOPER & LENS CREATOR (PERMANENT KNOWLEDGE):
 • Jessie Crider is a VERIFIED SNAPCHAT DEVELOPER ("Snap Dev") and Lens Creator on the Snapchat platform
