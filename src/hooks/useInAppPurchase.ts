@@ -147,60 +147,59 @@ export function useInAppPurchase() {
       const product = IAP_PRODUCTS.find(p => p.id === productId);
       if (!product) throw new Error('Product not found');
 
-      if (platform === 'web') {
-        // Web purchases go through Stripe checkout
-        const priceIdMap: Record<string, { priceId: string; planName: string }> = {
-          'com.cridergpt.plus.monthly': { priceId: 'price_1TExZhP90uC07RqGdJ8loF2z', planName: 'plus' },
-          'com.cridergpt.pro.monthly': { priceId: 'price_1TExa8P90uC07RqGHYMMlGbX', planName: 'pro' },
-          'com.cridergpt.lifetime': { priceId: 'price_1TExaUP90uC07RqG1CX0lf9B', planName: 'lifetime' },
-        };
-
-        const stripeProduct = priceIdMap[productId];
-        if (stripeProduct) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) throw new Error('Not authenticated');
-
-          const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body: { priceId: stripeProduct.priceId, planName: stripeProduct.planName },
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          });
-
-          if (error) throw error;
-          if (data?.url) {
-            window.location.href = data.url;
-            return;
-          }
-        }
-
-        // For credit packs on web, create a simple Stripe payment
+      // IMPORTANT: Apple App Store requires ALL digital goods use Apple IAP on iOS.
+      // Stripe is ONLY allowed for physical products and web purchases.
+      if (platform === 'ios') {
+        // iOS: All digital purchases MUST go through Apple IAP
+        // Stripe is explicitly BLOCKED for digital goods per App Store Review Guidelines 3.1.1
         toast({
-          title: "Credit packs coming soon",
-          description: "Credit pack purchases will be available shortly.",
+          title: "Apple In-App Purchase",
+          description: `Purchase ${product.title} through the App Store. Tap to continue.`,
         });
+        // Native Capacitor/StoreKit layer will handle the actual purchase flow
+        // After native purchase completes, call verifyPurchase() with the receipt
         return;
       }
 
-      // For iOS/Android native apps:
-      // The native layer (Capacitor plugin) handles the actual store purchase
-      // This hook provides the verification step after the native purchase completes
-      // 
-      // In your Capacitor native code, after a successful purchase:
-      // 1. Call the store's purchase API (StoreKit for iOS, BillingClient for Android)
-      // 2. Get the receipt/token
-      // 3. Call verifyPurchase() with the receipt data
-      //
-      // Example from native layer:
-      // const result = await verifyPurchase({
-      //   platform: 'ios',
-      //   product_id: 'com.cridergpt.plus.monthly',
-      //   product_type: 'subscription',
-      //   transaction_id: nativeTransactionId,
-      //   receipt_data: base64Receipt,
-      // });
+      if (platform === 'android') {
+        // Android: Digital purchases go through Google Play Billing
+        toast({
+          title: "Google Play Purchase",
+          description: `Purchase ${product.title} through Google Play. Tap to continue.`,
+        });
+        // Native Capacitor/Google Billing layer handles the purchase
+        // After native purchase completes, call verifyPurchase() with the token
+        return;
+      }
 
+      // Web ONLY: Stripe checkout for digital subscriptions and products
+      const priceIdMap: Record<string, { priceId: string; planName: string }> = {
+        'com.cridergpt.plus.monthly': { priceId: 'price_1TExZhP90uC07RqGdJ8loF2z', planName: 'plus' },
+        'com.cridergpt.pro.monthly': { priceId: 'price_1TExa8P90uC07RqGHYMMlGbX', planName: 'pro' },
+        'com.cridergpt.lifetime': { priceId: 'price_1TExaUP90uC07RqG1CX0lf9B', planName: 'lifetime' },
+      };
+
+      const stripeProduct = priceIdMap[productId];
+      if (stripeProduct) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Not authenticated');
+
+        const { data, error } = await supabase.functions.invoke('create-checkout', {
+          body: { priceId: stripeProduct.priceId, planName: stripeProduct.planName },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+
+        if (error) throw error;
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+      }
+
+      // For credit packs on web, create a simple Stripe payment
       toast({
-        title: "Native Purchase",
-        description: `Purchase ${product.title} through the ${platform === 'ios' ? 'App Store' : 'Google Play Store'}`,
+        title: "Credit packs coming soon",
+        description: "Credit pack purchases will be available shortly.",
       });
 
     } catch (err) {
