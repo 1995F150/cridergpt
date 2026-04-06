@@ -1,6 +1,7 @@
 version: "3.8"
 
 services:
+  # ── Voice & Music AI Engine (CPU mode for AMD RX 580) ──
   voice-engine:
     build:
       context: .
@@ -10,27 +11,60 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # Persist voice samples and generated music between restarts
       - voice-samples:/app/voice-samples
       - music-output:/app/music-output
-      # Persist downloaded models so they don't re-download every restart
       - model-cache:/root/.local/share
       - huggingface-cache:/root/.cache/huggingface
     environment:
-      - DEVICE=cuda
+      - DEVICE=cpu
       - PORT=5000
       - VOICE_SAMPLES_DIR=/app/voice-samples
       - MUSIC_OUTPUT_DIR=/app/music-output
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    mem_limit: 10g
+    cpus: 3.5
+
+  # ── Backup Server — scheduled Supabase backups ──
+  backup-server:
+    image: python:3.11-slim
+    container_name: cridergpt-backup-server
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    volumes:
+      - backups:/app/backups
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL:-https://udpldrrpebdyuiqdtqnq.supabase.co}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-}
+      - BACKUP_INTERVAL_HOURS=6
+      - PORT=5050
+    command: >
+      bash -c "
+        pip install flask flask-cors supabase httpx &&
+        python /app/backup-server.py
+      "
+    working_dir: /app
+    configs:
+      - source: backup-server-script
+        target: /app/backup-server.py
+
+  # ── Watchtower — auto-updates containers when you rebuild ──
+  watchtower:
+    image: containrrr/watchtower
+    container_name: cridergpt-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400
+
+configs:
+  backup-server-script:
+    file: ./backup-server.py
 
 volumes:
   voice-samples:
   music-output:
   model-cache:
   huggingface-cache:
+  backups:

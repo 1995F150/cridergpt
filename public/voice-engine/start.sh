@@ -1,36 +1,33 @@
 #!/bin/bash
 echo "============================================"
-echo "  CriderGPT Voice Engine - Docker Launcher"
+echo "  CriderGPT Docker Stack - Launcher"
+echo "  AMD Ryzen 3 3200G + RX 580 (CPU mode)"
 echo "============================================"
 echo ""
 
-# Check Docker
 if ! docker info >/dev/null 2>&1; then
     echo "[ERROR] Docker is not running. Start Docker first."
     exit 1
 fi
+
 echo "[OK] Docker is running."
-
-# Check NVIDIA GPU
-if docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi >/dev/null 2>&1; then
-    echo "[OK] NVIDIA GPU detected."
-else
-    echo "[WARNING] No GPU detected - falling back to CPU (slower)."
-fi
-
 echo ""
-echo "Building and starting voice engine..."
-echo "First run downloads ~4-6 GB of AI models."
+echo "PC: Ryzen 3 3200G / RX 580 8GB / 16GB RAM"
+echo "Mode: CPU inference (AMD GPU not supported by PyTorch Docker)"
+echo ""
+echo "Starting: Voice Engine (5000) + Backup Server (5050) + Watchtower"
 echo ""
 
 docker compose up --build -d
 
 echo ""
 echo "============================================"
-echo "  Voice Engine running on port 5000"
-echo "  Health check: http://localhost:5000/health"
+echo "  All Services Running!"
 echo "============================================"
 echo ""
-echo "Logs:    docker logs -f cridergpt-voice-engine"
-echo "Stop:    docker compose down"
-echo "Restart: docker compose restart"
+echo "  Voice Engine:  http://localhost:5000/health"
+echo "  Backup Server: http://localhost:5050/health"
+echo "  Manual Backup: curl -X POST http://localhost:5050/backup/now"
+echo ""
+echo "  Logs:  docker logs -f cridergpt-voice-engine"
+echo "  Stop:  docker compose down"
