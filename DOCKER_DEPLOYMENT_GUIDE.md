@@ -1,12 +1,38 @@
-# CriderGPT Voice & Music Engine — Docker Deployment Guide
+# CriderGPT Docker Stack — Deployment Guide
 
-## What This Runs
+## Your PC Build
 
-Your self-hosted AI engine with:
+| Component | Spec |
+|-----------|------|
+| **CPU** | AMD Ryzen 3 3200G (4C/4T) |
+| **GPU** | XFX Radeon RX 580 8GB GDDR5 |
+| **RAM** | 16GB |
+| **Motherboard** | ASRock A560M-HDV |
+| **Storage** | 1TB HDD (SATA) |
+| **PSU** | 500W |
+| **Network** | PCIe Wi-Fi + Bluetooth |
+
+> **Note:** PyTorch does not support AMD GPUs via Docker on Windows, so the AI engine runs in **CPU mode**. It's slower than NVIDIA CUDA but still functional for personal use. Your Ryzen 3 handles 1 request at a time comfortably.
+
+---
+
+## What Docker Runs
+
+### 1. Voice & Music Engine (Port 5000)
 - **Voice Cloning (XTTS-v2)** — TTS in Jessie's voice from a 6-second sample
 - **Music Generation (MusicGen)** — AI-generated songs, beats, instrumentals
-- **Stem Separation (Demucs)** — split songs into vocals/drums/bass/other for covers
+- **Stem Separation (Demucs)** — split songs into vocals/drums/bass/other
 - **Hum-to-Song** — turn humming into polished tracks
+
+### 2. Backup Server (Port 5050)
+- **Automatic backups** of your entire Supabase database every 6 hours
+- **Manual backup** trigger via API
+- **Local storage** — all backups saved to Docker volume on your 1TB HDD
+- Tables backed up: profiles, ai_usage, ai_memory, chat_messages, events, livestock, orders, and more
+
+### 3. Watchtower (Auto-Updates)
+- Monitors your containers and auto-rebuilds when you update code
+- Checks once per day
 
 ---
 
@@ -14,12 +40,11 @@ Your self-hosted AI engine with:
 
 | Requirement | Details |
 |-------------|---------|
-| **OS** | Windows 10/11, Linux, or macOS |
+| **OS** | Windows 10/11 |
 | **Docker Desktop** | [Download here](https://www.docker.com/products/docker-desktop/) |
-| **NVIDIA GPU** | 8GB+ VRAM (your GPU works fine for personal/small use) |
-| **NVIDIA Drivers** | Latest from [nvidia.com](https://www.nvidia.com/drivers) |
-| **NVIDIA Container Toolkit** | [Install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) |
 | **Disk Space** | ~15 GB for Docker image + AI models |
+
+No NVIDIA GPU or special drivers needed — runs on CPU.
 
 ---
 
@@ -38,7 +63,7 @@ chmod +x start.sh
 ./start.sh
 ```
 
-### Manual (any OS)
+### Manual
 ```bash
 cd public/voice-engine
 docker compose up --build -d
@@ -49,11 +74,12 @@ docker compose up --build -d
 ## First Run
 
 On first launch, Docker will:
-1. Build the container (~5 min)
+1. Build the containers (~5-8 min)
 2. Download AI models on first request (~4-6 GB total):
    - XTTS-v2 (~1.8 GB)
    - MusicGen-small (~1.5 GB)
    - Demucs (~800 MB)
+   - Whisper-base (~150 MB)
 
 Models are cached in Docker volumes — they only download once.
 
@@ -61,23 +87,34 @@ Models are cached in Docker volumes — they only download once.
 
 ## Connecting to CriderGPT
 
-1. Go to your **Supabase Dashboard → Edge Function Secrets**
-2. Set `VOICE_ENGINE_URL` to:
-   - Local: `http://localhost:5000`
-   - Remote server: `http://YOUR_SERVER_IP:5000`
+### Voice Engine
+1. Go to **Supabase Dashboard → Edge Function Secrets**
+2. Set `VOICE_ENGINE_URL` to `http://localhost:5000`
 
-That's it. The app will route all voice/music requests through this URL.
+### Backup Server
+1. Set `SUPABASE_SERVICE_KEY` in a `.env` file in the `public/voice-engine/` folder:
+   ```
+   SUPABASE_URL=https://udpldrrpebdyuiqdtqnq.supabase.co
+   SUPABASE_SERVICE_KEY=your-service-role-key-here
+   ```
+2. Get your service role key from **Supabase Dashboard → Settings → API → service_role**
 
 ---
 
 ## Verify It's Working
 
 ```bash
-# Health check
+# Voice engine health
 curl http://localhost:5000/health
 
-# Should return:
-# {"status": "healthy", "models": {...}, "gpu_available": true}
+# Backup server health
+curl http://localhost:5050/health
+
+# List backups
+curl http://localhost:5050/backups
+
+# Trigger manual backup
+curl -X POST http://localhost:5050/backup/now
 ```
 
 ---
@@ -86,44 +123,45 @@ curl http://localhost:5000/health
 
 | Action | Command |
 |--------|---------|
-| Start | `docker compose up -d` |
-| Stop | `docker compose down` |
-| View logs | `docker logs -f cridergpt-voice-engine` |
+| Start all | `docker compose up -d` |
+| Stop all | `docker compose down` |
+| Voice logs | `docker logs -f cridergpt-voice-engine` |
+| Backup logs | `docker logs -f cridergpt-backup-server` |
 | Restart | `docker compose restart` |
 | Rebuild | `docker compose up --build -d` |
-| Check GPU | `docker exec cridergpt-voice-engine nvidia-smi` |
+| Manual backup | `curl -X POST http://localhost:5050/backup/now` |
 
 ---
 
-## Scaling Notes (100+ Users)
+## Performance Notes (Your Build)
 
-Your 8GB GPU handles 1-3 concurrent requests well. For heavier load:
+| Task | Estimated Time (CPU) |
+|------|---------------------|
+| TTS (1 sentence) | ~5-10 seconds |
+| Music (15 sec clip) | ~30-60 seconds |
+| Beat generation | ~30-60 seconds |
+| Stem separation | ~2-3 minutes |
+| Hum-to-song | ~45-90 seconds |
 
-| Option | Cost | Setup |
-|--------|------|-------|
-| **Queue requests** | Free | Already built in — requests queue when GPU is busy |
-| **RunPod Serverless** | ~$0.0002/sec | Pay-per-use, auto-scales, no idle cost |
-| **Vast.ai** | ~$0.20/hr | Rent a 24GB GPU, run same Docker image |
-| **Lambda Labs** | ~$0.50/hr | Enterprise-grade A100 GPUs |
-
-To switch to cloud: just change `VOICE_ENGINE_URL` in Supabase secrets to point at the cloud server instead of localhost.
+CPU mode is slower than GPU but totally usable for personal/small use. Your 16GB RAM is enough to load all models.
 
 ---
 
 ## Troubleshooting
 
-**"NVIDIA GPU not detected"**
-- Install/update NVIDIA drivers
-- Install NVIDIA Container Toolkit
-- Restart Docker Desktop
-- Windows: Enable WSL2 GPU support in Docker Desktop settings
-
 **"Out of memory"**
-- MusicGen-small uses ~4GB VRAM, XTTS uses ~2GB
-- Close other GPU apps (games, etc.) before generating
-- Models load on first use and stay in memory
+- Your 16GB RAM is enough, but close Chrome tabs and heavy apps while generating
+- Models load on first use and stay in memory (~6-8 GB total)
 
 **"Connection refused" from the app**
 - Make sure Docker container is running: `docker ps`
-- Check the port isn't blocked by firewall
+- Check port isn't blocked by firewall
 - Verify `VOICE_ENGINE_URL` matches your setup
+
+**Slow generation?**
+- Expected on CPU — see performance table above
+- Your Ryzen 3 3200G handles it but won't be instant like a GPU
+- Consider a future NVIDIA GPU upgrade (RTX 3060 12GB = ~$250) for 5-10x speedup
+
+**Backup server says "no service key"**
+- Add `SUPABASE_SERVICE_KEY` to your `.env` file in `public/voice-engine/`

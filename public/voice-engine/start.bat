@@ -1,6 +1,7 @@
 @echo off
 echo ============================================
-echo   CriderGPT Voice Engine - Docker Launcher
+echo   CriderGPT Docker Stack - Launcher
+echo   AMD Ryzen 3 3200G + RX 580 (CPU mode)
 echo ============================================
 echo.
 
@@ -15,43 +16,34 @@ if errorlevel 1 (
 
 echo [OK] Docker is running.
 echo.
-
-REM Check for NVIDIA GPU support
-docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi >nul 2>&1
-if errorlevel 1 (
-    echo [WARNING] NVIDIA GPU not detected in Docker.
-    echo Make sure you have:
-    echo   1. NVIDIA drivers installed
-    echo   2. NVIDIA Container Toolkit installed
-    echo   3. Docker Desktop GPU support enabled
-    echo.
-    echo Falling back to CPU mode (will be slower)...
-    set USE_CPU=1
-) else (
-    echo [OK] NVIDIA GPU detected.
-    set USE_CPU=0
-)
-
+echo Your PC specs: Ryzen 3 3200G / RX 580 8GB / 16GB RAM
+echo Mode: CPU inference (AMD GPU not supported by PyTorch Docker)
 echo.
-echo Building and starting the voice engine...
-echo This will download AI models on first run (~4-6 GB).
+echo Starting services:
+echo   1. Voice + Music Engine  (port 5000)
+echo   2. Backup Server         (port 5050)
+echo   3. Watchtower            (auto-updates)
+echo.
+echo Building and starting all services...
+echo First run downloads AI models (~4-6 GB). Be patient.
 echo.
 
-if "%USE_CPU%"=="1" (
-    docker compose up --build -d
-    echo [NOTE] Running in CPU mode - generation will be slower.
-) else (
-    docker compose up --build -d
-)
+docker compose up --build -d
 
 echo.
 echo ============================================
-echo   Voice Engine is starting on port 5000
-echo   Health check: http://localhost:5000/health
+echo   All Services Running!
 echo ============================================
 echo.
-echo To view logs:    docker logs -f cridergpt-voice-engine
-echo To stop:         docker compose down
-echo To restart:      docker compose restart
+echo   Voice Engine:   http://localhost:5000/health
+echo   Backup Server:  http://localhost:5050/health
+echo   Backup List:    http://localhost:5050/backups
+echo   Manual Backup:  curl -X POST http://localhost:5050/backup/now
+echo.
+echo Commands:
+echo   Logs (voice):   docker logs -f cridergpt-voice-engine
+echo   Logs (backup):  docker logs -f cridergpt-backup-server
+echo   Stop all:       docker compose down
+echo   Restart:        docker compose restart
 echo.
 pause
