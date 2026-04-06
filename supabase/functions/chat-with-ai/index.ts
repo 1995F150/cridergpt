@@ -446,11 +446,32 @@ Jessie Crider is a full-stack developer and AI engineer who built CriderGPT from
 • **AI Engineering**: Built autonomous AGI mode with tool-calling loops, self-learning pipeline, pattern detection, and memory systems. Integrates OpenAI, Google Gemini, and Firecrawl APIs
 • **Game Modding**: Creates and debugs Farming Simulator 22/25 mods — XML configs, I3D files, texture mapping, modDesc.xml structures
 • **Mobile**: Capacitor-based Android AND iOS builds from the same React codebase. iOS uses EAS Cloud Build (no MacBook required).
-• **Automation**: Local PC agent system with Python (Tkinter GUI, PyInstaller builds), GitHub/Google Drive/Gmail integrations
+• **Automation**: Docker-based agent system (docker-agent container on port 5100) replaces the old Python GUI. Polls agent_execution_queue in Supabase for commands. Supports file ops, git, shell commands, and system info — all inside Docker.
 • **Platform Building**: Stripe payment integration, multi-tier subscription system, Snapchat OAuth + Creative Kit, TikTok API
-• **DevOps**: GitHub CI/CD, Docker deployment guides, PWA service workers, offline-first architecture
+• **DevOps**: GitHub CI/CD, Docker deployment (4-container stack), PWA service workers, offline-first architecture
 • Jessie uses Lovable as his primary development platform and has built the entire CriderGPT ecosystem through it
 • **Desktop (Future)**: Native desktop app planned with hardware API access (GPU/CPU tuning). Separate native build, not a web wrapper.
+
+🖥️ JESSIE'S PC BUILD (Custom-built — KNOW THIS):
+• CPU: AMD Ryzen 3 3200G (4 cores / 4 threads, integrated Vega 8 graphics)
+• GPU: XFX Radeon RX 580 8GB GDDR5 (RX-CYBERB) — AMD, NOT NVIDIA
+• RAM: 16GB DDR4
+• Motherboard: ASRock A560M-HDV (Micro-ATX)
+• Case: Cooler Master MasterBox Q300L (ventilated, magnetic dust filters, acrylic side panel)
+• PSU: 500W (max usage ~109W)
+• Storage: 1TB SATA HDD
+• Cooling: Case fans with LED control HUD (SATA powered)
+• Network: PCIe Wi-Fi + Bluetooth card
+• Peripherals: Dell keyboard + mouse, Razer BlackWidow Elite mechanical keyboard
+• Capabilities: Runs Blender, GIANTS Editor, modern games, multitasks without freezing
+• IMPORTANT: AI models run in CPU mode — PyTorch does NOT support AMD GPUs via Docker on Windows. No NVIDIA GPU.
+
+🐳 DOCKER STACK (4 containers on Jessie's PC):
+• Voice Engine (port 5000) — XTTS-v2 voice cloning, MusicGen, Demucs, Whisper (CPU mode)
+• Backup Server (port 5050) — Auto-backs up Supabase every 6 hours to local 1TB HDD
+• Docker Agent (port 5100) — Replaces gui_agent.py. Polls agent_execution_queue for commands. Handles file ops, git, shell, system info.
+• Watchtower — Auto-updates containers daily
+• To start everything: \`cd public/voice-engine && start.bat\`
 
 📱 MOBILE BUILD COMMANDS (CRITICAL — Give these when asked about building the app):
 

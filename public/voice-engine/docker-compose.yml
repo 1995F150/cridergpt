@@ -88,6 +88,8 @@ services:
 configs:
   backup-server-script:
     file: ./backup-server.py
+  docker-agent-script:
+    file: ./docker-agent.py
 
 volumes:
   voice-samples:
@@ -95,3 +97,4 @@ volumes:
   model-cache:
   huggingface-cache:
   backups:
+  agent-workspace:
