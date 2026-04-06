@@ -47,6 +47,33 @@ services:
       - source: backup-server-script
         target: /app/backup-server.py
 
+  # ── Docker Agent — replaces gui_agent.py, handles AGI/Agent commands ──
+  docker-agent:
+    image: python:3.11-slim
+    container_name: cridergpt-docker-agent
+    restart: unless-stopped
+    ports:
+      - "5100:5100"
+    volumes:
+      - agent-workspace:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL:-https://udpldrrpebdyuiqdtqnq.supabase.co}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-}
+      - POLL_INTERVAL=5
+      - PORT=5100
+      - WORKSPACE_DIR=/workspace
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/* &&
+        pip install flask flask-cors httpx &&
+        python /app/docker-agent.py
+      "
+    working_dir: /app
+    configs:
+      - source: docker-agent-script
+        target: /app/docker-agent.py
+
   # ── Watchtower — auto-updates containers when you rebuild ──
   watchtower:
     image: containrrr/watchtower
