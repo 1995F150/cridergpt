@@ -60,6 +60,30 @@ PC_SPECS = {
     "peripherals": ["Dell keyboard", "Dell mouse", "Razer BlackWidow Elite"],
 }
 
+# ============================================================
+# Legacy Chatbot Engine — offline fallback (from chatbot_jessie.py)
+# The very first AI system Jessie ever built, now embedded here
+# as a fallback when external APIs are unreachable.
+# ============================================================
+LEGACY_RULES = [
+    (["hello", "hi", "hey"], "Hey there! How can I help you today?"),
+    (["how are you"], "I'm doing great. Thanks for asking!"),
+    (["your name"], "I'm CriderGPT's Docker Agent — but my roots trace back to a simple Python chatbot."),
+    (["help"], "I'm here for you! Ask me anything — running in legacy fallback mode."),
+    (["bye", "goodbye"], "Take care! Talk to you later."),
+    (["docker", "container"], "Your Docker stack: voice(5000), backup(5050), agent(5100). Run start.bat to launch."),
+    (["error", "bug", "broken"], "Try checking Docker logs: docker-compose logs -f"),
+    (["status", "health"], "I'll check system health for you."),
+]
+
+def legacy_chatbot_response(text: str) -> str:
+    """Fallback response engine when Supabase/OpenAI is unreachable."""
+    lower = text.lower().strip()
+    for keywords, response in LEGACY_RULES:
+        if any(kw in lower for kw in keywords):
+            return response
+    return "I'm running in legacy fallback mode and can't process that. Basic commands: hello, help, status, docker, bye."
+
 os.makedirs(WORKSPACE_DIR, exist_ok=True)
 
 
@@ -304,6 +328,14 @@ def revive():
     global KILL_SWITCH
     KILL_SWITCH = False
     return jsonify({"status": "revived"})
+
+@app.route("/chat/legacy", methods=["POST"])
+def legacy_chat():
+    """Legacy chatbot fallback endpoint — responds even when APIs are down."""
+    data = request.json or {}
+    message = data.get("message", "")
+    response = legacy_chatbot_response(message)
+    return jsonify({"response": response, "source": "legacy-chatbot", "offline": True})
 
 
 if __name__ == "__main__":
