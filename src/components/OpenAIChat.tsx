@@ -191,6 +191,7 @@ function OpenAIChat() {
       }
 
       setReply(responseText);
+      setReplySource('ai');
       
       // Update knowledge stats
       const updatedStats = await getKnowledgeStats();
@@ -208,6 +209,20 @@ function OpenAIChat() {
     } catch (error) {
       console.error('Error sending message:', error);
       
+      // Offline fallback — try legacy chatbot engine
+      if (message.trim()) {
+        const fallback = legacyChatbotResponse(message);
+        if (fallback) {
+          setReply(`⚡ **Offline Mode** — AI is unreachable, using legacy engine:\n\n${fallback.text}`);
+          setReplySource('legacy');
+          toast({
+            title: "Running in Legacy Mode",
+            description: "AI is offline. Using the original chatbot engine as fallback.",
+          });
+          return;
+        }
+      }
+
       if (error.message && error.message.includes('(Used:')) {
         toast({
           title: "Monthly Token Limit Reached",
