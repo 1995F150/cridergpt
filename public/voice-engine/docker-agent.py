@@ -329,6 +329,14 @@ def revive():
     KILL_SWITCH = False
     return jsonify({"status": "revived"})
 
+@app.route("/chat/legacy", methods=["POST"])
+def legacy_chat():
+    """Legacy chatbot fallback endpoint — responds even when APIs are down."""
+    data = request.json or {}
+    message = data.get("message", "")
+    response = legacy_chatbot_response(message)
+    return jsonify({"response": response, "source": "legacy-chatbot", "offline": True})
+
 
 if __name__ == "__main__":
     import threading
