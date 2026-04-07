@@ -253,10 +253,37 @@ function OpenAIChat() {
               </Badge>
             )}
           </CardTitle>
-          <ModelSelector 
-            selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
-          />
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => {
+                    setLegacyMode(!legacyMode);
+                    toast({
+                      title: legacyMode ? "Legacy Mode Off" : "🐍 Legacy Mode On",
+                      description: legacyMode 
+                        ? "Back to full CriderGPT AI" 
+                        : "Using the original chatbot engine — where it all started!",
+                    });
+                  }}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    legacyMode 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <Terminal className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{legacyMode ? 'Legacy Mode ON — click to disable' : 'Legacy Mode — use the original chatbot'}</p>
+              </TooltipContent>
+            </Tooltip>
+            <ModelSelector 
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+            />
+          </div>
         </div>
         
         {knowledgeStats.totalInteractions > 0 && (
@@ -290,10 +317,25 @@ function OpenAIChat() {
         />
         
         {reply && (
-          <div className="p-4 bg-gradient-to-br from-[#081F35]/5 to-[#D8B142]/5 border border-[#D8B142]/20 rounded-lg animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+          <div className={`p-4 border rounded-lg animate-in fade-in-50 slide-in-from-bottom-2 duration-300 ${
+            replySource === 'legacy' 
+              ? 'bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20' 
+              : 'bg-gradient-to-br from-[#081F35]/5 to-[#D8B142]/5 border-[#D8B142]/20'
+          }`}>
             <p className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[#D8B142]" />
-              <span className="font-semibold">CriderGPT Response:</span>
+              {replySource === 'legacy' ? (
+                <Terminal className="h-4 w-4 text-green-500" />
+              ) : (
+                <Sparkles className="h-4 w-4 text-[#D8B142]" />
+              )}
+              <span className="font-semibold">
+                {replySource === 'legacy' ? 'Legacy Chatbot Response:' : 'CriderGPT Response:'}
+              </span>
+              {replySource === 'legacy' && (
+                <Badge variant="outline" className="text-xs text-green-600 border-green-500/30">
+                  🐍 Original Engine
+                </Badge>
+              )}
             </p>
             <p className="whitespace-pre-wrap leading-relaxed">{reply}</p>
           </div>
