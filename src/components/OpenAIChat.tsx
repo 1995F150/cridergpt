@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Brain, BookOpen, Sparkles } from "lucide-react";
+import { MessageSquare, Brain, BookOpen, Sparkles, Terminal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ModelSelector from "./ModelSelector";
 import { useModelSelection } from "@/hooks/useModelSelection";
@@ -10,6 +10,8 @@ import { ModernChatInput } from "./ModernChatInput";
 import { useAIMemory } from "@/hooks/useAIMemory";
 import { useVisionMemory } from "@/hooks/useVisionMemory";
 import { supabase } from "@/integrations/supabase/client";
+import { legacyChatbotResponse } from "@/utils/legacyChatbot";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FilePreview {
   id: string;
@@ -22,6 +24,8 @@ interface FilePreview {
 
 function OpenAIChat() {
   const [reply, setReply] = useState("");
+  const [replySource, setReplySource] = useState<'ai' | 'legacy'>('ai');
+  const [legacyMode, setLegacyMode] = useState(false);
   const [knowledgeStats, setKnowledgeStats] = useState({
     totalInteractions: 0,
     categoriesKnown: [],
@@ -72,6 +76,17 @@ function OpenAIChat() {
   };
 
   async function handleSendMessage(message: string, files?: FilePreview[]) {
+    // Legacy Mode — use the original chatbot engine
+    if (legacyMode && !files?.length) {
+      const legacyResult = legacyChatbotResponse(message);
+      if (legacyResult) {
+        setReply(legacyResult.text);
+        setReplySource('legacy');
+        toast({ title: "Legacy Mode", description: "Response from the original chatbot engine 🐍" });
+        return;
+      }
+    }
+
     try {
       let responseText = '';
       let processedDocContent = '';
