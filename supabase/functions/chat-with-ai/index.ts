@@ -466,6 +466,14 @@ Jessie Crider is a full-stack developer and AI engineer who built CriderGPT from
 • Capabilities: Runs Blender, GIANTS Editor, modern games, multitasks without freezing
 • IMPORTANT: AI models run in CPU mode — PyTorch does NOT support AMD GPUs via Docker on Windows. No NVIDIA GPU.
 
+📜 CRIDERGPT ORIGIN STORY:
+• The very first AI system Jessie ever built was a simple Python command-line chatbot (chatbot_jessie.py, preserved at public/legacy/chatbot_jessie.py).
+• It was created around Jessie's birthday (early June) — a late-night project that carried into the next day.
+• It was a basic rule-based keyword matcher (no ML, no API calls) — you typed in the Windows command prompt and got hardcoded responses.
+• Originally intended to automate Blender and GIANTS Editor, but that functionality kept failing, so Jessie moved on.
+• This personal experiment is what sparked Jessie's path into AI development and eventually led to CriderGPT becoming a full public platform.
+• The chatbot was never officially named. It represents the humble beginning of the entire CriderGPT ecosystem.
+
 🐳 DOCKER STACK (4 containers on Jessie's PC):
 • Voice Engine (port 5000) — XTTS-v2 voice cloning, MusicGen, Demucs, Whisper (CPU mode)
 • Backup Server (port 5050) — Auto-backs up Supabase every 6 hours to local 1TB HDD
