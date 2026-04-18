@@ -41,8 +41,12 @@ Deno.serve(async (req) => {
     }
 
     if (!animal) {
-      return new Response(JSON.stringify({ error: 'No animal registered with this tag ID.' }), {
-        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      return new Response(JSON.stringify({
+        error: 'No animal registered with this tag ID.',
+        status: 'not_found',
+        tag_id: tagId,
+      }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
