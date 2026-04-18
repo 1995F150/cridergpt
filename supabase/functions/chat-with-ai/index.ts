@@ -1,11 +1,111 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
+import {
+  loadFullCatalog,
+  summarizeCatalogForAI,
+  lookupOrdersForUser,
+  createCheckoutLink,
+} from "../_shared/catalog.ts";
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
 const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
+
+// OpenAI chat-completions tool format (nested under "function")
+const PRODUCT_TOOLS_CHAT = [
+  {
+    type: 'function',
+    function: {
+      name: 'search_products',
+      description: 'Search the CriderGPT catalog (physical, digital, Snapchat filters). Use when user asks about products, pricing, or availability.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string' },
+          category: { type: 'string' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'recommend_products',
+      description: "Recommend products that fit the user's stated need.",
+      parameters: {
+        type: 'object',
+        properties: { need: { type: 'string' } },
+        required: ['need'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'lookup_order',
+      description: "Look up the signed-in user's own orders, subscriptions, and filter requests.",
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_checkout_link',
+      description: 'Generate a Stripe checkout link for a product. Returns a URL.',
+      parameters: {
+        type: 'object',
+        properties: {
+          product_ref: { type: 'string', description: 'Stripe price_id, prod_id, or digital_products id/slug' },
+          quantity: { type: 'integer', minimum: 1 },
+        },
+        required: ['product_ref'],
+      },
+    },
+  },
+];
+
+async function runProductTool(name: string, args: any, userId: string | null, userEmail: string | null, origin: string) {
+  switch (name) {
+    case 'search_products': {
+      const q = String(args?.query || '').toLowerCase();
+      const cat = args?.category ? String(args.category) : null;
+      const all = await loadFullCatalog();
+      let list = all;
+      if (cat) list = list.filter(p => p.category === cat);
+      if (q) list = list.filter(p =>
+        [p.title, p.description ?? '', p.category ?? '', p.tags.join(' ')].join(' ').toLowerCase().includes(q)
+      );
+      return { count: list.length, products: list.slice(0, 10), summary: summarizeCatalogForAI(list.slice(0, 10)) };
+    }
+    case 'recommend_products': {
+      const need = String(args?.need || '').toLowerCase();
+      const all = await loadFullCatalog();
+      const ranked = all.map(p => {
+        const hay = [p.title, p.description ?? '', p.tags.join(' ')].join(' ').toLowerCase();
+        const score = need.split(/\s+/).filter(Boolean).reduce((s, t) => s + (hay.includes(t) ? 1 : 0), 0);
+        return { p, score };
+      }).sort((a, b) => b.score - a.score).slice(0, 5).map(x => x.p);
+      return { recommendations: ranked, summary: summarizeCatalogForAI(ranked) };
+    }
+    case 'lookup_order': {
+      if (!userId) return { error: 'Sign in required to look up orders' };
+      const orders = await lookupOrdersForUser(userId, userEmail);
+      return { count: orders.length, orders };
+    }
+    case 'create_checkout_link': {
+      const ref = String(args?.product_ref || '');
+      const qty = Math.max(1, Number(args?.quantity) || 1);
+      if (!ref) return { error: 'product_ref required' };
+      return await createCheckoutLink(ref, qty, userEmail, origin);
+    }
+    default:
+      return { error: `Unknown tool: ${name}` };
+  }
+}
+
 
 const SYSTEM_PROMPT = (userEmail: string, writingSamples: string, memoryEnabled: boolean, memoriesContext: string) => {
   const now = new Date();
@@ -969,46 +1069,72 @@ serve(async (req) => {
         throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
       }
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Tool-calling loop (max 4 iterations to prevent infinite loops)
+      const origin = req.headers.get('origin') || 'https://cridergpt.lovable.app';
+      let toolLoopData: any = null;
+      let toolIterations = 0;
+      const MAX_TOOL_ITERATIONS = 4;
+
+      while (toolIterations < MAX_TOOL_ITERATIONS) {
+        const requestBody: any = {
           model: defaultModel,
           messages,
           max_tokens: 2000,
-        }),
-      });
+        };
+        // Only attach tools when not doing image analysis (vision + tools combo is flaky)
+        if (!imageData) {
+          requestBody.tools = PRODUCT_TOOLS_CHAT;
+          requestBody.tool_choice = 'auto';
+        }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('AI Gateway error:', response.status, errorText);
-        
-        if (response.status === 429) {
-          return new Response(JSON.stringify({ 
-            error: "Rate limited. Please try again in a moment." 
-          }), {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('AI Gateway error:', response.status, errorText);
+          if (response.status === 429) {
+            return new Response(JSON.stringify({ error: "Rate limited. Please try again in a moment." }), {
+              status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          if (response.status === 402) {
+            return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits." }), {
+              status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          throw new Error(`AI Gateway error: ${response.status}`);
+        }
+
+        toolLoopData = await response.json();
+        const choice = toolLoopData.choices?.[0];
+        const toolCalls = choice?.message?.tool_calls;
+
+        if (!toolCalls || toolCalls.length === 0) break;
+
+        // Append assistant message with tool calls + run each tool
+        messages.push(choice.message);
+        for (const call of toolCalls) {
+          let parsedArgs: any = {};
+          try { parsedArgs = JSON.parse(call.function.arguments || '{}'); } catch {}
+          console.log('[chat-with-ai] tool call:', call.function.name, parsedArgs);
+          const result = await runProductTool(call.function.name, parsedArgs, userId, userEmail, origin);
+          messages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            content: JSON.stringify(result),
           });
         }
-        
-        if (response.status === 402) {
-          return new Response(JSON.stringify({ 
-            error: "AI credits exhausted. Please add credits." 
-          }), {
-            status: 402,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        
-        throw new Error(`AI Gateway error: ${response.status}`);
+        toolIterations += 1;
       }
 
-      const data = await response.json();
-      aiResponse = data.choices?.[0]?.message?.content || 'No response generated';
+      aiResponse = toolLoopData?.choices?.[0]?.message?.content || 'No response generated';
       responseSource = useOpenAI ? 'openai' : 'gateway';
     } // end else (external API)
 

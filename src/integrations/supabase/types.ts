@@ -1095,6 +1095,84 @@ export type Database = {
         }
         Relationships: []
       }
+      digital_products: {
+        Row: {
+          active: boolean
+          category: string | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          download_url: string | null
+          featured: boolean
+          gallery_urls: string[] | null
+          id: string
+          license_terms: string | null
+          max_redemptions: number | null
+          metadata: Json
+          price_cents: number
+          product_type: string
+          redemption_count: number
+          slug: string
+          sort_order: number
+          stripe_price_id: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          download_url?: string | null
+          featured?: boolean
+          gallery_urls?: string[] | null
+          id?: string
+          license_terms?: string | null
+          max_redemptions?: number | null
+          metadata?: Json
+          price_cents?: number
+          product_type?: string
+          redemption_count?: number
+          slug: string
+          sort_order?: number
+          stripe_price_id?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          download_url?: string | null
+          featured?: boolean
+          gallery_urls?: string[] | null
+          id?: string
+          license_terms?: string | null
+          max_redemptions?: number | null
+          metadata?: Json
+          price_cents?: number
+          product_type?: string
+          redemption_count?: number
+          slug?: string
+          sort_order?: number
+          stripe_price_id?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           category: string | null
