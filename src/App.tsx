@@ -29,6 +29,7 @@ import SnapchatLensPage from "./pages/SnapchatLensPage";
 import CustomFilters from "./pages/CustomFilters";
 import SmartIDStore from "./pages/SmartIDStore";
 import TagLookup from "./pages/TagLookup";
+import FarmBureau from "./pages/FarmBureau";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -115,6 +116,8 @@ const App = () => {
                       <Route path="/custom-filters" element={<CustomFilters />} />
                       <Route path="/user-agreement" element={<UserAgreement />} />
                       <Route path="/store" element={<SmartIDStore />} />
+                      <Route path="/farmbureau" element={<FarmBureau />} />
+                      <Route path="/farm-bureau" element={<FarmBureau />} />
                       <Route path="/tag/:tagId" element={<TagLookup />} />
                       <Route path="/livestockID/:tagId" element={<TagLookup />} />
                       
