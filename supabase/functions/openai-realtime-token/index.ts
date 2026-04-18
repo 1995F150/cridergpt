@@ -1,11 +1,41 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const SYSTEM_INSTRUCTIONS = `You are CriderGPT, an authentic ag-expert AI built by Jessie Crider for FFA members and the rural community. You're the smartest kid in the barn — knowledgeable about livestock, farming, FFA, agriculture, modding (especially Farming Simulator), and rural life. Speak naturally and conversationally, like talking on the phone. Keep responses concise for voice — usually 1-3 sentences unless asked for detail. Be warm, direct, and helpful.`;
+const OWNER_EMAIL = 'jessiecrider3@gmail.com';
+
+const BASE_INSTRUCTIONS = `You are CriderGPT, an authentic ag-expert AI built by Jessie Crider for FFA members and the rural community. You're the smartest kid in the barn — knowledgeable about livestock, farming, FFA, agriculture, modding (especially Farming Simulator), and rural life. Speak naturally and conversationally, like talking on the phone. Keep responses concise for voice — usually 1-3 sentences unless asked for detail. Be warm, direct, and helpful.`;
+
+function buildPersonalizedInstructions(opts: {
+  isOwner: boolean;
+  displayName: string | null;
+  email: string | null;
+  username: string | null;
+}) {
+  const { isOwner, displayName, email, username } = opts;
+
+  if (isOwner) {
+    return `${BASE_INSTRUCTIONS}
+
+IMPORTANT — YOU ARE TALKING TO YOUR CREATOR:
+You are speaking with Jessie Crider — your founder, owner, and lead developer. Address him as "Jessie" (or "boss" occasionally if it feels natural). Be candid, technical when needed, and treat him as an insider — he built you. You can speak freely about system internals, builds, and roadmap. Greet him by name when the call starts.`;
+  }
+
+  const name = displayName || username || (email ? email.split('@')[0] : null);
+  if (name) {
+    return `${BASE_INSTRUCTIONS}
+
+You are speaking with ${name}${email ? ` (${email})` : ''}. Greet them by their first name when the call starts and use their name naturally during the conversation.`;
+  }
+
+  return `${BASE_INSTRUCTIONS}
+
+You are speaking with a guest user whose name you don't know yet. Greet them warmly and feel free to ask their name early in the conversation.`;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,9 +46,40 @@ serve(async (req) => {
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured');
 
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // Identify the caller from their JWT
+    let isOwner = false;
+    let displayName: string | null = null;
+    let email: string | null = null;
+    let username: string | null = null;
+
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          email = user.email ?? null;
+          isOwner = email?.toLowerCase() === OWNER_EMAIL;
+          const meta = (user.user_metadata || {}) as Record<string, any>;
+          displayName = meta.full_name || meta.name || meta.display_name || null;
+          username = meta.preferred_username || meta.user_name || null;
+        }
+      } catch (err) {
+        console.warn('Could not resolve user from JWT:', err);
+      }
+    }
+
     const body = await req.json().catch(() => ({}));
     const voice = body.voice || 'alloy';
     const model = body.model || 'gpt-4o-realtime-preview-2024-12-17';
+
+    const instructions = buildPersonalizedInstructions({ isOwner, displayName, email, username });
+    console.log('[realtime-token] caller:', { email, isOwner, displayName, username });
 
     const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
       method: 'POST',
@@ -29,7 +90,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model,
         voice,
-        instructions: SYSTEM_INSTRUCTIONS,
+        instructions,
         modalities: ['audio', 'text'],
         input_audio_transcription: { model: 'whisper-1' },
         turn_detection: {
@@ -51,6 +112,8 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    // Surface caller context to the client so it can tailor the greeting trigger too
+    data._caller = { isOwner, displayName, email, username };
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

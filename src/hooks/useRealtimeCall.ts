@@ -128,6 +128,7 @@ export function useRealtimeCall() {
       if (sessionErr) throw sessionErr;
       const ephemeralKey = session?.client_secret?.value;
       if (!ephemeralKey) throw new Error('No ephemeral key returned');
+      const caller = session?._caller as { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
 
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
@@ -164,13 +165,15 @@ export function useRealtimeCall() {
       dcRef.current = dc;
       dc.addEventListener('open', () => {
         console.log('[Realtime] Data channel open — requesting greeting');
+        const greetingInstruction = caller?.isOwner
+          ? "Greet Jessie warmly by name in one short sentence — he's your creator. Mention you're CriderGPT and ask what he's working on."
+          : caller?.displayName || caller?.username
+            ? `Greet ${caller.displayName || caller.username} warmly by their first name in one short sentence. Mention you're CriderGPT and ask what they need.`
+            : "Greet the user warmly in one short sentence. Say hi, mention you're CriderGPT, and ask what they need.";
         try {
           dc.send(JSON.stringify({
             type: 'response.create',
-            response: {
-              modalities: ['audio', 'text'],
-              instructions: "Greet the user warmly in one short sentence. Say hi, mention you're CriderGPT, and ask what they need.",
-            },
+            response: { modalities: ['audio', 'text'], instructions: greetingInstruction },
           }));
         } catch (err) {
           console.error('[Realtime] Failed to send greeting trigger:', err);
