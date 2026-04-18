@@ -94,7 +94,6 @@ export type PanelType =
   | 'sensors'
   | 'frequency';
 
-export default function Index() {
 // Set of valid panel slugs (kept in sync with PanelType + livestockID alias)
 const VALID_PANELS = new Set<string>([
   'chat','vision-memory','calculators','calendar','files','gallery','code','maps','media',
