@@ -114,6 +114,7 @@ const navigationGroups: NavGroup[] = [
       
       { id: 'zip-to-exe', label: 'ZIP-to-EXE Builder', icon: Package },
       { id: 'mod-tools', label: 'Mod Creation Tools', icon: Wrench },
+      { id: 'textures', label: 'Texture Generator', icon: Layers },
       { id: 'cloud-gaming', label: 'Cloud Gaming', icon: Gamepad2 },
       { id: 'rdr2-guide', label: 'RDR2 Guide', icon: Gamepad2 },
       { id: 'usb-hub', label: 'USB Hub', icon: Usb },
