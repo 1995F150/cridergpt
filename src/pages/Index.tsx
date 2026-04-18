@@ -55,6 +55,7 @@ const SensorPanel = lazy(() => import('@/components/panels/SensorPanel').then(m 
 const FrequencyPanel = lazy(() => import('@/components/panels/FrequencyPanel').then(m => ({ default: m.FrequencyPanel })));
 const TexturesPanel = lazy(() => import('@/components/panels/TexturesPanel').then(m => ({ default: m.TexturesPanel })));
 const MetadataPanel = lazy(() => import('@/components/panels/MetadataPanel').then(m => ({ default: m.MetadataPanel })));
+const MusicPanel = lazy(() => import('@/components/panels/MusicPanel').then(m => ({ default: m.MusicPanel })));
 
 export type PanelType = 
   | 'chat' 
@@ -96,7 +97,8 @@ export type PanelType =
   | 'sensors'
   | 'frequency'
   | 'textures'
-  | 'metadata';
+  | 'metadata'
+  | 'music';
 
 // Set of valid panel slugs (kept in sync with PanelType + livestockID alias)
 const VALID_PANELS = new Set<string>([
@@ -215,6 +217,7 @@ export default function Index() {
       case 'frequency': return <FrequencyPanel />;
       case 'textures': return <TexturesPanel />;
       case 'metadata': return <MetadataPanel />;
+      case 'music': return <MusicPanel />;
       default: return <ChatPanel />;
     }
   };
