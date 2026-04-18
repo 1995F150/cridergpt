@@ -84,7 +84,6 @@ export function MetadataPanel() {
     try {
       const data = await exifr.parse(file, {
         tiff: true,
-        ifd0: true,
         exif: true,
         gps: true,
         xmp: true,
