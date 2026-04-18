@@ -20,6 +20,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
     volume,
     showCC,
     transcripts,
+    micError,
     startCall,
     endCall,
     toggleMute,
@@ -30,7 +31,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
 
   if (!isCallActive) {
     return (
-      <div className="flex justify-center items-center p-4">
+      <div className="flex flex-col justify-center items-center gap-3 p-4">
         <Button
           onClick={startCall}
           size="lg"
@@ -40,6 +41,9 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
           <Phone className="h-5 w-5" />
           {isConnecting ? 'Connecting…' : 'Start Call Mode'}
         </Button>
+        {micError ? (
+          <p className="text-sm text-destructive text-center max-w-xs">{micError}</p>
+        ) : null}
       </div>
     );
   }

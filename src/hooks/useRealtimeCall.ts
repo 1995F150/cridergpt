@@ -22,6 +22,7 @@ export function useRealtimeCall() {
   const [showCC, setShowCC] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   const [aiSpeaking, setAiSpeaking] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -90,8 +91,37 @@ export function useRealtimeCall() {
     }
 
     setStatus('connecting');
+    setMicError(null);
+
+    let micStream: MediaStream | null = null;
+
     try {
-      // 1. Get ephemeral token
+      if (navigator.permissions?.query) {
+        try {
+          const permission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          if (permission.state === 'denied') {
+            const message = 'Microphone blocked. Enable microphone access in your browser settings.';
+            setMicError(message);
+            toast({ title: 'Microphone blocked', description: message, variant: 'destructive' });
+            setStatus('idle');
+            return;
+          }
+        } catch {
+          // Permissions API is inconsistent across browsers; continue to getUserMedia.
+        }
+      }
+
+      // Request microphone immediately inside the user gesture flow.
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      localStreamRef.current = micStream;
+
+      // Get ephemeral token after mic access is granted.
       const { data: session, error: sessionErr } = await supabase.functions.invoke('openai-realtime-token', {
         body: { voice: 'alloy' },
       });
@@ -99,23 +129,37 @@ export function useRealtimeCall() {
       const ephemeralKey = session?.client_secret?.value;
       if (!ephemeralKey) throw new Error('No ephemeral key returned');
 
-      // 2. Set up WebRTC
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
 
-      // Remote audio
+      // Prepare audio element early and try to unlock playback for mobile browsers.
       const audioEl = document.createElement('audio');
       audioEl.autoplay = true;
+      audioEl.playsInline = true;
       audioEl.volume = volume;
       audioElRef.current = audioEl;
-      pc.ontrack = (e) => { audioEl.srcObject = e.streams[0]; };
+      try {
+        await audioEl.play();
+      } catch {
+        // Expected until a remote track exists.
+      }
 
-      // Mic
-      const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
-      localStreamRef.current = ms;
-      ms.getTracks().forEach(t => pc.addTrack(t, ms));
+      pc.ontrack = async (e) => {
+        audioEl.srcObject = e.streams[0];
+        try {
+          await audioEl.play();
+        } catch (err) {
+          console.error('[Realtime] Remote audio playback blocked:', err);
+          toast({
+            title: 'Audio blocked',
+            description: 'The call connected, but browser audio playback was blocked. Tap Start Call again if needed.',
+            variant: 'destructive',
+          });
+        }
+      };
 
-      // Data channel for events
+      micStream.getTracks().forEach((t) => pc.addTrack(t, micStream!));
+
       const dc = pc.createDataChannel('oai-events');
       dcRef.current = dc;
       dc.addEventListener('open', () => {
@@ -136,7 +180,6 @@ export function useRealtimeCall() {
         try { handleEvent(JSON.parse(e.data)); } catch (err) { console.error('Bad event', err); }
       });
 
-      // 3. SDP offer/answer
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
@@ -153,7 +196,6 @@ export function useRealtimeCall() {
       const answerSdp = await sdpResp.text();
       await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
-      // 4. Log call
       const { data: callLog } = await supabase
         .from('call_logs')
         .insert({ user_id: user.id, start_time: new Date().toISOString(), mute_count: 0 })
@@ -161,7 +203,6 @@ export function useRealtimeCall() {
         .single();
       callIdRef.current = callLog?.id ?? null;
 
-      // 5. Timer
       muteCountRef.current = 0;
       setCallDuration(0);
       setTranscripts([]);
@@ -171,9 +212,16 @@ export function useRealtimeCall() {
       toast({ title: '📞 Call connected', description: 'Speak naturally with CriderGPT' });
     } catch (err: any) {
       console.error('Start call failed:', err);
+      const message =
+        err?.name === 'NotAllowedError' ? 'Permission denied. Allow microphone access in browser settings.' :
+        err?.name === 'NotFoundError' ? 'No microphone was found on this device.' :
+        err?.name === 'NotReadableError' ? 'Your microphone is busy in another app.' :
+        err?.message || 'Could not start call';
+
+      setMicError(message);
       cleanup();
       setStatus('idle');
-      toast({ title: 'Call failed', description: err.message || 'Could not start call', variant: 'destructive' });
+      toast({ title: 'Call failed', description: message, variant: 'destructive' });
     }
   }, [user, volume, toast, handleEvent, cleanup]);
 
@@ -220,6 +268,7 @@ export function useRealtimeCall() {
     volume,
     showCC,
     transcripts,
+    micError,
     startCall,
     endCall,
     toggleMute,
