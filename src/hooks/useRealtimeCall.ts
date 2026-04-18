@@ -128,6 +128,7 @@ export function useRealtimeCall() {
       if (sessionErr) throw sessionErr;
       const ephemeralKey = session?.client_secret?.value;
       if (!ephemeralKey) throw new Error('No ephemeral key returned');
+      const caller = session?._caller as { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
 
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
