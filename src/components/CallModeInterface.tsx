@@ -65,18 +65,39 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
           </div>
         </div>
 
-        {/* Voice Indicator */}
+        {/* Voice Indicator with CriderGPT Logo */}
         <div className="flex justify-center">
-          <div className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all ${
-            isMuted ? 'bg-muted' : 'bg-primary/10'
-          }`}>
-            {isMuted ? (
-              <MicOff className="h-12 w-12 text-muted-foreground" />
-            ) : aiSpeaking ? (
-              <Volume2 className="h-12 w-12 text-primary animate-pulse" />
-            ) : (
-              <Mic className="h-12 w-12 text-primary animate-pulse" />
+          <div className="relative w-32 h-32 flex items-center justify-center">
+            {/* Animated rings when AI is speaking */}
+            {!isMuted && aiSpeaking && (
+              <>
+                <div className="absolute inset-0 rounded-full border-2 border-primary/40 animate-ping" />
+                <div className="absolute inset-2 rounded-full border-2 border-primary/30 animate-ping [animation-delay:0.2s]" />
+                <div className="absolute inset-4 rounded-full border-2 border-primary/20 animate-ping [animation-delay:0.4s]" />
+              </>
             )}
+            {/* Pulsing glow */}
+            <div className={`absolute inset-0 rounded-full transition-all ${
+              isMuted 
+                ? 'bg-muted' 
+                : aiSpeaking 
+                  ? 'bg-primary/20 animate-pulse' 
+                  : 'bg-primary/10'
+            }`} />
+            {/* Logo or mute icon */}
+            <div className={`relative w-24 h-24 rounded-full flex items-center justify-center overflow-hidden bg-background shadow-lg transition-transform ${
+              !isMuted && aiSpeaking ? 'scale-110' : 'scale-100'
+            } ${!isMuted && !aiSpeaking ? 'animate-pulse' : ''}`}>
+              {isMuted ? (
+                <MicOff className="h-12 w-12 text-muted-foreground" />
+              ) : (
+                <img 
+                  src="/cridergpt-logo.png" 
+                  alt="CriderGPT" 
+                  className={`h-16 w-16 object-contain ${aiSpeaking ? 'animate-pulse' : ''}`}
+                />
+              )}
+            </div>
           </div>
         </div>
 
