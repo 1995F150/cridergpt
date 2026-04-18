@@ -118,6 +118,20 @@ export function useRealtimeCall() {
       // Data channel for events
       const dc = pc.createDataChannel('oai-events');
       dcRef.current = dc;
+      dc.addEventListener('open', () => {
+        console.log('[Realtime] Data channel open — requesting greeting');
+        try {
+          dc.send(JSON.stringify({
+            type: 'response.create',
+            response: {
+              modalities: ['audio', 'text'],
+              instructions: "Greet the user warmly in one short sentence. Say hi, mention you're CriderGPT, and ask what they need.",
+            },
+          }));
+        } catch (err) {
+          console.error('[Realtime] Failed to send greeting trigger:', err);
+        }
+      });
       dc.addEventListener('message', (e) => {
         try { handleEvent(JSON.parse(e.data)); } catch (err) { console.error('Bad event', err); }
       });
