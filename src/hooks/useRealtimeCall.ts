@@ -222,32 +222,49 @@ export function useRealtimeCall() {
       await pc.setLocalDescription(offer);
 
       const model = 'gpt-4o-realtime-preview-2024-12-17';
-      const sdpResp = await fetch(`https://api.openai.com/v1/realtime?model=${model}`, {
-        method: 'POST',
-        body: offer.sdp,
-        headers: {
-          Authorization: `Bearer ${ephemeralKey}`,
-          'Content-Type': 'application/sdp',
-        },
-      });
+      // 15s timeout so a slow/blocked network fails fast instead of spinning forever.
+      const sdpController = new AbortController();
+      const sdpTimeout = setTimeout(() => sdpController.abort(), 15000);
+      let sdpResp: Response;
+      try {
+        sdpResp = await fetch(`https://api.openai.com/v1/realtime?model=${model}`, {
+          method: 'POST',
+          body: offer.sdp,
+          headers: {
+            Authorization: `Bearer ${ephemeralKey}`,
+            'Content-Type': 'application/sdp',
+          },
+          signal: sdpController.signal,
+        });
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          throw new Error('Connection timed out — check your network and try again.');
+        }
+        throw err;
+      } finally {
+        clearTimeout(sdpTimeout);
+      }
       if (!sdpResp.ok) throw new Error(`SDP exchange failed: ${sdpResp.status}`);
       const answerSdp = await sdpResp.text();
       await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
-      const { data: callLog } = await supabase
-        .from('call_logs')
-        .insert({ user_id: user.id, start_time: new Date().toISOString(), mute_count: 0 })
-        .select()
-        .single();
-      callIdRef.current = callLog?.id ?? null;
-
+      // Flip to active immediately — don't block the UI on the call_logs insert.
       muteCountRef.current = 0;
       setCallDuration(0);
       setTranscripts([]);
       timerRef.current = setInterval(() => setCallDuration(p => p + 1), 1000);
-
       setStatus('active');
       toast({ title: '📞 Call connected', description: 'Speak naturally with CriderGPT' });
+
+      // Log the call in the background (non-blocking).
+      supabase
+        .from('call_logs')
+        .insert({ user_id: user.id, start_time: new Date().toISOString(), mute_count: 0 })
+        .select()
+        .single()
+        .then(({ data: callLog }) => {
+          callIdRef.current = callLog?.id ?? null;
+        });
     } catch (err: any) {
       console.error('Start call failed:', err);
       const message =
