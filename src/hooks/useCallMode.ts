@@ -129,10 +129,14 @@ export function useCallMode() {
 
   // Text-to-speech for AI responses — uses cloned voice engine when available
   const speakResponse = async (text: string) => {
-    // Try cloned voice engine first (will fail if local Docker engine isn't running)
+    // Try OpenAI TTS first (requires auth)
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text }
+        body: { text },
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
       });
 
       if (!error && data?.audioContent) {
