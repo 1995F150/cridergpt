@@ -160,9 +160,18 @@ export function useRealtimeCall() {
       const { data: session, error: sessionErr } = await supabase.functions.invoke('openai-realtime-token', {
         body: { voice: 'alloy' },
       });
-      if (sessionErr) throw sessionErr;
+      if (sessionErr) {
+        const sessionMessage = sessionErr.message || 'Could not start realtime session';
+        throw new Error(sessionMessage);
+      }
+      if (session?.error) {
+        const detail = session.detail ? ` ${session.detail}` : '';
+        throw new Error(`${session.error}${detail}`.trim());
+      }
       const ephemeralKey = session?.client_secret?.value;
-      if (!ephemeralKey) throw new Error('No ephemeral key returned');
+      if (!ephemeralKey) {
+        throw new Error('Call setup failed: realtime token response did not include a client secret.');
+      }
       const caller = session?._caller as { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
 
       const pc = new RTCPeerConnection();
@@ -244,7 +253,10 @@ export function useRealtimeCall() {
       } finally {
         clearTimeout(sdpTimeout);
       }
-      if (!sdpResp.ok) throw new Error(`SDP exchange failed: ${sdpResp.status}`);
+      if (!sdpResp.ok) {
+        const errorDetail = await sdpResp.text().catch(() => '');
+        throw new Error(`SDP exchange failed (${sdpResp.status})${errorDetail ? `: ${errorDetail}` : ''}`);
+      }
       const answerSdp = await sdpResp.text();
       await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
