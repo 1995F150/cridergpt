@@ -38,7 +38,8 @@ import {
   HandCoins,
   Usb,
   Radar,
-  Tag
+  Tag,
+  Music
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
@@ -95,6 +96,7 @@ const navigationGroups: NavGroup[] = [
     label: 'CREATIVE',
     items: [
       { id: 'media', label: 'Media', icon: Play, emailRestricted: ['jessiecrider3@gmail.com'] },
+      { id: 'music', label: 'Music', icon: Music },
       { id: 'ai-image', label: 'AI Images', icon: ImageIcon },
       { id: 'studio', label: '3D Studio', icon: Cuboid },
     ]

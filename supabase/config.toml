@@ -60,3 +60,6 @@ verify_jwt = false
 [functions.product-tools]
 verify_jwt = false
 
+[functions.youtube-search]
+verify_jwt = false
+
