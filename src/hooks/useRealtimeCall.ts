@@ -162,20 +162,16 @@ export function useRealtimeCall() {
       micStream = await micPromise;
       localStreamRef.current = micStream;
 
-      const { data: session, error: sessionErr } = await tokenPromise;
+      const { data: initialSession, error: sessionErr } = await tokenPromise;
       if (sessionErr) {
         const sessionMessage = sessionErr.message || 'Could not start realtime session';
         throw new Error(sessionMessage);
       }
-      if (session?.error) {
-        const detail = session.detail ? ` ${session.detail}` : '';
-        throw new Error(`${session.error}${detail}`.trim());
+      if (initialSession?.error) {
+        const detail = initialSession.detail ? ` ${initialSession.detail}` : '';
+        throw new Error(`${initialSession.error}${detail}`.trim());
       }
-      const ephemeralKey = session?.client_secret?.value;
-      if (!ephemeralKey) {
-        throw new Error('Call setup failed: realtime token response did not include a client secret.');
-      }
-      const caller = session?._caller as { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
+      const caller = initialSession?._caller as { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
 
       // Public STUN servers help ICE gather candidates faster on restrictive networks.
       const pc = new RTCPeerConnection({
@@ -236,34 +232,20 @@ export function useRealtimeCall() {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      const model = 'gpt-4o-realtime-preview-2024-12-17';
-      // 15s timeout so a slow/blocked network fails fast instead of spinning forever.
-      const sdpController = new AbortController();
-      const sdpTimeout = setTimeout(() => sdpController.abort(), 15000);
-      let sdpResp: Response;
-      try {
-        sdpResp = await fetch(`https://api.openai.com/v1/realtime?model=${model}`, {
-          method: 'POST',
-          body: offer.sdp,
-          headers: {
-            Authorization: `Bearer ${ephemeralKey}`,
-            'Content-Type': 'application/sdp',
-          },
-          signal: sdpController.signal,
-        });
-      } catch (err: any) {
-        if (err?.name === 'AbortError') {
-          throw new Error('Connection timed out — check your network and try again.');
-        }
-        throw err;
-      } finally {
-        clearTimeout(sdpTimeout);
+      const { data: session, error: handshakeErr } = await supabase.functions.invoke('openai-realtime-token', {
+        body: { voice: 'alloy', offerSdp: offer.sdp },
+      });
+      if (handshakeErr) {
+        throw new Error(handshakeErr.message || 'Realtime handshake failed');
       }
-      if (!sdpResp.ok) {
-        const errorDetail = await sdpResp.text().catch(() => '');
-        throw new Error(`SDP exchange failed (${sdpResp.status})${errorDetail ? `: ${errorDetail}` : ''}`);
+      if (session?.error) {
+        const detail = session.detail ? ` ${session.detail}` : '';
+        throw new Error(`${session.error}${detail}`.trim());
       }
-      const answerSdp = await sdpResp.text();
+      const answerSdp = session?.answer_sdp;
+      if (!answerSdp) {
+        throw new Error('Call setup failed: realtime handshake did not return an answer SDP.');
+      }
       await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
       // Flip to active immediately — don't block the UI on the call_logs insert.
