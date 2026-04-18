@@ -65,6 +65,21 @@ const PRODUCT_TOOLS_CHAT = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'find_restaurants',
+      description: "Find restaurants on DoorDash by cuisine/dish, optionally near a location. Returns deep links the user opens to checkout in DoorDash. CriderGPT cannot place DoorDash orders directly.",
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Cuisine, dish, or restaurant name' },
+          location: { type: 'string', description: 'Optional city, ZIP, or neighborhood' },
+        },
+        required: ['query'],
+      },
+    },
+  },
 ];
 
 async function runProductTool(name: string, args: any, userId: string | null, userEmail: string | null, origin: string) {
