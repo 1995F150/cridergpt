@@ -63,12 +63,6 @@ export const seoConfig: Record<string, SEOConfig> = {
     keywords: "AI voice cloning, text to speech, voice studio, CriderGPT voice, AI music generator, voice synthesis",
     canonical: "https://cridergpt.lovable.app/voice-studio"
   },
-  "mod-tools": {
-    title: "FS25 Mod Tools — Build & Debug Farming Simulator Mods | CriderGPT",
-    description: "Create, edit, and debug Farming Simulator 22/25 mods. ZIP packaging, XML analysis, and AI-powered mod consulting built into CriderGPT.",
-    keywords: "FS25 mod tools, Farming Simulator mod creator, FS22 mod builder, mod XML editor, Farming Simulator modding, CriderGPT mod tools",
-    canonical: "https://cridergpt.lovable.app/mod-tools"
-  },
   guardian: {
     title: "Guardian Dashboard — Parental Controls | CriderGPT",
     description: "Monitor your child's CriderGPT usage with the Guardian Dashboard. Set content filters, view activity timelines, and get real-time alerts.",

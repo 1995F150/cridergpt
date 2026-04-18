@@ -39,7 +39,7 @@ const AppConverterPanel = lazy(() => import('@/components/panels/AppConverterPan
 const CloudGamingPanel = lazy(() => import('@/components/panels/CloudGamingPanel').then(m => ({ default: m.CloudGamingPanel })));
 const Model3DConverterPanel = lazy(() => import('@/components/panels/Model3DConverterPanel').then(m => ({ default: m.Model3DConverterPanel })));
 const StudioPanel = lazy(() => import('@/components/panels/StudioPanel').then(m => ({ default: m.StudioPanel })));
-const ModToolsPanel = lazy(() => import('@/components/panels/ModToolsPanel').then(m => ({ default: m.ModToolsPanel })));
+
 const ZipToExePanel = lazy(() => import('@/components/panels/ZipToExePanel').then(m => ({ default: m.ZipToExePanel })));
 const CodeEditorPanel = lazy(() => import('@/components/panels/CodeEditorPanel').then(m => ({ default: m.CodeEditorPanel })));
 const AdminPanel = lazy(() => import('@/components/panels/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -75,7 +75,6 @@ export type PanelType =
   | 'timeline' 
   | 'memorial' 
   | 'ffa'
-  | 'mod-tools'
   | 'ai-image'
   | 'document-ai'
   | 'plan'
@@ -103,10 +102,10 @@ export type PanelType =
 // Set of valid panel slugs (kept in sync with PanelType + livestockID alias)
 const VALID_PANELS = new Set<string>([
   'chat','vision-memory','calculators','calendar','files','gallery','code','maps','media',
-  'projects','contact','profile','payment','updates','timeline','memorial','ffa','mod-tools',
+  'projects','contact','profile','payment','updates','timeline','memorial','ffa',
   'ai-image','document-ai','plan','app-converter','cloud-gaming','3d-converter','studio',
   'zip-to-exe','code-editor','admin','guardian','livestock','livestockID','receipts',
-  'agent-swarm','voice-studio','shared-spending','usb-hub','rdr2-guide','sensors','frequency','textures','metadata'
+  'agent-swarm','voice-studio','shared-spending','usb-hub','rdr2-guide','sensors','frequency','textures','metadata','music'
 ]);
 
 // Map URL slug → internal panel id
@@ -194,7 +193,6 @@ export default function Index() {
       case 'timeline': return <TimelinePanel />;
       case 'memorial': return <MemorialPanel />;
       case 'ffa': return <FFAPanel />;
-      case 'mod-tools': return <ModToolsPanel />;
       case 'ai-image': return <AIImagePanel />;
       case 'document-ai': return <DocumentAIPanel />;
       case 'plan': return <PlanPanel />;
