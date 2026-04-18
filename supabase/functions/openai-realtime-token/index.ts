@@ -90,7 +90,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model,
         voice,
-        instructions,
+        instructions: instructions + `\n\n🛒 PRODUCT TOOLS:\nYou have function tools to search products, recommend items, look up the user's orders, add to their cart, and create Stripe checkout links. When the user asks about products, pricing, what they bought, or wants to buy/order something, USE THE TOOLS — never make up SKUs, prices, or order details. Read prices/descriptions out loud naturally; you don't need to read URLs aloud.`,
         modalities: ['audio', 'text'],
         input_audio_transcription: { model: 'whisper-1' },
         turn_detection: {
@@ -99,6 +99,8 @@ serve(async (req) => {
           prefix_padding_ms: 300,
           silence_duration_ms: 500,
         },
+        tools: PRODUCT_TOOLS,
+        tool_choice: 'auto',
       }),
     });
 
