@@ -88,7 +88,6 @@ const navigationGroups: NavGroup[] = [
       { id: 'calculators', label: 'Calculators', icon: Calculator },
       { id: 'files', label: 'Files', icon: Folder },
       { id: 'gallery', label: 'Gallery', icon: Images },
-      { id: 'metadata', label: 'Metadata Editor', icon: Tag },
       { id: 'projects', label: 'Projects', icon: Folder },
     ]
   },
@@ -122,6 +121,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'usb-hub', label: 'USB Hub', icon: Usb },
       { id: 'sensors', label: 'Sensors', icon: Radar },
       { id: 'frequency', label: 'Frequency Tools', icon: AudioLines },
+      { id: 'metadata', label: 'Metadata Editor', icon: Tag },
       { id: '3d-converter', label: '3D Converter', icon: Box, developerOnly: true },
     ]
   },
