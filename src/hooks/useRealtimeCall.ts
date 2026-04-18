@@ -146,20 +146,23 @@ export function useRealtimeCall() {
         }
       }
 
-      // Request microphone immediately inside the user gesture flow.
-      micStream = await navigator.mediaDevices.getUserMedia({
+      // Kick off mic capture and token fetch in parallel — they're independent
+      // and together account for most of the connect latency.
+      const micPromise = navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
         },
       });
-      localStreamRef.current = micStream;
-
-      // Get ephemeral token after mic access is granted.
-      const { data: session, error: sessionErr } = await supabase.functions.invoke('openai-realtime-token', {
+      const tokenPromise = supabase.functions.invoke('openai-realtime-token', {
         body: { voice: 'alloy' },
       });
+
+      micStream = await micPromise;
+      localStreamRef.current = micStream;
+
+      const { data: session, error: sessionErr } = await tokenPromise;
       if (sessionErr) {
         const sessionMessage = sessionErr.message || 'Could not start realtime session';
         throw new Error(sessionMessage);
@@ -174,7 +177,10 @@ export function useRealtimeCall() {
       }
       const caller = session?._caller as { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
 
-      const pc = new RTCPeerConnection();
+      // Public STUN servers help ICE gather candidates faster on restrictive networks.
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }],
+      });
       pcRef.current = pc;
 
       // Prepare audio element early and try to unlock playback for mobile browsers.
