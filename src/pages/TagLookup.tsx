@@ -17,7 +17,12 @@ import { toast } from '@/hooks/use-toast';
 type ClaimStatus = 'idle' | 'available' | 'mine' | 'taken' | 'unknown';
 
 export default function TagLookup() {
-  const { tagId } = useParams<{ tagId: string }>();
+  const { tagId: rawTagId } = useParams<{ tagId: string }>();
+  // Strip wrapping braces, whitespace, and decode URI components defensively.
+  // Some NFC tags / QR codes encode the ID as "{CriderGPT-XXXXXX}" which breaks lookup.
+  const tagId = rawTagId
+    ? decodeURIComponent(rawTagId).trim().replace(/^[{<\[]+|[}>\]]+$/g, '').trim()
+    : rawTagId;
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
