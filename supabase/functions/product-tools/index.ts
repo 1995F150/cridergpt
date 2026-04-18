@@ -96,6 +96,46 @@ serve(async (req) => {
         return jsonRes(result);
       }
 
+      case 'find_restaurants': {
+        const query = String(args.query || args.cuisine || '').trim();
+        const location = String(args.location || '').trim();
+        if (!query) return jsonRes({ error: 'query is required (e.g. "pizza", "tacos")' });
+        const searchTerm = `${query}${location ? ' near ' + location : ''}`;
+        const ddSearchUrl = `https://www.doordash.com/search/store/${encodeURIComponent(searchTerm)}/`;
+        // Try Firecrawl search if available for richer results
+        const FC_KEY = Deno.env.get('FIRECRAWL_API_KEY');
+        let results: Array<{ name: string; url: string; description?: string }> = [];
+        if (FC_KEY) {
+          try {
+            const fcRes = await fetch('https://api.firecrawl.dev/v2/search', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${FC_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                query: `site:doordash.com/store ${searchTerm}`,
+                limit: 5,
+              }),
+            });
+            const fcData = await fcRes.json();
+            const items = fcData?.data?.web || fcData?.data || [];
+            results = items.slice(0, 5).map((r: any) => ({
+              name: r.title || r.url,
+              url: r.url,
+              description: r.description || r.snippet,
+            }));
+          } catch (err) {
+            console.warn('[find_restaurants] firecrawl failed:', err);
+          }
+        }
+        return jsonRes({
+          query: searchTerm,
+          search_url: ddSearchUrl,
+          results,
+          note: results.length
+            ? 'Tap any link to open DoorDash and complete checkout there.'
+            : 'CriderGPT can\'t place DoorDash orders directly — open this link in the DoorDash app to browse and order.',
+        });
+      }
+
       case 'add_to_cart': {
         if (!userId) return jsonRes({ error: 'Sign in required to add items to cart' });
         const productId = String(args.product_id || '');
