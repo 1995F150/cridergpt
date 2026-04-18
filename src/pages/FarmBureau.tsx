@@ -62,11 +62,7 @@ export default function FarmBureau() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO
-        title="Farm Bureau Members — CriderGPT Smart Livestock Tags | Wytheville, VA"
-        description="Exclusive Smart Livestock Tag program for Virginia Farm Bureau members. Tap-to-scan NFC tags with full health & ownership records. 10% member discount."
-        keywords="farm bureau, wytheville va, smart livestock tags, nfc cattle tags, virginia farm bureau"
-      />
+      <SEO page="farmbureau" />
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-primary/10 via-background to-accent/10">
