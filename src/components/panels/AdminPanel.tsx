@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive } from 'lucide-react';
+import { DatabaseThrottlePanel } from '@/components/admin/DatabaseThrottlePanel';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ContentModeration } from '@/components/admin/ContentModeration';
@@ -133,6 +134,9 @@ export function AdminPanel() {
           <TabsTrigger value="maintenance" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <AlertTriangle className="h-4 w-4" /> Maintenance
           </TabsTrigger>
+          <TabsTrigger value="db-throttle" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <HardDrive className="h-4 w-4" /> DB Throttle
+          </TabsTrigger>
           <TabsTrigger value="api" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <TerminalSquare className="h-4 w-4" /> API Generation
           </TabsTrigger>
@@ -202,6 +206,7 @@ export function AdminPanel() {
         <TabsContent value="broadcast"><EmailBroadcast /></TabsContent>
         <TabsContent value="revenue"><RevenueDashboard /></TabsContent>
         <TabsContent value="maintenance"><MaintenanceMode /></TabsContent>
+        <TabsContent value="db-throttle"><DatabaseThrottlePanel /></TabsContent>
         <TabsContent value="api"><APIGeneration /></TabsContent>
         <TabsContent value="settings"><SystemSettings /></TabsContent>
         <TabsContent value="imports"><ConversationImporter /></TabsContent>
