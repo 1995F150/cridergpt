@@ -260,13 +260,6 @@ export const FEATURE_OFFLINE_STATUS: Record<string, OfflineFeature> = {
     description: 'Basic 3D features work offline, cloud features need internet',
     fallbackMessage: 'Some 3D features require an internet connection.'
   },
-  'mod-tools': {
-    id: 'mod-tools',
-    name: 'Mod Tools',
-    status: 'partially-offline',
-    description: 'Local mod editing works offline',
-    fallbackMessage: 'Some mod tools require an internet connection.'
-  },
   'app-converter': {
     id: 'app-converter',
     name: 'App Converter',
