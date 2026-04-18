@@ -96,18 +96,48 @@ export function useCallMode() {
     }
   };
 
+  // Browser SpeechSynthesis fallback
+  const speakWithBrowser = (text: string) => {
+    if (!('speechSynthesis' in window)) {
+      console.error('No speechSynthesis available in this browser');
+      return;
+    }
+    window.speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.volume = Math.max(0.01, volume);
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
+    synthRef.current = utter;
+
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+    }
+
+    utter.onend = () => {
+      if (recognitionRef.current && isCallActive && !isMuted) {
+        try { recognitionRef.current.start(); } catch {}
+      }
+    };
+    utter.onerror = (e) => {
+      console.error('SpeechSynthesis error:', e);
+    };
+
+    window.speechSynthesis.speak(utter);
+    console.log('🔊 Speaking via browser TTS:', text.substring(0, 60));
+  };
+
   // Text-to-speech for AI responses — uses cloned voice engine when available
   const speakResponse = async (text: string) => {
-    // Try cloned voice engine first
+    // Try cloned voice engine first (will fail if local Docker engine isn't running)
     try {
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { text }
       });
 
       if (!error && data?.audioContent) {
-        // Pause mic while AI speaks
         if (recognitionRef.current) {
-          recognitionRef.current.stop();
+          try { recognitionRef.current.stop(); } catch {}
         }
 
         const audioBlob = new Blob(
@@ -120,40 +150,26 @@ export function useCallMode() {
 
         audio.onended = () => {
           URL.revokeObjectURL(audioUrl);
-          // Resume mic after AI finishes speaking
           if (recognitionRef.current && isCallActive && !isMuted) {
-            recognitionRef.current.start();
+            try { recognitionRef.current.start(); } catch {}
           }
         };
 
-        audio.play();
-        return;
+        try {
+          await audio.play();
+          return;
+        } catch (playErr) {
+          console.warn('Audio playback blocked, falling back to browser TTS:', playErr);
+          URL.revokeObjectURL(audioUrl);
+        }
+      } else {
+        console.warn('Cloned TTS unavailable, using browser TTS. Error:', error);
       }
     } catch (err) {
-      console.warn('Cloned voice unavailable, falling back to browser TTS:', err);
+      console.warn('Cloned voice request failed, falling back to browser TTS:', err);
     }
 
-    // Fallback to browser SpeechSynthesis
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      
-      synthRef.current = new SpeechSynthesisUtterance(text);
-      synthRef.current.volume = volume;
-      synthRef.current.rate = 1.0;
-      synthRef.current.pitch = 1.0;
-      
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-
-      synthRef.current.onend = () => {
-        if (recognitionRef.current && isCallActive && !isMuted) {
-          recognitionRef.current.start();
-        }
-      };
-
-      window.speechSynthesis.speak(synthRef.current);
-    }
+    speakWithBrowser(text);
   };
 
   // Start call
