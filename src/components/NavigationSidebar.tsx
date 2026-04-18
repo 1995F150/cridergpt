@@ -87,6 +87,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'calculators', label: 'Calculators', icon: Calculator },
       { id: 'files', label: 'Files', icon: Folder },
       { id: 'gallery', label: 'Gallery', icon: Images },
+      { id: 'metadata', label: 'Metadata Editor', icon: Tag },
       { id: 'projects', label: 'Projects', icon: Folder },
     ]
   },

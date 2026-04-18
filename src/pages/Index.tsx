@@ -54,6 +54,7 @@ const RDR2GuidePanel = lazy(() => import('@/components/panels/RDR2GuidePanel').t
 const SensorPanel = lazy(() => import('@/components/panels/SensorPanel').then(m => ({ default: m.SensorPanel })));
 const FrequencyPanel = lazy(() => import('@/components/panels/FrequencyPanel').then(m => ({ default: m.FrequencyPanel })));
 const TexturesPanel = lazy(() => import('@/components/panels/TexturesPanel').then(m => ({ default: m.TexturesPanel })));
+const MetadataPanel = lazy(() => import('@/components/panels/MetadataPanel').then(m => ({ default: m.MetadataPanel })));
 
 export type PanelType = 
   | 'chat' 
@@ -212,6 +213,7 @@ export default function Index() {
       case 'sensors': return <SensorPanel />;
       case 'frequency': return <FrequencyPanel />;
       case 'textures': return <TexturesPanel />;
+      case 'metadata': return <MetadataPanel />;
       default: return <ChatPanel />;
     }
   };
