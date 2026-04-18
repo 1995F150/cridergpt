@@ -48,7 +48,19 @@ export function useRealtimeCall() {
     }
   }, []);
 
-  const handleEvent = useCallback((evt: any) => {
+  const executeTool = useCallback(async (name: string, args: Record<string, unknown>) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('product-tools', {
+        body: { tool: name, args },
+      });
+      if (error) return { error: error.message };
+      return data;
+    } catch (err: any) {
+      return { error: err?.message || 'Tool failed' };
+    }
+  }, []);
+
+  const handleEvent = useCallback(async (evt: any) => {
     switch (evt.type) {
       case 'response.audio.delta':
         setAiSpeaking(true);
@@ -77,12 +89,35 @@ export function useRealtimeCall() {
           }]);
         }
         break;
+      case 'response.function_call_arguments.done': {
+        // Realtime tool call: { name, call_id, arguments (json string) }
+        const dc = dcRef.current;
+        if (!dc) break;
+        let parsed: Record<string, unknown> = {};
+        try { parsed = JSON.parse(evt.arguments || '{}'); } catch {}
+        console.log('[Realtime] Tool call:', evt.name, parsed);
+        const result = await executeTool(evt.name, parsed);
+        try {
+          dc.send(JSON.stringify({
+            type: 'conversation.item.create',
+            item: {
+              type: 'function_call_output',
+              call_id: evt.call_id,
+              output: JSON.stringify(result),
+            },
+          }));
+          dc.send(JSON.stringify({ type: 'response.create' }));
+        } catch (err) {
+          console.error('[Realtime] Failed to return tool result:', err);
+        }
+        break;
+      }
       case 'error':
         console.error('Realtime error event:', evt);
         toast({ title: 'Call error', description: evt.error?.message || 'Unknown error', variant: 'destructive' });
         break;
     }
-  }, [toast]);
+  }, [toast, executeTool]);
 
   const startCall = useCallback(async () => {
     if (!user) {
