@@ -13,6 +13,9 @@ const TTS_LIMITS: Record<string, number> = {
   pro: 2000,
 };
 
+// OpenAI TTS voices: alloy, echo, fable, onyx, nova, shimmer
+const DEFAULT_VOICE = 'onyx';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -25,8 +28,11 @@ serve(async (req) => {
   );
 
   try {
-    const { text, voice_profile_id } = await req.json();
+    const { text, voice } = await req.json();
     if (!text) throw new Error('Text is required');
+
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured');
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
@@ -37,7 +43,7 @@ serve(async (req) => {
     if (!user?.id) throw new Error('User authentication failed');
 
     const userId = user.id;
-    console.log('TTS request from:', userId);
+    console.log('TTS request from:', userId, 'chars:', text.length);
 
     // Check usage limits
     let { data: usage, error: usageError } = await supabase
@@ -76,47 +82,36 @@ serve(async (req) => {
       }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Resolve voice sample URL — check for user's voice profile or use default
-    let voiceSampleRef = 'crider-voice-sample.mp3';
-
-    if (voice_profile_id) {
-      const { data: profile } = await supabase
-        .from('voice_profiles')
-        .select('sample_path')
-        .eq('id', voice_profile_id)
-        .eq('user_id', userId)
-        .single();
-
-      if (profile?.sample_path) voiceSampleRef = profile.sample_path;
-    } else {
-      // Use user's default voice profile if one exists
-      const { data: defaultProfile } = await supabase
-        .from('voice_profiles')
-        .select('sample_path')
-        .eq('user_id', userId)
-        .eq('is_default', true)
-        .single();
-
-      if (defaultProfile?.sample_path) voiceSampleRef = defaultProfile.sample_path;
-    }
-
-    // Call voice engine — configurable URL via env var
-    const engineUrl = Deno.env.get('VOICE_ENGINE_URL') || 'http://localhost:5000';
-
-    const response = await fetch(`${engineUrl}/tts`, {
+    // Call OpenAI TTS API
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voice_sample: voiceSampleRef }),
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'tts-1',
+        voice: voice || DEFAULT_VOICE,
+        input: text,
+        response_format: 'mp3',
+      }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Voice engine error:', errText);
-      throw new Error(`Voice engine error: ${response.status}`);
+      console.error('OpenAI TTS error:', response.status, errText);
+      throw new Error(`OpenAI TTS error: ${response.status}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    // Chunked base64 encoding to avoid call stack overflow on large audio
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    const base64Audio = btoa(binary);
 
     // Update usage
     await supabase.from('ai_usage').update({ tts_requests: currentTTS + 1, updated_at: new Date().toISOString() }).eq('id', usage.id);
