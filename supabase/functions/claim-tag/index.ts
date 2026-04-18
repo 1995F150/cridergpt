@@ -63,17 +63,17 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Reserve the tag for this user (status → 'claimed' with assigned_by = user)
-    // The pool will be finalized to 'assigned' when the animal record is created.
+    // Reserve the tag for this user. We mark it 'assigned' with assigned_by = user,
+    // but leave assigned_to_animal NULL until the user creates an animal record.
     const { error: updateErr } = await db
       .from('livestock_tag_pool')
       .update({
-        status: 'claimed',
+        status: 'assigned',
         assigned_by: user.id,
         assigned_at: new Date().toISOString(),
       })
       .eq('tag_id', tagId)
-      .in('status', ['available', 'programmed', 'claimed']) // idempotent re-claim by same user OK below
+      .in('status', ['available', 'programmed'])
     if (updateErr) throw updateErr
 
     // Log the claim event
