@@ -48,6 +48,8 @@ export function NFCTagWriter() {
   const [useCustomId, setUseCustomId] = useState(false);
   const [encryptData, setEncryptData] = useState(false);
   const [lockTag, setLockTag] = useState(false);
+  const [writeUrl, setWriteUrl] = useState(true);
+  const [writePlainText, setWritePlainText] = useState(true);
   const [isWriting, setIsWriting] = useState(false);
   const [isReading, setIsReading] = useState(false);
   const [nfcSupported, setNfcSupported] = useState(false);
@@ -128,12 +130,19 @@ export function NFCTagWriter() {
 
     try {
       const ndef = new (window as any).NDEFReader();
-      await ndef.write({
-        records: [
-          { recordType: 'text', data: buildPayload(tagId) },
-          { recordType: 'url', data: `https://cridergpt.lovable.app/?scan=${tagId}` }
-        ]
-      });
+      const records: any[] = [];
+      if (writeUrl) {
+        records.push({ recordType: 'url', data: `https://cridergpt.lovable.app/livestockID/${tagId}` });
+      }
+      if (writePlainText) {
+        records.push({ recordType: 'text', data: buildPayload(tagId) });
+      }
+      if (records.length === 0) {
+        toast.error('Enable at least one record type (URL or plain text)');
+        setIsWriting(false);
+        return;
+      }
+      await ndef.write({ records });
 
       if (lockTag) {
         try {
@@ -248,7 +257,7 @@ export function NFCTagWriter() {
             </div>
             <div className="flex-1">
               <h2 className="text-xl font-semibold">NFC Tag Writer</h2>
-              <p className="text-muted-foreground text-sm">Write plain CriderGPT IDs to NFC tags</p>
+              <p className="text-muted-foreground text-sm">Writes URL + plain ID by default · iPhone-friendly tap-to-open</p>
             </div>
             <Badge variant={nfcSupported ? 'default' : 'destructive'} className="gap-1.5">
               {nfcSupported ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
@@ -324,6 +333,27 @@ export function NFCTagWriter() {
                 )}
               </div>
             )}
+
+            <Separator />
+
+            {/* Record Type Selection (default: both) */}
+            <div className="space-y-3 rounded-lg bg-primary/5 border border-primary/15 p-3">
+              <p className="text-xs font-semibold text-primary uppercase tracking-wide">Records to Write</p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm">URL Record (iPhone tap-to-open)</Label>
+                  <p className="text-xs text-muted-foreground font-mono break-all">https://cridergpt.lovable.app/livestockID/&#123;id&#125;</p>
+                </div>
+                <Switch checked={writeUrl} onCheckedChange={setWriteUrl} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm">Plain-Text Record (Android scan button)</Label>
+                  <p className="text-xs text-muted-foreground">Backward-compatible with existing scanner</p>
+                </div>
+                <Switch checked={writePlainText} onCheckedChange={setWritePlainText} />
+              </div>
+            </div>
 
             <Separator />
 
