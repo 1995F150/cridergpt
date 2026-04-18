@@ -4,7 +4,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useRealtimeCall } from '@/hooks/useRealtimeCall';
+import { useCallMode } from '@/hooks/useCallMode';
 
 interface CallModeInterfaceProps {
   onClose?: () => void;
@@ -13,21 +13,22 @@ interface CallModeInterfaceProps {
 export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
   const {
     isCallActive,
-    isConnecting,
     isMuted,
-    aiSpeaking,
     callDuration,
     volume,
     showCC,
     transcripts,
-    micError,
     startCall,
     endCall,
     toggleMute,
     adjustVolume,
     toggleCC,
     formatDuration,
-  } = useRealtimeCall();
+  } = useCallMode();
+
+  const isConnecting = false;
+  const aiSpeaking = false;
+  const micError = null;
 
   if (!isCallActive) {
     return (
