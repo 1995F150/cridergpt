@@ -17,6 +17,8 @@ export interface TranscriptEntry {
   timestamp: Date;
 }
 
+const CALL_MODE_MODEL = 'google/gemini-3-flash-preview';
+
 export function useCallMode() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -44,21 +46,18 @@ export function useCallMode() {
       recognitionRef.current.interimResults = true;
       
       recognitionRef.current.onresult = async (event: any) => {
-        const transcript = Array.from(event.results)
-          .map((result: any) => result[0].transcript)
-          .join('');
-        
-        if (event.results[0].isFinal) {
-          // Add user transcript to CC
-          setTranscripts(prev => [...prev, {
-            speaker: 'user',
-            text: transcript,
-            timestamp: new Date()
-          }]);
-          
-          // Process complete transcript
-          await processVoiceInput(transcript);
-        }
+        const result = event.results?.[event.resultIndex];
+        const transcript = result?.[0]?.transcript?.trim();
+
+        if (!result?.isFinal || !transcript) return;
+
+        setTranscripts(prev => [...prev, {
+          speaker: 'user',
+          text: transcript,
+          timestamp: new Date()
+        }]);
+
+        await processVoiceInput(transcript);
       };
 
       recognitionRef.current.onerror = (event: any) => {
@@ -73,9 +72,9 @@ export function useCallMode() {
 
     try {
       const { data, error } = await supabase.functions.invoke('chat-with-ai', {
-        body: { 
+        body: {
           message: transcript,
-          model: 'gpt-3.5-turbo'
+          model: CALL_MODE_MODEL,
         }
       });
 

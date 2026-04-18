@@ -823,7 +823,7 @@ serve(async (req) => {
   );
 
   try {
-    const { message, imageData, conversation_history, sensor_context } = await req.json();
+    const { message, imageData, conversation_history, sensor_context, model } = await req.json();
 
     if (!message && !imageData) {
       throw new Error('Message or image is required');
@@ -1097,15 +1097,17 @@ serve(async (req) => {
         messages.push({ role: 'user', content: message });
       }
 
-      // Call OpenAI API (fallback to Lovable AI Gateway if no OpenAI key)
-      const useOpenAI = !!OPENAI_API_KEY;
+      // Call OpenAI API unless a Lovable AI model was explicitly requested.
+      const requestedModel = typeof model === 'string' ? model.trim() : '';
+      const prefersLovable = requestedModel.startsWith('google/');
+      const useOpenAI = !!OPENAI_API_KEY && !prefersLovable;
       const apiUrl = useOpenAI 
         ? 'https://api.openai.com/v1/chat/completions' 
         : 'https://ai.gateway.lovable.dev/v1/chat/completions';
       const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
-      const defaultModel = useOpenAI 
-        ? (imageData ? 'gpt-4o' : 'gpt-4o-mini') 
-        : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash');
+      const defaultModel = requestedModel || (useOpenAI
+        ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
+        : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-3-flash-preview'));
 
       if (!apiKey) {
         throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
