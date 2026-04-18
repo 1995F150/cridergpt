@@ -4,7 +4,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useCallMode } from '@/hooks/useCallMode';
+import { useRealtimeCall } from '@/hooks/useRealtimeCall';
 
 interface CallModeInterfaceProps {
   onClose?: () => void;
@@ -13,7 +13,9 @@ interface CallModeInterfaceProps {
 export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
   const {
     isCallActive,
+    isConnecting,
     isMuted,
+    aiSpeaking,
     callDuration,
     volume,
     showCC,
@@ -24,7 +26,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
     adjustVolume,
     toggleCC,
     formatDuration,
-  } = useCallMode();
+  } = useRealtimeCall();
 
   if (!isCallActive) {
     return (
@@ -33,9 +35,10 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
           onClick={startCall}
           size="lg"
           className="gap-2"
+          disabled={isConnecting}
         >
           <Phone className="h-5 w-5" />
-          Start Call Mode
+          {isConnecting ? 'Connecting…' : 'Start Call Mode'}
         </Button>
       </div>
     );
@@ -64,6 +67,8 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
           }`}>
             {isMuted ? (
               <MicOff className="h-12 w-12 text-muted-foreground" />
+            ) : aiSpeaking ? (
+              <Volume2 className="h-12 w-12 text-primary animate-pulse" />
             ) : (
               <Mic className="h-12 w-12 text-primary animate-pulse" />
             )}
