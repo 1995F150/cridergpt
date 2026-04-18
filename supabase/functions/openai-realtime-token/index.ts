@@ -65,6 +65,19 @@ const PRODUCT_TOOLS = [
       required: ['product_id'],
     },
   },
+  {
+    type: 'function',
+    name: 'find_restaurants',
+    description: "Find restaurants on DoorDash by cuisine or dish, optionally near a location. Returns deep links the user can tap to open DoorDash and check out there. CriderGPT cannot place DoorDash orders directly — always hand off via link.",
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Cuisine, dish, or restaurant name (e.g. "pizza", "tacos", "Chipotle")' },
+        location: { type: 'string', description: 'Optional city, ZIP, or neighborhood' },
+      },
+      required: ['query'],
+    },
+  },
 ];
 
 

@@ -65,6 +65,21 @@ const PRODUCT_TOOLS_CHAT = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'find_restaurants',
+      description: "Find restaurants on DoorDash by cuisine/dish, optionally near a location. Returns deep links the user opens to checkout in DoorDash. CriderGPT cannot place DoorDash orders directly.",
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Cuisine, dish, or restaurant name' },
+          location: { type: 'string', description: 'Optional city, ZIP, or neighborhood' },
+        },
+        required: ['query'],
+      },
+    },
+  },
 ];
 
 async function runProductTool(name: string, args: any, userId: string | null, userEmail: string | null, origin: string) {
@@ -100,6 +115,33 @@ async function runProductTool(name: string, args: any, userId: string | null, us
       const qty = Math.max(1, Number(args?.quantity) || 1);
       if (!ref) return { error: 'product_ref required' };
       return await createCheckoutLink(ref, qty, userEmail, origin);
+    }
+    case 'find_restaurants': {
+      const query = String(args?.query || '').trim();
+      const location = String(args?.location || '').trim();
+      if (!query) return { error: 'query required' };
+      const term = `${query}${location ? ' near ' + location : ''}`;
+      const search_url = `https://www.doordash.com/search/store/${encodeURIComponent(term)}/`;
+      const FC_KEY = Deno.env.get('FIRECRAWL_API_KEY');
+      let results: Array<{ name: string; url: string; description?: string }> = [];
+      if (FC_KEY) {
+        try {
+          const fc = await fetch('https://api.firecrawl.dev/v2/search', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${FC_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: `site:doordash.com/store ${term}`, limit: 5 }),
+          });
+          const data = await fc.json();
+          const items = data?.data?.web || data?.data || [];
+          results = items.slice(0, 5).map((r: any) => ({
+            name: r.title || r.url, url: r.url, description: r.description || r.snippet,
+          }));
+        } catch (err) { console.warn('[find_restaurants] firecrawl:', err); }
+      }
+      return {
+        query: term, search_url, results,
+        note: 'CriderGPT can\'t place DoorDash orders. Tap a link to open DoorDash and check out there.',
+      };
     }
     default:
       return { error: `Unknown tool: ${name}` };
