@@ -121,6 +121,7 @@ serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     // Identify the caller from their JWT
     let isOwner = false;
@@ -147,12 +148,28 @@ serve(async (req) => {
       }
     }
 
+    const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+    });
+
+    const { data: writingSamplesData } = await adminSupabase
+      .from('writing_samples')
+      .select('title, content')
+      .order('created_at', { ascending: true })
+      .limit(6);
+
+    const writingStyleContext = writingSamplesData?.length
+      ? `\n\n✍️ JESSIE WRITING SAMPLE STYLE:\nUse this as the speaking style source of truth. Match the vocabulary, rhythm, sentence restarts, filler words, and casual thought-flow — do not sound polished or corporate.\n${writingSamplesData
+          .map((sample) => `\n=== ${sample.title} ===\n${sample.content.slice(0, 900)}`)
+          .join('\n')}`
+      : '';
+
     const body = await req.json().catch(() => ({}));
     const voice = body.voice || 'alloy';
     const model = body.model || 'gpt-4o-realtime-preview-2024-12-17';
 
-    const instructions = buildPersonalizedInstructions({ isOwner, displayName, email, username });
-    console.log('[realtime-token] caller:', { email, isOwner, displayName, username });
+    const instructions = buildPersonalizedInstructions({ isOwner, displayName, email, username }) + writingStyleContext;
+    console.log('[realtime-token] caller:', { email, isOwner, displayName, username, writingSamples: writingSamplesData?.length || 0 });
 
     const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
       method: 'POST',
