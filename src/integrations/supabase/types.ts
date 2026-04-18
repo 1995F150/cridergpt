@@ -4622,6 +4622,7 @@ export type Database = {
         | { Args: never; Returns: boolean }
         | { Args: { limit_type: string }; Returns: number }
       cleanup_expired_stories: { Args: never; Returns: undefined }
+      cleanup_old_data: { Args: never; Returns: undefined }
       compute_user_revenue_mapping: {
         Args: never
         Returns: {
