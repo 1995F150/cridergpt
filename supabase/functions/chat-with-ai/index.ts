@@ -1,11 +1,111 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
+import {
+  loadFullCatalog,
+  summarizeCatalogForAI,
+  lookupOrdersForUser,
+  createCheckoutLink,
+} from "../_shared/catalog.ts";
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
 const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
+
+// OpenAI chat-completions tool format (nested under "function")
+const PRODUCT_TOOLS_CHAT = [
+  {
+    type: 'function',
+    function: {
+      name: 'search_products',
+      description: 'Search the CriderGPT catalog (physical, digital, Snapchat filters). Use when user asks about products, pricing, or availability.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string' },
+          category: { type: 'string' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'recommend_products',
+      description: "Recommend products that fit the user's stated need.",
+      parameters: {
+        type: 'object',
+        properties: { need: { type: 'string' } },
+        required: ['need'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'lookup_order',
+      description: "Look up the signed-in user's own orders, subscriptions, and filter requests.",
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_checkout_link',
+      description: 'Generate a Stripe checkout link for a product. Returns a URL.',
+      parameters: {
+        type: 'object',
+        properties: {
+          product_ref: { type: 'string', description: 'Stripe price_id, prod_id, or digital_products id/slug' },
+          quantity: { type: 'integer', minimum: 1 },
+        },
+        required: ['product_ref'],
+      },
+    },
+  },
+];
+
+async function runProductTool(name: string, args: any, userId: string | null, userEmail: string | null, origin: string) {
+  switch (name) {
+    case 'search_products': {
+      const q = String(args?.query || '').toLowerCase();
+      const cat = args?.category ? String(args.category) : null;
+      const all = await loadFullCatalog();
+      let list = all;
+      if (cat) list = list.filter(p => p.category === cat);
+      if (q) list = list.filter(p =>
+        [p.title, p.description ?? '', p.category ?? '', p.tags.join(' ')].join(' ').toLowerCase().includes(q)
+      );
+      return { count: list.length, products: list.slice(0, 10), summary: summarizeCatalogForAI(list.slice(0, 10)) };
+    }
+    case 'recommend_products': {
+      const need = String(args?.need || '').toLowerCase();
+      const all = await loadFullCatalog();
+      const ranked = all.map(p => {
+        const hay = [p.title, p.description ?? '', p.tags.join(' ')].join(' ').toLowerCase();
+        const score = need.split(/\s+/).filter(Boolean).reduce((s, t) => s + (hay.includes(t) ? 1 : 0), 0);
+        return { p, score };
+      }).sort((a, b) => b.score - a.score).slice(0, 5).map(x => x.p);
+      return { recommendations: ranked, summary: summarizeCatalogForAI(ranked) };
+    }
+    case 'lookup_order': {
+      if (!userId) return { error: 'Sign in required to look up orders' };
+      const orders = await lookupOrdersForUser(userId, userEmail);
+      return { count: orders.length, orders };
+    }
+    case 'create_checkout_link': {
+      const ref = String(args?.product_ref || '');
+      const qty = Math.max(1, Number(args?.quantity) || 1);
+      if (!ref) return { error: 'product_ref required' };
+      return await createCheckoutLink(ref, qty, userEmail, origin);
+    }
+    default:
+      return { error: `Unknown tool: ${name}` };
+  }
+}
+
 
 const SYSTEM_PROMPT = (userEmail: string, writingSamples: string, memoryEnabled: boolean, memoriesContext: string) => {
   const now = new Date();
