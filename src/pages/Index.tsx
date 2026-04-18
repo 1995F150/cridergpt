@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import { trackPageView, trackFeatureUse } from '@/utils/analytics';
 import { NavigationSidebar } from '@/components/NavigationSidebar';
