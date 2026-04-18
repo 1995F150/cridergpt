@@ -167,6 +167,7 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const voice = body.voice || 'alloy';
     const model = body.model || 'gpt-4o-realtime-preview-2024-12-17';
+    const offerSdp = typeof body.offerSdp === 'string' ? body.offerSdp : null;
 
     const instructions = buildPersonalizedInstructions({ isOwner, displayName, email, username }) + writingStyleContext;
     console.log('[realtime-token] caller:', { email, isOwner, displayName, username, writingSamples: writingSamplesData?.length || 0 });
@@ -204,8 +205,43 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+
+    let answerSdp: string | null = null;
+    if (offerSdp) {
+      const ephemeralKey = data?.client_secret?.value;
+      if (!ephemeralKey) {
+        return new Response(JSON.stringify({ error: 'Realtime session did not include a client secret for SDP exchange.' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
+        method: 'POST',
+        body: offerSdp,
+        headers: {
+          Authorization: `Bearer ${ephemeralKey}`,
+          'Content-Type': 'application/sdp',
+        },
+      });
+
+      if (!sdpResponse.ok) {
+        const detail = await sdpResponse.text().catch(() => '');
+        return new Response(JSON.stringify({ error: `SDP exchange failed (${sdpResponse.status})`, detail }), {
+          status: sdpResponse.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      answerSdp = await sdpResponse.text();
+    }
+
     // Surface caller context to the client so it can tailor the greeting trigger too
     data._caller = { isOwner, displayName, email, username };
+    if (answerSdp) {
+      data.answer_sdp = answerSdp;
+    }
+
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
