@@ -1148,6 +1148,51 @@ export type Database = {
           },
         ]
       }
+      farmbureau_leads: {
+        Row: {
+          county: string | null
+          created_at: string
+          email: string
+          farm_name: string | null
+          herd_size: number | null
+          id: string
+          livestock_type: string | null
+          message: string | null
+          name: string
+          phone: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          county?: string | null
+          created_at?: string
+          email: string
+          farm_name?: string | null
+          herd_size?: number | null
+          id?: string
+          livestock_type?: string | null
+          message?: string | null
+          name: string
+          phone?: string | null
+          source?: string
+          status?: string
+        }
+        Update: {
+          county?: string | null
+          created_at?: string
+          email?: string
+          farm_name?: string | null
+          herd_size?: number | null
+          id?: string
+          livestock_type?: string | null
+          message?: string | null
+          name?: string
+          phone?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
       feature_notifications: {
         Row: {
           created_at: string | null
