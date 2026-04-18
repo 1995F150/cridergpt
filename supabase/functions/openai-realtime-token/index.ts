@@ -165,7 +165,7 @@ serve(async (req) => {
       : '';
 
     const body = await req.json().catch(() => ({}));
-    const voice = body.voice || 'alloy';
+    const voice = body.voice || 'marin';
     const model = body.model || 'gpt-4o-realtime-preview-2024-12-17';
     const offerSdp = typeof body.offerSdp === 'string' ? body.offerSdp : null;
 

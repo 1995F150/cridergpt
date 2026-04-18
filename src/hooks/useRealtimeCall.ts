@@ -146,8 +146,6 @@ export function useRealtimeCall() {
         }
       }
 
-      // Kick off mic capture and token fetch in parallel — they're independent
-      // and together account for most of the connect latency.
       const micPromise = navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -155,23 +153,10 @@ export function useRealtimeCall() {
           autoGainControl: true,
         },
       });
-      const tokenPromise = supabase.functions.invoke('openai-realtime-token', {
-        body: { voice: 'alloy' },
-      });
 
       micStream = await micPromise;
       localStreamRef.current = micStream;
-
-      const { data: initialSession, error: sessionErr } = await tokenPromise;
-      if (sessionErr) {
-        const sessionMessage = sessionErr.message || 'Could not start realtime session';
-        throw new Error(sessionMessage);
-      }
-      if (initialSession?.error) {
-        const detail = initialSession.detail ? ` ${initialSession.detail}` : '';
-        throw new Error(`${initialSession.error}${detail}`.trim());
-      }
-      const caller = initialSession?._caller as { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
+      let caller: { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
 
       // Public STUN servers help ICE gather candidates faster on restrictive networks.
       const pc = new RTCPeerConnection({
@@ -183,6 +168,10 @@ export function useRealtimeCall() {
       const audioEl = document.createElement('audio');
       audioEl.autoplay = true;
       audioEl.setAttribute('playsinline', 'true');
+      audioEl.preload = 'auto';
+      audioEl.muted = false;
+      audioEl.style.display = 'none';
+      document.body.appendChild(audioEl);
       audioEl.volume = volume;
       audioElRef.current = audioEl;
       try {
@@ -233,7 +222,7 @@ export function useRealtimeCall() {
       await pc.setLocalDescription(offer);
 
       const { data: session, error: handshakeErr } = await supabase.functions.invoke('openai-realtime-token', {
-        body: { voice: 'alloy', offerSdp: offer.sdp },
+        body: { voice: 'marin', offerSdp: offer.sdp },
       });
       if (handshakeErr) {
         throw new Error(handshakeErr.message || 'Realtime handshake failed');
@@ -246,6 +235,7 @@ export function useRealtimeCall() {
       if (!answerSdp) {
         throw new Error('Call setup failed: realtime handshake did not return an answer SDP.');
       }
+      caller = session?._caller as { isOwner?: boolean; displayName?: string | null; email?: string | null; username?: string | null } | undefined;
       await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
       // Flip to active immediately — don't block the UI on the call_logs insert.
