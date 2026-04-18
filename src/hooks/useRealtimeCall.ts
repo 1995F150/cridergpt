@@ -135,7 +135,7 @@ export function useRealtimeCall() {
       // Prepare audio element early and try to unlock playback for mobile browsers.
       const audioEl = document.createElement('audio');
       audioEl.autoplay = true;
-      audioEl.playsInline = true;
+      audioEl.setAttribute('playsinline', 'true');
       audioEl.volume = volume;
       audioElRef.current = audioEl;
       try {
