@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import { trackPageView, trackFeatureUse } from '@/utils/analytics';
 import { NavigationSidebar } from '@/components/NavigationSidebar';
@@ -93,8 +94,32 @@ export type PanelType =
   | 'sensors'
   | 'frequency';
 
+// Set of valid panel slugs (kept in sync with PanelType + livestockID alias)
+const VALID_PANELS = new Set<string>([
+  'chat','vision-memory','calculators','calendar','files','gallery','code','maps','media',
+  'projects','contact','profile','payment','updates','timeline','memorial','ffa','mod-tools',
+  'ai-image','document-ai','plan','app-converter','cloud-gaming','3d-converter','studio',
+  'zip-to-exe','code-editor','admin','guardian','livestock','livestockID','receipts',
+  'agent-swarm','voice-studio','shared-spending','usb-hub','rdr2-guide','sensors','frequency'
+]);
+
+// Map URL slug → internal panel id
+const slugToPanel = (slug?: string): PanelType => {
+  if (!slug) return 'chat';
+  if (slug === 'livestockID') return 'livestock';
+  return (VALID_PANELS.has(slug) ? slug : 'chat') as PanelType;
+};
+
+// Map internal panel id → URL slug
+const panelToSlug = (panel: PanelType): string => {
+  if (panel === 'livestock') return 'livestockID';
+  return panel;
+};
+
 export default function Index() {
-  const [activePanel, setActivePanel] = useState<PanelType>('chat');
+  const { tab } = useParams<{ tab?: string }>();
+  const navigate = useNavigate();
+  const [activePanel, setActivePanel] = useState<PanelType>(() => slugToPanel(tab));
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { isSupported, permission } = useBrowserNotifications();
@@ -105,12 +130,12 @@ export default function Index() {
   // Developer access based on admin role or specific email
   const isDeveloper = isAdmin || user?.email === 'jessiecrider3@gmail.com';
 
+  // Sync URL → state (handles browser back/forward + direct deep links)
   useEffect(() => {
-    const savedPanel = localStorage.getItem('activePanel') as PanelType;
-    if (savedPanel) {
-      setActivePanel(savedPanel);
-    }
-  }, []);
+    const next = slugToPanel(tab);
+    setActivePanel(next);
+    localStorage.setItem('activePanel', next);
+  }, [tab]);
 
   // Show notification permission modal after a short delay for new users
   useEffect(() => {
@@ -129,17 +154,19 @@ export default function Index() {
 
   const handlePanelChange = (panel: string) => {
     const panelType = panel as PanelType;
-    setActivePanel(panelType);
-    localStorage.setItem('activePanel', panelType);
+    const slug = panelToSlug(panelType);
+    // Push to URL — the useEffect above will update state
+    navigate(slug === 'chat' ? '/' : `/${slug}`);
     
     // Track page view and feature usage
-    trackPageView(`/${panelType}`, `${panelType.charAt(0).toUpperCase() + panelType.slice(1)} | CriderGPT`);
+    trackPageView(`/${slug}`, `${panelType.charAt(0).toUpperCase() + panelType.slice(1)} | CriderGPT`);
     trackFeatureUse(panelType);
   };
 
   // Track initial page view
   useEffect(() => {
-    trackPageView(`/${activePanel}`, `${activePanel.charAt(0).toUpperCase() + activePanel.slice(1)} | CriderGPT`);
+    trackPageView(`/${panelToSlug(activePanel)}`, `${activePanel.charAt(0).toUpperCase() + activePanel.slice(1)} | CriderGPT`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const renderPanel = () => {

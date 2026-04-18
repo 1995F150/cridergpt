@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,8 @@ export default function Auth() {
   const [initializing, setInitializing] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo') || '/';
   const { toast } = useToast();
 
   useEffect(() => {
@@ -46,8 +48,8 @@ export default function Auth() {
             setAuthError(null);
           }
         } else if (session) {
-          console.log('✅ Session found, redirecting...');
-          navigate('/', { replace: true });
+          console.log('✅ Session found, redirecting to:', returnTo);
+          navigate(returnTo, { replace: true });
           return;
         } else {
           console.log('✅ No session, showing auth form');
@@ -69,7 +71,7 @@ export default function Auth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('🔔 Auth event:', event);
       if (session && mounted) {
-        navigate('/', { replace: true });
+        navigate(returnTo, { replace: true });
       }
     });
 

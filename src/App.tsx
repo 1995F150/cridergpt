@@ -116,9 +116,11 @@ const App = () => {
                       <Route path="/user-agreement" element={<UserAgreement />} />
                       <Route path="/store" element={<SmartIDStore />} />
                       <Route path="/tag/:tagId" element={<TagLookup />} />
+                      <Route path="/livestockID/:tagId" element={<TagLookup />} />
                       
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />
+                      <Route path="/:tab" element={<Index />} />
                       
                       {/* Catch all route */}
                       <Route path="*" element={<NotFound />} />
