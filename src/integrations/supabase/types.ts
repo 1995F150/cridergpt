@@ -1208,6 +1208,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_throttles: {
+        Row: {
+          description: string | null
+          enabled: boolean
+          feature_key: string
+          id: string
+          retention_days: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          enabled?: boolean
+          feature_key: string
+          id?: string
+          retention_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          enabled?: boolean
+          feature_key?: string
+          id?: string
+          retention_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       filter_orders: {
         Row: {
           admin_notes: string | null
@@ -4662,6 +4692,7 @@ export type Database = {
         Returns: boolean
       }
       has_tier_feature: { Args: { feature: string }; Returns: boolean }
+      is_feature_enabled: { Args: { _key: string }; Returns: boolean }
       is_founder:
         | { Args: never; Returns: boolean }
         | { Args: { check_email: string }; Returns: boolean }
@@ -4708,6 +4739,7 @@ export type Database = {
       }
       reset_monthly_usage: { Args: never; Returns: undefined }
       reset_query_statistics: { Args: never; Returns: undefined }
+      run_data_autoprune: { Args: never; Returns: Json }
       safe_batch_sync_user_tiers: {
         Args: never
         Returns: {
