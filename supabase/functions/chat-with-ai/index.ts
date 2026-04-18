@@ -1069,46 +1069,72 @@ serve(async (req) => {
         throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
       }
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Tool-calling loop (max 4 iterations to prevent infinite loops)
+      const origin = req.headers.get('origin') || 'https://cridergpt.lovable.app';
+      let toolLoopData: any = null;
+      let toolIterations = 0;
+      const MAX_TOOL_ITERATIONS = 4;
+
+      while (toolIterations < MAX_TOOL_ITERATIONS) {
+        const requestBody: any = {
           model: defaultModel,
           messages,
           max_tokens: 2000,
-        }),
-      });
+        };
+        // Only attach tools when not doing image analysis (vision + tools combo is flaky)
+        if (!imageData) {
+          requestBody.tools = PRODUCT_TOOLS_CHAT;
+          requestBody.tool_choice = 'auto';
+        }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('AI Gateway error:', response.status, errorText);
-        
-        if (response.status === 429) {
-          return new Response(JSON.stringify({ 
-            error: "Rate limited. Please try again in a moment." 
-          }), {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('AI Gateway error:', response.status, errorText);
+          if (response.status === 429) {
+            return new Response(JSON.stringify({ error: "Rate limited. Please try again in a moment." }), {
+              status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          if (response.status === 402) {
+            return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits." }), {
+              status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          throw new Error(`AI Gateway error: ${response.status}`);
+        }
+
+        toolLoopData = await response.json();
+        const choice = toolLoopData.choices?.[0];
+        const toolCalls = choice?.message?.tool_calls;
+
+        if (!toolCalls || toolCalls.length === 0) break;
+
+        // Append assistant message with tool calls + run each tool
+        messages.push(choice.message);
+        for (const call of toolCalls) {
+          let parsedArgs: any = {};
+          try { parsedArgs = JSON.parse(call.function.arguments || '{}'); } catch {}
+          console.log('[chat-with-ai] tool call:', call.function.name, parsedArgs);
+          const result = await runProductTool(call.function.name, parsedArgs, userId, userEmail, origin);
+          messages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            content: JSON.stringify(result),
           });
         }
-        
-        if (response.status === 402) {
-          return new Response(JSON.stringify({ 
-            error: "AI credits exhausted. Please add credits." 
-          }), {
-            status: 402,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        
-        throw new Error(`AI Gateway error: ${response.status}`);
+        toolIterations += 1;
       }
 
-      const data = await response.json();
-      aiResponse = data.choices?.[0]?.message?.content || 'No response generated';
+      aiResponse = toolLoopData?.choices?.[0]?.message?.content || 'No response generated';
       responseSource = useOpenAI ? 'openai' : 'gateway';
     } // end else (external API)
 
