@@ -8,6 +8,66 @@ const corsHeaders = {
 
 const OWNER_EMAIL = 'jessiecrider3@gmail.com';
 
+// Realtime API tool format (flat — not nested under "function")
+const PRODUCT_TOOLS = [
+  {
+    type: 'function',
+    name: 'search_products',
+    description: "Search the CriderGPT catalog (physical products, digital products, Snapchat filters). Use whenever the user asks about products, pricing, or availability.",
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Free-text search across titles, descriptions, tags' },
+        category: { type: 'string', description: 'Optional category filter, e.g. "snapchat-filters"' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    type: 'function',
+    name: 'recommend_products',
+    description: "Recommend products based on a stated need (e.g. 'I need something for tracking cattle'). Returns 5 best matches.",
+    parameters: {
+      type: 'object',
+      properties: { need: { type: 'string', description: "What the user is trying to accomplish" } },
+      required: ['need'],
+    },
+  },
+  {
+    type: 'function',
+    name: 'lookup_order',
+    description: "Look up the signed-in user's own orders, subscriptions, and custom-filter requests. Returns status and amounts.",
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    type: 'function',
+    name: 'create_checkout_link',
+    description: "Generate a Stripe checkout link the user can tap to pay. Use after confirming intent. Returns a URL.",
+    parameters: {
+      type: 'object',
+      properties: {
+        product_ref: { type: 'string', description: 'Stripe price_id, prod_id, or digital_products id/slug' },
+        quantity: { type: 'integer', minimum: 1, default: 1 },
+      },
+      required: ['product_ref'],
+    },
+  },
+  {
+    type: 'function',
+    name: 'add_to_cart',
+    description: "Add an item to the user's store cart so they can review it on the /store page.",
+    parameters: {
+      type: 'object',
+      properties: {
+        product_id: { type: 'string', description: 'Store product id' },
+        quantity: { type: 'integer', minimum: 1, default: 1 },
+      },
+      required: ['product_id'],
+    },
+  },
+];
+
+
 const BASE_INSTRUCTIONS = `You are CriderGPT, an authentic ag-expert AI built by Jessie Crider for FFA members and the rural community. You're the smartest kid in the barn — knowledgeable about livestock, farming, FFA, agriculture, modding (especially Farming Simulator), and rural life. Speak naturally and conversationally, like talking on the phone. Keep responses concise for voice — usually 1-3 sentences unless asked for detail. Be warm, direct, and helpful.`;
 
 function buildPersonalizedInstructions(opts: {
