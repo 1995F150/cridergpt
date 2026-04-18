@@ -125,6 +125,16 @@ export function NFCTagWriter() {
     if (!tagId) { toast.error('Select or enter a tag ID first'); return; }
     if (!nfcSupported) { toast.error('NFC is not supported on this device'); return; }
 
+    if (lockTag) {
+      const confirmed = window.confirm(
+        `⚠️ PERMANENT LOCK WARNING\n\nYou are about to PERMANENTLY lock tag "${tagId}".\n\n• This CANNOT be undone\n• The tag becomes read-only forever\n• Only NTAG213/215/216 chips support locking\n• If locking fails, the tag may still be writable\n\nProceed with permanent lock?`
+      );
+      if (!confirmed) {
+        toast.info('Lock cancelled — tag not written');
+        return;
+      }
+    }
+
     setIsWriting(true);
     addLog(tagId, 'write', 'pending', encryptData, lockTag);
 
@@ -132,7 +142,7 @@ export function NFCTagWriter() {
       const ndef = new (window as any).NDEFReader();
       const records: any[] = [];
       if (writeUrl) {
-        records.push({ recordType: 'url', data: `https://cridergpt.lovable.app/livestockID/${tagId}` });
+        records.push({ recordType: 'url', data: `https://cridergpt.lovable.app/tag/${tagId}` });
       }
       if (writePlainText) {
         records.push({ recordType: 'text', data: buildPayload(tagId) });
@@ -342,7 +352,7 @@ export function NFCTagWriter() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className="text-sm">URL Record (iPhone tap-to-open)</Label>
-                  <p className="text-xs text-muted-foreground font-mono break-all">https://cridergpt.lovable.app/livestockID/&#123;id&#125;</p>
+                  <p className="text-xs text-muted-foreground font-mono break-all">https://cridergpt.lovable.app/tag/&#123;id&#125;</p>
                 </div>
                 <Switch checked={writeUrl} onCheckedChange={setWriteUrl} />
               </div>
