@@ -16,6 +16,28 @@ import { toast } from '@/hooks/use-toast';
 
 type ClaimStatus = 'idle' | 'available' | 'mine' | 'taken' | 'unknown';
 
+const parseFunctionError = async (fnError: any) => {
+  const status = fnError?.context?.status ?? fnError?.status ?? null;
+
+  try {
+    const response = fnError?.context;
+    if (response && typeof response.clone === 'function') {
+      const payload = await response.clone().json();
+      return {
+        status,
+        message: payload?.error || fnError?.message || 'Failed to look up tag',
+      };
+    }
+  } catch {
+    // Fall back to Supabase error message below.
+  }
+
+  return {
+    status,
+    message: fnError?.message || 'Failed to look up tag',
+  };
+};
+
 export default function TagLookup() {
   const { tagId: rawTagId } = useParams<{ tagId: string }>();
   // Strip wrapping braces, whitespace, and decode URI components defensively.
@@ -63,7 +85,19 @@ export default function TagLookup() {
       const { data, error: fnError } = await supabase.functions.invoke('tag-lookup', {
         body: { tag_id: tagId },
       });
-      if (fnError) throw fnError;
+
+      if (fnError) {
+        const parsedError = await parseFunctionError(fnError);
+        const shouldCheckPool = isLivestockRoute && parsedError.status === 404;
+
+        if (shouldCheckPool) {
+          await evaluatePoolTag();
+          return;
+        }
+
+        throw new Error(parsedError.message);
+      }
+
       if (data?.error) {
         // Tag not found via tag-lookup (no animal yet). Check the pool.
         if (isLivestockRoute) {
