@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  base: './',
   build: {
     rollupOptions: {
       onwarn(warning, warn) {
