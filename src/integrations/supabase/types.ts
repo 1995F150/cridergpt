@@ -1686,6 +1686,48 @@ export type Database = {
           },
         ]
       }
+      launch_planner_tasks: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          notes: string | null
+          phase: string
+          phase_order: number
+          task_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          phase: string
+          phase_order: number
+          task_order: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          phase?: string
+          phase_order?: number
+          task_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       learning_queue: {
         Row: {
           created_at: string | null

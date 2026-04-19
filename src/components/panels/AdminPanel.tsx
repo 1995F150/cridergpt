@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive, Rocket } from 'lucide-react';
+import { LaunchPlanner } from '@/components/admin/LaunchPlanner';
 import { DatabaseThrottlePanel } from '@/components/admin/DatabaseThrottlePanel';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -173,6 +174,9 @@ export function AdminPanel() {
           <TabsTrigger value="pos" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Receipt className="h-4 w-4" /> POS
           </TabsTrigger>
+          <TabsTrigger value="launch-planner" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Rocket className="h-4 w-4" /> Launch Planner
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4" /> Settings
           </TabsTrigger>
@@ -220,6 +224,7 @@ export function AdminPanel() {
         <TabsContent value="qr-generator"><QRCodeGenerator /></TabsContent>
         <TabsContent value="barcode-generator"><BarcodeGenerator /></TabsContent>
         <TabsContent value="pos"><PointOfSale /></TabsContent>
+        <TabsContent value="launch-planner"><LaunchPlanner /></TabsContent>
       </Tabs>
     </div>
   );
