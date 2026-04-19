@@ -66,6 +66,3 @@ verify_jwt = false
 [functions.mcp-server]
 verify_jwt = false
 
-[functions.openai-apps-challenge]
-verify_jwt = false
-
