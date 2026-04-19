@@ -179,7 +179,7 @@ export function LaunchPlanner() {
                         <div className="text-xs text-muted-foreground mt-0.5">{task.description}</div>
                       )}
                       {task.completed_at && (
-                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        <div className="text-xs text-primary mt-1">
                           ✓ Done {new Date(task.completed_at).toLocaleDateString()}
                         </div>
                       )}
