@@ -65,8 +65,8 @@ services:
       - WORKSPACE_DIR=/workspace
     command: >
       bash -c "
-        apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/* &&
-        pip install flask flask-cors httpx &&
+        apt-get update && apt-get install -y git curl scrot xvfb && rm -rf /var/lib/apt/lists/* &&
+        pip install flask flask-cors httpx pyautogui pillow &&
         python /app/docker-agent.py
       "
     working_dir: /app

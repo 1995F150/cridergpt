@@ -209,6 +209,71 @@ def execute_command(command: str, context: dict = None) -> dict:
                 "free_gb": round(usage.free / (1024**3), 2),
             }
 
+        # ── Screenshot (requires DISPLAY or scrot/PIL) ──
+        elif cmd_type in ("screenshot", "screen"):
+            try:
+                import base64, io
+                # Try pyautogui first (best cross-platform)
+                try:
+                    import pyautogui
+                    img = pyautogui.screenshot()
+                    buf = io.BytesIO()
+                    img.save(buf, format="PNG")
+                    b64 = base64.b64encode(buf.getvalue()).decode()
+                    return {"status": "ok", "image_base64": b64, "format": "png"}
+                except Exception:
+                    pass
+                # Fallback: scrot on Linux
+                tmp = "/tmp/agent_screen.png"
+                subprocess.run(["scrot", tmp], capture_output=True, timeout=10)
+                if os.path.exists(tmp):
+                    with open(tmp, "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode()
+                    return {"status": "ok", "image_base64": b64, "format": "png"}
+                return {"status": "error", "error": "No screenshot backend (install pyautogui or scrot)"}
+            except Exception as e:
+                return {"status": "error", "error": f"Screenshot failed: {e}"}
+
+        # ── UI Control (mouse + keyboard via pyautogui) ──
+        elif cmd_type in ("click", "mouse_click"):
+            try:
+                import pyautogui
+                coords = cmd_body.split(",")
+                if len(coords) == 2:
+                    x, y = int(coords[0].strip()), int(coords[1].strip())
+                    pyautogui.click(x, y)
+                    return {"status": "ok", "clicked": [x, y]}
+                pyautogui.click()
+                return {"status": "ok", "clicked": "current_position"}
+            except Exception as e:
+                return {"status": "error", "error": f"Click failed: {e}"}
+
+        elif cmd_type in ("type", "keyboard"):
+            try:
+                import pyautogui
+                pyautogui.typewrite(cmd_body, interval=0.02)
+                return {"status": "ok", "typed_chars": len(cmd_body)}
+            except Exception as e:
+                return {"status": "error", "error": f"Type failed: {e}"}
+
+        elif cmd_type in ("hotkey", "press"):
+            try:
+                import pyautogui
+                keys = [k.strip() for k in cmd_body.split("+")]
+                pyautogui.hotkey(*keys)
+                return {"status": "ok", "pressed": keys}
+            except Exception as e:
+                return {"status": "error", "error": f"Hotkey failed: {e}"}
+
+        elif cmd_type in ("move", "mouse_move"):
+            try:
+                import pyautogui
+                x, y = [int(v.strip()) for v in cmd_body.split(",")]
+                pyautogui.moveTo(x, y, duration=0.2)
+                return {"status": "ok", "moved_to": [x, y]}
+            except Exception as e:
+                return {"status": "error", "error": f"Move failed: {e}"}
+
         # ── Kill Switch ──
         elif cmd_type == "kill":
             KILL_SWITCH = True
