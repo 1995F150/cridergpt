@@ -80,6 +80,45 @@ const PRODUCT_TOOLS_CHAT = [
       },
     },
   },
+  // ── MCP bridge: cloud tools (livestock, events, filter quote, etc.) ──
+  {
+    type: 'function',
+    function: {
+      name: 'mcp_cloud_tool',
+      description: 'Call any tool on the CriderGPT cloud MCP server (livestock_lookup, store_search, events_lookup, filter_quote, cridergpt_chat). Returns JSON result.',
+      parameters: {
+        type: 'object',
+        properties: {
+          tool: { type: 'string', description: 'Tool name (e.g. livestock_lookup)' },
+          args: { type: 'object', description: 'Tool arguments object' },
+        },
+        required: ['tool'],
+      },
+    },
+  },
+  // ── MCP bridge: local PC agent (Docker) ──
+  {
+    type: 'function',
+    function: {
+      name: 'mcp_local_pc',
+      description: "Run an action on the user's local PC via the Docker agent. Commands: sysinfo, read_file, write_file, list_files, shell, screenshot, click (x,y), type (text), hotkey (ctrl+c), move (x,y), git_status, git_pull. Format: 'cmd_type: body' (e.g. 'shell: dir', 'screenshot:', 'click: 500,300'). Local agent must be online.",
+      parameters: {
+        type: 'object',
+        properties: {
+          command: { type: 'string', description: "Full command string like 'shell: ls' or 'screenshot:'" },
+        },
+        required: ['command'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'mcp_local_status',
+      description: 'Check if the local PC Docker agent is online and ready to receive commands.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
 ];
 
 async function runProductTool(name: string, args: any, userId: string | null, userEmail: string | null, origin: string) {
