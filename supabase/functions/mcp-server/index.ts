@@ -2,8 +2,6 @@
 // Public endpoint (verify_jwt = false). Uses service-role key for DB reads.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const VERIFICATION_TOKEN = "vfxe3VV5KZYzEAQa2OC_lb5eaIY0Pi7D9uOEWrUp4yg";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, mcp-session-id",
@@ -226,15 +224,6 @@ async function handleRpc(msg: any) {
 // ---------- HTTP server ----------
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  const url = new URL(req.url);
-
-  // Domain verification challenge endpoint (OpenAI Apps)
-  if (url.pathname.endsWith("/.well-known/openai-apps-challenge") || url.searchParams.get("challenge") === "1") {
-    return new Response(VERIFICATION_TOKEN, {
-      headers: { ...corsHeaders, "Content-Type": "text/plain" },
-    });
-  }
 
   // Health check
   if (req.method === "GET") {
