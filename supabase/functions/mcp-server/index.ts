@@ -17,6 +17,13 @@ const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY");
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
 // ---------- Tool definitions ----------
+const READ_ONLY_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+};
+
 const TOOLS = [
   {
     name: "livestock_lookup",
@@ -26,6 +33,7 @@ const TOOLS = [
       properties: { tag_id: { type: "string", description: "Tag ID like 'CriderGPT-XXXXXX'" } },
       required: ["tag_id"],
     },
+    annotations: { title: "Livestock Lookup", ...READ_ONLY_ANNOTATIONS },
   },
   {
     name: "store_search",
@@ -35,6 +43,7 @@ const TOOLS = [
       properties: { query: { type: "string", description: "Search keywords" } },
       required: ["query"],
     },
+    annotations: { title: "Store Search", ...READ_ONLY_ANNOTATIONS },
   },
   {
     name: "events_lookup",
@@ -43,10 +52,11 @@ const TOOLS = [
       type: "object",
       properties: { limit: { type: "number", description: "Max events to return (default 5)" } },
     },
+    annotations: { title: "Events Lookup", ...READ_ONLY_ANNOTATIONS },
   },
   {
     name: "filter_quote",
-    description: "Estimate price for a custom Snapchat filter based on description complexity.",
+    description: "Estimate price for a custom Snapchat filter based on description complexity. Pure calculation, no side effects.",
     inputSchema: {
       type: "object",
       properties: {
@@ -55,6 +65,7 @@ const TOOLS = [
       },
       required: ["description"],
     },
+    annotations: { title: "Filter Quote", ...READ_ONLY_ANNOTATIONS },
   },
   {
     name: "cridergpt_chat",
@@ -63,6 +74,13 @@ const TOOLS = [
       type: "object",
       properties: { question: { type: "string", description: "Your question" } },
       required: ["question"],
+    },
+    annotations: {
+      title: "CriderGPT Chat",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
     },
   },
 ];
