@@ -182,6 +182,73 @@ async function runProductTool(name: string, args: any, userId: string | null, us
         note: 'CriderGPT can\'t place DoorDash orders. Tap a link to open DoorDash and check out there.',
       };
     }
+    case 'mcp_cloud_tool': {
+      const tool = String(args?.tool || '');
+      const toolArgs = args?.args || {};
+      if (!tool) return { error: 'tool name required' };
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+        const r = await fetch(`${supabaseUrl}/functions/v1/mcp-server`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream', 'Authorization': `Bearer ${anonKey}`, 'apikey': anonKey },
+          body: JSON.stringify({
+            jsonrpc: '2.0', id: 1, method: 'tools/call',
+            params: { name: tool, arguments: toolArgs },
+          }),
+        });
+        const data = await r.json();
+        return data?.result ?? data;
+      } catch (e) {
+        return { error: `MCP cloud call failed: ${e instanceof Error ? e.message : String(e)}` };
+      }
+    }
+    case 'mcp_local_pc': {
+      if (!userId) return { error: 'Sign in required to run local PC commands' };
+      const command = String(args?.command || '');
+      if (!command) return { error: 'command required (format: "type: body")' };
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+        const admin = createClient(supabaseUrl, serviceKey);
+        // Queue task for local Docker agent to pick up
+        const { data: task, error: insErr } = await admin
+          .from('agent_execution_queue')
+          .insert({ user_id: userId, command, status: 'pending', kill_switch: false })
+          .select('id').single();
+        if (insErr || !task) return { error: `Queue failed: ${insErr?.message}` };
+        // Poll for result up to 30s
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 1000));
+          const { data: row } = await admin
+            .from('agent_execution_queue')
+            .select('status,result')
+            .eq('id', task.id).single();
+          if (row?.status === 'completed') return { task_id: task.id, ...(row.result as any) };
+          if (row?.status === 'failed') return { task_id: task.id, error: 'Local agent failed', result: row.result };
+        }
+        return { task_id: task.id, status: 'pending', message: 'Local agent did not respond in 30s — is it online?' };
+      } catch (e) {
+        return { error: `Local PC call failed: ${e instanceof Error ? e.message : String(e)}` };
+      }
+    }
+    case 'mcp_local_status': {
+      if (!userId) return { online: false, error: 'Sign in required' };
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+        const admin = createClient(supabaseUrl, serviceKey);
+        const { data } = await admin
+          .from('agent_status')
+          .select('is_online,last_heartbeat,agent_version')
+          .eq('user_id', userId).maybeSingle();
+        if (!data) return { online: false, message: 'No local agent registered' };
+        const ageMs = data.last_heartbeat ? Date.now() - new Date(data.last_heartbeat).getTime() : Infinity;
+        return { online: data.is_online && ageMs < 120000, last_heartbeat: data.last_heartbeat, version: data.agent_version, age_seconds: Math.floor(ageMs / 1000) };
+      } catch (e) {
+        return { online: false, error: e instanceof Error ? e.message : String(e) };
+      }
+    }
     default:
       return { error: `Unknown tool: ${name}` };
   }
