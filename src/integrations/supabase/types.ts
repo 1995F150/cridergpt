@@ -4445,6 +4445,96 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          created_by: string | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          max_attempts: number
+          payload: Json
+          priority: number
+          result: Json | null
+          scheduled_for: string
+          started_at: string | null
+          status: string
+          type: string
+          worker_name: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          max_attempts?: number
+          payload?: Json
+          priority?: number
+          result?: Json | null
+          scheduled_for?: string
+          started_at?: string | null
+          status?: string
+          type: string
+          worker_name?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          max_attempts?: number
+          payload?: Json
+          priority?: number
+          result?: Json | null
+          scheduled_for?: string
+          started_at?: string | null
+          status?: string
+          type?: string
+          worker_name?: string | null
+        }
+        Relationships: []
+      }
+      worker_nodes: {
+        Row: {
+          capabilities: string[]
+          created_at: string
+          hostname: string | null
+          id: string
+          jobs_processed: number
+          last_heartbeat: string
+          metadata: Json
+          version: string | null
+          worker_name: string
+        }
+        Insert: {
+          capabilities?: string[]
+          created_at?: string
+          hostname?: string | null
+          id?: string
+          jobs_processed?: number
+          last_heartbeat?: string
+          metadata?: Json
+          version?: string | null
+          worker_name: string
+        }
+        Update: {
+          capabilities?: string[]
+          created_at?: string
+          hostname?: string | null
+          id?: string
+          jobs_processed?: number
+          last_heartbeat?: string
+          metadata?: Json
+          version?: string | null
+          worker_name?: string
+        }
+        Relationships: []
+      }
       writing_samples: {
         Row: {
           category: string | null
@@ -4663,6 +4753,32 @@ export type Database = {
       check_tier_limit:
         | { Args: never; Returns: boolean }
         | { Args: { limit_type: string }; Returns: number }
+      claim_next_worker_job: {
+        Args: { p_types?: string[]; p_worker_name: string }
+        Returns: {
+          attempts: number
+          created_at: string
+          created_by: string | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          max_attempts: number
+          payload: Json
+          priority: number
+          result: Json | null
+          scheduled_for: string
+          started_at: string | null
+          status: string
+          type: string
+          worker_name: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "worker_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       cleanup_expired_stories: { Args: never; Returns: undefined }
       cleanup_old_data: { Args: never; Returns: undefined }
       compute_user_revenue_mapping: {
