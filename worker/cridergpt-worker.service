@@ -1,0 +1,24 @@
+[Unit]
+Description=CriderGPT Supabase Worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cridergpt
+Group=cridergpt
+WorkingDirectory=/opt/cridergpt-worker
+EnvironmentFile=/opt/cridergpt-worker/.env
+ExecStart=/opt/cridergpt-worker/venv/bin/python /opt/cridergpt-worker/worker.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
