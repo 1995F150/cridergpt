@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface CallLog {
   id: string;
@@ -12,339 +12,519 @@ interface CallLog {
 }
 
 export interface TranscriptEntry {
-  speaker: 'user' | 'ai';
+  speaker: "user" | "ai";
   text: string;
   timestamp: Date;
 }
 
-const CALL_MODE_MODEL = 'google/gemini-3-flash-preview';
+type RealtimeServerEvent = {
+  type?: string;
+  [key: string]: unknown;
+};
 
-export function useCallMode() {
+const REALTIME_MODEL = "gpt-realtime";
+const REALTIME_VOICE = "marin";
+
+export function useRealtimeCall() {
   const { user } = useAuth();
   const { toast } = useToast();
+
   const [isCallActive, setIsCallActive] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [aiSpeaking, setAiSpeaking] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
-  const [currentCallId, setCurrentCallId] = useState<string | null>(null);
-  const [muteCount, setMuteCount] = useState(0);
   const [showCC, setShowCC] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
-  
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const recognitionRef = useRef<any>(null);
-  const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
+  const [currentCallId, setCurrentCallId] = useState<string | null>(null);
+  const [muteCount, setMuteCount] = useState(0);
 
-  // Initialize speech recognition
-  const initSpeechRecognition = useCallback(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      
-      recognitionRef.current.onresult = async (event: any) => {
-        const result = event.results?.[event.resultIndex];
-        const transcript = result?.[0]?.transcript?.trim();
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const dataChannelRef = useRef<RTCDataChannel | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const connectedRef = useRef(false);
 
-        if (!result?.isFinal || !transcript) return;
+  const userTranscriptBufferRef = useRef("");
+  const aiTranscriptBufferRef = useRef("");
 
-        setTranscripts(prev => [...prev, {
-          speaker: 'user',
-          text: transcript,
-          timestamp: new Date()
-        }]);
+  const appendTranscript = useCallback((speaker: "user" | "ai", text: string) => {
+    const clean = text.trim();
+    if (!clean) return;
 
-        await processVoiceInput(transcript);
-      };
+    setTranscripts((prev) => [
+      ...prev,
+      {
+        speaker,
+        text: clean,
+        timestamp: new Date(),
+      },
+    ]);
+  }, []);
 
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-      };
+  const resetBuffers = useCallback(() => {
+    userTranscriptBufferRef.current = "";
+    aiTranscriptBufferRef.current = "";
+  }, []);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
     }
   }, []);
 
-  // Process voice input and generate AI response
-  const processVoiceInput = async (transcript: string) => {
-    if (!user) return;
+  const startTimer = useCallback(() => {
+    clearTimer();
+    timerRef.current = window.setInterval(() => {
+      setCallDuration((prev) => prev + 1);
+    }, 1000);
+  }, [clearTimer]);
 
-    try {
-      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
-        body: {
-          message: transcript,
-          model: CALL_MODE_MODEL,
-        }
-      });
+  const formatDurationValue = useCallback((seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  }, []);
 
-      if (error) throw error;
-      
-      // Add AI response to CC
-      if (data?.response) {
-        setTranscripts(prev => [...prev, {
-          speaker: 'ai',
-          text: data.response,
-          timestamp: new Date()
-        }]);
-        
-        // Speak the response
-        speakResponse(data.response);
-      }
-    } catch (error) {
-      console.error('Error processing voice input:', error);
+  const setRemoteAudioVolume = useCallback((nextVolume: number) => {
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.volume = nextVolume;
     }
-  };
+  }, []);
 
-  // Browser SpeechSynthesis fallback
-  const speakWithBrowser = (text: string) => {
-    if (!('speechSynthesis' in window)) {
-      console.error('No speechSynthesis available in this browser');
-      return;
-    }
-    window.speechSynthesis.cancel();
+  const sendClientEvent = useCallback((event: Record<string, unknown>) => {
+    const dc = dataChannelRef.current;
+    if (!dc || dc.readyState !== "open") return false;
 
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.volume = Math.max(0.01, volume);
-    utter.rate = 1.0;
-    utter.pitch = 1.0;
-    synthRef.current = utter;
+    dc.send(JSON.stringify(event));
+    return true;
+  }, []);
 
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
-    }
+  const handleServerEvent = useCallback(
+    (event: MessageEvent<string>) => {
+      try {
+        const msg = JSON.parse(event.data) as RealtimeServerEvent;
+        const type = typeof msg.type === "string" ? msg.type : "";
 
-    utter.onend = () => {
-      if (recognitionRef.current && isCallActive && !isMuted) {
-        try { recognitionRef.current.start(); } catch {}
-      }
-    };
-    utter.onerror = (e) => {
-      console.error('SpeechSynthesis error:', e);
-    };
+        // Debugging helper
+        console.log("[realtime event]", type, msg);
 
-    window.speechSynthesis.speak(utter);
-    console.log('🔊 Speaking via browser TTS:', text.substring(0, 60));
-  };
+        switch (type) {
+          case "input_audio_buffer.speech_started":
+            setAiSpeaking(false);
+            break;
 
-  // Text-to-speech for AI responses — uses cloned voice engine when available
-  const speakResponse = async (text: string) => {
-    // Try OpenAI TTS first (requires auth)
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text },
-        headers: session?.access_token
-          ? { Authorization: `Bearer ${session.access_token}` }
-          : undefined,
-      });
+          case "response.audio.delta":
+            setAiSpeaking(true);
+            break;
 
-      if (!error && data?.audioContent) {
-        if (recognitionRef.current) {
-          try { recognitionRef.current.stop(); } catch {}
-        }
+          case "response.audio.done":
+            setAiSpeaking(false);
+            break;
 
-        const audioBlob = new Blob(
-          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
-          { type: 'audio/mpeg' }
-        );
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        audio.volume = volume;
+          case "response.done": {
+            setAiSpeaking(false);
 
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          if (recognitionRef.current && isCallActive && !isMuted) {
-            try { recognitionRef.current.start(); } catch {}
+            const response = (msg as any).response;
+            const output = Array.isArray(response?.output) ? response.output : [];
+
+            for (const item of output) {
+              const content = Array.isArray(item?.content) ? item.content : [];
+              for (const part of content) {
+                if (part?.type === "audio_transcript" && typeof part?.transcript === "string") {
+                  appendTranscript("ai", part.transcript);
+                } else if (part?.type === "text" && typeof part?.text === "string") {
+                  appendTranscript("ai", part.text);
+                }
+              }
+            }
+
+            aiTranscriptBufferRef.current = "";
+            break;
           }
-        };
 
-        try {
-          await audio.play();
-          return;
-        } catch (playErr) {
-          console.warn('Audio playback blocked, falling back to browser TTS:', playErr);
-          URL.revokeObjectURL(audioUrl);
+          case "conversation.item.input_audio_transcription.completed": {
+            const transcript = typeof (msg as any).transcript === "string" ? (msg as any).transcript : "";
+
+            if (transcript.trim()) {
+              appendTranscript("user", transcript);
+              userTranscriptBufferRef.current = "";
+            }
+            break;
+          }
+
+          case "error": {
+            const errorMessage =
+              typeof (msg as any)?.error?.message === "string" ? (msg as any).error.message : "Realtime session error";
+
+            console.error("[realtime error]", msg);
+            setMicError(errorMessage);
+
+            toast({
+              title: "Call Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
+            break;
+          }
+
+          default:
+            break;
         }
-      } else {
-        console.warn('Cloned TTS unavailable, using browser TTS. Error:', error);
+      } catch (err) {
+        console.error("Failed to parse realtime event:", err);
+      }
+    },
+    [appendTranscript, toast],
+  );
+
+  const cleanupMedia = useCallback(() => {
+    try {
+      if (dataChannelRef.current) {
+        dataChannelRef.current.onopen = null;
+        dataChannelRef.current.onclose = null;
+        dataChannelRef.current.onerror = null;
+        dataChannelRef.current.onmessage = null;
+        if (dataChannelRef.current.readyState !== "closed") {
+          dataChannelRef.current.close();
+        }
       }
     } catch (err) {
-      console.warn('Cloned voice request failed, falling back to browser TTS:', err);
+      console.warn("Error closing data channel:", err);
+    }
+    dataChannelRef.current = null;
+
+    try {
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.ontrack = null;
+        peerConnectionRef.current.onconnectionstatechange = null;
+        peerConnectionRef.current.oniceconnectionstatechange = null;
+        peerConnectionRef.current.onicegatheringstatechange = null;
+        peerConnectionRef.current.onsignalingstatechange = null;
+        peerConnectionRef.current.close();
+      }
+    } catch (err) {
+      console.warn("Error closing peer connection:", err);
+    }
+    peerConnectionRef.current = null;
+
+    try {
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    } catch (err) {
+      console.warn("Error stopping local tracks:", err);
+    }
+    localStreamRef.current = null;
+
+    try {
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.pause();
+        remoteAudioRef.current.srcObject = null;
+      }
+    } catch (err) {
+      console.warn("Error cleaning remote audio:", err);
+    }
+    remoteAudioRef.current = null;
+
+    connectedRef.current = false;
+    setAiSpeaking(false);
+    clearTimer();
+  }, [clearTimer]);
+
+  const endCall = useCallback(async () => {
+    const durationAtEnd = callDuration;
+    const callId = currentCallId;
+
+    cleanupMedia();
+
+    setIsCallActive(false);
+    setIsConnecting(false);
+    setIsMuted(false);
+    setMicError(null);
+    setCurrentCallId(null);
+    setCallDuration(0);
+    setMuteCount(0);
+    resetBuffers();
+
+    if (callId) {
+      try {
+        await supabase
+          .from("call_logs")
+          .update({
+            end_time: new Date().toISOString(),
+            duration_seconds: durationAtEnd,
+            mute_count: muteCount,
+          })
+          .eq("id", callId);
+      } catch (err) {
+        console.error("Failed to update call log:", err);
+      }
     }
 
-    speakWithBrowser(text);
-  };
+    toast({
+      title: "Call Ended",
+      description: `Duration: ${formatDurationValue(durationAtEnd)}`,
+    });
+  }, [callDuration, cleanupMedia, currentCallId, formatDurationValue, muteCount, resetBuffers, toast]);
 
-  // Start call
   const startCall = useCallback(async () => {
     if (!user) {
       toast({
         title: "Authentication Required",
-        description: "Please sign in to use Call Mode",
+        description: "Please sign in to use Call Mode.",
         variant: "destructive",
       });
       return;
     }
 
+    if (isConnecting || isCallActive) return;
+
+    setIsConnecting(true);
+    setMicError(null);
+    setTranscripts([]);
+    resetBuffers();
+
     try {
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      localStreamRef.current = stream;
 
-      // Initialize audio context
-      audioContextRef.current = new AudioContext();
+      const remoteAudio = document.createElement("audio");
+      remoteAudio.autoplay = true;
+      remoteAudio.playsInline = true;
+      remoteAudio.volume = volume;
+      remoteAudioRef.current = remoteAudio;
 
-      // Create call log
-      const { data: callLog, error } = await supabase
-        .from('call_logs')
+      const pc = new RTCPeerConnection();
+      peerConnectionRef.current = pc;
+
+      pc.ontrack = (event) => {
+        remoteAudio.srcObject = event.streams[0];
+        remoteAudio.play().catch((err) => console.warn("Remote audio autoplay issue:", err));
+      };
+
+      pc.onconnectionstatechange = () => {
+        console.log("pc.connectionState:", pc.connectionState);
+
+        if (pc.connectionState === "connected" && !connectedRef.current) {
+          connectedRef.current = true;
+          setIsConnecting(false);
+          setIsCallActive(true);
+          startTimer();
+
+          toast({
+            title: "📞 Call Started",
+            description: "CriderGPT is live.",
+          });
+        }
+
+        if (
+          pc.connectionState === "failed" ||
+          pc.connectionState === "disconnected" ||
+          pc.connectionState === "closed"
+        ) {
+          if (connectedRef.current || isCallActive || isConnecting) {
+            void endCall();
+          }
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        console.log("pc.iceConnectionState:", pc.iceConnectionState);
+      };
+
+      pc.onicegatheringstatechange = () => {
+        console.log("pc.iceGatheringState:", pc.iceGatheringState);
+      };
+
+      pc.onsignalingstatechange = () => {
+        console.log("pc.signalingState:", pc.signalingState);
+      };
+
+      stream.getTracks().forEach((track) => {
+        pc.addTrack(track, stream);
+      });
+
+      const dc = pc.createDataChannel("oai-events");
+      dataChannelRef.current = dc;
+
+      dc.onopen = () => {
+        console.log("data channel open");
+
+        // Optional: ask for text transcripts/events to flow alongside audio
+        sendClientEvent({
+          type: "response.create",
+          response: {
+            output_modalities: ["audio", "text"],
+          },
+        });
+      };
+
+      dc.onclose = () => {
+        console.log("data channel closed");
+      };
+
+      dc.onerror = (err) => {
+        console.error("data channel error", err);
+      };
+
+      dc.onmessage = handleServerEvent;
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      const { data: sessionData, error: sessionError } = await supabase.functions.invoke("realtime-token", {
+        body: {
+          model: REALTIME_MODEL,
+          voice: REALTIME_VOICE,
+        },
+      });
+
+      if (sessionError) {
+        throw new Error(sessionError.message || "Failed to create realtime session");
+      }
+
+      const ephemeralKey = sessionData?.client_secret?.value;
+      if (!ephemeralKey) {
+        throw new Error("Missing ephemeral client secret from realtime-token");
+      }
+
+      const sdpResponse = await fetch(
+        `https://api.openai.com/v1/realtime?model=${encodeURIComponent(REALTIME_MODEL)}`,
+        {
+          method: "POST",
+          body: offer.sdp,
+          headers: {
+            Authorization: `Bearer ${ephemeralKey}`,
+            "Content-Type": "application/sdp",
+          },
+        },
+      );
+
+      if (!sdpResponse.ok) {
+        const detail = await sdpResponse.text().catch(() => "");
+        throw new Error(`SDP exchange failed (${sdpResponse.status}): ${detail}`);
+      }
+
+      const answerSdp = await sdpResponse.text();
+      await pc.setRemoteDescription({
+        type: "answer",
+        sdp: answerSdp,
+      });
+
+      // Create call log after session starts
+      const { data: callLog, error: callLogError } = await supabase
+        .from("call_logs")
         .insert({
           user_id: user.id,
           start_time: new Date().toISOString(),
-          mute_count: 0
+          mute_count: 0,
         })
         .select()
-        .single();
+        .single<CallLog>();
 
-      if (error) throw error;
-
-      setCurrentCallId(callLog.id);
-      setIsCallActive(true);
-      setMuteCount(0);
-      setTranscripts([]);
-
-      // Start timer
-      timerRef.current = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000);
-
-      // Initialize speech recognition
-      initSpeechRecognition();
-      if (recognitionRef.current) {
-        recognitionRef.current.start();
+      if (!callLogError && callLog?.id) {
+        setCurrentCallId(callLog.id);
       }
+    } catch (error) {
+      console.error("Error starting realtime call:", error);
+
+      cleanupMedia();
+      setIsConnecting(false);
+      setIsCallActive(false);
+
+      const description =
+        error instanceof Error ? error.message : "Failed to start call. Check mic permissions and realtime setup.";
+
+      setMicError(description);
 
       toast({
-        title: "📞 Call Started",
-        description: "Speak to interact with CriderGPT AI",
-      });
-    } catch (error) {
-      console.error('Error starting call:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start call. Check microphone permissions.",
+        title: "Call Failed",
+        description,
         variant: "destructive",
       });
     }
-  }, [user, toast, initSpeechRecognition]);
+  }, [
+    cleanupMedia,
+    endCall,
+    handleServerEvent,
+    isCallActive,
+    isConnecting,
+    resetBuffers,
+    sendClientEvent,
+    startTimer,
+    toast,
+    user,
+    volume,
+  ]);
 
-  // End call
-  const endCall = useCallback(async () => {
-    if (!currentCallId || !user) return;
-
-    try {
-      // Stop all media
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-
-      // Update call log
-      await supabase
-        .from('call_logs')
-        .update({
-          end_time: new Date().toISOString(),
-          duration_seconds: callDuration,
-          mute_count: muteCount
-        })
-        .eq('id', currentCallId);
-
-      setIsCallActive(false);
-      setCallDuration(0);
-      setCurrentCallId(null);
-      setMuteCount(0);
-      setTranscripts([]);
-
-      toast({
-        title: "Call Ended",
-        description: `Duration: ${formatDuration(callDuration)}`,
-      });
-    } catch (error) {
-      console.error('Error ending call:', error);
-    }
-  }, [currentCallId, user, callDuration, muteCount, toast]);
-
-  // Toggle mute
   const toggleMute = useCallback(() => {
-    if (recognitionRef.current) {
-      if (isMuted) {
-        recognitionRef.current.start();
-      } else {
-        recognitionRef.current.stop();
-        setMuteCount(prev => prev + 1);
-      }
-    }
-    
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getAudioTracks().forEach(track => {
-        track.enabled = isMuted;
-      });
+    const stream = localStreamRef.current;
+    if (!stream) return;
+
+    const nextMuted = !isMuted;
+
+    stream.getAudioTracks().forEach((track) => {
+      track.enabled = !nextMuted;
+    });
+
+    if (nextMuted) {
+      setMuteCount((prev) => prev + 1);
     }
 
-    setIsMuted(!isMuted);
+    setIsMuted(nextMuted);
   }, [isMuted]);
 
-  // Adjust volume
-  const adjustVolume = useCallback((newVolume: number) => {
-    setVolume(newVolume);
-    if (synthRef.current) {
-      synthRef.current.volume = newVolume;
-    }
-  }, []);
-
-  // Format duration
-  const formatDuration = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (isCallActive) {
-        endCall();
-      }
-    };
-  }, []);
+  const adjustVolume = useCallback(
+    (newVolume: number) => {
+      setVolume(newVolume);
+      setRemoteAudioVolume(newVolume);
+    },
+    [setRemoteAudioVolume],
+  );
 
   const toggleCC = useCallback(() => {
-    setShowCC(prev => !prev);
+    setShowCC((prev) => !prev);
   }, []);
+
+  const formatDuration = useCallback(() => {
+    return formatDurationValue(callDuration);
+  }, [callDuration, formatDurationValue]);
+
+  useEffect(() => {
+    return () => {
+      cleanupMedia();
+    };
+  }, [cleanupMedia]);
 
   return {
     isCallActive,
+    isConnecting,
     isMuted,
+    aiSpeaking,
     callDuration,
     volume,
     showCC,
     transcripts,
+    micError,
     startCall,
     endCall,
     toggleMute,
     adjustVolume,
     toggleCC,
-    formatDuration: () => formatDuration(callDuration),
+    formatDuration,
   };
 }
+
+// Alias so either import works.
+export const useCallMode = useRealtimeCall;
