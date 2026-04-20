@@ -25,7 +25,7 @@ type RealtimeServerEvent = {
 const REALTIME_MODEL = "gpt-realtime";
 const REALTIME_VOICE = "marin";
 
-export function useRealtimeCall() {
+export function useCallMode() {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -48,28 +48,6 @@ export function useRealtimeCall() {
   const timerRef = useRef<number | null>(null);
   const connectedRef = useRef(false);
 
-  const userTranscriptBufferRef = useRef("");
-  const aiTranscriptBufferRef = useRef("");
-
-  const appendTranscript = useCallback((speaker: "user" | "ai", text: string) => {
-    const clean = text.trim();
-    if (!clean) return;
-
-    setTranscripts((prev) => [
-      ...prev,
-      {
-        speaker,
-        text: clean,
-        timestamp: new Date(),
-      },
-    ]);
-  }, []);
-
-  const resetBuffers = useCallback(() => {
-    userTranscriptBufferRef.current = "";
-    aiTranscriptBufferRef.current = "";
-  }, []);
-
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
       window.clearInterval(timerRef.current);
@@ -90,6 +68,20 @@ export function useRealtimeCall() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   }, []);
 
+  const appendTranscript = useCallback((speaker: "user" | "ai", text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    setTranscripts((prev) => [
+      ...prev,
+      {
+        speaker,
+        text: trimmed,
+        timestamp: new Date(),
+      },
+    ]);
+  }, []);
+
   const setRemoteAudioVolume = useCallback((nextVolume: number) => {
     if (remoteAudioRef.current) {
       remoteAudioRef.current.volume = nextVolume;
@@ -103,84 +95,6 @@ export function useRealtimeCall() {
     dc.send(JSON.stringify(event));
     return true;
   }, []);
-
-  const handleServerEvent = useCallback(
-    (event: MessageEvent<string>) => {
-      try {
-        const msg = JSON.parse(event.data) as RealtimeServerEvent;
-        const type = typeof msg.type === "string" ? msg.type : "";
-
-        // Debugging helper
-        console.log("[realtime event]", type, msg);
-
-        switch (type) {
-          case "input_audio_buffer.speech_started":
-            setAiSpeaking(false);
-            break;
-
-          case "response.audio.delta":
-            setAiSpeaking(true);
-            break;
-
-          case "response.audio.done":
-            setAiSpeaking(false);
-            break;
-
-          case "response.done": {
-            setAiSpeaking(false);
-
-            const response = (msg as any).response;
-            const output = Array.isArray(response?.output) ? response.output : [];
-
-            for (const item of output) {
-              const content = Array.isArray(item?.content) ? item.content : [];
-              for (const part of content) {
-                if (part?.type === "audio_transcript" && typeof part?.transcript === "string") {
-                  appendTranscript("ai", part.transcript);
-                } else if (part?.type === "text" && typeof part?.text === "string") {
-                  appendTranscript("ai", part.text);
-                }
-              }
-            }
-
-            aiTranscriptBufferRef.current = "";
-            break;
-          }
-
-          case "conversation.item.input_audio_transcription.completed": {
-            const transcript = typeof (msg as any).transcript === "string" ? (msg as any).transcript : "";
-
-            if (transcript.trim()) {
-              appendTranscript("user", transcript);
-              userTranscriptBufferRef.current = "";
-            }
-            break;
-          }
-
-          case "error": {
-            const errorMessage =
-              typeof (msg as any)?.error?.message === "string" ? (msg as any).error.message : "Realtime session error";
-
-            console.error("[realtime error]", msg);
-            setMicError(errorMessage);
-
-            toast({
-              title: "Call Error",
-              description: errorMessage,
-              variant: "destructive",
-            });
-            break;
-          }
-
-          default:
-            break;
-        }
-      } catch (err) {
-        console.error("Failed to parse realtime event:", err);
-      }
-    },
-    [appendTranscript, toast],
-  );
 
   const cleanupMedia = useCallback(() => {
     try {
@@ -239,6 +153,7 @@ export function useRealtimeCall() {
   const endCall = useCallback(async () => {
     const durationAtEnd = callDuration;
     const callId = currentCallId;
+    const totalMutes = muteCount;
 
     cleanupMedia();
 
@@ -249,7 +164,6 @@ export function useRealtimeCall() {
     setCurrentCallId(null);
     setCallDuration(0);
     setMuteCount(0);
-    resetBuffers();
 
     if (callId) {
       try {
@@ -258,7 +172,7 @@ export function useRealtimeCall() {
           .update({
             end_time: new Date().toISOString(),
             duration_seconds: durationAtEnd,
-            mute_count: muteCount,
+            mute_count: totalMutes,
           })
           .eq("id", callId);
       } catch (err) {
@@ -270,7 +184,90 @@ export function useRealtimeCall() {
       title: "Call Ended",
       description: `Duration: ${formatDurationValue(durationAtEnd)}`,
     });
-  }, [callDuration, cleanupMedia, currentCallId, formatDurationValue, muteCount, resetBuffers, toast]);
+  }, [callDuration, cleanupMedia, currentCallId, formatDurationValue, muteCount, toast]);
+
+  const handleServerEvent = useCallback(
+    (event: MessageEvent<string>) => {
+      try {
+        const msg = JSON.parse(event.data) as RealtimeServerEvent;
+        const type = typeof msg.type === "string" ? msg.type : "";
+
+        console.log("[realtime event]", type, msg);
+
+        switch (type) {
+          case "input_audio_buffer.speech_started":
+            setAiSpeaking(false);
+            break;
+
+          case "response.audio.delta":
+            setAiSpeaking(true);
+            break;
+
+          case "response.audio.done":
+            setAiSpeaking(false);
+            break;
+
+          case "conversation.item.input_audio_transcription.completed": {
+            const transcript =
+              typeof (msg as { transcript?: unknown }).transcript === "string"
+                ? ((msg as { transcript: string }).transcript ?? "")
+                : "";
+
+            if (transcript.trim()) {
+              appendTranscript("user", transcript);
+            }
+            break;
+          }
+
+          case "response.done": {
+            setAiSpeaking(false);
+
+            const response = (
+              msg as {
+                response?: {
+                  output?: Array<{ content?: Array<{ type?: string; transcript?: string; text?: string }> }>;
+                };
+              }
+            ).response;
+            const output = Array.isArray(response?.output) ? response.output : [];
+
+            for (const item of output) {
+              const content = Array.isArray(item?.content) ? item.content : [];
+              for (const part of content) {
+                if (part?.type === "audio_transcript" && typeof part?.transcript === "string") {
+                  appendTranscript("ai", part.transcript);
+                } else if (part?.type === "text" && typeof part?.text === "string") {
+                  appendTranscript("ai", part.text);
+                }
+              }
+            }
+            break;
+          }
+
+          case "error": {
+            const errorObj = msg as { error?: { message?: string } };
+            const errorMessage = errorObj.error?.message || "Realtime session error";
+
+            console.error("[realtime error]", msg);
+            setMicError(errorMessage);
+
+            toast({
+              title: "Call Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
+            break;
+          }
+
+          default:
+            break;
+        }
+      } catch (err) {
+        console.error("Failed to parse realtime event:", err);
+      }
+    },
+    [appendTranscript, toast],
+  );
 
   const startCall = useCallback(async () => {
     if (!user) {
@@ -287,7 +284,6 @@ export function useRealtimeCall() {
     setIsConnecting(true);
     setMicError(null);
     setTranscripts([]);
-    resetBuffers();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -301,7 +297,6 @@ export function useRealtimeCall() {
 
       const remoteAudio = document.createElement("audio");
       remoteAudio.autoplay = true;
-      remoteAudio.playsInline = true;
       remoteAudio.volume = volume;
       remoteAudioRef.current = remoteAudio;
 
@@ -309,8 +304,13 @@ export function useRealtimeCall() {
       peerConnectionRef.current = pc;
 
       pc.ontrack = (event) => {
-        remoteAudio.srcObject = event.streams[0];
-        remoteAudio.play().catch((err) => console.warn("Remote audio autoplay issue:", err));
+        const [remoteStream] = event.streams;
+        if (!remoteStream) return;
+
+        remoteAudio.srcObject = remoteStream;
+        remoteAudio.play().catch((err) => {
+          console.warn("Remote audio autoplay issue:", err);
+        });
       };
 
       pc.onconnectionstatechange = () => {
@@ -333,8 +333,12 @@ export function useRealtimeCall() {
           pc.connectionState === "disconnected" ||
           pc.connectionState === "closed"
         ) {
-          if (connectedRef.current || isCallActive || isConnecting) {
+          if (connectedRef.current) {
             void endCall();
+          } else {
+            cleanupMedia();
+            setIsConnecting(false);
+            setIsCallActive(false);
           }
         }
       };
@@ -361,7 +365,6 @@ export function useRealtimeCall() {
       dc.onopen = () => {
         console.log("data channel open");
 
-        // Optional: ask for text transcripts/events to flow alongside audio
         sendClientEvent({
           type: "response.create",
           response: {
@@ -403,7 +406,7 @@ export function useRealtimeCall() {
         `https://api.openai.com/v1/realtime?model=${encodeURIComponent(REALTIME_MODEL)}`,
         {
           method: "POST",
-          body: offer.sdp,
+          body: offer.sdp ?? "",
           headers: {
             Authorization: `Bearer ${ephemeralKey}`,
             "Content-Type": "application/sdp",
@@ -422,7 +425,6 @@ export function useRealtimeCall() {
         sdp: answerSdp,
       });
 
-      // Create call log after session starts
       const { data: callLog, error: callLogError } = await supabase
         .from("call_logs")
         .insert({
@@ -460,7 +462,6 @@ export function useRealtimeCall() {
     handleServerEvent,
     isCallActive,
     isConnecting,
-    resetBuffers,
     sendClientEvent,
     startTimer,
     toast,
@@ -526,5 +527,4 @@ export function useRealtimeCall() {
   };
 }
 
-// Alias so either import works.
-export const useCallMode = useRealtimeCall;
+export const useRealtimeCall = useCallMode;
