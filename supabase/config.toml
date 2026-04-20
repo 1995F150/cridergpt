@@ -63,3 +63,6 @@ verify_jwt = false
 [functions.mcp-server]
 verify_jwt = false
 
+[functions.create-worker-job]
+verify_jwt = false
+

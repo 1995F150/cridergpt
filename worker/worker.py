@@ -27,9 +27,6 @@ import traceback
 from typing import Any, Callable
 
 import httpx
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # ── Config ────────────────────────────────────────────────────────────
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
