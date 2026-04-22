@@ -281,9 +281,9 @@ export default function CustomFilters() {
     "provider": {
       "@type": "Person",
       "name": "Jessie Crider",
-      "url": "https://cridergpt.lovable.app"
+      "url": "https://www.cridergpt.com"
     },
-    "url": "https://cridergpt.lovable.app/custom-filters",
+    "url": "https://www.cridergpt.com/custom-filters",
     "areaServed": "Worldwide",
     "offers": {
       "@type": "AggregateOffer",
@@ -311,10 +311,10 @@ export default function CustomFilters() {
         <title>Custom Snapchat Filters from $5 | CriderGPT</title>
         <meta name="description" content="Order custom Snapchat filters and lenses starting at $5. Made by a verified Snap developer with 141K+ reach. BOGO deals, loyalty discounts, and lifetime use included." />
         <meta name="keywords" content="custom snapchat filter, snapchat lens maker, custom snap filter, buy snapchat filter, cheap snapchat filter, custom geofilter, snapchat developer" />
-        <link rel="canonical" href="https://cridergpt.lovable.app/custom-filters" />
+        <link rel="canonical" href="https://www.cridergpt.com/custom-filters" />
         <meta property="og:title" content="Custom Snapchat Filters from $5 | CriderGPT" />
         <meta property="og:description" content="Get a custom Snapchat filter made by a verified developer. Starting at $5 with BOGO deals." />
-        <meta property="og:url" content="https://cridergpt.lovable.app/custom-filters" />
+        <meta property="og:url" content="https://www.cridergpt.com/custom-filters" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>

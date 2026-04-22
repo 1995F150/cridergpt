@@ -23,7 +23,7 @@ const EDGE_STYLES = [
 
 export function QRCodeGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [content, setContent] = useState('https://cridergpt.lovable.app');
+  const [content, setContent] = useState('https://www.cridergpt.com');
   const [name, setName] = useState('');
   const [fgColor, setFgColor] = useState('#000000');
   const [bgColor, setBgColor] = useState('#ffffff');

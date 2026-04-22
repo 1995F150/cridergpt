@@ -142,7 +142,7 @@ export function NFCTagWriter() {
       const ndef = new (window as any).NDEFReader();
       const records: any[] = [];
       if (writeUrl) {
-        records.push({ recordType: 'url', data: `https://cridergpt.lovable.app/tag/${tagId}` });
+        records.push({ recordType: 'url', data: `https://www.cridergpt.com/tag/${tagId}` });
       }
       if (writePlainText) {
         records.push({ recordType: 'text', data: buildPayload(tagId) });
@@ -352,7 +352,7 @@ export function NFCTagWriter() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className="text-sm">URL Record (iPhone tap-to-open)</Label>
-                  <p className="text-xs text-muted-foreground font-mono break-all">https://cridergpt.lovable.app/tag/&#123;id&#125;</p>
+                  <p className="text-xs text-muted-foreground font-mono break-all">https://www.cridergpt.com/tag/&#123;id&#125;</p>
                 </div>
                 <Switch checked={writeUrl} onCheckedChange={setWriteUrl} />
               </div>
