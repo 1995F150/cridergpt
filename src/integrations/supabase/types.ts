@@ -5005,6 +5005,7 @@ export type Database = {
             }
             Returns: undefined
           }
+      purge_old_ai_interactions: { Args: never; Returns: undefined }
       record_calculator_usage: {
         Args: {
           calc_type: string
