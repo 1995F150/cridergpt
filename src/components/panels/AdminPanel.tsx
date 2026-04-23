@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive, Rocket } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive, Rocket, Server } from 'lucide-react';
+import { HomeServerPanel } from '@/components/admin/HomeServerPanel';
 import { LaunchPlanner } from '@/components/admin/LaunchPlanner';
 import { DatabaseThrottlePanel } from '@/components/admin/DatabaseThrottlePanel';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
@@ -174,6 +175,9 @@ export function AdminPanel() {
           <TabsTrigger value="pos" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Receipt className="h-4 w-4" /> POS
           </TabsTrigger>
+          <TabsTrigger value="home-server" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Server className="h-4 w-4" /> Home Server
+          </TabsTrigger>
           <TabsTrigger value="launch-planner" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Rocket className="h-4 w-4" /> Launch Planner
           </TabsTrigger>
@@ -224,6 +228,7 @@ export function AdminPanel() {
         <TabsContent value="qr-generator"><QRCodeGenerator /></TabsContent>
         <TabsContent value="barcode-generator"><BarcodeGenerator /></TabsContent>
         <TabsContent value="pos"><PointOfSale /></TabsContent>
+        <TabsContent value="home-server"><HomeServerPanel /></TabsContent>
         <TabsContent value="launch-planner"><LaunchPlanner /></TabsContent>
       </Tabs>
     </div>
