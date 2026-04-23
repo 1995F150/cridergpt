@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Server, Activity, TerminalSquare, Monitor, RefreshCw, ExternalLink, Loader2 } from 'lucide-react';
+import {
+  Server, Activity, TerminalSquare, Monitor, RefreshCw, ExternalLink,
+  Loader2, Copy, Check, Download, Cloud,
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -18,6 +21,82 @@ interface StatusResult {
   checked_at: string;
 }
 
+const SERVER_USER = 'cridergpt2026';
+const SERVER_IP = '192.168.40.198';
+const SUPABASE_REF = 'udpldrrpebdyuiqdtqnq';
+
+const QUICK_COMMANDS: { label: string; cmd: string }[] = [
+  { label: 'Uptime', cmd: 'uptime' },
+  { label: 'Disk usage', cmd: 'df -h' },
+  { label: 'Memory', cmd: 'free -h' },
+  { label: 'Docker ps', cmd: 'docker ps' },
+  { label: 'CriderGPT logs', cmd: 'docker logs --tail 100 cridergpt' },
+  { label: 'Restart CriderGPT', cmd: 'docker restart cridergpt' },
+  { label: 'Pull latest', cmd: 'cd ~/cridergpt && git pull' },
+  { label: 'Sync DB from Supabase', cmd: 'cd ~/cridergpt && bash scripts/sync-from-supabase.sh' },
+];
+
+const AGENT_INSTALL_SCRIPT = `#!/usr/bin/env bash
+# Run this ONCE on your home server (cridergpt2026@192.168.40.198) over SSH.
+# It installs a tiny HTTP agent that the admin panel can call.
+set -e
+sudo apt-get update && sudo apt-get install -y python3 python3-pip python3-venv git curl
+mkdir -p ~/cridergpt-agent && cd ~/cridergpt-agent
+python3 -m venv .venv && source .venv/bin/activate
+pip install --upgrade pip flask gunicorn
+cat > agent.py <<'PY'
+import os, subprocess, shlex
+from flask import Flask, request, jsonify
+app = Flask(__name__)
+TOKEN = os.environ.get("AGENT_TOKEN", "change-me")
+
+@app.post("/run")
+def run():
+    if request.headers.get("X-Agent-Token") != TOKEN:
+        return jsonify(error="unauthorized"), 401
+    cmd = (request.json or {}).get("command", "").strip()
+    if not cmd: return jsonify(error="missing command"), 400
+    try:
+        out = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=120)
+        return jsonify(stdout=out.stdout, stderr=out.stderr, code=out.returncode)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+@app.get("/health")
+def health(): return jsonify(ok=True)
+PY
+echo "Done. Start with:  AGENT_TOKEN=yourtoken gunicorn -w 2 -b 0.0.0.0:5005 agent:app"`;
+
+const CRIDERGPT_CLONE_SCRIPT = `#!/usr/bin/env bash
+# Clones / refreshes a local CriderGPT mirror tied to your Supabase project.
+# Run on the home server after the agent is up.
+set -e
+PROJECT_REF="${SUPABASE_REF}"
+WORKDIR="$HOME/cridergpt"
+mkdir -p "$WORKDIR" && cd "$WORKDIR"
+
+# 1. Supabase CLI
+if ! command -v supabase >/dev/null 2>&1; then
+  curl -fsSL https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz \\
+    | sudo tar -xz -C /usr/local/bin supabase
+fi
+
+# 2. Login (one-time, opens browser-less device flow)
+supabase login || true
+
+# 3. Link to remote project
+supabase link --project-ref "$PROJECT_REF" || true
+
+# 4. Pull schema + edge functions + migrations
+supabase db pull
+supabase functions download home-server-proxy || true
+
+# 5. Optional: dump data snapshot
+mkdir -p backups
+supabase db dump --data-only -f "backups/data-$(date +%F).sql" || true
+
+echo "✅ CriderGPT mirror synced at $WORKDIR"`;
+
 export function HomeServerPanel() {
   const [status, setStatus] = useState<StatusResult | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -25,6 +104,7 @@ export function HomeServerPanel() {
   const [cmdLoading, setCmdLoading] = useState(false);
   const [cmdOutput, setCmdOutput] = useState<string>('');
   const [vmUrl, setVmUrl] = useState<string>('https://vm.cridergpt.com');
+  const [copied, setCopied] = useState<string | null>(null);
 
   async function callProxy(action: string, extra: Record<string, unknown> = {}) {
     const { data, error } = await supabase.functions.invoke('home-server-proxy', {
@@ -47,12 +127,13 @@ export function HomeServerPanel() {
     }
   }
 
-  async function runCommand() {
-    if (!command.trim()) return;
+  async function runCommand(override?: string) {
+    const target = (override ?? command).trim();
+    if (!target) return;
     setCmdLoading(true);
     setCmdOutput('');
     try {
-      const data = await callProxy('command', { command });
+      const data = await callProxy('command', { command: target });
       if (data?.error) {
         setCmdOutput(`ERROR: ${data.error}`);
         toast.error('Command failed', { description: data.error });
@@ -67,6 +148,13 @@ export function HomeServerPanel() {
     } finally {
       setCmdLoading(false);
     }
+  }
+
+  function copy(label: string, text: string) {
+    navigator.clipboard.writeText(text);
+    setCopied(label);
+    toast.success(`Copied ${label}`);
+    setTimeout(() => setCopied(null), 1500);
   }
 
   useEffect(() => {
@@ -84,7 +172,7 @@ export function HomeServerPanel() {
             <div>
               <CardTitle>Home Server Connection</CardTitle>
               <CardDescription>
-                Connects to your Ubuntu host via Cloudflare Tunnel (vm.cridergpt.com)
+                {SERVER_USER}@{SERVER_IP} · tunnel: vm.cridergpt.com
               </CardDescription>
             </div>
           </div>
@@ -116,18 +204,59 @@ export function HomeServerPanel() {
           )}
           {status && !status.agent_configured && (
             <p className="mt-3 text-xs text-muted-foreground">
-              ℹ️ Command execution disabled — set <code className="font-mono">HOME_SERVER_AGENT_URL</code> secret to enable.
+              ℹ️ Command runner disabled until <code className="font-mono">HOME_SERVER_AGENT_URL</code> secret is set. Use the Setup tab to install the agent first.
             </p>
           )}
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="vm">
+      <Tabs defaultValue="setup">
         <TabsList>
+          <TabsTrigger value="setup" className="gap-2"><Download className="h-4 w-4" /> Setup</TabsTrigger>
           <TabsTrigger value="vm" className="gap-2"><Monitor className="h-4 w-4" /> VM Viewer</TabsTrigger>
           <TabsTrigger value="commands" className="gap-2"><TerminalSquare className="h-4 w-4" /> Commands</TabsTrigger>
+          <TabsTrigger value="clone" className="gap-2"><Cloud className="h-4 w-4" /> Clone CriderGPT</TabsTrigger>
           <TabsTrigger value="health" className="gap-2"><Activity className="h-4 w-4" /> Health</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="setup">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">SSH + Agent Install</CardTitle>
+              <CardDescription>
+                SSH into the server, then paste this script. It installs a small Flask agent on port 5005.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-lg border border-border bg-muted/40 p-3 font-mono text-sm flex items-center justify-between gap-2">
+                <span>ssh {SERVER_USER}@{SERVER_IP}</span>
+                <Button size="sm" variant="ghost" className="gap-1.5"
+                  onClick={() => copy('SSH command', `ssh ${SERVER_USER}@${SERVER_IP}`)}>
+                  {copied === 'SSH command' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  Copy
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Agent install script</p>
+                  <Button size="sm" variant="outline" className="gap-1.5"
+                    onClick={() => copy('agent script', AGENT_INSTALL_SCRIPT)}>
+                    {copied === 'agent script' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    Copy script
+                  </Button>
+                </div>
+                <pre className="bg-muted/50 border border-border rounded-lg p-4 text-xs font-mono whitespace-pre-wrap max-h-80 overflow-auto">
+{AGENT_INSTALL_SCRIPT}
+                </pre>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                After it's running, expose <code>http://YOUR_IP:5005</code> via your router or Cloudflare Tunnel, then add <code>HOME_SERVER_AGENT_URL</code> as a Supabase secret to enable the Commands tab.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="vm">
           <Card>
@@ -167,6 +296,19 @@ export function HomeServerPanel() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {QUICK_COMMANDS.map((q) => (
+                  <Button
+                    key={q.label}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setCommand(q.cmd); runCommand(q.cmd); }}
+                    disabled={cmdLoading}
+                  >
+                    {q.label}
+                  </Button>
+                ))}
+              </div>
               <div className="flex gap-2">
                 <Input
                   value={command}
@@ -175,7 +317,7 @@ export function HomeServerPanel() {
                   onKeyDown={(e) => e.key === 'Enter' && !cmdLoading && runCommand()}
                   className="font-mono"
                 />
-                <Button onClick={runCommand} disabled={cmdLoading || !command.trim()}>
+                <Button onClick={() => runCommand()} disabled={cmdLoading || !command.trim()}>
                   {cmdLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Run'}
                 </Button>
               </div>
@@ -184,6 +326,34 @@ export function HomeServerPanel() {
                   {cmdOutput}
                 </pre>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="clone">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Clone CriderGPT to Home Server</CardTitle>
+              <CardDescription>
+                One-shot script: installs Supabase CLI, links to project <code>{SUPABASE_REF}</code>, pulls schema + edge functions, and snapshots data into <code>~/cridergpt/backups</code>.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">sync-from-supabase.sh</p>
+                <Button size="sm" variant="outline" className="gap-1.5"
+                  onClick={() => copy('clone script', CRIDERGPT_CLONE_SCRIPT)}>
+                  {copied === 'clone script' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  Copy script
+                </Button>
+              </div>
+              <pre className="bg-muted/50 border border-border rounded-lg p-4 text-xs font-mono whitespace-pre-wrap max-h-96 overflow-auto">
+{CRIDERGPT_CLONE_SCRIPT}
+              </pre>
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+                <p><strong className="text-foreground">Once installed</strong>, you can re-run a sync anytime from the Commands tab via the <em>"Sync DB from Supabase"</em> quick button.</p>
+                <p>Save the script to <code>~/cridergpt/scripts/sync-from-supabase.sh</code> and <code>chmod +x</code> it for the quick-button to work.</p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
