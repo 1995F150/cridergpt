@@ -124,7 +124,17 @@ export function HomeServerPanel() {
     const { data, error } = await supabase.functions.invoke('home-server-proxy', {
       body: { action, ...extra },
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      let detail = error.message;
+      try {
+        const ctx = (error as unknown as { context?: Response }).context;
+        if (ctx && typeof ctx.json === 'function') {
+          const body = await ctx.json();
+          if (body?.error) detail = String(body.error);
+        }
+      } catch { /* ignore */ }
+      throw new Error(detail);
+    }
     return data;
   }
 
