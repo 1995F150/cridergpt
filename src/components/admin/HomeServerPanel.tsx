@@ -89,6 +89,12 @@ mkdir -p backups
 supabase db dump --data-only -f "backups/data-$(date +%F).sql" || true
 echo "✅ CriderGPT mirror synced at $WORKDIR"`;
 
+function generateToken(): string {
+  const bytes = new Uint8Array(24);
+  (globalThis.crypto ?? window.crypto).getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 interface TermLine {
   kind: 'in' | 'out' | 'err' | 'sys';
   text: string;
