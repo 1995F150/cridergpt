@@ -132,17 +132,16 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'command') {
-      if (!AGENT_URL) {
-        return json(
-          {
-            error:
-              'HOME_SERVER_AGENT_URL secret not set. Add it to enable command execution.',
-          },
-          400,
-        );
-      }
       const command = String(body.command ?? '').trim();
       if (!command) return json({ error: 'command is required' }, 400);
+      if (!AGENT_URL) {
+        return json({
+          error:
+            'Agent not connected. Install the agent on the home server (Setup tab) and add HOME_SERVER_AGENT_URL as a Supabase secret. Once connected, this command will run on the server.',
+          command,
+          agent_configured: false,
+        });
+      }
 
       const t0 = Date.now();
       try {
