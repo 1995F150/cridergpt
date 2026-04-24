@@ -78,6 +78,59 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'youtube') {
+      // Build a yt-dlp command from structured inputs and forward as a normal command
+      const url = String(body.url ?? '').trim();
+      if (!/^https?:\/\//i.test(url)) return json({ error: 'valid url required' }, 400);
+      const format = String(body.format ?? 'mp4'); // mp4 | mp3
+      const quality = String(body.quality ?? 'best'); // best | 1080 | 720 | 480 | 360 | 192k | 320k
+      const subtitles = !!body.subtitles;
+      const thumbnail = !!body.thumbnail;
+      const playlist = !!body.playlist;
+      const startTime = String(body.startTime ?? '').trim();
+      const endTime = String(body.endTime ?? '').trim();
+      const outDir = '~/Downloads/cridergpt-yt';
+
+      const safeUrl = url.replace(/'/g, "'\\''");
+      const parts: string[] = [`mkdir -p ${outDir}`, '&&', 'yt-dlp'];
+      if (!playlist) parts.push('--no-playlist');
+      if (subtitles) parts.push('--write-subs --sub-langs en --embed-subs');
+      if (thumbnail) parts.push('--embed-thumbnail');
+      if (startTime || endTime) {
+        const range = `*${startTime || '0'}-${endTime || 'inf'}`;
+        parts.push(`--download-sections "${range}"`);
+      }
+      if (format === 'mp3') {
+        const abr = /^\d+k$/.test(quality) ? quality : '192k';
+        parts.push(`-x --audio-format mp3 --audio-quality ${abr}`);
+      } else {
+        const heightFilter = /^\d+$/.test(quality) ? `[height<=${quality}]` : '';
+        parts.push(
+          `-f "bv*${heightFilter}+ba/b${heightFilter}" --merge-output-format mp4`,
+        );
+      }
+      parts.push(`-o "${outDir}/%(title).100s [%(id)s].%(ext)s"`);
+      parts.push(`'${safeUrl}'`);
+      const ytCmd = parts.join(' ');
+
+      if (!AGENT_URL) {
+        return json({ command: ytCmd, error: 'HOME_SERVER_AGENT_URL not set — copy this command and run it on the server.' }, 200);
+      }
+      const t0 = Date.now();
+      try {
+        const res = await fetch(AGENT_URL.replace(/\/$/, '') + '/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: ytCmd }),
+          signal: AbortSignal.timeout(600000),
+        });
+        const text = await res.text();
+        return json({ status: res.status, ok: res.ok, latency_ms: Date.now() - t0, command: ytCmd, output: text });
+      } catch (e) {
+        return json({ error: e instanceof Error ? e.message : String(e), command: ytCmd, latency_ms: Date.now() - t0 }, 502);
+      }
+    }
+
     if (action === 'command') {
       if (!AGENT_URL) {
         return json(
