@@ -121,6 +121,23 @@ export function HomeServerPanel() {
   const [ytLoading, setYtLoading] = useState(false);
   const [ytPreviewCmd, setYtPreviewCmd] = useState('');
 
+  // Agent token (generated locally, persisted in browser only)
+  const [agentToken, setAgentToken] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('cridergpt_agent_token');
+      if (saved) return saved;
+      const fresh = generateToken();
+      localStorage.setItem('cridergpt_agent_token', fresh);
+      return fresh;
+    } catch { return generateToken(); }
+  });
+  function regenerateToken() {
+    const t = generateToken();
+    setAgentToken(t);
+    try { localStorage.setItem('cridergpt_agent_token', t); } catch { /* ignore */ }
+    toast.success('New token generated', { description: 'Update it on the server and in the HOME_SERVER_AGENT_URL secret.' });
+  }
+
   async function callProxy(action: string, extra: Record<string, unknown> = {}) {
     const { data, error } = await supabase.functions.invoke('home-server-proxy', {
       body: { action, ...extra },
