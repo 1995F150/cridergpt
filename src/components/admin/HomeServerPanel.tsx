@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Server, Activity, TerminalSquare, Monitor, RefreshCw, ExternalLink,
   Loader2, Copy, Check, Download, Cloud, Youtube, Wifi, WifiOff, Trash2,
+  KeyRound, RotateCw,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -88,6 +89,12 @@ mkdir -p backups
 supabase db dump --data-only -f "backups/data-$(date +%F).sql" || true
 echo "✅ CriderGPT mirror synced at $WORKDIR"`;
 
+function generateToken(): string {
+  const bytes = new Uint8Array(24);
+  (globalThis.crypto ?? window.crypto).getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 interface TermLine {
   kind: 'in' | 'out' | 'err' | 'sys';
   text: string;
@@ -119,6 +126,23 @@ export function HomeServerPanel() {
   const [ytEnd, setYtEnd] = useState('');
   const [ytLoading, setYtLoading] = useState(false);
   const [ytPreviewCmd, setYtPreviewCmd] = useState('');
+
+  // Agent token (generated locally, persisted in browser only)
+  const [agentToken, setAgentToken] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('cridergpt_agent_token');
+      if (saved) return saved;
+      const fresh = generateToken();
+      localStorage.setItem('cridergpt_agent_token', fresh);
+      return fresh;
+    } catch { return generateToken(); }
+  });
+  function regenerateToken() {
+    const t = generateToken();
+    setAgentToken(t);
+    try { localStorage.setItem('cridergpt_agent_token', t); } catch { /* ignore */ }
+    toast.success('New token generated', { description: 'Update it on the server and in the HOME_SERVER_AGENT_URL secret.' });
+  }
 
   async function callProxy(action: string, extra: Record<string, unknown> = {}) {
     const { data, error } = await supabase.functions.invoke('home-server-proxy', {
@@ -525,11 +549,34 @@ export function HomeServerPanel() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="setup">
+        <TabsContent value="setup" className="space-y-4">
+          {/* 1. Agent token */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2"><KeyRound className="h-4 w-4" /> Agent Token</CardTitle>
+              <CardDescription>Generated for you. Use the same value on the server (<code>AGENT_TOKEN=…</code>) and in the Supabase secret URL.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs flex items-center justify-between gap-2 break-all">
+                <span>{agentToken}</span>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="ghost" className="gap-1.5" onClick={() => copy('agent token', agentToken)}>
+                    {copied === 'agent token' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  </Button>
+                  <Button size="sm" variant="ghost" className="gap-1.5" onClick={regenerateToken} title="Generate new token">
+                    <RotateCw className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Stored only in this browser. Treat it like a password.</p>
+            </CardContent>
+          </Card>
+
+          {/* 2. SSH + agent install */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">SSH + Agent Install</CardTitle>
-              <CardDescription>SSH into the server, then paste this script. Installs the Flask agent on port 5005 and yt-dlp.</CardDescription>
+              <CardDescription>SSH into the server, then paste the script. Installs the Flask agent on port 5005, yt-dlp, and ffmpeg.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg border border-border bg-muted/40 p-3 font-mono text-sm flex items-center justify-between gap-2">
@@ -541,19 +588,87 @@ export function HomeServerPanel() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">Agent install script</p>
+                  <p className="text-sm font-medium">1. Install agent (one-time)</p>
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => copy('agent script', AGENT_INSTALL_SCRIPT)}>
                     {copied === 'agent script' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     Copy script
                   </Button>
                 </div>
-                <pre className="bg-muted/50 border border-border rounded-lg p-4 text-xs font-mono whitespace-pre-wrap max-h-80 overflow-auto">
+                <pre className="bg-muted/50 border border-border rounded-lg p-4 text-xs font-mono whitespace-pre-wrap max-h-72 overflow-auto">
 {AGENT_INSTALL_SCRIPT}
                 </pre>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Expose <code>http://YOUR_IP:5005</code> via your router or Cloudflare Tunnel, then add <code>HOME_SERVER_AGENT_URL</code> as a Supabase secret.
-              </p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">2. Start the agent</p>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => copy('start cmd', `cd ~/cridergpt-agent && source .venv/bin/activate && AGENT_TOKEN=${agentToken} nohup gunicorn -w 2 -b 0.0.0.0:5005 agent:app > agent.log 2>&1 &`)}>
+                    {copied === 'start cmd' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    Copy
+                  </Button>
+                </div>
+                <pre className="bg-muted/50 border border-border rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-auto">
+{`cd ~/cridergpt-agent && source .venv/bin/activate
+AGENT_TOKEN=${agentToken} nohup gunicorn -w 2 -b 0.0.0.0:5005 agent:app > agent.log 2>&1 &`}
+                </pre>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 3. Cloudflare Tunnel quick-install */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2"><Cloud className="h-4 w-4" /> Cloudflare Tunnel (recommended)</CardTitle>
+              <CardDescription>Exposes port 5005 to a public HTTPS URL — works on any Wi-Fi or 5G, no router config.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">1. Install cloudflared + login</p>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => copy('cf install', `curl -fsSL https://pkg.cloudflare.com/install.sh | sudo bash\nsudo apt-get install -y cloudflared\ncloudflared tunnel login`)}>
+                    {copied === 'cf install' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    Copy
+                  </Button>
+                </div>
+                <pre className="bg-muted/50 border border-border rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-auto">
+{`curl -fsSL https://pkg.cloudflare.com/install.sh | sudo bash
+sudo apt-get install -y cloudflared
+cloudflared tunnel login`}
+                </pre>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">2. Create tunnel + route to port 5005</p>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => copy('cf create', `cloudflared tunnel create cridergpt-agent\ncloudflared tunnel route dns cridergpt-agent agent.cridergpt.com\ncloudflared tunnel --url http://localhost:5005 run cridergpt-agent`)}>
+                    {copied === 'cf create' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    Copy
+                  </Button>
+                </div>
+                <pre className="bg-muted/50 border border-border rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-auto">
+{`cloudflared tunnel create cridergpt-agent
+cloudflared tunnel route dns cridergpt-agent agent.cridergpt.com
+cloudflared tunnel --url http://localhost:5005 run cridergpt-agent`}
+                </pre>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">3. Add the secret in Supabase</p>
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs space-y-1">
+                  <div><span className="text-muted-foreground">Name:</span> <code className="font-mono">HOME_SERVER_AGENT_URL</code></div>
+                  <div className="flex items-center justify-between gap-2 break-all">
+                    <span><span className="text-muted-foreground">Value:</span> <code className="font-mono">https://agent.cridergpt.com?token={agentToken}</code></span>
+                    <Button size="sm" variant="ghost" className="gap-1.5 shrink-0" onClick={() => copy('secret value', `https://agent.cridergpt.com?token=${agentToken}`)}>
+                      {copied === 'secret value' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+                <a
+                  href={`https://supabase.com/dashboard/project/${SUPABASE_REF}/settings/functions`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  Open Supabase Function Secrets <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
