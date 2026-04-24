@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Server, Activity, TerminalSquare, Monitor, RefreshCw, ExternalLink,
   Loader2, Copy, Check, Download, Cloud, Youtube, Wifi, WifiOff, Trash2,
+  KeyRound, RotateCw,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
