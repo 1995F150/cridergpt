@@ -56,6 +56,7 @@ export type Database = {
           keyword: string | null
           kill_switch: boolean
           result: Json | null
+          server_id: string | null
           started_at: string | null
           status: string
           user_id: string
@@ -69,6 +70,7 @@ export type Database = {
           keyword?: string | null
           kill_switch?: boolean
           result?: Json | null
+          server_id?: string | null
           started_at?: string | null
           status?: string
           user_id: string
@@ -82,12 +84,21 @@ export type Database = {
           keyword?: string | null
           kill_switch?: boolean
           result?: Json | null
+          server_id?: string | null
           started_at?: string | null
           status?: string
           user_id?: string
           vision_data?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "agent_execution_queue_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "saved_servers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agent_status: {
         Row: {
@@ -3050,6 +3061,142 @@ export type Database = {
           speaker?: string
         }
         Relationships: []
+      }
+      saved_server_secrets: {
+        Row: {
+          created_at: string
+          encrypted_password: string
+          iv: string
+          server_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_password: string
+          iv: string
+          server_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_password?: string
+          iv?: string
+          server_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_server_secrets_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: true
+            referencedRelation: "saved_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_servers: {
+        Row: {
+          agent_installed: boolean
+          created_at: string
+          host: string
+          id: string
+          last_seen_at: string | null
+          nickname: string
+          notes: string | null
+          owner_id: string
+          port: number
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          agent_installed?: boolean
+          created_at?: string
+          host: string
+          id?: string
+          last_seen_at?: string | null
+          nickname: string
+          notes?: string | null
+          owner_id: string
+          port?: number
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          agent_installed?: boolean
+          created_at?: string
+          host?: string
+          id?: string
+          last_seen_at?: string | null
+          nickname?: string
+          notes?: string | null
+          owner_id?: string
+          port?: number
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      server_commands: {
+        Row: {
+          command: string
+          created_at: string
+          id: string
+          label: string
+          owner_id: string
+          sort_order: number
+        }
+        Insert: {
+          command: string
+          created_at?: string
+          id?: string
+          label: string
+          owner_id: string
+          sort_order?: number
+        }
+        Update: {
+          command?: string
+          created_at?: string
+          id?: string
+          label?: string
+          owner_id?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      server_pairing_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          owner_id: string
+          redeemed: boolean
+          redeemed_server_id: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          owner_id: string
+          redeemed?: boolean
+          redeemed_server_id?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          owner_id?: string
+          redeemed?: boolean
+          redeemed_server_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "server_pairing_codes_redeemed_server_id_fkey"
+            columns: ["redeemed_server_id"]
+            isOneToOne: false
+            referencedRelation: "saved_servers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       snapchat_lens_analytics: {
         Row: {
