@@ -39,8 +39,10 @@ import {
   Usb,
   Radar,
   Tag,
-  Music
+  Music,
+  Lightbulb
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -148,6 +150,7 @@ const externalLinks: NavItem[] = [
 
 export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false }: NavigationSidebarProps) {
   const { isAdmin } = useAdmin();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
   
@@ -283,6 +286,14 @@ export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false 
                       {pendingCount}
                     </Badge>
                   )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 h-10 text-sm mt-2 hover:bg-primary/10 hover:text-primary"
+                  onClick={() => navigate('/idea-planner')}
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  Idea Planner
                 </Button>
               </div>
             </>

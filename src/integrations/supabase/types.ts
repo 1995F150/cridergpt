@@ -1662,6 +1662,54 @@ export type Database = {
         }
         Relationships: []
       }
+      idea_planner_ideas: {
+        Row: {
+          created_at: string
+          id: string
+          mermaid: string | null
+          notes: string | null
+          parts: Json | null
+          prompt: string
+          status: string
+          steps: Json | null
+          summary: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mermaid?: string | null
+          notes?: string | null
+          parts?: Json | null
+          prompt: string
+          status?: string
+          steps?: Json | null
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mermaid?: string | null
+          notes?: string | null
+          parts?: Json | null
+          prompt?: string
+          status?: string
+          steps?: Json | null
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       imported_messages: {
         Row: {
           content: string
