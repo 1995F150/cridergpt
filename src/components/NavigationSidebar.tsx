@@ -287,6 +287,14 @@ export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false 
                     </Badge>
                   )}
                 </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 h-10 text-sm mt-2 hover:bg-primary/10 hover:text-primary"
+                  onClick={() => navigate('/idea-planner')}
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  Idea Planner
+                </Button>
               </div>
             </>
           )}
