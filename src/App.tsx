@@ -121,6 +121,7 @@ const App = () => {
                       <Route path="/farm-bureau" element={<FarmBureau />} />
                       <Route path="/tag/:tagId" element={<TagLookup />} />
                       <Route path="/livestockID/:tagId" element={<TagLookup />} />
+                      <Route path="/idea-planner" element={<IdeaPlanner />} />
                       
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />
