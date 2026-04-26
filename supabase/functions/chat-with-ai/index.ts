@@ -1133,45 +1133,77 @@ serve(async (req) => {
       }
     }
 
-    // === LOCAL-FIRST AI INFRASTRUCTURE: Check local corpus before calling external API ===
+    // === RAG: Retrieval-Augmented Generation from CriderGPT training corpus ===
+    // Pull relevant entries from the training corpus + user's training_inputs
+    // and inject as grounded context. The AI still answers in Jessie's voice,
+    // but grounds itself in YOUR data first (this is what makes it "your AI").
     let localAnswer: string | null = null;
     let responseSource = 'openai';
+    let ragContext = '';
 
-    if (message && userId) {
+    if (message) {
       try {
-        // Search training corpus for keyword matches
-        const searchTerms = message.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3).slice(0, 5);
-        
+        const searchTerms = message.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3).slice(0, 6);
+
         if (searchTerms.length > 0) {
+          const orFilter = searchTerms.map((t: string) => `content.ilike.%${t}%,topic.ilike.%${t}%`).join(',');
+
+          // 1. Pull top corpus matches (broader: 8 entries instead of 3)
           const { data: corpusMatches } = await supabase
             .from('cridergpt_training_corpus')
             .select('content, topic, category')
-            .or(searchTerms.map((t: string) => `content.ilike.%${t}%`).join(','))
-            .limit(3);
+            .or(orFilter)
+            .limit(8);
 
-          if (corpusMatches && corpusMatches.length > 0) {
-            // Check if any match is highly relevant (topic matches)
-            const topicMatch = corpusMatches.find((m: any) => {
+          // 2. Pull user's own training inputs if logged in
+          let userTraining: any[] = [];
+          if (userId) {
+            const { data: ut } = await supabase
+              .from('training_inputs')
+              .select('content, category')
+              .eq('user_id', userId)
+              .or(searchTerms.map((t: string) => `content.ilike.%${t}%`).join(','))
+              .limit(5);
+            userTraining = ut || [];
+          }
+
+          const allMatches = [...(corpusMatches || []), ...userTraining];
+
+          if (allMatches.length > 0) {
+            // Check for a near-perfect topic match → still serve direct (saves tokens)
+            const topicMatch = (corpusMatches || []).find((m: any) => {
               const topic = (m.topic || '').toLowerCase();
-              return searchTerms.some((t: string) => topic.includes(t));
+              return searchTerms.some((t: string) => topic === t || topic.includes(t));
             });
 
-            if (topicMatch) {
-              // Strong match — use as direct answer
+            if (topicMatch && message.trim().length < 80) {
+              // Short, factual lookup — serve directly
               localAnswer = topicMatch.content;
               responseSource = 'cridergpt-local';
-              console.log('LOCAL MATCH found in training corpus:', topicMatch.topic);
+              console.log('LOCAL DIRECT MATCH:', topicMatch.topic);
+            } else {
+              // Broader question — inject as RAG context for the LLM to ground in
+              const formatted = allMatches
+                .slice(0, 10)
+                .map((m: any) => {
+                  const label = m.topic ? `[${m.category || 'note'}: ${m.topic}]` : `[${m.category || 'note'}]`;
+                  return `${label} ${m.content}`;
+                })
+                .join('\n\n');
+              ragContext = `\n\n=== CRIDERGPT KNOWLEDGE BASE (use this as your primary source — these are vetted facts from Jessie's own training corpus) ===\n${formatted}\n=== END KNOWLEDGE BASE ===\n\nWhen the question relates to the knowledge base above, ground your answer in it. Cite the topic name when relevant. If the knowledge base doesn't cover it, you may use general knowledge but say so plainly.`;
+              responseSource = 'cridergpt-rag';
+              console.log(`RAG context injected: ${allMatches.length} entries (${corpusMatches?.length || 0} corpus + ${userTraining.length} user)`);
             }
           }
         }
-      } catch (localErr) {
-        console.log('Local corpus search skipped:', localErr);
+      } catch (ragErr) {
+        console.log('RAG retrieval skipped:', ragErr);
       }
     }
 
     // Build messages array
     const sensorInfo = sensor_context ? `\n${sensor_context}` : '';
-    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext + sensorInfo;
+    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext + sensorInfo + ragContext;
     
     let aiResponse: string;
 
