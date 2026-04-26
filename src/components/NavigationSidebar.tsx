@@ -39,8 +39,10 @@ import {
   Usb,
   Radar,
   Tag,
-  Music
+  Music,
+  Lightbulb
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
