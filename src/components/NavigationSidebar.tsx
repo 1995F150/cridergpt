@@ -150,6 +150,7 @@ const externalLinks: NavItem[] = [
 
 export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false }: NavigationSidebarProps) {
   const { isAdmin } = useAdmin();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
   
