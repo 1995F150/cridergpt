@@ -30,6 +30,7 @@ import CustomFilters from "./pages/CustomFilters";
 import SmartIDStore from "./pages/SmartIDStore";
 import TagLookup from "./pages/TagLookup";
 import FarmBureau from "./pages/FarmBureau";
+import IdeaPlanner from "./pages/IdeaPlanner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
