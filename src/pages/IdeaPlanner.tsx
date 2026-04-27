@@ -148,6 +148,42 @@ export default function IdeaPlanner() {
     toast.success("Deleted");
   }
 
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("File too large (max 2MB)"); return; }
+    try {
+      const text = await file.text();
+      const baseName = file.name.replace(/\.[^.]+$/, "");
+      newIdea();
+      setTitle(baseName.slice(0, 80));
+      setPrompt(text.slice(0, 8000));
+      toast.success(`Imported "${file.name}" — review then Generate Blueprint`);
+    } catch {
+      toast.error("Could not read file");
+    }
+  }
+
+  async function exportPDF() {
+    if (!selected) { toast.error("Open or generate an idea first"); return; }
+    try {
+      await exportIdeaToPDF({
+        title: selected.title,
+        prompt: selected.prompt,
+        summary: selected.summary,
+        mermaid: selected.mermaid,
+        blueprint_svg: selected.blueprint_svg,
+        parts: selected.parts,
+        steps: selected.steps,
+        notes: selected.notes,
+      });
+      toast.success("PDF downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "PDF export failed");
+    }
+  }
+
   if (authLoading || adminLoading) {
     return <div className="flex items-center justify-center min-h-screen text-muted-foreground">Loading…</div>;
   }
