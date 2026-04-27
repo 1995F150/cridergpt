@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive, Rocket, Server } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive, Rocket, Server, Brain } from 'lucide-react';
 import { HomeServerPanel } from '@/components/admin/HomeServerPanel';
 import { LaunchPlanner } from '@/components/admin/LaunchPlanner';
 import { DatabaseThrottlePanel } from '@/components/admin/DatabaseThrottlePanel';
@@ -33,6 +33,7 @@ import { StoreProductsManager } from '@/components/admin/StoreProductsManager';
 import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator';
 import { BarcodeGenerator } from '@/components/admin/BarcodeGenerator';
 import { PointOfSale } from '@/components/admin/PointOfSale';
+import { AIInfrastructure } from '@/components/admin/AIInfrastructure';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
