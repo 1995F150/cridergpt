@@ -12,8 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Lightbulb, Sparkles, Save, Trash2, Plus, Loader2, Workflow } from "lucide-react";
+import { Lightbulb, Sparkles, Save, Trash2, Plus, Loader2, Workflow, FileDown, Upload, Image as ImageIcon } from "lucide-react";
 import { MermaidDiagram } from "@/components/MermaidDiagram";
+import { BlueprintSVG } from "@/components/idea/BlueprintSVG";
+import { exportIdeaToPDF } from "@/utils/ideaPdfExport";
 
 interface Part { name: string; category: string; qty: string; notes?: string; }
 interface Step { phase: string; title: string; detail: string; }
@@ -23,6 +25,8 @@ interface Idea {
   prompt: string;
   summary: string | null;
   mermaid: string | null;
+  blueprint_svg: string | null;
+  blueprint_kind: string | null;
   parts: Part[];
   steps: Step[];
   notes: string;
@@ -87,13 +91,15 @@ export default function IdeaPlanner() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
 
-      const blueprint = data as { summary: string; mermaid: string; parts: Part[]; steps: Step[] };
+      const blueprint = data as { summary: string; mermaid?: string; blueprint_svg?: string; blueprint_kind?: string; parts: Part[]; steps: Step[] };
       const payload = {
         user_id: user!.id,
         title: title || "Untitled Idea",
         prompt,
         summary: blueprint.summary,
-        mermaid: blueprint.mermaid,
+        mermaid: blueprint.mermaid || null,
+        blueprint_svg: blueprint.blueprint_svg || null,
+        blueprint_kind: blueprint.blueprint_kind || "system_diagram",
         parts: blueprint.parts as any,
         steps: blueprint.steps as any,
         notes,
@@ -140,6 +146,42 @@ export default function IdeaPlanner() {
     if (selected?.id === id) newIdea();
     loadIdeas();
     toast.success("Deleted");
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("File too large (max 2MB)"); return; }
+    try {
+      const text = await file.text();
+      const baseName = file.name.replace(/\.[^.]+$/, "");
+      newIdea();
+      setTitle(baseName.slice(0, 80));
+      setPrompt(text.slice(0, 8000));
+      toast.success(`Imported "${file.name}" — review then Generate Blueprint`);
+    } catch {
+      toast.error("Could not read file");
+    }
+  }
+
+  async function exportPDF() {
+    if (!selected) { toast.error("Open or generate an idea first"); return; }
+    try {
+      await exportIdeaToPDF({
+        title: selected.title,
+        prompt: selected.prompt,
+        summary: selected.summary,
+        mermaid: selected.mermaid,
+        blueprint_svg: selected.blueprint_svg,
+        parts: selected.parts,
+        steps: selected.steps,
+        notes: selected.notes,
+      });
+      toast.success("PDF downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "PDF export failed");
+    }
   }
 
   if (authLoading || adminLoading) {
@@ -228,11 +270,29 @@ export default function IdeaPlanner() {
                     {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
                     {selected ? "Regenerate Blueprint" : "Generate Blueprint"}
                   </Button>
+                  <Button variant="outline" asChild>
+                    <label className="cursor-pointer">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Import Product
+                      <input
+                        type="file"
+                        accept=".txt,.md,.markdown,.json,text/plain"
+                        className="hidden"
+                        onChange={handleImport}
+                      />
+                    </label>
+                  </Button>
                   {selected && (
-                    <Button variant="outline" onClick={saveNotes} disabled={saving}>
-                      {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                      Save Title & Notes
-                    </Button>
+                    <>
+                      <Button variant="outline" onClick={saveNotes} disabled={saving}>
+                        {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save Title & Notes
+                      </Button>
+                      <Button variant="outline" onClick={exportPDF}>
+                        <FileDown className="h-4 w-4 mr-2" />
+                        Export PDF
+                      </Button>
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -242,6 +302,19 @@ export default function IdeaPlanner() {
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-base">Summary</CardTitle></CardHeader>
                 <CardContent><p className="text-sm leading-relaxed">{selected.summary}</p></CardContent>
+              </Card>
+            )}
+
+            {selected?.blueprint_svg && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-primary" /> Visual Blueprint
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BlueprintSVG svg={selected.blueprint_svg} className="w-full overflow-auto" />
+                </CardContent>
               </Card>
             )}
 

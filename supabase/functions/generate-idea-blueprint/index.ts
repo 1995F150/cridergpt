@@ -20,19 +20,23 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const systemPrompt = `You are an expert inventor, electrical engineer, and product designer helping turn rough invention ideas into actionable buildable blueprints.
+    const systemPrompt = `You are an expert inventor, engineer, woodworker, leatherworker, and product designer turning rough ideas into actionable, buildable blueprints.
 
-For every idea you receive you MUST call the function "build_blueprint" exactly once with:
-- summary: 2-4 sentence plain-English overview of what the thing is and how it works
-- mermaid: a valid Mermaid "flowchart TD" diagram (boxes + arrows) showing how components connect. Use simple labels, no emojis, no special characters that break Mermaid. Example:
-    flowchart TD
-      A[Sensor] --> B[Microcontroller]
-      B --> C[Wi-Fi Module]
-      C --> D[Cloud Server]
-- parts: array of physical/electronic parts needed. Each: {name, category, qty, notes}. Categories: electronics, hardware, material, tool, software, other.
-- steps: ordered build steps. Each: {phase, title, detail}. Group by logical phase (e.g. "Prototype", "Wiring", "Firmware", "Testing").
+Call the function "build_blueprint" exactly once.
 
-Be specific: name actual chips (ESP32, ATmega328P), wire gauges (22 AWG), languages (C++/Arduino, MicroPython), libraries. Assume hobbyist-to-pro maker audience.`;
+CRITICAL — pick the correct blueprint_kind:
+- "system_diagram" → for electronics, software, IoT, networked devices. Provide \`mermaid\`.
+- "physical_blueprint" → for physical objects (beehives, leather goods, furniture, mechanical parts, structures, jigs). Provide \`blueprint_svg\`: a clean, labeled top-down or exploded technical drawing as a complete <svg> string (viewBox 0 0 800 600, white background, black strokes, labeled dimensions in inches/cm, callouts for each part). Looks like a hand-drafted blueprint.
+- "hybrid" → both. Provide both fields.
+
+Always provide:
+- summary: 2-4 sentence plain overview
+- parts: [{name, category, qty, notes}] — categories: electronics, hardware, material, tool, software, fastener, finish, other
+- steps: [{phase, title, detail}] grouped by phase (Design, Materials, Cut, Assembly, Wiring, Firmware, Finish, Testing — pick what fits)
+
+Be concrete: real chip names, wire gauges, lumber sizes (2x4 pine), leather weights (5-6oz veg-tan), thread types, fastener specs.
+
+For blueprint_svg, draw with intent: rectangles for parts, dashed lines for hidden edges, arrows + text for dimensions, a small legend, a title block in the bottom-right. No emojis. Pure SVG, no <script>. Keep under 8KB.`;
 
     const tools = [{
       type: "function",
@@ -43,7 +47,9 @@ Be specific: name actual chips (ESP32, ATmega328P), wire gauges (22 AWG), langua
           type: "object",
           properties: {
             summary: { type: "string" },
-            mermaid: { type: "string" },
+            blueprint_kind: { type: "string", enum: ["system_diagram", "physical_blueprint", "hybrid"] },
+            mermaid: { type: "string", description: "Mermaid flowchart TD when electronics/system" },
+            blueprint_svg: { type: "string", description: "Complete <svg>...</svg> physical drawing when physical object" },
             parts: {
               type: "array",
               items: {
@@ -72,7 +78,7 @@ Be specific: name actual chips (ESP32, ATmega328P), wire gauges (22 AWG), langua
               },
             },
           },
-          required: ["summary", "mermaid", "parts", "steps"],
+          required: ["summary", "blueprint_kind", "parts", "steps"],
           additionalProperties: false,
         },
       },
@@ -85,7 +91,7 @@ Be specific: name actual chips (ESP32, ATmega328P), wire gauges (22 AWG), langua
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Title: ${title || "Untitled idea"}\n\nIdea: ${prompt}` },
@@ -101,7 +107,7 @@ Be specific: name actual chips (ESP32, ATmega328P), wire gauges (22 AWG), langua
       });
     }
     if (resp.status === 402) {
-      return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in Settings → Workspace → Usage." }), {
+      return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
         status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
