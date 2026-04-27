@@ -1279,8 +1279,6 @@ serve(async (req) => {
         : 'https://ai.gateway.lovable.dev/v1/chat/completions';
       const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
       const defaultModel = requestedModel || adminDefaultModel || (useOpenAI
-      const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
-      const defaultModel = requestedModel || (useOpenAI
         ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
         : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-3-flash-preview'));
 
