@@ -943,6 +943,40 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
+    // === AI Infrastructure settings (admin-controlled) ===
+    let infraSettings: any = null;
+    try {
+      const { data: infra } = await supabase
+        .from('ai_infrastructure_settings')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      infraSettings = infra;
+    } catch (e) {
+      console.log('Could not load AI infra settings, using defaults');
+    }
+
+    if (infraSettings?.kill_switch) {
+      return new Response(
+        JSON.stringify({ error: 'AI is temporarily disabled by admin (kill switch active).' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Safety: blocked keywords
+    if (typeof message === 'string' && infraSettings?.safety_level !== 'off') {
+      const blocked: string[] = Array.isArray(infraSettings?.blocked_keywords) ? infraSettings.blocked_keywords : [];
+      const lower = message.toLowerCase();
+      const hit = blocked.find((k) => k && lower.includes(String(k).toLowerCase()));
+      if (hit) {
+        return new Response(
+          JSON.stringify({ error: `Message rejected by safety filter (matched: ${hit}).` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Get user from auth header
     let userId = null;
     let userEmail = null;
