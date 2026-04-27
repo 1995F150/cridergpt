@@ -91,13 +91,15 @@ export default function IdeaPlanner() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
 
-      const blueprint = data as { summary: string; mermaid: string; parts: Part[]; steps: Step[] };
+      const blueprint = data as { summary: string; mermaid?: string; blueprint_svg?: string; blueprint_kind?: string; parts: Part[]; steps: Step[] };
       const payload = {
         user_id: user!.id,
         title: title || "Untitled Idea",
         prompt,
         summary: blueprint.summary,
-        mermaid: blueprint.mermaid,
+        mermaid: blueprint.mermaid || null,
+        blueprint_svg: blueprint.blueprint_svg || null,
+        blueprint_kind: blueprint.blueprint_kind || "system_diagram",
         parts: blueprint.parts as any,
         steps: blueprint.steps as any,
         notes,
