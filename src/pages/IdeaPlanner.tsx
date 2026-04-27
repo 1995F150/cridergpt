@@ -270,11 +270,29 @@ export default function IdeaPlanner() {
                     {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
                     {selected ? "Regenerate Blueprint" : "Generate Blueprint"}
                   </Button>
+                  <Button variant="outline" asChild>
+                    <label className="cursor-pointer">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Import Product
+                      <input
+                        type="file"
+                        accept=".txt,.md,.markdown,.json,text/plain"
+                        className="hidden"
+                        onChange={handleImport}
+                      />
+                    </label>
+                  </Button>
                   {selected && (
-                    <Button variant="outline" onClick={saveNotes} disabled={saving}>
-                      {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                      Save Title & Notes
-                    </Button>
+                    <>
+                      <Button variant="outline" onClick={saveNotes} disabled={saving}>
+                        {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save Title & Notes
+                      </Button>
+                      <Button variant="outline" onClick={exportPDF}>
+                        <FileDown className="h-4 w-4 mr-2" />
+                        Export PDF
+                      </Button>
+                    </>
                   )}
                 </div>
               </CardContent>
