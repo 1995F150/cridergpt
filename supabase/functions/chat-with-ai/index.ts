@@ -1342,7 +1342,7 @@ serve(async (req) => {
           let parsedArgs: any = {};
           try { parsedArgs = JSON.parse(call.function.arguments || '{}'); } catch {}
           console.log('[chat-with-ai] tool call:', call.function.name, parsedArgs);
-          const result = await runProductTool(call.function.name, parsedArgs, userId, userEmail, origin);
+          const result = await runProductTool(call.function.name, parsedArgs, userId, userEmail ?? null, origin);
           messages.push({
             role: 'tool',
             tool_call_id: call.id,
