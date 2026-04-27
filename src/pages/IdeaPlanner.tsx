@@ -12,8 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Lightbulb, Sparkles, Save, Trash2, Plus, Loader2, Workflow } from "lucide-react";
+import { Lightbulb, Sparkles, Save, Trash2, Plus, Loader2, Workflow, FileDown, Upload, Image as ImageIcon } from "lucide-react";
 import { MermaidDiagram } from "@/components/MermaidDiagram";
+import { BlueprintSVG } from "@/components/idea/BlueprintSVG";
+import { exportIdeaToPDF } from "@/utils/ideaPdfExport";
 
 interface Part { name: string; category: string; qty: string; notes?: string; }
 interface Step { phase: string; title: string; detail: string; }
@@ -23,6 +25,8 @@ interface Idea {
   prompt: string;
   summary: string | null;
   mermaid: string | null;
+  blueprint_svg: string | null;
+  blueprint_kind: string | null;
   parts: Part[];
   steps: Step[];
   notes: string;
