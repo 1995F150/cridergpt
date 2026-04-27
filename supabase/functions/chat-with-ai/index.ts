@@ -1271,11 +1271,14 @@ serve(async (req) => {
 
       // Call OpenAI API unless a Lovable AI model was explicitly requested.
       const requestedModel = typeof model === 'string' ? model.trim() : '';
-      const prefersLovable = requestedModel.startsWith('google/');
+      const adminDefaultModel = infraSettings?.default_model || '';
+      const prefersLovable = (requestedModel || adminDefaultModel).startsWith('google/');
       const useOpenAI = !!OPENAI_API_KEY && !prefersLovable;
       const apiUrl = useOpenAI 
         ? 'https://api.openai.com/v1/chat/completions' 
         : 'https://ai.gateway.lovable.dev/v1/chat/completions';
+      const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
+      const defaultModel = requestedModel || adminDefaultModel || (useOpenAI
       const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
       const defaultModel = requestedModel || (useOpenAI
         ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
