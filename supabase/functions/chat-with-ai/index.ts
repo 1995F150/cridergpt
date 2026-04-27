@@ -1296,7 +1296,8 @@ serve(async (req) => {
         const requestBody: any = {
           model: defaultModel,
           messages,
-          max_tokens: 2000,
+          max_tokens: infraSettings?.max_tokens || 2000,
+          temperature: typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7,
         };
         // Only attach tools when not doing image analysis (vision + tools combo is flaky)
         if (!imageData) {
