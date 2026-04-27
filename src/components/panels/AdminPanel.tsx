@@ -182,6 +182,9 @@ export function AdminPanel() {
           <TabsTrigger value="launch-planner" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Rocket className="h-4 w-4" /> Launch Planner
           </TabsTrigger>
+          <TabsTrigger value="ai-infra" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Brain className="h-4 w-4" /> AI Infrastructure
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4" /> Settings
           </TabsTrigger>
@@ -231,6 +234,7 @@ export function AdminPanel() {
         <TabsContent value="pos"><PointOfSale /></TabsContent>
         <TabsContent value="home-server"><HomeServerPanel /></TabsContent>
         <TabsContent value="launch-planner"><LaunchPlanner /></TabsContent>
+        <TabsContent value="ai-infra"><AIInfrastructure /></TabsContent>
       </Tabs>
     </div>
   );
