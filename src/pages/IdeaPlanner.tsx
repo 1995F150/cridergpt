@@ -305,6 +305,19 @@ export default function IdeaPlanner() {
               </Card>
             )}
 
+            {selected?.blueprint_svg && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-primary" /> Visual Blueprint
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BlueprintSVG svg={selected.blueprint_svg} className="w-full overflow-auto" />
+                </CardContent>
+              </Card>
+            )}
+
             {selected?.mermaid && (
               <Card>
                 <CardHeader className="pb-2">
