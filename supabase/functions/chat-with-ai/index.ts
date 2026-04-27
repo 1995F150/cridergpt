@@ -943,6 +943,40 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
+    // === AI Infrastructure settings (admin-controlled) ===
+    let infraSettings: any = null;
+    try {
+      const { data: infra } = await supabase
+        .from('ai_infrastructure_settings')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      infraSettings = infra;
+    } catch (e) {
+      console.log('Could not load AI infra settings, using defaults');
+    }
+
+    if (infraSettings?.kill_switch) {
+      return new Response(
+        JSON.stringify({ error: 'AI is temporarily disabled by admin (kill switch active).' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Safety: blocked keywords
+    if (typeof message === 'string' && infraSettings?.safety_level !== 'off') {
+      const blocked: string[] = Array.isArray(infraSettings?.blocked_keywords) ? infraSettings.blocked_keywords : [];
+      const lower = message.toLowerCase();
+      const hit = blocked.find((k) => k && lower.includes(String(k).toLowerCase()));
+      if (hit) {
+        return new Response(
+          JSON.stringify({ error: `Message rejected by safety filter (matched: ${hit}).` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Get user from auth header
     let userId = null;
     let userEmail = null;
@@ -1237,13 +1271,14 @@ serve(async (req) => {
 
       // Call OpenAI API unless a Lovable AI model was explicitly requested.
       const requestedModel = typeof model === 'string' ? model.trim() : '';
-      const prefersLovable = requestedModel.startsWith('google/');
+      const adminDefaultModel = infraSettings?.default_model || '';
+      const prefersLovable = (requestedModel || adminDefaultModel).startsWith('google/');
       const useOpenAI = !!OPENAI_API_KEY && !prefersLovable;
       const apiUrl = useOpenAI 
         ? 'https://api.openai.com/v1/chat/completions' 
         : 'https://ai.gateway.lovable.dev/v1/chat/completions';
       const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
-      const defaultModel = requestedModel || (useOpenAI
+      const defaultModel = requestedModel || adminDefaultModel || (useOpenAI
         ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
         : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-3-flash-preview'));
 
@@ -1261,7 +1296,8 @@ serve(async (req) => {
         const requestBody: any = {
           model: defaultModel,
           messages,
-          max_tokens: 2000,
+          max_tokens: infraSettings?.max_tokens || 2000,
+          temperature: typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7,
         };
         // Only attach tools when not doing image analysis (vision + tools combo is flaky)
         if (!imageData) {
@@ -1306,7 +1342,7 @@ serve(async (req) => {
           let parsedArgs: any = {};
           try { parsedArgs = JSON.parse(call.function.arguments || '{}'); } catch {}
           console.log('[chat-with-ai] tool call:', call.function.name, parsedArgs);
-          const result = await runProductTool(call.function.name, parsedArgs, userId, userEmail, origin);
+          const result = await runProductTool(call.function.name, parsedArgs, userId ?? null, userEmail ?? null, origin);
           messages.push({
             role: 'tool',
             tool_call_id: call.id,

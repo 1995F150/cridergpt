@@ -264,6 +264,66 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_infrastructure_settings: {
+        Row: {
+          blocked_keywords: string[]
+          default_model: string
+          fallback_model: string
+          fine_tune_enabled: boolean
+          id: string
+          kill_switch: boolean
+          max_tokens: number
+          notes: string | null
+          rag_enabled: boolean
+          rag_top_k: number
+          safety_level: string
+          system_prompt_override: string | null
+          temperature: number
+          updated_at: string
+          updated_by: string | null
+          use_ai_memory: boolean
+          use_writing_style: boolean
+        }
+        Insert: {
+          blocked_keywords?: string[]
+          default_model?: string
+          fallback_model?: string
+          fine_tune_enabled?: boolean
+          id?: string
+          kill_switch?: boolean
+          max_tokens?: number
+          notes?: string | null
+          rag_enabled?: boolean
+          rag_top_k?: number
+          safety_level?: string
+          system_prompt_override?: string | null
+          temperature?: number
+          updated_at?: string
+          updated_by?: string | null
+          use_ai_memory?: boolean
+          use_writing_style?: boolean
+        }
+        Update: {
+          blocked_keywords?: string[]
+          default_model?: string
+          fallback_model?: string
+          fine_tune_enabled?: boolean
+          id?: string
+          kill_switch?: boolean
+          max_tokens?: number
+          notes?: string | null
+          rag_enabled?: boolean
+          rag_top_k?: number
+          safety_level?: string
+          system_prompt_override?: string | null
+          temperature?: number
+          updated_at?: string
+          updated_by?: string | null
+          use_ai_memory?: boolean
+          use_writing_style?: boolean
+        }
+        Relationships: []
+      }
       ai_interactions: {
         Row: {
           ai_response: string
@@ -1664,6 +1724,8 @@ export type Database = {
       }
       idea_planner_ideas: {
         Row: {
+          blueprint_kind: string | null
+          blueprint_svg: string | null
           created_at: string
           id: string
           mermaid: string | null
@@ -1679,6 +1741,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          blueprint_kind?: string | null
+          blueprint_svg?: string | null
           created_at?: string
           id?: string
           mermaid?: string | null
@@ -1694,6 +1758,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          blueprint_kind?: string | null
+          blueprint_svg?: string | null
           created_at?: string
           id?: string
           mermaid?: string | null

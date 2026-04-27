@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive, Rocket, Server } from 'lucide-react';
+import { Shield, Users, CreditCard, Flag, BarChart3, FileText, Settings, BookOpen, Mail, DollarSign, AlertTriangle, ClipboardList, Database, TerminalSquare, FileJson, Ghost, Nfc, Package, Cpu, Lightbulb, Tag, ShoppingBag, QrCode, Barcode, Receipt, HardDrive, Rocket, Server, Brain } from 'lucide-react';
 import { HomeServerPanel } from '@/components/admin/HomeServerPanel';
 import { LaunchPlanner } from '@/components/admin/LaunchPlanner';
 import { DatabaseThrottlePanel } from '@/components/admin/DatabaseThrottlePanel';
@@ -33,6 +33,7 @@ import { StoreProductsManager } from '@/components/admin/StoreProductsManager';
 import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator';
 import { BarcodeGenerator } from '@/components/admin/BarcodeGenerator';
 import { PointOfSale } from '@/components/admin/PointOfSale';
+import { AIInfrastructure } from '@/components/admin/AIInfrastructure';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
@@ -181,6 +182,9 @@ export function AdminPanel() {
           <TabsTrigger value="launch-planner" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Rocket className="h-4 w-4" /> Launch Planner
           </TabsTrigger>
+          <TabsTrigger value="ai-infra" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Brain className="h-4 w-4" /> AI Infrastructure
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4" /> Settings
           </TabsTrigger>
@@ -230,6 +234,7 @@ export function AdminPanel() {
         <TabsContent value="pos"><PointOfSale /></TabsContent>
         <TabsContent value="home-server"><HomeServerPanel /></TabsContent>
         <TabsContent value="launch-planner"><LaunchPlanner /></TabsContent>
+        <TabsContent value="ai-infra"><AIInfrastructure /></TabsContent>
       </Tabs>
     </div>
   );
