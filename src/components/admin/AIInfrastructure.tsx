@@ -730,3 +730,65 @@ export function AIInfrastructure() {
     </div>
   );
 }
+
+function AddonCard({ icon, title, desc, children, defaultOpen = false }: { icon: React.ReactNode; title: string; desc: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  return (
+    <Collapsible defaultOpen={defaultOpen}>
+      <Card>
+        <CollapsibleTrigger className="w-full text-left">
+          <CardHeader className="hover:bg-muted/30 transition-colors rounded-t-lg">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  {icon}
+                </div>
+                <div>
+                  <CardTitle className="text-base">{title}</CardTitle>
+                  <CardDescription className="text-xs">{desc}</CardDescription>
+                </div>
+              </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform data-[state=open]:rotate-180" />
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent>{children}</CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}
+
+function LabelWithTip({ label, tip, children }: { label: string; tip: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-1.5">
+        <Label>{label}</Label>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs"><p className="text-xs">{tip}</p></TooltipContent>
+        </Tooltip>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ToggleRow({ label, tip, checked, onChange }: { label: string; tip: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-1.5 flex-1">
+        <Label className="cursor-pointer">{label}</Label>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs"><p className="text-xs">{tip}</p></TooltipContent>
+        </Tooltip>
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
