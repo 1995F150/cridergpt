@@ -35,6 +35,41 @@ interface Idea {
   updated_at: string;
 }
 
+const SUGGESTED_PROMPTS: { title: string; prompt: string }[] = [
+  {
+    title: "Smart Livestock Collar",
+    prompt: "A solar-powered GPS + NFC livestock collar for cattle that tracks location, body temperature, and activity. Sends alerts to the rancher's phone when an animal strays outside a geofence or shows signs of illness. Should run on a low-power microcontroller and last 30+ days between charges.",
+  },
+  {
+    title: "Beehive Monitor",
+    prompt: "A wooden Langstroth-style beehive with built-in sensors: hive weight (load cell), interior temperature/humidity, and a microphone for swarm detection. Solar powered with LoRa or WiFi backhaul. Beekeeper sees real-time hive health on a phone app.",
+  },
+  {
+    title: "Leather Belt Pattern",
+    prompt: "A handcrafted 1.5\" wide leather belt with a tooled western pattern, stainless steel buckle, and edge burnishing. Provide cutting dimensions, leather weight (oz), tools needed, stitch spacing, and finishing steps for a beginner leatherworker.",
+  },
+  {
+    title: "Backyard Chicken Coop",
+    prompt: "A 4-hen backyard chicken coop with attached run, sloped roof for rain runoff, removable droppings tray, and 2 nesting boxes. Built from cedar lumber. Include cut list, hardware list, and step-by-step assembly suitable for a weekend DIY build.",
+  },
+  {
+    title: "FFA Show Box",
+    prompt: "A portable FFA livestock show grooming box with locking lid, removable tool tray, side handle, and compartments for clippers, brushes, and adhesive. Made from 3/4\" plywood with a stained finish and brass hardware.",
+  },
+  {
+    title: "Smart Feed Scale",
+    prompt: "A bench-mounted livestock feed scale that weighs feed buckets up to 100 lbs, logs each feeding to an app over Bluetooth, and tracks feed conversion ratio per pen. Battery powered with an OLED display.",
+  },
+  {
+    title: "Off-Grid Garden Sensor",
+    prompt: "A weatherproof soil moisture, temperature, and light sensor stake for a vegetable garden. Solar trickle charged, transmits via LoRa to a base station, alerts gardener when soil moisture drops below threshold.",
+  },
+  {
+    title: "Wooden Tool Tote",
+    prompt: "A simple cedar carpenter's tool tote with a center dowel handle, sloped sides, and divided interior for hand tools. Provide a cut list for one 1x8x6ft board, joinery method (glued + nailed), and finishing steps.",
+  },
+];
+
 export default function IdeaPlanner() {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
@@ -265,6 +300,25 @@ export default function IdeaPlanner() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                 />
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Lightbulb className="h-3 w-3" /> Need a spark? Try one of these:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SUGGESTED_PROMPTS.map((s) => (
+                      <Button
+                        key={s.title}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-auto py-1.5 px-2.5 text-xs"
+                        onClick={() => { setTitle(s.title); setPrompt(s.prompt); }}
+                      >
+                        {s.title}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <Button onClick={generate} disabled={generating || !prompt.trim()}>
                     {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
