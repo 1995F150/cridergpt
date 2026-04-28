@@ -32,7 +32,61 @@ interface InfraSettings {
   fine_tune_enabled: boolean;
   notes: string | null;
   updated_at: string;
+  advanced_addons?: AdvancedAddons;
 }
+
+interface AdvancedAddons {
+  model_router: {
+    mode: "local_only" | "cloud_only" | "local_first" | "best_available" | "private_only";
+    task_routes: Record<"chat" | "coding" | "image" | "long_reasoning" | "file_tasks" | "safety_sensitive", string>;
+  };
+  task_temperatures: { factual: number; coding: number; chat: number; brainstorm: number; creative: number };
+  rag_tuning: {
+    preset: "normal" | "deep" | "low_noise";
+    normal_top_k: number; deep_top_k: number; low_noise_top_k: number;
+    source_priority: string[];
+    dedupe_memory: boolean;
+    show_retrieved_context: boolean;
+  };
+  memory_governance: { review_required: boolean; min_confidence: number; categories: string[] };
+  tool_permissions: {
+    read_only: boolean; ask_before_write: boolean; ask_before_delete: boolean;
+    blocked_tools: string[]; admin_only_tools: string[];
+  };
+  privacy_mode: {
+    local_only: boolean; cloud_fallback_allowed: boolean; strip_pii_before_cloud: boolean;
+    no_store_sensitive: boolean; retention_days: number;
+  };
+  output_verification: {
+    safety_check: boolean; factual_check: boolean; formatting_check: boolean;
+    instruction_check: boolean; show_confidence: boolean;
+  };
+  logging: {
+    replay_console_enabled: boolean; log_prompts: boolean; log_rag_entries: boolean;
+    log_tools: boolean; log_latency: boolean;
+  };
+  fallback: {
+    fallback_model: string; retry_count: number; timeout_ms: number;
+    local_to_cloud_fallback: boolean; friendly_error_message: string;
+  };
+  emergency: {
+    disable_ai: boolean; disable_tools: boolean; disable_cloud_fallback: boolean;
+    lock_public_access: boolean; maintenance_mode: boolean;
+  };
+}
+
+const DEFAULT_ADDONS: AdvancedAddons = {
+  model_router: { mode: "best_available", task_routes: { chat: "default", coding: "default", image: "default", long_reasoning: "default", file_tasks: "default", safety_sensitive: "default" } },
+  task_temperatures: { factual: 0.2, coding: 0.2, chat: 0.4, brainstorm: 0.8, creative: 0.9 },
+  rag_tuning: { preset: "normal", normal_top_k: 5, deep_top_k: 15, low_noise_top_k: 3, source_priority: ["memory", "corpus", "writing_style"], dedupe_memory: true, show_retrieved_context: false },
+  memory_governance: { review_required: false, min_confidence: 0.5, categories: ["personal", "project", "preference", "fact", "task"] },
+  tool_permissions: { read_only: false, ask_before_write: true, ask_before_delete: true, blocked_tools: [], admin_only_tools: [] },
+  privacy_mode: { local_only: false, cloud_fallback_allowed: true, strip_pii_before_cloud: true, no_store_sensitive: false, retention_days: 90 },
+  output_verification: { safety_check: false, factual_check: false, formatting_check: false, instruction_check: false, show_confidence: false },
+  logging: { replay_console_enabled: true, log_prompts: true, log_rag_entries: true, log_tools: true, log_latency: true },
+  fallback: { fallback_model: "google/gemini-3-flash-preview", retry_count: 2, timeout_ms: 30000, local_to_cloud_fallback: true, friendly_error_message: "CriderGPT is taking a breather. Try again in a moment." },
+  emergency: { disable_ai: false, disable_tools: false, disable_cloud_fallback: false, lock_public_access: false, maintenance_mode: false },
+};
 
 const MODELS = [
   { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (fast, cheap)" },
