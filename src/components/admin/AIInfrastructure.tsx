@@ -189,6 +189,7 @@ export function AIInfrastructure() {
         system_prompt_override: settings.system_prompt_override,
         fine_tune_enabled: settings.fine_tune_enabled,
         notes: settings.notes,
+        advanced_addons: addons,
         updated_at: new Date().toISOString(),
         updated_by: userData.user?.id,
       })
