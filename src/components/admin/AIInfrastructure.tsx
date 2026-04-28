@@ -142,13 +142,26 @@ export function AIInfrastructure() {
       });
     }
 
-    const [{ count: c1 }, { count: c2 }] = await Promise.all([
+    const [{ count: c1 }, { count: c2 }, queueRes] = await Promise.all([
       supabase.from("cridergpt_training_corpus").select("id", { count: "exact", head: true }),
       supabase.from("ai_memory").select("id", { count: "exact", head: true }),
+      (supabase as any).from("ai_memory_review").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(50),
     ]);
     setCorpusCount(c1 ?? 0);
     setMemoryCount(c2 ?? 0);
+    setReviewQueue(queueRes?.data || []);
     setLoading(false);
+  }
+
+  async function reviewMemory(id: string, status: "approved" | "rejected") {
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await (supabase as any)
+      .from("ai_memory_review")
+      .update({ status, reviewed_by: userData.user?.id, reviewed_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    setReviewQueue((q) => q.filter((r) => r.id !== id));
+    toast.success(`Memory ${status}`);
   }
 
   async function save() {
