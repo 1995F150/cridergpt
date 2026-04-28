@@ -265,6 +265,25 @@ export default function IdeaPlanner() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                 />
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Lightbulb className="h-3 w-3" /> Need a spark? Try one of these:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SUGGESTED_PROMPTS.map((s) => (
+                      <Button
+                        key={s.title}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-auto py-1.5 px-2.5 text-xs"
+                        onClick={() => { setTitle(s.title); setPrompt(s.prompt); }}
+                      >
+                        {s.title}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <Button onClick={generate} disabled={generating || !prompt.trim()}>
                     {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
