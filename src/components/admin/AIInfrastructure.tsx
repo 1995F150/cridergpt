@@ -503,6 +503,204 @@ export function AIInfrastructure() {
         </CardContent>
       </Card>
 
+      {/* ============================================================== */}
+      {/* ADVANCED AI INFRASTRUCTURE ADD-ONS                              */}
+      {/* ============================================================== */}
+      <div className="rounded-xl bg-gradient-to-r from-amber-500/10 via-primary/5 to-transparent border border-amber-500/30 p-5">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-amber-500/15 flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-amber-500" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold">Advanced AI Infrastructure</h2>
+            <p className="text-xs text-muted-foreground">Operations console add-ons. Expand each card to configure.</p>
+          </div>
+        </div>
+      </div>
+
+      <TooltipProvider delayDuration={200}>
+        <AddonCard icon={<Route className="h-4 w-4" />} title="Model Router" desc="Route requests to local, cloud, or hybrid models — by task.">
+          <div className="space-y-4">
+            <LabelWithTip label="Routing mode" tip="How CriderGPT picks which model to use for each request.">
+              <Select value={addons.model_router.mode} onValueChange={(v: any) => setAddons({ ...addons, model_router: { ...addons.model_router, mode: v } })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="local_only">Local model only</SelectItem>
+                  <SelectItem value="cloud_only">Cloud model only</SelectItem>
+                  <SelectItem value="local_first">Local-first with cloud fallback</SelectItem>
+                  <SelectItem value="best_available">Best available model</SelectItem>
+                  <SelectItem value="private_only">Private-only mode</SelectItem>
+                </SelectContent>
+              </Select>
+            </LabelWithTip>
+            <Separator />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Per-task overrides</p>
+            <div className="grid md:grid-cols-2 gap-3">
+              {(["chat","coding","image","long_reasoning","file_tasks","safety_sensitive"] as const).map((task) => (
+                <div key={task} className="space-y-1">
+                  <Label className="capitalize text-xs">{task.replace("_"," ")}</Label>
+                  <Select value={addons.model_router.task_routes[task]} onValueChange={(v) => setAddons({ ...addons, model_router: { ...addons.model_router, task_routes: { ...addons.model_router.task_routes, [task]: v } } })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Use routing mode</SelectItem>
+                      {MODELS.map((m) => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<Thermometer className="h-4 w-4" />} title="Task Temperature Profiles" desc="Per-task creativity presets that override the global temperature.">
+          <div className="space-y-4">
+            {(Object.keys(addons.task_temperatures) as (keyof typeof addons.task_temperatures)[]).map((k) => (
+              <div key={k} className="space-y-1">
+                <Label className="capitalize">{k}: {addons.task_temperatures[k].toFixed(2)}</Label>
+                <Slider min={0} max={2} step={0.05} value={[addons.task_temperatures[k]]} onValueChange={([v]) => setAddons({ ...addons, task_temperatures: { ...addons.task_temperatures, [k]: v } })} />
+              </div>
+            ))}
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<SlidersHorizontal className="h-4 w-4" />} title="RAG Tuning" desc="Fine-tune retrieval depth, source priority, and dedup behavior.">
+          <div className="space-y-4">
+            <LabelWithTip label="Active retrieval preset" tip="Normal = balanced. Deep = pulls more context. Low-noise = strict, fewer entries.">
+              <Select value={addons.rag_tuning.preset} onValueChange={(v: any) => setAddons({ ...addons, rag_tuning: { ...addons.rag_tuning, preset: v } })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal mode</SelectItem>
+                  <SelectItem value="deep">Deep mode</SelectItem>
+                  <SelectItem value="low_noise">Low-noise mode</SelectItem>
+                </SelectContent>
+              </Select>
+            </LabelWithTip>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label className="text-xs">Normal top-K</Label><Input type="number" value={addons.rag_tuning.normal_top_k} onChange={(e) => setAddons({ ...addons, rag_tuning: { ...addons.rag_tuning, normal_top_k: parseInt(e.target.value || "5") } })} /></div>
+              <div><Label className="text-xs">Deep top-K</Label><Input type="number" value={addons.rag_tuning.deep_top_k} onChange={(e) => setAddons({ ...addons, rag_tuning: { ...addons.rag_tuning, deep_top_k: parseInt(e.target.value || "15") } })} /></div>
+              <div><Label className="text-xs">Low-noise top-K</Label><Input type="number" value={addons.rag_tuning.low_noise_top_k} onChange={(e) => setAddons({ ...addons, rag_tuning: { ...addons.rag_tuning, low_noise_top_k: parseInt(e.target.value || "3") } })} /></div>
+            </div>
+            <LabelWithTip label="Source priority (comma-separated)" tip="Order RAG queries: e.g. memory, corpus, writing_style.">
+              <Input value={addons.rag_tuning.source_priority.join(", ")} onChange={(e) => setAddons({ ...addons, rag_tuning: { ...addons.rag_tuning, source_priority: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } })} />
+            </LabelWithTip>
+            <ToggleRow label="Filter duplicate memories" tip="Skip near-identical entries during retrieval." checked={addons.rag_tuning.dedupe_memory} onChange={(v) => setAddons({ ...addons, rag_tuning: { ...addons.rag_tuning, dedupe_memory: v } })} />
+            <ToggleRow label="Show retrieved context before sending (debug)" tip="Admin-only: surfaces RAG matches in the chat UI for inspection." checked={addons.rag_tuning.show_retrieved_context} onChange={(v) => setAddons({ ...addons, rag_tuning: { ...addons.rag_tuning, show_retrieved_context: v } })} />
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<Database className="h-4 w-4" />} title="Memory Governance" desc="Review queue, confidence thresholds, and category labels.">
+          <div className="space-y-4">
+            <ToggleRow label="Require admin approval for new memories" tip="New memories land in the review queue instead of going live." checked={addons.memory_governance.review_required} onChange={(v) => setAddons({ ...addons, memory_governance: { ...addons.memory_governance, review_required: v } })} />
+            <div className="space-y-1">
+              <Label>Min confidence to auto-store: {addons.memory_governance.min_confidence.toFixed(2)}</Label>
+              <Slider min={0} max={1} step={0.05} value={[addons.memory_governance.min_confidence]} onValueChange={([v]) => setAddons({ ...addons, memory_governance: { ...addons.memory_governance, min_confidence: v } })} />
+            </div>
+            <LabelWithTip label="Allowed memory categories" tip="Comma-separated. Memories outside these categories are rejected.">
+              <Input value={addons.memory_governance.categories.join(", ")} onChange={(e) => setAddons({ ...addons, memory_governance: { ...addons.memory_governance, categories: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } })} />
+            </LabelWithTip>
+            <Separator />
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Review queue ({reviewQueue.length} pending)</p>
+              {reviewQueue.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No memories awaiting review.</p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {reviewQueue.map((r) => (
+                    <div key={r.id} className="rounded-md border p-2 text-xs space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{r.category || "uncategorized"}</Badge>
+                        <Badge variant="secondary">conf: {Number(r.confidence ?? 0).toFixed(2)}</Badge>
+                      </div>
+                      <p className="text-foreground/90">{r.content}</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => reviewMemory(r.id, "approved")}>Approve</Button>
+                        <Button size="sm" variant="destructive" onClick={() => reviewMemory(r.id, "rejected")}>Forget</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<ShieldCheck className="h-4 w-4" />} title="Tool Permission Layer" desc="Control which tools the AI may invoke — and when to ask first.">
+          <div className="space-y-3">
+            <ToggleRow label="Read-only mode (no writes anywhere)" tip="AI may only read data; all mutations blocked." checked={addons.tool_permissions.read_only} onChange={(v) => setAddons({ ...addons, tool_permissions: { ...addons.tool_permissions, read_only: v } })} />
+            <ToggleRow label="Ask before write actions" tip="Confirm with the user before any insert/update tool call." checked={addons.tool_permissions.ask_before_write} onChange={(v) => setAddons({ ...addons, tool_permissions: { ...addons.tool_permissions, ask_before_write: v } })} />
+            <ToggleRow label="Ask before delete actions" tip="Confirm with the user before any delete tool call." checked={addons.tool_permissions.ask_before_delete} onChange={(v) => setAddons({ ...addons, tool_permissions: { ...addons.tool_permissions, ask_before_delete: v } })} />
+            <LabelWithTip label="Blocked tools (comma-separated)" tip="Tool names the AI may never invoke.">
+              <Input value={addons.tool_permissions.blocked_tools.join(", ")} onChange={(e) => setAddons({ ...addons, tool_permissions: { ...addons.tool_permissions, blocked_tools: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } })} placeholder="e.g. delete_user, drop_table" />
+            </LabelWithTip>
+            <LabelWithTip label="Admin-only tools (comma-separated)" tip="Tools restricted to admin sessions.">
+              <Input value={addons.tool_permissions.admin_only_tools.join(", ")} onChange={(e) => setAddons({ ...addons, tool_permissions: { ...addons.tool_permissions, admin_only_tools: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } })} placeholder="e.g. send_broadcast, fix_user_plan" />
+            </LabelWithTip>
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<Lock className="h-4 w-4" />} title="Privacy Mode" desc="Local-first inference, PII stripping, and retention rules.">
+          <div className="space-y-3">
+            <ToggleRow label="Local-only inference" tip="Force all inference to local model. No cloud calls." checked={addons.privacy_mode.local_only} onChange={(v) => setAddons({ ...addons, privacy_mode: { ...addons.privacy_mode, local_only: v } })} />
+            <ToggleRow label="Allow cloud fallback" tip="If local unavailable, fall back to cloud (unless local-only is on)." checked={addons.privacy_mode.cloud_fallback_allowed} onChange={(v) => setAddons({ ...addons, privacy_mode: { ...addons.privacy_mode, cloud_fallback_allowed: v } })} />
+            <ToggleRow label="Strip PII before cloud fallback" tip="Redacts emails, phones, and tag IDs from prompts sent to cloud." checked={addons.privacy_mode.strip_pii_before_cloud} onChange={(v) => setAddons({ ...addons, privacy_mode: { ...addons.privacy_mode, strip_pii_before_cloud: v } })} />
+            <ToggleRow label="Do not store sensitive conversations" tip="Conversations flagged as sensitive are not persisted in chat history." checked={addons.privacy_mode.no_store_sensitive} onChange={(v) => setAddons({ ...addons, privacy_mode: { ...addons.privacy_mode, no_store_sensitive: v } })} />
+            <LabelWithTip label="Data retention (days)" tip="Auto-purge logs and transcripts older than this.">
+              <Input type="number" min={1} max={3650} value={addons.privacy_mode.retention_days} onChange={(e) => setAddons({ ...addons, privacy_mode: { ...addons.privacy_mode, retention_days: parseInt(e.target.value || "90") } })} />
+            </LabelWithTip>
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<CheckCircle2 className="h-4 w-4" />} title="Output Verification" desc="Optional second-pass checks before returning a response.">
+          <div className="space-y-3">
+            <ToggleRow label="Safety check" tip="Re-scans the response for harmful content." checked={addons.output_verification.safety_check} onChange={(v) => setAddons({ ...addons, output_verification: { ...addons.output_verification, safety_check: v } })} />
+            <ToggleRow label="Factual consistency check" tip="Cross-checks claims against retrieved RAG context." checked={addons.output_verification.factual_check} onChange={(v) => setAddons({ ...addons, output_verification: { ...addons.output_verification, factual_check: v } })} />
+            <ToggleRow label="Formatting check" tip="Ensures markdown / code blocks are well-formed." checked={addons.output_verification.formatting_check} onChange={(v) => setAddons({ ...addons, output_verification: { ...addons.output_verification, formatting_check: v } })} />
+            <ToggleRow label="Instruction-following check" tip="Verifies the answer addresses the user's actual ask." checked={addons.output_verification.instruction_check} onChange={(v) => setAddons({ ...addons, output_verification: { ...addons.output_verification, instruction_check: v } })} />
+            <ToggleRow label="Show confidence score in UI" tip="Displays a 0-100 confidence badge under each response." checked={addons.output_verification.show_confidence} onChange={(v) => setAddons({ ...addons, output_verification: { ...addons.output_verification, show_confidence: v } })} />
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<ScrollText className="h-4 w-4" />} title="Logging / Replay Console" desc="Capture every request for debugging and audit.">
+          <div className="space-y-3">
+            <ToggleRow label="Replay console enabled" tip="Master switch for the debug log stream." checked={addons.logging.replay_console_enabled} onChange={(v) => setAddons({ ...addons, logging: { ...addons.logging, replay_console_enabled: v } })} />
+            <ToggleRow label="Log user prompts" tip="Stores the raw prompt for each request." checked={addons.logging.log_prompts} onChange={(v) => setAddons({ ...addons, logging: { ...addons.logging, log_prompts: v } })} />
+            <ToggleRow label="Log RAG entries used" tip="Records which corpus/memory entries were injected." checked={addons.logging.log_rag_entries} onChange={(v) => setAddons({ ...addons, logging: { ...addons.logging, log_rag_entries: v } })} />
+            <ToggleRow label="Log tool calls" tip="Records every tool invocation and response." checked={addons.logging.log_tools} onChange={(v) => setAddons({ ...addons, logging: { ...addons.logging, log_tools: v } })} />
+            <ToggleRow label="Log latency metrics" tip="Per-stage timing (routing, RAG, model, verify)." checked={addons.logging.log_latency} onChange={(v) => setAddons({ ...addons, logging: { ...addons.logging, log_latency: v } })} />
+            <p className="text-xs text-muted-foreground italic">Logs surface in the existing API activity feed.</p>
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<RefreshCw className="h-4 w-4" />} title="Fallback &amp; Failure Handling" desc="Retries, timeouts, and graceful degradation.">
+          <div className="space-y-3">
+            <LabelWithTip label="Fallback model" tip="Used when the primary model errors or times out.">
+              <Select value={addons.fallback.fallback_model} onValueChange={(v) => setAddons({ ...addons, fallback: { ...addons.fallback, fallback_model: v } })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{MODELS.map((m) => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </LabelWithTip>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Retry count</Label><Input type="number" min={0} max={10} value={addons.fallback.retry_count} onChange={(e) => setAddons({ ...addons, fallback: { ...addons.fallback, retry_count: parseInt(e.target.value || "2") } })} /></div>
+              <div><Label className="text-xs">Timeout (ms)</Label><Input type="number" min={1000} max={120000} value={addons.fallback.timeout_ms} onChange={(e) => setAddons({ ...addons, fallback: { ...addons.fallback, timeout_ms: parseInt(e.target.value || "30000") } })} /></div>
+            </div>
+            <ToggleRow label="If local server unavailable, use cloud fallback" tip="Auto-switch to cloud when local inference fails." checked={addons.fallback.local_to_cloud_fallback} onChange={(v) => setAddons({ ...addons, fallback: { ...addons.fallback, local_to_cloud_fallback: v } })} />
+            <LabelWithTip label="Friendly error message" tip="Shown to users when all models fail.">
+              <Textarea rows={2} value={addons.fallback.friendly_error_message} onChange={(e) => setAddons({ ...addons, fallback: { ...addons.fallback, friendly_error_message: e.target.value } })} />
+            </LabelWithTip>
+          </div>
+        </AddonCard>
+
+        <AddonCard icon={<Siren className="h-4 w-4 text-destructive" />} title="Emergency Controls" desc="Hard switches for incidents and maintenance.">
+          <div className="space-y-3">
+            <ToggleRow label="Disable AI responses" tip="Blocks all model calls (separate from master kill switch)." checked={addons.emergency.disable_ai} onChange={(v) => setAddons({ ...addons, emergency: { ...addons.emergency, disable_ai: v } })} />
+            <ToggleRow label="Disable tool execution" tip="AI can chat but cannot invoke any tools." checked={addons.emergency.disable_tools} onChange={(v) => setAddons({ ...addons, emergency: { ...addons.emergency, disable_tools: v } })} />
+            <ToggleRow label="Disable cloud fallback" tip="Forces local-only behavior immediately." checked={addons.emergency.disable_cloud_fallback} onChange={(v) => setAddons({ ...addons, emergency: { ...addons.emergency, disable_cloud_fallback: v } })} />
+            <ToggleRow label="Lock public access" tip="Only authenticated users may use AI features." checked={addons.emergency.lock_public_access} onChange={(v) => setAddons({ ...addons, emergency: { ...addons.emergency, lock_public_access: v } })} />
+            <ToggleRow label="Admin-only maintenance mode" tip="Only admins may use AI; everyone else sees a maintenance banner." checked={addons.emergency.maintenance_mode} onChange={(v) => setAddons({ ...addons, emergency: { ...addons.emergency, maintenance_mode: v } })} />
+          </div>
+        </AddonCard>
+      </TooltipProvider>
+
       {/* Notes */}
       <Card>
         <CardHeader>
