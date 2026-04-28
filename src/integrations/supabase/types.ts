@@ -266,6 +266,7 @@ export type Database = {
       }
       ai_infrastructure_settings: {
         Row: {
+          advanced_addons: Json
           blocked_keywords: string[]
           default_model: string
           fallback_model: string
@@ -285,6 +286,7 @@ export type Database = {
           use_writing_style: boolean
         }
         Insert: {
+          advanced_addons?: Json
           blocked_keywords?: string[]
           default_model?: string
           fallback_model?: string
@@ -304,6 +306,7 @@ export type Database = {
           use_writing_style?: boolean
         }
         Update: {
+          advanced_addons?: Json
           blocked_keywords?: string[]
           default_model?: string
           fallback_model?: string
@@ -402,6 +405,48 @@ export type Database = {
           topic?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      ai_memory_review: {
+        Row: {
+          category: string | null
+          confidence: number | null
+          content: string
+          created_at: string
+          id: string
+          memory_id: string | null
+          notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          confidence?: number | null
+          content: string
+          created_at?: string
+          id?: string
+          memory_id?: string | null
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          confidence?: number | null
+          content?: string
+          created_at?: string
+          id?: string
+          memory_id?: string | null
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
         }
         Relationships: []
       }
