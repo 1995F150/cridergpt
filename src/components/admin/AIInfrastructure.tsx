@@ -105,6 +105,8 @@ export function AIInfrastructure() {
   const [blockedInput, setBlockedInput] = useState("");
   const [corpusCount, setCorpusCount] = useState<number | null>(null);
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
+  const [addons, setAddons] = useState<AdvancedAddons>(DEFAULT_ADDONS);
+  const [reviewQueue, setReviewQueue] = useState<any[]>([]);
 
   useEffect(() => {
     load();
@@ -122,6 +124,22 @@ export function AIInfrastructure() {
     if (data) {
       setSettings(data);
       setBlockedInput((data.blocked_keywords || []).join(", "));
+      // Merge stored addons with defaults so newly added keys hydrate cleanly
+      const stored = data.advanced_addons || {};
+      setAddons({
+        ...DEFAULT_ADDONS,
+        ...stored,
+        model_router: { ...DEFAULT_ADDONS.model_router, ...(stored.model_router || {}), task_routes: { ...DEFAULT_ADDONS.model_router.task_routes, ...(stored.model_router?.task_routes || {}) } },
+        task_temperatures: { ...DEFAULT_ADDONS.task_temperatures, ...(stored.task_temperatures || {}) },
+        rag_tuning: { ...DEFAULT_ADDONS.rag_tuning, ...(stored.rag_tuning || {}) },
+        memory_governance: { ...DEFAULT_ADDONS.memory_governance, ...(stored.memory_governance || {}) },
+        tool_permissions: { ...DEFAULT_ADDONS.tool_permissions, ...(stored.tool_permissions || {}) },
+        privacy_mode: { ...DEFAULT_ADDONS.privacy_mode, ...(stored.privacy_mode || {}) },
+        output_verification: { ...DEFAULT_ADDONS.output_verification, ...(stored.output_verification || {}) },
+        logging: { ...DEFAULT_ADDONS.logging, ...(stored.logging || {}) },
+        fallback: { ...DEFAULT_ADDONS.fallback, ...(stored.fallback || {}) },
+        emergency: { ...DEFAULT_ADDONS.emergency, ...(stored.emergency || {}) },
+      });
     }
 
     const [{ count: c1 }, { count: c2 }] = await Promise.all([
