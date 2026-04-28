@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Brain, Loader2, Power, Shield, Sparkles, Database, FileDown, AlertTriangle } from "lucide-react";
+import { Brain, Loader2, Power, Shield, Sparkles, Database, FileDown, AlertTriangle, Route, Thermometer, SlidersHorizontal, ShieldCheck, Lock, CheckCircle2, ScrollText, RefreshCw, Siren, ChevronDown, Info } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface InfraSettings {
   id: string;
