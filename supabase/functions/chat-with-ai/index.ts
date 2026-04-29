@@ -1289,10 +1289,20 @@ serve(async (req) => {
       }
     }
 
-    // Build messages array
+    // Resolve CriderGPT named model -> backend + personality + temperature
+    const criderModel = resolveCriderModel(model);
+    if (criderModel) {
+      console.log(`Resolved CriderGPT model "${model}" -> backend ${criderModel.backend}`);
+    }
+
+    // Build messages array — personality goes FIRST so it dominates the long base prompt
     const sensorInfo = sensor_context ? `\n${sensor_context}` : '';
-    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext + sensorInfo + ragContext;
-    
+    const personalityPrefix = criderModel
+      ? `\n=== ACTIVE MODEL PERSONALITY (HIGHEST PRIORITY) ===\n${criderModel.personality}\n=== END PERSONALITY ===\n\n`
+      : '';
+    const baseSystem = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext);
+    const systemPrompt = personalityPrefix + baseSystem + livestockContext + importedContext + sensorInfo + ragContext;
+
     let aiResponse: string;
 
     if (localAnswer) {
@@ -1323,16 +1333,17 @@ serve(async (req) => {
         messages.push({ role: 'user', content: message });
       }
 
-      // Call OpenAI API unless a Lovable AI model was explicitly requested.
-      const requestedModel = typeof model === 'string' ? model.trim() : '';
+      // Decide backend model: CriderGPT registry > raw model > admin default > fallback
+      const rawModel = typeof model === 'string' ? model.trim() : '';
       const adminDefaultModel = infraSettings?.default_model || '';
-      const prefersLovable = (requestedModel || adminDefaultModel).startsWith('google/');
+      const resolvedBackend = criderModel?.backend || rawModel || adminDefaultModel;
+      const prefersLovable = (resolvedBackend || '').startsWith('google/') || (resolvedBackend || '').startsWith('openai/');
       const useOpenAI = !!OPENAI_API_KEY && !prefersLovable;
-      const apiUrl = useOpenAI 
-        ? 'https://api.openai.com/v1/chat/completions' 
+      const apiUrl = useOpenAI
+        ? 'https://api.openai.com/v1/chat/completions'
         : 'https://ai.gateway.lovable.dev/v1/chat/completions';
       const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
-      const defaultModel = requestedModel || adminDefaultModel || (useOpenAI
+      const defaultModel = resolvedBackend || (useOpenAI
         ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
         : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-3-flash-preview'));
 
@@ -1346,12 +1357,16 @@ serve(async (req) => {
       let toolIterations = 0;
       const MAX_TOOL_ITERATIONS = 4;
 
+      const effectiveTemperature = typeof criderModel?.temperature === 'number'
+        ? criderModel.temperature
+        : (typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7);
+
       while (toolIterations < MAX_TOOL_ITERATIONS) {
         const requestBody: any = {
           model: defaultModel,
           messages,
           max_tokens: infraSettings?.max_tokens || 2000,
-          temperature: typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7,
+          temperature: effectiveTemperature,
         };
         // Only attach tools when not doing image analysis (vision + tools combo is flaky)
         if (!imageData) {
