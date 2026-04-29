@@ -251,13 +251,13 @@ serve(async (req) => {
     const characterRefs = allCharacters || [];
     console.log('Loaded', characterRefs.length, 'character references');
 
-    // Auto-detect characters from prompt
+    // Auto-detect characters from prompt (word-boundary matching)
     const promptLower = prompt.toLowerCase();
     const detectedSlugs: string[] = [];
 
     for (const [slug, keywords] of Object.entries(CHARACTER_KEYWORDS)) {
       for (const keyword of keywords) {
-        if (promptLower.includes(keyword)) {
+        if (matchesKeyword(promptLower, keyword)) {
           if (!detectedSlugs.includes(slug)) {
             detectedSlugs.push(slug);
             console.log(`Detected character: ${slug} (keyword: "${keyword}")`);
@@ -267,11 +267,14 @@ serve(async (req) => {
       }
     }
 
-    // Check database names
+    // Check database names (also word-boundary)
     for (const char of characterRefs) {
-      const nameLower = char.name?.toLowerCase() || '';
-      const slugLower = char.slug?.toLowerCase() || '';
-      if (promptLower.includes(nameLower) || promptLower.includes(slugLower)) {
+      const nameLower = (char.name || '').toLowerCase();
+      const slugLower = (char.slug || '').toLowerCase();
+      if (
+        (nameLower && matchesKeyword(promptLower, nameLower)) ||
+        (slugLower && matchesKeyword(promptLower, slugLower))
+      ) {
         const baseSlug = CHARACTER_BASE_NAMES.find(base => slugLower.startsWith(base)) || slugLower;
         if (!detectedSlugs.includes(baseSlug)) {
           detectedSlugs.push(baseSlug);
