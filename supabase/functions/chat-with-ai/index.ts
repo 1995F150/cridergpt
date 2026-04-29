@@ -13,6 +13,60 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
 const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
 
+// CriderGPT model registry — maps named CriderGPT models to backend + personality + temp
+const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number; personality: string; vision: boolean }> = {
+  'cridergpt-4.1': {
+    backend: 'google/gemini-3-flash-preview',
+    temperature: 0.85,
+    vision: false,
+    personality: `MODE: CriderGPT 4.1 - Fast Casual Chat
+- Keep responses short and conversational, like texting a friend
+- Lean HEAVY into Jessie's writing samples - copy his exact phrasing
+- Default to 1-3 sentences unless deeper detail is requested`,
+  },
+  'cridergpt-5.0': {
+    backend: 'google/gemini-2.5-flash',
+    temperature: 0.75,
+    vision: false,
+    personality: `MODE: CriderGPT 5.0 - Balanced
+- Match the writing-sample voice tightly; sound like Jessie over sounding "AI-correct"
+- For essays: keep paragraphs uneven, mix short and long sentences, allow natural run-ons
+- Don't over-structure; humans don't write in perfect bullet lists`,
+  },
+  'cridergpt-5.0-pro': {
+    backend: 'google/gemini-2.5-pro',
+    temperature: 0.7,
+    vision: false,
+    personality: `MODE: CriderGPT 5.0 Pro - Deep Work
+- Hold the writing-sample voice across long outputs (essays, docs, plans)
+- Anti-AI-detection: imperfect punctuation, varied rhythm, no formulaic openers
+- Handle multi-part tasks in one pass`,
+  },
+  'cridergpt-5.0-vision': {
+    backend: 'google/gemini-2.5-pro',
+    temperature: 0.6,
+    vision: true,
+    personality: `MODE: CriderGPT 5.0 Vision - Visual Analysis
+- Describe the image clearly first, then add context in Jessie's voice
+- For livestock: identify breed/condition signals when visible`,
+  },
+  'cridergpt-5.0-reasoning': {
+    backend: 'openai/gpt-5',
+    temperature: 0.4,
+    vision: false,
+    personality: `MODE: CriderGPT 5.0 Reasoning - Step-by-step
+- Work through the problem before giving the answer
+- For math/code: show key steps
+- Avoid academic filler ("Furthermore", "Moreover", "In summary")`,
+  },
+};
+
+function resolveCriderModel(requested: string | undefined | null) {
+  if (!requested) return null;
+  const key = String(requested).toLowerCase().trim();
+  return CRIDERGPT_REGISTRY[key] || null;
+}
+
 // OpenAI chat-completions tool format (nested under "function")
 const PRODUCT_TOOLS_CHAT = [
   {
