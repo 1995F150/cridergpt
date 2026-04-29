@@ -1058,11 +1058,15 @@ serve(async (req) => {
       .order('created_at', { ascending: true });
 
     let writingSamplesText = '';
-    if (writingSamplesData) {
+    let writingSamplesCount = 0;
+    if (writingSamplesData && writingSamplesData.length > 0) {
       writingSamplesText = writingSamplesData
         .map(sample => `\n=== ${sample.title} ===\n${sample.content}\n`)
         .join('\n');
-      console.log('Loaded', writingSamplesData.length, 'writing samples');
+      writingSamplesCount = writingSamplesData.length;
+      console.log('Loaded', writingSamplesCount, 'writing samples (', writingSamplesText.length, 'chars)');
+    } else {
+      console.warn('No writing samples found in database — voice mimicry will be weak');
     }
 
     // Check if memory is enabled for this user
