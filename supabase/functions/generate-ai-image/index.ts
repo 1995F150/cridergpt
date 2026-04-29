@@ -8,31 +8,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Character detection keywords - EXPANDED for 99% accuracy
+// Character detection keywords - WORD-BOUNDARY matched (no false positives)
+// Each entry is matched with \b...\b regex so 'i' won't match inside 'with' etc.
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
   'jessie': [
-    'jessie', 'crider', 'creator', 'jesse', 'jessie crider',
-    'ffa jacket', 'historian jacket', 'ffa blue jacket', 'his jacket', 
-    'ffa officer', 'ffa member', 'ffa historian', 'the historian',
-    'me', 'myself', 'i', 'my photo', 'my picture', 'my portrait'
+    'jessie', 'crider', 'jesse', 'jessie crider',
+    'ffa jacket', 'historian jacket', 'ffa blue jacket',
+    'ffa historian', 'the historian',
+    'me', 'myself', 'my photo', 'my picture', 'my portrait', 'my selfie',
+    'selfie of me', 'a photo of me', 'picture of me'
   ],
   'dr-harman': [
-    'dr harman', 'dr. harman', 'harman', 'doctor harman', 
-    'great-grandfather', 'great grandfather', 'grandfather', 'ancestor', 
-    'dr-harman', 'the doctor', 'old doctor', 'vintage doctor'
+    'dr harman', 'dr. harman', 'harman', 'doctor harman',
+    'great-grandfather', 'great grandfather', 'my grandfather', 'my ancestor',
+    'dr-harman'
   ],
   'savanaa': [
-    'savanaa', 'savannah', 'sav', 'savanna', 
-    'girlfriend', 'my girlfriend', 'her', 'my girl'
+    'savanaa', 'savannah', 'savanna',
+    'my girlfriend', 'girlfriend savanaa'
   ],
   'jr-hoback': [
-    'jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback', 'jr', 'j.r.',
-    'uncle', 'friend jr', 'my uncle', 'uncle jr',
-    'curly hair man', 'gray curly hair', 'white curly hair'
+    'jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback',
+    'uncle jr', 'my uncle jr'
   ]
 };
 
-const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback'];
+const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback', 'jessies-truck'];
+
+// Escape regex special chars in keyword
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Word-boundary match - prevents 'i' matching inside 'with', 'me' inside 'memory', etc.
+function matchesKeyword(text: string, keyword: string): boolean {
+  const pattern = new RegExp(`\\b${escapeRegex(keyword)}\\b`, 'i');
+  return pattern.test(text);
+}
 
 // =====================================================
 // SMART KEYWORD EXTRACTION FOR LONG PROMPTS
