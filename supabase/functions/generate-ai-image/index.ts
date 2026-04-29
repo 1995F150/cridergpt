@@ -8,31 +8,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Character detection keywords - EXPANDED for 99% accuracy
+// Character/object detection keywords - WORD-BOUNDARY matched (no false positives)
+// Each entry is matched with \b...\b regex so 'i' won't match inside 'with' etc.
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
   'jessie': [
-    'jessie', 'crider', 'creator', 'jesse', 'jessie crider',
-    'ffa jacket', 'historian jacket', 'ffa blue jacket', 'his jacket', 
-    'ffa officer', 'ffa member', 'ffa historian', 'the historian',
-    'me', 'myself', 'i', 'my photo', 'my picture', 'my portrait'
+    'jessie', 'crider', 'jesse', 'jessie crider',
+    'ffa jacket', 'historian jacket', 'ffa blue jacket',
+    'ffa historian', 'the historian',
+    'me', 'myself', 'my photo', 'my picture', 'my portrait', 'my selfie',
+    'selfie of me', 'a photo of me', 'picture of me'
   ],
   'dr-harman': [
-    'dr harman', 'dr. harman', 'harman', 'doctor harman', 
-    'great-grandfather', 'great grandfather', 'grandfather', 'ancestor', 
-    'dr-harman', 'the doctor', 'old doctor', 'vintage doctor'
+    'dr harman', 'dr. harman', 'harman', 'doctor harman',
+    'great-grandfather', 'great grandfather', 'my grandfather', 'my ancestor',
+    'dr-harman'
   ],
   'savanaa': [
-    'savanaa', 'savannah', 'sav', 'savanna', 
-    'girlfriend', 'my girlfriend', 'her', 'my girl'
+    'savanaa', 'savannah', 'savanna',
+    'my girlfriend', 'girlfriend savanaa'
   ],
   'jr-hoback': [
-    'jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback', 'jr', 'j.r.',
-    'uncle', 'friend jr', 'my uncle', 'uncle jr',
-    'curly hair man', 'gray curly hair', 'white curly hair'
-  ]
+    'jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback',
+    'uncle jr', 'my uncle jr'
+  ],
+  'jessies-truck': [
+    'my truck', 'jessies truck', "jessie's truck", 'the truck',
+    '1st gen dodge', 'first gen dodge', '1st gen', 'dodge ram first gen',
+    'my dodge', 'my pickup', 'my ram'
+  ],
 };
 
-const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback'];
+const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback', 'jessies-truck'];
+
+// Escape regex special chars in keyword
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Word-boundary match - prevents 'i' matching inside 'with', 'me' inside 'memory', etc.
+function matchesKeyword(text: string, keyword: string): boolean {
+  const pattern = new RegExp(`\\b${escapeRegex(keyword)}\\b`, 'i');
+  return pattern.test(text);
+}
 
 // =====================================================
 // SMART KEYWORD EXTRACTION FOR LONG PROMPTS
@@ -239,13 +256,13 @@ serve(async (req) => {
     const characterRefs = allCharacters || [];
     console.log('Loaded', characterRefs.length, 'character references');
 
-    // Auto-detect characters from prompt
+    // Auto-detect characters from prompt (word-boundary matching)
     const promptLower = prompt.toLowerCase();
     const detectedSlugs: string[] = [];
 
     for (const [slug, keywords] of Object.entries(CHARACTER_KEYWORDS)) {
       for (const keyword of keywords) {
-        if (promptLower.includes(keyword)) {
+        if (matchesKeyword(promptLower, keyword)) {
           if (!detectedSlugs.includes(slug)) {
             detectedSlugs.push(slug);
             console.log(`Detected character: ${slug} (keyword: "${keyword}")`);
@@ -255,11 +272,14 @@ serve(async (req) => {
       }
     }
 
-    // Check database names
+    // Check database names (also word-boundary)
     for (const char of characterRefs) {
-      const nameLower = char.name?.toLowerCase() || '';
-      const slugLower = char.slug?.toLowerCase() || '';
-      if (promptLower.includes(nameLower) || promptLower.includes(slugLower)) {
+      const nameLower = (char.name || '').toLowerCase();
+      const slugLower = (char.slug || '').toLowerCase();
+      if (
+        (nameLower && matchesKeyword(promptLower, nameLower)) ||
+        (slugLower && matchesKeyword(promptLower, slugLower))
+      ) {
         const baseSlug = CHARACTER_BASE_NAMES.find(base => slugLower.startsWith(base)) || slugLower;
         if (!detectedSlugs.includes(baseSlug)) {
           detectedSlugs.push(baseSlug);

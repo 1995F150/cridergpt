@@ -13,6 +13,60 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
 const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
 
+// CriderGPT model registry — maps named CriderGPT models to backend + personality + temp
+const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number; personality: string; vision: boolean }> = {
+  'cridergpt-4.1': {
+    backend: 'google/gemini-3-flash-preview',
+    temperature: 0.85,
+    vision: false,
+    personality: `MODE: CriderGPT 4.1 - Fast Casual Chat
+- Keep responses short and conversational, like texting a friend
+- Lean HEAVY into Jessie's writing samples - copy his exact phrasing
+- Default to 1-3 sentences unless deeper detail is requested`,
+  },
+  'cridergpt-5.0': {
+    backend: 'google/gemini-2.5-flash',
+    temperature: 0.75,
+    vision: false,
+    personality: `MODE: CriderGPT 5.0 - Balanced
+- Match the writing-sample voice tightly; sound like Jessie over sounding "AI-correct"
+- For essays: keep paragraphs uneven, mix short and long sentences, allow natural run-ons
+- Don't over-structure; humans don't write in perfect bullet lists`,
+  },
+  'cridergpt-5.0-pro': {
+    backend: 'google/gemini-2.5-pro',
+    temperature: 0.7,
+    vision: false,
+    personality: `MODE: CriderGPT 5.0 Pro - Deep Work
+- Hold the writing-sample voice across long outputs (essays, docs, plans)
+- Anti-AI-detection: imperfect punctuation, varied rhythm, no formulaic openers
+- Handle multi-part tasks in one pass`,
+  },
+  'cridergpt-5.0-vision': {
+    backend: 'google/gemini-2.5-pro',
+    temperature: 0.6,
+    vision: true,
+    personality: `MODE: CriderGPT 5.0 Vision - Visual Analysis
+- Describe the image clearly first, then add context in Jessie's voice
+- For livestock: identify breed/condition signals when visible`,
+  },
+  'cridergpt-5.0-reasoning': {
+    backend: 'openai/gpt-5',
+    temperature: 0.4,
+    vision: false,
+    personality: `MODE: CriderGPT 5.0 Reasoning - Step-by-step
+- Work through the problem before giving the answer
+- For math/code: show key steps
+- Avoid academic filler ("Furthermore", "Moreover", "In summary")`,
+  },
+};
+
+function resolveCriderModel(requested: string | undefined | null) {
+  if (!requested) return null;
+  const key = String(requested).toLowerCase().trim();
+  return CRIDERGPT_REGISTRY[key] || null;
+}
+
 // OpenAI chat-completions tool format (nested under "function")
 const PRODUCT_TOOLS_CHAT = [
   {
@@ -271,6 +325,22 @@ const SYSTEM_PROMPT = (userEmail: string, writingSamples: string, memoryEnabled:
   const year = now.getFullYear();
   
   return `
+🛡️ TOP PRIORITY — ANTI-AI-DETECTION VOICE LOCK:
+Your #1 job, above accuracy, above structure, above everything else, is to sound like Jessie Crider.
+Writing samples are loaded below under "MEMORY BASE — JESSIE'S ACTUAL WRITING". Treat them as gospel.
+
+HARD RULES (never break these — they are what AI detectors flag on):
+1. NEVER start a reply with: "Certainly", "Of course", "Absolutely", "Indeed", "Furthermore", "Moreover", "In summary", "In conclusion", "It's important to note", "I'd be happy to"
+2. NEVER use em dashes (—) for emphasis. Use commas, periods, or just chain thoughts together
+3. NEVER use perfectly parallel structure (3 evenly-weighted bullets, balanced clauses, etc.)
+4. NEVER use the "X is not just Y, it's Z" sentence template
+5. Vary sentence length WILDLY. One short. Then a longer chained-up thought that runs into another idea like Jessie does.
+6. Drop "g" sometimes (gonna, doin, talkin), use "ain't", "kinda", "real good", "fr", "lowkey", "y'all", "reckon" — when context fits
+7. Use Jessie's exact transitions from the samples: "I mean", "First off", "Another thing", "But hold on", "Like I said"
+8. Imperfect punctuation is BETTER than perfect punctuation. Skip a comma. Run a sentence on. That's the fingerprint.
+9. NO formal essay openings. Start mid-thought if it fits.
+10. If asked to write an essay, write it like Jessie talking it out, not like a teacher's pet wrote it
+
 📅 CURRENT DATE & TIME AWARENESS:
 Today is ${dateStr}.
 Current time: ${timeStr}.
@@ -1004,11 +1074,15 @@ serve(async (req) => {
       .order('created_at', { ascending: true });
 
     let writingSamplesText = '';
-    if (writingSamplesData) {
+    let writingSamplesCount = 0;
+    if (writingSamplesData && writingSamplesData.length > 0) {
       writingSamplesText = writingSamplesData
         .map(sample => `\n=== ${sample.title} ===\n${sample.content}\n`)
         .join('\n');
-      console.log('Loaded', writingSamplesData.length, 'writing samples');
+      writingSamplesCount = writingSamplesData.length;
+      console.log('Loaded', writingSamplesCount, 'writing samples (', writingSamplesText.length, 'chars)');
+    } else {
+      console.warn('No writing samples found in database — voice mimicry will be weak');
     }
 
     // Check if memory is enabled for this user
@@ -1235,10 +1309,20 @@ serve(async (req) => {
       }
     }
 
-    // Build messages array
+    // Resolve CriderGPT named model -> backend + personality + temperature
+    const criderModel = resolveCriderModel(model);
+    if (criderModel) {
+      console.log(`Resolved CriderGPT model "${model}" -> backend ${criderModel.backend}`);
+    }
+
+    // Build messages array — personality goes FIRST so it dominates the long base prompt
     const sensorInfo = sensor_context ? `\n${sensor_context}` : '';
-    const systemPrompt = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext) + livestockContext + importedContext + sensorInfo + ragContext;
-    
+    const personalityPrefix = criderModel
+      ? `\n=== ACTIVE MODEL PERSONALITY (HIGHEST PRIORITY) ===\n${criderModel.personality}\n=== END PERSONALITY ===\n\n`
+      : '';
+    const baseSystem = SYSTEM_PROMPT(userEmail || 'anonymous', writingSamplesText, memoryEnabled, memoriesContext);
+    const systemPrompt = personalityPrefix + baseSystem + livestockContext + importedContext + sensorInfo + ragContext;
+
     let aiResponse: string;
 
     if (localAnswer) {
@@ -1269,16 +1353,17 @@ serve(async (req) => {
         messages.push({ role: 'user', content: message });
       }
 
-      // Call OpenAI API unless a Lovable AI model was explicitly requested.
-      const requestedModel = typeof model === 'string' ? model.trim() : '';
+      // Decide backend model: CriderGPT registry > raw model > admin default > fallback
+      const rawModel = typeof model === 'string' ? model.trim() : '';
       const adminDefaultModel = infraSettings?.default_model || '';
-      const prefersLovable = (requestedModel || adminDefaultModel).startsWith('google/');
+      const resolvedBackend = criderModel?.backend || rawModel || adminDefaultModel;
+      const prefersLovable = (resolvedBackend || '').startsWith('google/') || (resolvedBackend || '').startsWith('openai/');
       const useOpenAI = !!OPENAI_API_KEY && !prefersLovable;
-      const apiUrl = useOpenAI 
-        ? 'https://api.openai.com/v1/chat/completions' 
+      const apiUrl = useOpenAI
+        ? 'https://api.openai.com/v1/chat/completions'
         : 'https://ai.gateway.lovable.dev/v1/chat/completions';
       const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
-      const defaultModel = requestedModel || adminDefaultModel || (useOpenAI
+      const defaultModel = resolvedBackend || (useOpenAI
         ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
         : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-3-flash-preview'));
 
@@ -1292,12 +1377,16 @@ serve(async (req) => {
       let toolIterations = 0;
       const MAX_TOOL_ITERATIONS = 4;
 
+      const effectiveTemperature = typeof criderModel?.temperature === 'number'
+        ? criderModel.temperature
+        : (typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7);
+
       while (toolIterations < MAX_TOOL_ITERATIONS) {
         const requestBody: any = {
           model: defaultModel,
           messages,
           max_tokens: infraSettings?.max_tokens || 2000,
-          temperature: typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7,
+          temperature: effectiveTemperature,
         };
         // Only attach tools when not doing image analysis (vision + tools combo is flaky)
         if (!imageData) {
