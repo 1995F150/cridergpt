@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Character detection keywords - WORD-BOUNDARY matched (no false positives)
+// Character/object detection keywords - WORD-BOUNDARY matched (no false positives)
 // Each entry is matched with \b...\b regex so 'i' won't match inside 'with' etc.
 const CHARACTER_KEYWORDS: Record<string, string[]> = {
   'jessie': [
@@ -30,7 +30,12 @@ const CHARACTER_KEYWORDS: Record<string, string[]> = {
   'jr-hoback': [
     'jr hoback', 'jr-hoback', 'j.r. hoback', 'hoback',
     'uncle jr', 'my uncle jr'
-  ]
+  ],
+  'jessies-truck': [
+    'my truck', 'jessies truck', "jessie's truck", 'the truck',
+    '1st gen dodge', 'first gen dodge', '1st gen', 'dodge ram first gen',
+    'my dodge', 'my pickup', 'my ram'
+  ],
 };
 
 const CHARACTER_BASE_NAMES = ['jessie', 'dr-harman', 'savanaa', 'jr-hoback', 'jessies-truck'];
