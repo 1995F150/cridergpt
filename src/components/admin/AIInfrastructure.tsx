@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Brain, Loader2, Power, Shield, Sparkles, Database, FileDown, AlertTriangle, Route, Thermometer, SlidersHorizontal, ShieldCheck, Lock, CheckCircle2, ScrollText, RefreshCw, Siren, ChevronDown, Info } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MyReferencesLibrary } from "./MyReferencesLibrary";
 
 interface InfraSettings {
   id: string;
@@ -700,6 +701,9 @@ export function AIInfrastructure() {
           </div>
         </AddonCard>
       </TooltipProvider>
+
+      {/* Reference Library */}
+      <MyReferencesLibrary />
 
       {/* Notes */}
       <Card>

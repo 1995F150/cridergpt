@@ -224,7 +224,7 @@ serve(async (req) => {
   );
 
   try {
-    const { prompt, characters: providedCharacters, settings, mode, imageUrl } = await req.json();
+    const { prompt, characters: providedCharacters, settings, mode, imageUrl, referenceIds } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -500,7 +500,54 @@ serve(async (req) => {
       }
     }
 
-    console.log(`📸 Total reference photos loaded: ${refCount}`);
+    console.log(`📸 Total character reference photos loaded: ${refCount}`);
+
+    // =====================================================
+    // USER REFERENCE LIBRARY (truck, future house, etc.)
+    // =====================================================
+    try {
+      const promptLowerForLib = prompt.toLowerCase();
+      const { data: libRefs } = await supabase
+        .from('user_reference_library')
+        .select('id, name, slug, image_url, keywords, auto_attach, use_for, is_global, user_id')
+        .eq('is_global', true);
+
+      const matchedRefs: any[] = [];
+      const explicitIds: string[] = Array.isArray(referenceIds) ? referenceIds : [];
+
+      for (const ref of (libRefs || [])) {
+        if (!ref.image_url) continue;
+        if (!(ref.use_for || []).includes('image')) continue;
+
+        if (explicitIds.includes(ref.id)) {
+          matchedRefs.push(ref);
+          continue;
+        }
+        if (ref.auto_attach && Array.isArray(ref.keywords)) {
+          for (const kw of ref.keywords) {
+            if (kw && matchesKeyword(promptLowerForLib, kw.toLowerCase())) {
+              matchedRefs.push(ref);
+              console.log(`📎 Auto-attached library ref "${ref.name}" (keyword: "${kw}")`);
+              break;
+            }
+          }
+        }
+      }
+
+      const seen = new Set<string>();
+      for (const ref of matchedRefs.slice(0, 4)) {
+        if (seen.has(ref.id)) continue;
+        seen.add(ref.id);
+        if (await addReferenceImage(ref.image_url, ref.name)) {
+          refCount++;
+          masterPrompt += `\nREFERENCE "${ref.name}": Use this attached image as the visual reference. Match it exactly.`;
+        }
+      }
+    } catch (libErr) {
+      console.error('Library ref lookup failed:', libErr);
+    }
+
+    console.log(`📸 Total references (chars + library): ${refCount}`);
 
     // Generate with Gemini Flash
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

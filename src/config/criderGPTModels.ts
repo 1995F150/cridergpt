@@ -33,7 +33,7 @@ export const CRIDERGPT_MODELS: CriderModelDef[] = [
     name: 'CriderGPT 4.1',
     tagline: 'Fast everyday chat',
     description: 'Quick replies for casual chat, short answers, and homework help. Tuned for natural Jessie voice.',
-    backend: 'google/gemini-3-flash-preview',
+    backend: 'google/gemini-2.5-flash-lite',
     temperature: 0.85,
     personality: `MODE: CriderGPT 4.1 - Fast Casual Chat
 - Keep responses short and conversational, like texting a friend

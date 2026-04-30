@@ -4523,6 +4523,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_reference_library: {
+        Row: {
+          auto_attach: boolean
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          is_global: boolean
+          keywords: string[]
+          name: string
+          slug: string
+          updated_at: string
+          use_for: string[]
+          user_id: string
+        }
+        Insert: {
+          auto_attach?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          is_global?: boolean
+          keywords?: string[]
+          name: string
+          slug: string
+          updated_at?: string
+          use_for?: string[]
+          user_id: string
+        }
+        Update: {
+          auto_attach?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          is_global?: boolean
+          keywords?: string[]
+          name?: string
+          slug?: string
+          updated_at?: string
+          use_for?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_reports: {
         Row: {
           admin_notes: string | null
