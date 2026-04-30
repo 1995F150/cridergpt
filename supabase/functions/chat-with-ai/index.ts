@@ -1382,6 +1382,19 @@ serve(async (req) => {
         ? criderModel.temperature
         : (typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7);
 
+      // === Hybrid local-first router ===
+      // Try the user's local Ollama for casual/simple turns when enabled.
+      // Falls through to the cloud fetch if local fails or task is too complex.
+      let hybridSettings: HybridSettings | null = null;
+      if (userId) {
+        const { data: hs } = await supabase
+          .from('hybrid_router_settings')
+          .select('enabled, local_endpoint, local_model, prefer_local_for, cloud_fallback, max_local_latency_ms')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (hs) hybridSettings = hs as HybridSettings;
+      }
+
       while (toolIterations < MAX_TOOL_ITERATIONS) {
         const requestBody: any = {
           model: defaultModel,
@@ -1395,7 +1408,36 @@ serve(async (req) => {
           requestBody.tool_choice = 'auto';
         }
 
-        const response = await fetch(apiUrl, {
+        // First-iteration only: try local route before cloud
+        let response: Response | null = null;
+        let usedLocal = false;
+        if (toolIterations === 0 && !imageData) {
+          const decision = decideRoute(
+            { message: typeof message === 'string' ? message : '', has_image: !!imageData },
+            hybridSettings,
+          );
+          if (decision.route === 'local' && decision.endpoint && decision.model) {
+            const localRes = await callLocalOllama(
+              decision.endpoint,
+              decision.model,
+              messages.map((m: any) => ({ role: m.role, content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) })),
+              { temperature: effectiveTemperature, max_tokens: requestBody.max_tokens, timeout_ms: hybridSettings?.max_local_latency_ms || 30000 },
+            );
+            if (localRes.ok) {
+              console.log(`[router] LOCAL hit (${localRes.latency_ms}ms) reason=${decision.reason}`);
+              toolLoopData = localRes.data;
+              usedLocal = true;
+              break; // local has no tool calls — done
+            } else {
+              console.log(`[router] local failed (${localRes.error}), falling back to cloud`);
+              if (hybridSettings && !hybridSettings.cloud_fallback) {
+                throw new Error(`Local AI failed and cloud fallback disabled: ${localRes.error}`);
+              }
+            }
+          }
+        }
+
+        response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
