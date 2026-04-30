@@ -1,15 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function matchesKeyword(text: string, keyword: string): boolean {
+  return new RegExp(`\\b${escapeRegex(keyword)}\\b`, "i").test(text);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { prompt, title } = await req.json();
+    const { prompt, title, referenceIds } = await req.json();
     if (!prompt || typeof prompt !== "string") {
       return new Response(JSON.stringify({ error: "prompt is required" }), {
         status: 400,
@@ -19,6 +27,48 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    // Look up reference library — auto-attach blueprint refs by keyword,
+    // or attach any explicitly-requested ones.
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } },
+    );
+
+    const attachedRefs: { name: string; image_url: string; reason: string }[] = [];
+    try {
+      const promptLower = `${title || ""} ${prompt}`.toLowerCase();
+      const { data: libRefs } = await supabase
+        .from("user_reference_library")
+        .select("id, name, image_url, keywords, auto_attach, use_for, is_global")
+        .eq("is_global", true);
+
+      const explicitIds: string[] = Array.isArray(referenceIds) ? referenceIds : [];
+      for (const ref of (libRefs || [])) {
+        if (!ref.image_url) continue;
+        if (!(ref.use_for || []).includes("blueprint")) continue;
+        if (explicitIds.includes(ref.id)) {
+          attachedRefs.push({ name: ref.name, image_url: ref.image_url, reason: "manual" });
+          continue;
+        }
+        if (ref.auto_attach && Array.isArray(ref.keywords)) {
+          for (const kw of ref.keywords) {
+            if (kw && matchesKeyword(promptLower, kw.toLowerCase())) {
+              attachedRefs.push({ name: ref.name, image_url: ref.image_url, reason: `keyword:${kw}` });
+              console.log(`📎 Blueprint auto-attached "${ref.name}" (keyword: ${kw})`);
+              break;
+            }
+          }
+        }
+      }
+    } catch (libErr) {
+      console.error("Library lookup failed:", libErr);
+    }
+
+    const refsHint = attachedRefs.length
+      ? `\n\nIMPORTANT — REFERENCE IMAGES ATTACHED:\nThe user has attached ${attachedRefs.length} reference image(s): ${attachedRefs.map(r => `"${r.name}"`).join(", ")}.\nUse the attached image(s) as the visual + structural starting point for the blueprint. Mirror the layout, proportions, room arrangement, and architectural style. Improve and refine where the user's request specifies, but stay faithful to the reference.`
+      : "";
 
     const systemPrompt = `You are an expert inventor, engineer, woodworker, leatherworker, and product designer turning rough ideas into actionable, buildable blueprints.
 
@@ -36,7 +86,7 @@ Always provide:
 
 Be concrete: real chip names, wire gauges, lumber sizes (2x4 pine), leather weights (5-6oz veg-tan), thread types, fastener specs.
 
-For blueprint_svg, draw with intent: rectangles for parts, dashed lines for hidden edges, arrows + text for dimensions, a small legend, a title block in the bottom-right. No emojis. Pure SVG, no <script>. Keep under 8KB.`;
+For blueprint_svg, draw with intent: rectangles for parts, dashed lines for hidden edges, arrows + text for dimensions, a small legend, a title block in the bottom-right. No emojis. Pure SVG, no <script>. Keep under 8KB.${refsHint}`;
 
     const tools = [{
       type: "function",
@@ -84,6 +134,17 @@ For blueprint_svg, draw with intent: rectangles for parts, dashed lines for hidd
       },
     }];
 
+    // Build user content — include attached reference images for vision context
+    const userContent: any[] = [
+      { type: "text", text: `Title: ${title || "Untitled idea"}\n\nIdea: ${prompt}` },
+    ];
+    for (const ref of attachedRefs) {
+      userContent.push({ type: "image_url", image_url: { url: ref.image_url } });
+    }
+
+    // Use Pro when refs are attached (vision quality matters), Flash otherwise (speed)
+    const model = attachedRefs.length > 0 ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -91,10 +152,10 @@ For blueprint_svg, draw with intent: rectangles for parts, dashed lines for hidd
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Title: ${title || "Untitled idea"}\n\nIdea: ${prompt}` },
+          { role: "user", content: userContent },
         ],
         tools,
         tool_choice: { type: "function", function: { name: "build_blueprint" } },
@@ -127,6 +188,7 @@ For blueprint_svg, draw with intent: rectangles for parts, dashed lines for hidd
       });
     }
     const blueprint = JSON.parse(toolCall.function.arguments);
+    blueprint.references_used = attachedRefs.map(r => r.name);
 
     return new Response(JSON.stringify(blueprint), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
