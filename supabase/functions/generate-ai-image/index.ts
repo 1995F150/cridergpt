@@ -224,7 +224,7 @@ serve(async (req) => {
   );
 
   try {
-    const { prompt, characters: providedCharacters, settings, mode, imageUrl } = await req.json();
+    const { prompt, characters: providedCharacters, settings, mode, imageUrl, referenceIds } = await req.json();
 
     if (!prompt) {
       return new Response(
