@@ -16,7 +16,7 @@ const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
 // CriderGPT model registry — maps named CriderGPT models to backend + personality + temp
 const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number; personality: string; vision: boolean }> = {
   'cridergpt-4.1': {
-    backend: 'google/gemini-3-flash-preview',
+    backend: 'google/gemini-2.5-flash-lite',
     temperature: 0.85,
     vision: false,
     personality: `MODE: CriderGPT 4.1 - Fast Casual Chat
