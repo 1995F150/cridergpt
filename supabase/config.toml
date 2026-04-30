@@ -66,3 +66,5 @@ verify_jwt = false
 [functions.create-worker-job]
 verify_jwt = false
 
+[functions.cridergpt-public-api]
+verify_jwt = false
