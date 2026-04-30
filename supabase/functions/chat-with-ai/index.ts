@@ -1447,6 +1447,7 @@ serve(async (req) => {
         });
 
         if (!response || !response.ok) {
+          if (!response) throw new Error('No response from AI gateway');
           const errorText = await response.text();
           console.error('AI Gateway error:', response.status, errorText);
           if (response.status === 429) {
