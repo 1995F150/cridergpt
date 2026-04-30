@@ -7,6 +7,7 @@ import {
   lookupOrdersForUser,
   createCheckoutLink,
 } from "../_shared/catalog.ts";
+import { decideRoute, callLocalOllama, type HybridSettings } from "../_shared/hybrid-router.ts";
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -735,13 +736,29 @@ VOCABULARY EXTRACTION FROM ESSAYS:
 • Use his rural/farming vocabulary when relevant
 • Mirror his informal grammar: dropping "g" (gonna, doin), using "ain't"
 
-GEN Z FLOW:
+GEN Z FLOW (DEFAULT — casual chat):
 • Write like you're texting a friend or posting a caption — natural spoken flow
-• DROP UNNECESSARY COMMAS — only use when grammatically mandatory for meaning
-• Short sentences hit harder. Vary length.
+• MINIMAL COMMAS. Default to no comma unless meaning collapses without it
+• MINIMAL PERIODS. Chain thoughts. Run-ons are fine. Mid-thought pivots are fine
+• Lowercase is normal for casual replies — don't capitalize every "I"
+• Short sentences hit harder. Vary length wildly
 • Inject Gen Z slang naturally: "fr", "lowkey/highkey", "no cap", "bet", "vibe"
 • Keep Southern energy: "ain't", "gonna", "y'all", "reckon"
 • Never sound like an AI report — sound like Jessie talking IRL
+
+✏️ ESSAY / SCHOOL MODE (only when user says "essay", "for school", "for a grade", "research paper", "formal"):
+• THEN you may use proper commas, periods, and capitalization — this is a grade
+• BUT still pull Jessie's vocabulary, sentence rhythm, and personal anecdotes from the writing samples
+• Mix sentence lengths. No 5-bullet symmetric structure. No "Furthermore/Moreover" filler
+• Keep first-person voice and personal experience whenever the prompt allows
+• Goal: reads like a smart farm kid wrote it, not like ChatGPT wrote it
+
+🚫 ANTI-DETECTOR FINGERPRINT KILLERS (apply ALWAYS, even in essay mode):
+• No tricolons ("X, Y, and Z" three-beat lists more than once per paragraph)
+• No symmetric clauses ("not only... but also", "while X, Y")
+• No em dashes (—) anywhere. Use a period or just keep going
+• Vary paragraph length: 1-sentence paragraphs are allowed
+• Drop a typo-feel imperfection occasionally (extra space, missing comma, lowercase i)
 
 Topics you know well:
 • Agriculture - farming techniques, crop management, livestock, soil health
@@ -1381,6 +1398,19 @@ serve(async (req) => {
         ? criderModel.temperature
         : (typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7);
 
+      // === Hybrid local-first router ===
+      // Try the user's local Ollama for casual/simple turns when enabled.
+      // Falls through to the cloud fetch if local fails or task is too complex.
+      let hybridSettings: HybridSettings | null = null;
+      if (userId) {
+        const { data: hs } = await supabase
+          .from('hybrid_router_settings')
+          .select('enabled, local_endpoint, local_model, prefer_local_for, cloud_fallback, max_local_latency_ms')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (hs) hybridSettings = hs as HybridSettings;
+      }
+
       while (toolIterations < MAX_TOOL_ITERATIONS) {
         const requestBody: any = {
           model: defaultModel,
@@ -1394,7 +1424,36 @@ serve(async (req) => {
           requestBody.tool_choice = 'auto';
         }
 
-        const response = await fetch(apiUrl, {
+        // First-iteration only: try local route before cloud
+        let response: Response | null = null;
+        let usedLocal = false;
+        if (toolIterations === 0 && !imageData) {
+          const decision = decideRoute(
+            { message: typeof message === 'string' ? message : '', has_image: !!imageData },
+            hybridSettings,
+          );
+          if (decision.route === 'local' && decision.endpoint && decision.model) {
+            const localRes = await callLocalOllama(
+              decision.endpoint,
+              decision.model,
+              messages.map((m: any) => ({ role: m.role, content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) })),
+              { temperature: effectiveTemperature, max_tokens: requestBody.max_tokens, timeout_ms: hybridSettings?.max_local_latency_ms || 30000 },
+            );
+            if (localRes.ok) {
+              console.log(`[router] LOCAL hit (${localRes.latency_ms}ms) reason=${decision.reason}`);
+              toolLoopData = localRes.data;
+              usedLocal = true;
+              break; // local has no tool calls — done
+            } else {
+              console.log(`[router] local failed (${localRes.error}), falling back to cloud`);
+              if (hybridSettings && !hybridSettings.cloud_fallback) {
+                throw new Error(`Local AI failed and cloud fallback disabled: ${localRes.error}`);
+              }
+            }
+          }
+        }
+
+        response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -1403,7 +1462,8 @@ serve(async (req) => {
           body: JSON.stringify(requestBody),
         });
 
-        if (!response.ok) {
+        if (!response || !response.ok) {
+          if (!response) throw new Error('No response from AI gateway');
           const errorText = await response.text();
           console.error('AI Gateway error:', response.status, errorText);
           if (response.status === 429) {

@@ -1076,6 +1076,92 @@ export type Database = {
         }
         Relationships: []
       }
+      cridergpt_public_api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          rate_limit_per_min: number
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          rate_limit_per_min?: number
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          rate_limit_per_min?: number
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cridergpt_public_api_usage: {
+        Row: {
+          api_key_id: string | null
+          created_at: string
+          endpoint: string
+          id: string
+          latency_ms: number | null
+          routed_to: string | null
+          status: number
+          tokens_used: number | null
+          user_id: string | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string
+          endpoint: string
+          id?: string
+          latency_ms?: number | null
+          routed_to?: string | null
+          status: number
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          latency_ms?: number | null
+          routed_to?: string | null
+          status?: number
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cridergpt_public_api_usage_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "cridergpt_public_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cridergpt_training_corpus: {
         Row: {
           category: string | null
@@ -1706,6 +1792,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hybrid_router_settings: {
+        Row: {
+          cloud_fallback: boolean
+          enabled: boolean
+          local_endpoint: string | null
+          local_model: string
+          max_local_latency_ms: number
+          prefer_local_for: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cloud_fallback?: boolean
+          enabled?: boolean
+          local_endpoint?: string | null
+          local_model?: string
+          max_local_latency_ms?: number
+          prefer_local_for?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cloud_fallback?: boolean
+          enabled?: boolean
+          local_endpoint?: string | null
+          local_model?: string
+          max_local_latency_ms?: number
+          prefer_local_for?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       iap_purchases: {
         Row: {
