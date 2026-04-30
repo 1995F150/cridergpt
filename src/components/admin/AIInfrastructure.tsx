@@ -15,6 +15,8 @@ import { Brain, Loader2, Power, Shield, Sparkles, Database, FileDown, AlertTrian
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MyReferencesLibrary } from "./MyReferencesLibrary";
+import { HybridRouterPanel } from "./HybridRouterPanel";
+import { PublicApiKeysPanel } from "./PublicApiKeysPanel";
 
 interface InfraSettings {
   id: string;
@@ -704,6 +706,12 @@ export function AIInfrastructure() {
 
       {/* Reference Library */}
       <MyReferencesLibrary />
+
+      {/* Hybrid Local-First Router (Phase 2: ~80% independence) */}
+      <HybridRouterPanel />
+
+      {/* Public API Keys for external clients */}
+      <PublicApiKeysPanel />
 
       {/* Notes */}
       <Card>
