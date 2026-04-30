@@ -1446,7 +1446,7 @@ serve(async (req) => {
           body: JSON.stringify(requestBody),
         });
 
-        if (!response.ok) {
+        if (!response || !response.ok) {
           const errorText = await response.text();
           console.error('AI Gateway error:', response.status, errorText);
           if (response.status === 429) {
