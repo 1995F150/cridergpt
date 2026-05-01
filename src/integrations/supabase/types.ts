@@ -720,6 +720,39 @@ export type Database = {
         }
         Relationships: []
       }
+      chapter_activity: {
+        Row: {
+          active_members_30d: number
+          chapter_id: string
+          chapter_name: string
+          id: string
+          member_count: number
+          rank: number | null
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          active_members_30d?: number
+          chapter_id: string
+          chapter_name: string
+          id?: string
+          member_count?: number
+          rank?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          active_members_30d?: number
+          chapter_id?: string
+          chapter_name?: string
+          id?: string
+          member_count?: number
+          rank?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chapter_awards: {
         Row: {
           award_date: string | null
@@ -3074,9 +3107,12 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           chat_tokens_limit: number | null
           created_at: string | null
           current_plan: string | null
+          display_name: string | null
           file_upload_mb_limit: number | null
           id: string
           max_api_keys: number | null
@@ -3088,6 +3124,7 @@ export type Database = {
           plus_subscription_status: string | null
           plus_tier: string | null
           pro_access: boolean | null
+          public_profile_enabled: boolean
           role: string | null
           special_date: string | null
           status: string | null
@@ -3106,9 +3143,12 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           chat_tokens_limit?: number | null
           created_at?: string | null
           current_plan?: string | null
+          display_name?: string | null
           file_upload_mb_limit?: number | null
           id?: string
           max_api_keys?: number | null
@@ -3120,6 +3160,7 @@ export type Database = {
           plus_subscription_status?: string | null
           plus_tier?: string | null
           pro_access?: boolean | null
+          public_profile_enabled?: boolean
           role?: string | null
           special_date?: string | null
           status?: string | null
@@ -3138,9 +3179,12 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           chat_tokens_limit?: number | null
           created_at?: string | null
           current_plan?: string | null
+          display_name?: string | null
           file_upload_mb_limit?: number | null
           id?: string
           max_api_keys?: number | null
@@ -3152,6 +3196,7 @@ export type Database = {
           plus_subscription_status?: string | null
           plus_tier?: string | null
           pro_access?: boolean | null
+          public_profile_enabled?: boolean
           role?: string | null
           special_date?: string | null
           status?: string | null
@@ -3263,6 +3308,63 @@ export type Database = {
           store_name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          reward_credits: number
+          user_id: string
+          uses_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          reward_credits?: number
+          user_id: string
+          uses_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          reward_credits?: number
+          user_id?: string
+          uses_count?: number
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          code_used: string
+          created_at: string
+          id: string
+          invitee_id: string
+          invitee_subscribed: boolean
+          inviter_id: string
+          reward_granted: boolean
+        }
+        Insert: {
+          code_used: string
+          created_at?: string
+          id?: string
+          invitee_id: string
+          invitee_subscribed?: boolean
+          inviter_id: string
+          reward_granted?: boolean
+        }
+        Update: {
+          code_used?: string
+          created_at?: string
+          id?: string
+          invitee_id?: string
+          invitee_subscribed?: boolean
+          inviter_id?: string
+          reward_granted?: boolean
         }
         Relationships: []
       }
@@ -4749,6 +4851,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          current_streak: number
+          id: string
+          last_check_in: string | null
+          longest_streak: number
+          total_check_ins: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          id?: string
+          last_check_in?: string | null
+          longest_streak?: number
+          total_check_ins?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          id?: string
+          last_check_in?: string | null
+          longest_streak?: number
+          total_check_ins?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
