@@ -31,6 +31,12 @@ import SmartIDStore from "./pages/SmartIDStore";
 import TagLookup from "./pages/TagLookup";
 import FarmBureau from "./pages/FarmBureau";
 import IdeaPlanner from "./pages/IdeaPlanner";
+import Invite from "./pages/Invite";
+import Leaderboard from "./pages/Leaderboard";
+import PublicProfile from "./pages/PublicProfile";
+import BreedIndex from "./pages/BreedIndex";
+import BreedDetail from "./pages/BreedDetail";
+import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +106,7 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <AuthProvider>
+                <ReferralCaptureMount />
                 <MaintenanceGuard>
                   <OfflineBanner />
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
@@ -122,7 +129,14 @@ const App = () => {
                       <Route path="/tag/:tagId" element={<TagLookup />} />
                       <Route path="/livestockID/:tagId" element={<TagLookup />} />
                       <Route path="/idea-planner" element={<IdeaPlanner />} />
-                      
+
+                      {/* Growth: invite, leaderboard, public profile, SEO breeds */}
+                      <Route path="/invite" element={<Invite />} />
+                      <Route path="/leaderboard" element={<Leaderboard />} />
+                      <Route path="/u/:username" element={<PublicProfile />} />
+                      <Route path="/breeds" element={<BreedIndex />} />
+                      <Route path="/breeds/:slug" element={<BreedDetail />} />
+
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />
                       <Route path="/:tab" element={<Index />} />
