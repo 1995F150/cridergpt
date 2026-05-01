@@ -33,7 +33,7 @@ export const CRIDERGPT_MODELS: CriderModelDef[] = [
     name: 'CriderGPT 4.1',
     tagline: 'Fast everyday chat',
     description: 'Quick replies for casual chat, short answers, and homework help. Tuned for natural Jessie voice.',
-    backend: 'google/gemini-2.5-flash-lite',
+    backend: 'openai/gpt-5-nano',
     temperature: 0.85,
     personality: `MODE: CriderGPT 4.1 - Fast Casual Chat
 - Keep responses short and conversational, like texting a friend
@@ -51,7 +51,7 @@ export const CRIDERGPT_MODELS: CriderModelDef[] = [
     name: 'CriderGPT 5.0',
     tagline: 'Balanced all-rounder',
     description: 'Solid writing, reasoning, and chat. Best for essays, planning, and most daily questions.',
-    backend: 'google/gemini-2.5-flash',
+    backend: 'openai/gpt-5-mini',
     temperature: 0.75,
     personality: `MODE: CriderGPT 5.0 - Balanced
 - Match the writing-sample voice tightly; prioritize sounding like Jessie over sounding "AI-correct"
@@ -68,7 +68,7 @@ export const CRIDERGPT_MODELS: CriderModelDef[] = [
     name: 'CriderGPT 5.0 Pro',
     tagline: 'Deep work & long context',
     description: 'Heaviest model. Use for big projects, full essays, and complex multi-step reasoning.',
-    backend: 'google/gemini-2.5-pro',
+    backend: 'openai/gpt-5',
     temperature: 0.7,
     personality: `MODE: CriderGPT 5.0 Pro - Deep Work
 - Take time on the answer. Think through it before writing.
@@ -85,7 +85,7 @@ export const CRIDERGPT_MODELS: CriderModelDef[] = [
     name: 'CriderGPT 5.0 Vision',
     tagline: 'See & analyze images',
     description: 'Look at photos, screenshots, livestock, receipts, FFA work — and respond in Jessie\'s voice.',
-    backend: 'google/gemini-2.5-pro',
+    backend: 'openai/gpt-5',
     temperature: 0.6,
     personality: `MODE: CriderGPT 5.0 Vision - Visual Analysis
 - Describe what's in the image clearly and concisely first
