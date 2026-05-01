@@ -17,7 +17,7 @@ const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
 // CriderGPT model registry — maps named CriderGPT models to backend + personality + temp
 const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number; personality: string; vision: boolean }> = {
   'cridergpt-4.1': {
-    backend: 'google/gemini-2.5-flash-lite',
+    backend: 'openai/gpt-5-nano',
     temperature: 0.85,
     vision: false,
     personality: `MODE: CriderGPT 4.1 - Fast Casual Chat
@@ -26,7 +26,7 @@ const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number;
 - Default to 1-3 sentences unless deeper detail is requested`,
   },
   'cridergpt-5.0': {
-    backend: 'google/gemini-2.5-flash',
+    backend: 'openai/gpt-5-mini',
     temperature: 0.75,
     vision: false,
     personality: `MODE: CriderGPT 5.0 - Balanced
@@ -35,7 +35,7 @@ const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number;
 - Don't over-structure; humans don't write in perfect bullet lists`,
   },
   'cridergpt-5.0-pro': {
-    backend: 'google/gemini-2.5-pro',
+    backend: 'openai/gpt-5',
     temperature: 0.7,
     vision: false,
     personality: `MODE: CriderGPT 5.0 Pro - Deep Work
@@ -44,7 +44,7 @@ const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number;
 - Handle multi-part tasks in one pass`,
   },
   'cridergpt-5.0-vision': {
-    backend: 'google/gemini-2.5-pro',
+    backend: 'openai/gpt-5',
     temperature: 0.6,
     vision: true,
     personality: `MODE: CriderGPT 5.0 Vision - Visual Analysis
@@ -1382,7 +1382,7 @@ serve(async (req) => {
       const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
       const defaultModel = resolvedBackend || (useOpenAI
         ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
-        : (imageData ? 'google/gemini-2.5-pro' : 'google/gemini-3-flash-preview'));
+        : (imageData ? 'openai/gpt-5' : 'openai/gpt-5-mini'));
 
       if (!apiKey) {
         throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
