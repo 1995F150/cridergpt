@@ -1,0 +1,17 @@
+INSERT INTO public.writing_samples (title, content, category) VALUES (
+'Argumentative: Is AI Positive or Negative for Society?',
+$ESSAY$Argumentative
+
+Is Artificial Intelligence (AI) a positive or negative technological development for society?
+
+Some tools in life can help you like Artificial Intelligence. AI can be a positive technological development for society. AI can help with Automation to get things done faster and with less mistakes, Also AI can Reduce human errors. Others claim AI has a negative technological development for society.
+
+"AI can help with Automation" to get things done faster and with less mistakes. In things like coding a human can make mistakes and can not do it faster but AI can do it faster and do tasks that are needed to be done. When websites are being made humans has to make the front end and backend there is a lot of work doing that so AI can help with that now, AI can code on frontend and backend to set things up. Instead of a human working on the frontend and backend AI can do it while the human is busy with something else AI can do the human tasks by itself. the AI can work on things from buttons and web pages and tools that is added to the website. AI can set up function codes for saving images on the backend that was uploaded on the Frontend by a user so the images saves when uploaded.
+
+"AI can Reduce human errors" when writing code or doing tasks it needs to do tasks its told to do. When human errors are reduced it saves a lot of time. Error codes on website can cause issues that will cause things to not work. It reduces human errors when working and it doesn't mess up on a job like a human would do, like a robot doing tasks and running a store but a human would make mistakes it is unlikely for AI to make mistakes when doing tasks. Even other claims AI is a negative effect on technological development for society but it helps with making no mistakes like a human would make like errors codes.
+
+Others claim AI has a negative technological development for society they say "replaces human labor" people loses their jobs. "AI can be misused" in bad ways if it goes in the wrong hands. "if no representative data the AI results can be unfair and bias" they say if the AI is only trained on one race of data the AI can be unfair to other races. "recommendations Algorithms for steaming services the types of shows you see are influenced by the shows recommended for you by AI agent" they say the AI sees what you watch and tells you what you would like because you watched that show they feel like they are getting spied on what they are watching. "AI systems influence human decisions from political opinions to social voices" they say AI influence human decisions from political to social voices like voting and finance.
+
+In conclusion AI can help with Automation to get things done faster and with less mistakes, AI can Reduce human errors. Others claim AI has a negative technological development for society, they say AI is bad but I disagree AI can help with things in good ways. AI is positive technological development from Automation to Reduce human mistakes and faster thinking and results. AI can help run businesses because of Automations.$ESSAY$,
+'essay'
+);
