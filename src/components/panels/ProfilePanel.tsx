@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ProfileSheet } from "@/components/profile/ProfileSheet";
 import { ManualPlanFix } from "@/components/ManualPlanFix";
 import { FeatureToggles } from "@/components/FeatureToggles";
+import { NotificationsPanel } from "@/components/growth/NotificationsPanel";
+import { PassphraseManager } from "@/components/admin/PassphraseManager";
 
 export function ProfilePanel() {
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -17,7 +19,13 @@ export function ProfilePanel() {
       
       {/* Feature Toggles */}
       <FeatureToggles />
-      
+
+      {/* Notifications & weekly digest */}
+      <NotificationsPanel />
+
+      {/* Passphrases */}
+      <PassphraseManager />
+
       {/* Manual Plan Fix Component */}
       <ManualPlanFix />
       
