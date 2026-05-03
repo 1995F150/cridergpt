@@ -794,6 +794,33 @@ export type Database = {
           },
         ]
       }
+      chapter_officers: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          id: string
+          office: string
+          term_year: number
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          id?: string
+          office: string
+          term_year: number
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          office?: string
+          term_year?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       chapter_requests: {
         Row: {
           admin_notes: string | null
@@ -1327,6 +1354,30 @@ export type Database = {
           messages_sent?: number | null
           session_id?: string
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      digest_preferences: {
+        Row: {
+          day_of_week: number
+          last_sent_at: string | null
+          updated_at: string
+          user_id: string
+          weekly_enabled: boolean
+        }
+        Insert: {
+          day_of_week?: number
+          last_sent_at?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_enabled?: boolean
+        }
+        Update: {
+          day_of_week?: number
+          last_sent_at?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_enabled?: boolean
         }
         Relationships: []
       }
@@ -2782,6 +2833,45 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_passphrases: {
+        Row: {
+          action_type: string
+          created_at: string
+          enabled: boolean
+          id: string
+          label: string
+          last_used_at: string | null
+          passphrase_hash: string
+          payload: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label: string
+          last_used_at?: string | null
+          passphrase_hash: string
+          payload?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          passphrase_hash?: string
+          payload?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pending_tasks: {
         Row: {
           created_at: string | null
@@ -3269,6 +3359,39 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          device_label: string | null
+          enabled: boolean
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          device_label?: string | null
+          enabled?: boolean
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          device_label?: string | null
+          enabled?: boolean
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       receipts: {
         Row: {
           amount: number
@@ -3516,6 +3639,45 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_guides: {
+        Row: {
+          category: string
+          content: string
+          generated_at: string
+          id: string
+          meta_description: string | null
+          published: boolean
+          slug: string
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          category: string
+          content: string
+          generated_at?: string
+          id?: string
+          meta_description?: string | null
+          published?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          category?: string
+          content?: string
+          generated_at?: string
+          id?: string
+          meta_description?: string | null
+          published?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       server_commands: {
         Row: {
           command: string
@@ -3577,6 +3739,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      share_unlocks: {
+        Row: {
+          feature_key: string
+          id: string
+          share_platform: string | null
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          feature_key: string
+          id?: string
+          share_platform?: string | null
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          feature_key?: string
+          id?: string
+          share_platform?: string | null
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       snapchat_lens_analytics: {
         Row: {
