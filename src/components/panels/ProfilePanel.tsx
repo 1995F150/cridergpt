@@ -19,7 +19,13 @@ export function ProfilePanel() {
       
       {/* Feature Toggles */}
       <FeatureToggles />
-      
+
+      {/* Notifications & weekly digest */}
+      <NotificationsPanel />
+
+      {/* Passphrases */}
+      <PassphraseManager />
+
       {/* Manual Plan Fix Component */}
       <ManualPlanFix />
       
