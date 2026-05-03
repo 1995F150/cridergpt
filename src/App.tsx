@@ -36,6 +36,8 @@ import Leaderboard from "./pages/Leaderboard";
 import PublicProfile from "./pages/PublicProfile";
 import BreedIndex from "./pages/BreedIndex";
 import BreedDetail from "./pages/BreedDetail";
+import Guides from "./pages/Guides";
+import GuideDetail from "./pages/GuideDetail";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
@@ -136,6 +138,8 @@ const App = () => {
                       <Route path="/u/:username" element={<PublicProfile />} />
                       <Route path="/breeds" element={<BreedIndex />} />
                       <Route path="/breeds/:slug" element={<BreedDetail />} />
+                      <Route path="/guides" element={<Guides />} />
+                      <Route path="/guides/:slug" element={<GuideDetail />} />
 
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />
