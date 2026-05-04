@@ -4,6 +4,7 @@ import { ManualPlanFix } from "@/components/ManualPlanFix";
 import { FeatureToggles } from "@/components/FeatureToggles";
 import { NotificationsPanel } from "@/components/growth/NotificationsPanel";
 import { PassphraseManager } from "@/components/admin/PassphraseManager";
+import { PassphraseTestFlow } from "@/components/admin/PassphraseTestFlow";
 
 export function ProfilePanel() {
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -25,6 +26,9 @@ export function ProfilePanel() {
 
       {/* Passphrases */}
       <PassphraseManager />
+
+      {/* Passphrase test flow */}
+      <PassphraseTestFlow />
 
       {/* Manual Plan Fix Component */}
       <ManualPlanFix />
