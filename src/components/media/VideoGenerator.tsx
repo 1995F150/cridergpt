@@ -12,9 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMediaSystem, GenerationSettings } from '@/hooks/useMediaSystem';
 import { useTikTok } from '@/hooks/useTikTok';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Video, Play, Download, Loader2, Film, 
-  Volume2, Timer, Sparkles, AlertCircle, Send
+  Volume2, Timer, Sparkles, AlertCircle, Send, Wand2
 } from 'lucide-react';
 import { TikTokIcon } from '@/components/icons/TikTokIcon';
 
@@ -102,6 +103,73 @@ export function VideoGenerator() {
       }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const base64ToBlob = (b64: string, mime: string) => {
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  };
+
+  const callVideoBackend = async (payload: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke('generate-video', { body: payload });
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(data.error);
+    if (!data?.video_base64) throw new Error('No video returned');
+    return base64ToBlob(data.video_base64, data.mime || 'video/mp4');
+  };
+
+  const animateFrameWithAI = async () => {
+    if (!generatedImage) {
+      toast({ title: "Generate a frame first", variant: "destructive" });
+      return;
+    }
+    try {
+      setIsGenerating(true);
+      toast({ title: "Animating", description: "Running on your home server (SVD)..." });
+      const dataUrl = generatedImage.startsWith('data:')
+        ? generatedImage
+        : `data:image/png;base64,${generatedImage}`;
+      const blob = await callVideoBackend({
+        mode: 'image-to-video',
+        image: dataUrl,
+        fps: 7,
+        motion: slowMotion ? 60 : 127,
+        frames: Math.min(25, Math.max(14, duration[0] * 7)),
+      });
+      lastVideoBlobRef.current = blob;
+      setVideoUrl(URL.createObjectURL(blob));
+      toast({ title: "Done", description: "AI video ready" });
+    } catch (e: any) {
+      toast({ title: "Video failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateTextToVideo = async () => {
+    if (!prompt.trim()) {
+      toast({ title: "Enter a prompt", variant: "destructive" });
+      return;
+    }
+    try {
+      setIsGenerating(true);
+      toast({ title: "Generating", description: "Text-to-video on your backend..." });
+      const blob = await callVideoBackend({
+        mode: 'text-to-video',
+        prompt,
+        frames: Math.min(24, Math.max(8, duration[0] * 8)),
+        fps: 8,
+      });
+      lastVideoBlobRef.current = blob;
+      setVideoUrl(URL.createObjectURL(blob));
+      toast({ title: "Done", description: "Video generated" });
+    } catch (e: any) {
+      toast({ title: "Video failed", description: e.message, variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
