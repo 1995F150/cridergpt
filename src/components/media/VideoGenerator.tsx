@@ -227,10 +227,11 @@ export function VideoGenerator() {
         <CardContent className="p-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
           <div>
-            <p className="font-medium text-amber-600 dark:text-amber-400">Video Generation</p>
+            <p className="font-medium text-amber-600 dark:text-amber-400">Self-Hosted AI Video</p>
             <p className="text-sm text-muted-foreground">
-              Generate a frame, export as video, then post directly to TikTok.
-              Full AI motion video is coming soon.
+              Generation runs on your own backend (Stable Video Diffusion + AnimateDiff).
+              No Sora, no third-party. Make sure <code>video_server.py</code> is running and
+              <code>HOME_SERVER_VIDEO_URL</code> is set.
             </p>
           </div>
         </CardContent>
@@ -314,9 +315,15 @@ export function VideoGenerator() {
               </div>
             </div>
 
-            <Button onClick={handleGenerateFrame} disabled={isGenerating || !prompt.trim()} className="w-full" size="lg">
-              {isGenerating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating...</> : <><Sparkles className="h-4 w-4 mr-2" />Generate Frame</>}
-            </Button>
+            <div className="grid grid-cols-1 gap-2">
+              <Button onClick={handleGenerateFrame} disabled={isGenerating || !prompt.trim()} className="w-full" size="lg">
+                {isGenerating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Working...</> : <><Sparkles className="h-4 w-4 mr-2" />Generate Frame</>}
+              </Button>
+              <Button onClick={generateTextToVideo} disabled={isGenerating || !prompt.trim()} variant="secondary" size="lg">
+                {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                Text → Video (AnimateDiff)
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -335,9 +342,15 @@ export function VideoGenerator() {
               {videoUrl && (
                 <video ref={videoRef} src={videoUrl} controls loop={loop} className="w-full rounded-lg border" />
               )}
-              <Button onClick={exportAsVideo} variant="outline" className="w-full" disabled={isGenerating || !generatedImage}>
-                <Download className="h-4 w-4 mr-2" />Export as Video ({duration[0]}s)
-              </Button>
+              <div className="grid grid-cols-1 gap-2">
+                <Button onClick={animateFrameWithAI} className="w-full" disabled={isGenerating || !generatedImage}>
+                  {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                  Animate Frame (SVD)
+                </Button>
+                <Button onClick={exportAsVideo} variant="outline" className="w-full" disabled={isGenerating || !generatedImage}>
+                  <Download className="h-4 w-4 mr-2" />Quick Export ({duration[0]}s WebM)
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
