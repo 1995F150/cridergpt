@@ -12,9 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMediaSystem, GenerationSettings } from '@/hooks/useMediaSystem';
 import { useTikTok } from '@/hooks/useTikTok';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Video, Play, Download, Loader2, Film, 
-  Volume2, Timer, Sparkles, AlertCircle, Send
+  Volume2, Timer, Sparkles, AlertCircle, Send, Wand2
 } from 'lucide-react';
 import { TikTokIcon } from '@/components/icons/TikTokIcon';
 
@@ -107,6 +108,73 @@ export function VideoGenerator() {
     }
   };
 
+  const base64ToBlob = (b64: string, mime: string) => {
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  };
+
+  const callVideoBackend = async (payload: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke('generate-video', { body: payload });
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(data.error);
+    if (!data?.video_base64) throw new Error('No video returned');
+    return base64ToBlob(data.video_base64, data.mime || 'video/mp4');
+  };
+
+  const animateFrameWithAI = async () => {
+    if (!generatedImage) {
+      toast({ title: "Generate a frame first", variant: "destructive" });
+      return;
+    }
+    try {
+      setIsGenerating(true);
+      toast({ title: "Animating", description: "Running on your home server (SVD)..." });
+      const dataUrl = generatedImage.startsWith('data:')
+        ? generatedImage
+        : `data:image/png;base64,${generatedImage}`;
+      const blob = await callVideoBackend({
+        mode: 'image-to-video',
+        image: dataUrl,
+        fps: 7,
+        motion: slowMotion ? 60 : 127,
+        frames: Math.min(25, Math.max(14, duration[0] * 7)),
+      });
+      lastVideoBlobRef.current = blob;
+      setVideoUrl(URL.createObjectURL(blob));
+      toast({ title: "Done", description: "AI video ready" });
+    } catch (e: any) {
+      toast({ title: "Video failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateTextToVideo = async () => {
+    if (!prompt.trim()) {
+      toast({ title: "Enter a prompt", variant: "destructive" });
+      return;
+    }
+    try {
+      setIsGenerating(true);
+      toast({ title: "Generating", description: "Text-to-video on your backend..." });
+      const blob = await callVideoBackend({
+        mode: 'text-to-video',
+        prompt,
+        frames: Math.min(24, Math.max(8, duration[0] * 8)),
+        fps: 8,
+      });
+      lastVideoBlobRef.current = blob;
+      setVideoUrl(URL.createObjectURL(blob));
+      toast({ title: "Done", description: "Video generated" });
+    } catch (e: any) {
+      toast({ title: "Video failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const exportAsVideo = async () => {
     const canvas = canvasRef.current;
     if (!canvas) {
@@ -159,10 +227,11 @@ export function VideoGenerator() {
         <CardContent className="p-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
           <div>
-            <p className="font-medium text-amber-600 dark:text-amber-400">Video Generation</p>
+            <p className="font-medium text-amber-600 dark:text-amber-400">Self-Hosted AI Video</p>
             <p className="text-sm text-muted-foreground">
-              Generate a frame, export as video, then post directly to TikTok.
-              Full AI motion video is coming soon.
+              Generation runs on your own backend (Stable Video Diffusion + AnimateDiff).
+              No Sora, no third-party. Make sure <code>video_server.py</code> is running and
+              <code>HOME_SERVER_VIDEO_URL</code> is set.
             </p>
           </div>
         </CardContent>
@@ -246,9 +315,15 @@ export function VideoGenerator() {
               </div>
             </div>
 
-            <Button onClick={handleGenerateFrame} disabled={isGenerating || !prompt.trim()} className="w-full" size="lg">
-              {isGenerating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating...</> : <><Sparkles className="h-4 w-4 mr-2" />Generate Frame</>}
-            </Button>
+            <div className="grid grid-cols-1 gap-2">
+              <Button onClick={handleGenerateFrame} disabled={isGenerating || !prompt.trim()} className="w-full" size="lg">
+                {isGenerating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Working...</> : <><Sparkles className="h-4 w-4 mr-2" />Generate Frame</>}
+              </Button>
+              <Button onClick={generateTextToVideo} disabled={isGenerating || !prompt.trim()} variant="secondary" size="lg">
+                {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                Text → Video (AnimateDiff)
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -267,9 +342,15 @@ export function VideoGenerator() {
               {videoUrl && (
                 <video ref={videoRef} src={videoUrl} controls loop={loop} className="w-full rounded-lg border" />
               )}
-              <Button onClick={exportAsVideo} variant="outline" className="w-full" disabled={isGenerating || !generatedImage}>
-                <Download className="h-4 w-4 mr-2" />Export as Video ({duration[0]}s)
-              </Button>
+              <div className="grid grid-cols-1 gap-2">
+                <Button onClick={animateFrameWithAI} className="w-full" disabled={isGenerating || !generatedImage}>
+                  {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                  Animate Frame (SVD)
+                </Button>
+                <Button onClick={exportAsVideo} variant="outline" className="w-full" disabled={isGenerating || !generatedImage}>
+                  <Download className="h-4 w-4 mr-2" />Quick Export ({duration[0]}s WebM)
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
