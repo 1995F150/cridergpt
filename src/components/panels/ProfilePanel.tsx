@@ -24,6 +24,9 @@ export function ProfilePanel() {
 
       <FreeWillStatus />
 
+      {/* Feature Toggles */}
+      <FeatureToggles />
+
       {/* Notifications & weekly digest */}
       <NotificationsPanel />
 
