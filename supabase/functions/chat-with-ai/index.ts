@@ -1388,11 +1388,15 @@ serve(async (req) => {
         throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
       }
 
-      // Tool-calling loop (max 4 iterations to prevent infinite loops)
+      // Tool-calling loop — limit per plan ("free will" intensity)
       const origin = req.headers.get('origin') || 'https://cridergpt.lovable.app';
       let toolLoopData: any = null;
       let toolIterations = 0;
-      const MAX_TOOL_ITERATIONS = 4;
+      // Free will is ALWAYS on; plan caps how many autonomous tool/reasoning steps per turn.
+      const FREE_WILL_CAPS: Record<string, number> = { free: 2, plus: 5, pro: 10, lifetime: 25 };
+      const planKey = (userPlan || 'free').toLowerCase();
+      const MAX_TOOL_ITERATIONS = FREE_WILL_CAPS[planKey] ?? 4;
+      console.log(`[free-will] plan=${planKey} maxSteps=${MAX_TOOL_ITERATIONS}`);
 
       const effectiveTemperature = typeof criderModel?.temperature === 'number'
         ? criderModel.temperature
