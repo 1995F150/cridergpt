@@ -42,20 +42,22 @@ export function CalendarView() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const calendarEvents = useMemo<BigCalendarEvent[]>(() => {
+    // Parse YYYY-MM-DD as LOCAL date (not UTC) so May 22 doesn't render as May 21.
+    const parseLocalDate = (dateStr: string, timeStr?: string | null) => {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dt = new Date(y, (m || 1) - 1, d || 1);
+      if (timeStr) {
+        const [hh, mm] = timeStr.split(':').map(Number);
+        dt.setHours(hh || 0, mm || 0, 0, 0);
+      }
+      return dt;
+    };
+
     return events.map(event => {
-      const startDate = new Date(event.event_date);
-      if (event.event_time) {
-        const [hours, minutes] = event.event_time.split(':');
-        startDate.setHours(parseInt(hours), parseInt(minutes));
-      }
-      
-      const endDate = new Date(event.event_date);
-      if (event.end_time) {
-        const [hours, minutes] = event.end_time.split(':');
-        endDate.setHours(parseInt(hours), parseInt(minutes));
-      } else {
-        endDate.setHours(startDate.getHours() + 1);
-      }
+      const startDate = parseLocalDate(event.event_date, event.event_time);
+      const endDate = event.end_time
+        ? parseLocalDate(event.event_date, event.end_time)
+        : new Date(startDate.getTime() + 60 * 60 * 1000);
 
       return {
         id: event.id,
