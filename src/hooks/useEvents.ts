@@ -177,7 +177,10 @@ export function useEvents(chapterId?: string | null) {
       events.forEach(event => {
         if (!event.event_time) return;
         
-        const eventDateTime = new Date(`${event.event_date}T${event.event_time}`);
+        // Parse as LOCAL time (no Z suffix) so notifications fire in user's TZ
+        const [yy, mo, dd] = event.event_date.split('-').map(Number);
+        const [hh, mi] = event.event_time.split(':').map(Number);
+        const eventDateTime = new Date(yy, (mo || 1) - 1, dd || 1, hh || 0, mi || 0);
         
         if (eventDateTime >= now && eventDateTime <= soon) {
           const notificationKey = `event-notified-${event.id}`;
