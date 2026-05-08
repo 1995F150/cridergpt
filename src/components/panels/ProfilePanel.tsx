@@ -7,6 +7,7 @@ import { PassphraseManager } from "@/components/admin/PassphraseManager";
 import { PassphraseTestFlow } from "@/components/admin/PassphraseTestFlow";
 import { GraduationCountdown } from "@/components/growth/GraduationCountdown";
 import { FreeWillStatus } from "@/components/admin/FreeWillStatus";
+import { SmsSettingsPanel } from "@/components/settings/SmsSettingsPanel";
 
 export function ProfilePanel() {
   const [sheetOpen, setSheetOpen] = useState(true);
