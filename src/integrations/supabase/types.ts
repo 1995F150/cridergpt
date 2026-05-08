@@ -3764,6 +3764,69 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_log: {
+        Row: {
+          body: string
+          created_at: string
+          error: string | null
+          id: string
+          status: string
+          to_number: string
+          twilio_sid: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          status?: string
+          to_number: string
+          twilio_sid?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          status?: string
+          to_number?: string
+          twilio_sid?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sms_settings: {
+        Row: {
+          created_at: string
+          notifications_enabled: boolean
+          phone_number: string
+          twilio_from_number: string | null
+          updated_at: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          notifications_enabled?: boolean
+          phone_number: string
+          twilio_from_number?: string | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          notifications_enabled?: boolean
+          phone_number?: string
+          twilio_from_number?: string | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       snapchat_lens_analytics: {
         Row: {
           created_at: string
