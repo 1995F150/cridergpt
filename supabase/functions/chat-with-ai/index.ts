@@ -1466,6 +1466,17 @@ serve(async (req) => {
           body: JSON.stringify(requestBody),
         });
 
+        // Fallback chain: home server (already tried above) -> OpenAI -> Lovable Gateway
+        if ((!response || !response.ok) && useOpenAI && LOVABLE_API_KEY) {
+          console.warn(`[fallback] OpenAI failed (${response?.status}), retrying via Lovable Gateway`);
+          const fallbackBody = { ...requestBody, model: requestBody.model?.startsWith('openai/') ? requestBody.model : `openai/${requestBody.model || 'gpt-5-mini'}` };
+          response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(fallbackBody),
+          });
+        }
+
         if (!response || !response.ok) {
           if (!response) throw new Error('No response from AI gateway');
           const errorText = await response.text();
