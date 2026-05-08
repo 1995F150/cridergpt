@@ -25,6 +25,9 @@ export function ProfilePanel() {
 
       <FreeWillStatus />
 
+      <SmsSettingsPanel />
+
+
       {/* Feature Toggles */}
       <FeatureToggles />
 
