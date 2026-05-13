@@ -126,14 +126,20 @@ export function useAILearning() {
         }
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Edge function call failed');
 
       // Check if we hit the rate limit
-      if (data.error && data.usage) {
+      if (data?.error && data?.usage) {
         throw new Error(`${data.error} (Used: ${data.usage.used}/${data.usage.limit})`);
       }
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
-      const response = data.response;
+      const response = data?.response;
+      if (!response) {
+        throw new Error('AI returned an empty response. Try again or switch models.');
+      }
       
       // Store this new interaction for future learning
       const contextTags = [

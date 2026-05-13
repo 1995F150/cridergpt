@@ -532,16 +532,29 @@ Make it detailed and actionable.`;
 
         } catch (error: any) {
           console.error("AI response error:", error);
-          if (error.message?.includes("(Used:")) {
+          const raw = error?.message || error?.error?.message || String(error || "");
+          if (raw.includes("(Used:")) {
             toast({
               title: "Token Limit Reached",
               description: "You've used all your tokens for this month.",
               variant: "destructive",
             });
+          } else if (/429|rate.?limit/i.test(raw)) {
+            toast({
+              title: "Rate limited",
+              description: "Too many requests — wait a few seconds and try again.",
+              variant: "destructive",
+            });
+          } else if (/402|credit|payment/i.test(raw)) {
+            toast({
+              title: "AI credits exhausted",
+              description: "Add credits in Workspace → Usage to keep chatting.",
+              variant: "destructive",
+            });
           } else {
             toast({
-              title: "Error",
-              description: "Failed to get AI response. Please try again.",
+              title: "AI error",
+              description: raw ? raw.slice(0, 220) : "Failed to get AI response. Please try again.",
               variant: "destructive",
             });
           }
