@@ -59,8 +59,12 @@ if exist "%ROOT%\cridergpt\.git" (
 REM ---------- 3. npm install ----------
 echo.
 echo [3/9] Installing npm dependencies (this can take a few minutes)...
-call npm install
-if errorlevel 1 ( echo npm install FAILED. & pause & exit /b 1 )
+call npm install --legacy-peer-deps
+if errorlevel 1 (
+  echo   Retrying with --force ...
+  call npm install --force
+  if errorlevel 1 ( echo npm install FAILED. & pause & exit /b 1 )
+)
 
 REM ---------- 4. Build web app ----------
 echo.
