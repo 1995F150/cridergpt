@@ -85,7 +85,7 @@ REM ---------- 6. Electron desktop (optional) ----------
 echo.
 choice /C YN /M "[6/9] Package CriderGPT as a Windows desktop app (Electron)"
 if errorlevel 2 goto SKIP_ELECTRON
-  call npm install --save-dev electron @electron/packager
+  call npm install --legacy-peer-deps --save-dev electron @electron/packager
   call npx @electron/packager . "CriderGPT" --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore="^/src" --ignore="^/public" --ignore="^/electron-release"
   echo   Desktop build  -^>  %CD%\electron-release\CriderGPT-win32-x64\CriderGPT.exe
 :SKIP_ELECTRON
