@@ -18,6 +18,32 @@ const corsHeaders = {
 
 const VM_URL = 'https://vm.cridergpt.com';
 const AGENT_URL = Deno.env.get('HOME_SERVER_AGENT_URL') ?? '';
+const AGENT_TOKEN = Deno.env.get('HOME_SERVER_AGENT_TOKEN') ?? '';
+
+function agentHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (AGENT_TOKEN) h['Authorization'] = `Bearer ${AGENT_TOKEN}`;
+  return h;
+}
+
+async function agentCall(path: string, body: unknown, timeoutMs = 30000) {
+  if (!AGENT_URL) return { status: 0, ok: false, error: 'HOME_SERVER_AGENT_URL not set', configured: false };
+  const t0 = Date.now();
+  try {
+    const res = await fetch(AGENT_URL.replace(/\/$/, '') + path, {
+      method: 'POST',
+      headers: agentHeaders(),
+      body: JSON.stringify(body ?? {}),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    const text = await res.text();
+    let parsed: unknown = text;
+    try { parsed = JSON.parse(text); } catch { /* keep text */ }
+    return { status: res.status, ok: res.ok, latency_ms: Date.now() - t0, data: parsed };
+  } catch (e) {
+    return { status: 0, ok: false, error: e instanceof Error ? e.message : String(e), latency_ms: Date.now() - t0 };
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -116,58 +142,23 @@ Deno.serve(async (req) => {
       if (!AGENT_URL) {
         return json({ command: ytCmd, error: 'HOME_SERVER_AGENT_URL not set — copy this command and run it on the server.' }, 200);
       }
-      const t0 = Date.now();
-      try {
-        const res = await fetch(AGENT_URL.replace(/\/$/, '') + '/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command: ytCmd }),
-          signal: AbortSignal.timeout(600000),
-        });
-        const text = await res.text();
-        return json({ status: res.status, ok: res.ok, latency_ms: Date.now() - t0, command: ytCmd, output: text });
-      } catch (e) {
-        return json({ error: e instanceof Error ? e.message : String(e), command: ytCmd, latency_ms: Date.now() - t0 }, 502);
-      }
+      const r = await agentCall('/run', { command: ytCmd, timeout: 600 }, 600000);
+      return json({ command: ytCmd, ...r });
     }
 
     if (action === 'command') {
       const command = String(body.command ?? '').trim();
       if (!command) return json({ error: 'command is required' }, 400);
-      if (!AGENT_URL) {
-        return json({
-          error:
-            'Agent not connected. Install the agent on the home server (Setup tab) and add HOME_SERVER_AGENT_URL as a Supabase secret. Once connected, this command will run on the server.',
-          command,
-          agent_configured: false,
-        });
-      }
-
-      const t0 = Date.now();
-      try {
-        const res = await fetch(AGENT_URL.replace(/\/$/, '') + '/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command }),
-          signal: AbortSignal.timeout(30000),
-        });
-        const text = await res.text();
-        return json({
-          status: res.status,
-          ok: res.ok,
-          latency_ms: Date.now() - t0,
-          output: text,
-        });
-      } catch (e) {
-        return json(
-          {
-            error: e instanceof Error ? e.message : String(e),
-            latency_ms: Date.now() - t0,
-          },
-          502,
-        );
-      }
+      const r = await agentCall('/run', { command, timeout: body.timeout ?? 60 });
+      return json(r);
     }
+
+    // ----- PC remote-control actions (Windows/Mac/Linux agent) -----
+    if (action === 'pc-screenshot') return json(await agentCall('/screenshot', {}, 15000));
+    if (action === 'pc-click')      return json(await agentCall('/click',  { x: body.x, y: body.y }, 10000));
+    if (action === 'pc-type')       return json(await agentCall('/type',   { text: body.text }, 15000));
+    if (action === 'pc-hotkey')     return json(await agentCall('/hotkey', { keys: body.keys }, 10000));
+    if (action === 'pc-sysinfo')    return json(await agentCall('/sysinfo', {}, 10000));
 
     return json({ error: `Unknown action: ${action}` }, 400);
   } catch (e) {
