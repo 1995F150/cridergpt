@@ -51,7 +51,7 @@ fi
 
 # 3. npm install
 say "[3/8] npm install..."
-npm install
+npm install --legacy-peer-deps || npm install --force
 
 # 4. Build
 say "[4/8] Production build..."
