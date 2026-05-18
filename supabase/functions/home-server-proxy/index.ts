@@ -18,6 +18,32 @@ const corsHeaders = {
 
 const VM_URL = 'https://vm.cridergpt.com';
 const AGENT_URL = Deno.env.get('HOME_SERVER_AGENT_URL') ?? '';
+const AGENT_TOKEN = Deno.env.get('HOME_SERVER_AGENT_TOKEN') ?? '';
+
+function agentHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (AGENT_TOKEN) h['Authorization'] = `Bearer ${AGENT_TOKEN}`;
+  return h;
+}
+
+async function agentCall(path: string, body: unknown, timeoutMs = 30000) {
+  if (!AGENT_URL) return { status: 0, ok: false, error: 'HOME_SERVER_AGENT_URL not set', configured: false };
+  const t0 = Date.now();
+  try {
+    const res = await fetch(AGENT_URL.replace(/\/$/, '') + path, {
+      method: 'POST',
+      headers: agentHeaders(),
+      body: JSON.stringify(body ?? {}),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    const text = await res.text();
+    let parsed: unknown = text;
+    try { parsed = JSON.parse(text); } catch { /* keep text */ }
+    return { status: res.status, ok: res.ok, latency_ms: Date.now() - t0, data: parsed };
+  } catch (e) {
+    return { status: 0, ok: false, error: e instanceof Error ? e.message : String(e), latency_ms: Date.now() - t0 };
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
