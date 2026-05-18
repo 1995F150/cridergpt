@@ -239,6 +239,7 @@ export function AdminPanel() {
         <TabsContent value="home-server"><HomeServerPanel /></TabsContent>
         <TabsContent value="launch-planner"><LaunchPlanner /></TabsContent>
         <TabsContent value="ai-infra"><AIInfrastructure /></TabsContent>
+        <TabsContent value="pc-remote"><PCRemotePanel /></TabsContent>
       </Tabs>
     </div>
   );
