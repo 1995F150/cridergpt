@@ -186,6 +186,9 @@ export function AdminPanel() {
           <TabsTrigger value="ai-infra" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Brain className="h-4 w-4" /> AI Infrastructure
           </TabsTrigger>
+          <TabsTrigger value="pc-remote" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Cpu className="h-4 w-4" /> PC Remote
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4" /> Settings
           </TabsTrigger>
