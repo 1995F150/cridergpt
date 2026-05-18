@@ -34,6 +34,7 @@ import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator';
 import { BarcodeGenerator } from '@/components/admin/BarcodeGenerator';
 import { PointOfSale } from '@/components/admin/PointOfSale';
 import { AIInfrastructure } from '@/components/admin/AIInfrastructure';
+import { PCRemotePanel } from '@/components/admin/PCRemotePanel';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
