@@ -59,8 +59,12 @@ if exist "%ROOT%\cridergpt\.git" (
 REM ---------- 3. npm install ----------
 echo.
 echo [3/9] Installing npm dependencies (this can take a few minutes)...
-call npm install
-if errorlevel 1 ( echo npm install FAILED. & pause & exit /b 1 )
+call npm install --legacy-peer-deps
+if errorlevel 1 (
+  echo   Retrying with --force ...
+  call npm install --force
+  if errorlevel 1 ( echo npm install FAILED. & pause & exit /b 1 )
+)
 
 REM ---------- 4. Build web app ----------
 echo.
@@ -72,7 +76,7 @@ REM ---------- 5. Capacitor / Android (optional) ----------
 echo.
 choice /C YN /M "[5/9] Sync Android (Capacitor) project now"
 if errorlevel 2 goto SKIP_ANDROID
-  call npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app @codetrix-studio/capacitor-google-auth
+  call npm install --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app @codetrix-studio/capacitor-google-auth
   if not exist android (call npx cap add android)
   call npx cap sync android
 :SKIP_ANDROID
@@ -81,7 +85,7 @@ REM ---------- 6. Electron desktop (optional) ----------
 echo.
 choice /C YN /M "[6/9] Package CriderGPT as a Windows desktop app (Electron)"
 if errorlevel 2 goto SKIP_ELECTRON
-  call npm install --save-dev electron @electron/packager
+  call npm install --legacy-peer-deps --save-dev electron @electron/packager
   call npx @electron/packager . "CriderGPT" --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore="^/src" --ignore="^/public" --ignore="^/electron-release"
   echo   Desktop build  -^>  %CD%\electron-release\CriderGPT-win32-x64\CriderGPT.exe
 :SKIP_ELECTRON

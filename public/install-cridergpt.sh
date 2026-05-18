@@ -51,7 +51,7 @@ fi
 
 # 3. npm install
 say "[3/8] npm install..."
-npm install
+npm install --legacy-peer-deps || npm install --force
 
 # 4. Build
 say "[4/8] Production build..."
@@ -59,7 +59,7 @@ npm run build
 
 # 5. Capacitor Android (optional)
 if ask "[5/8] Sync Android (Capacitor) project?"; then
-  npm install @capacitor/core @capacitor/cli @capacitor/android \
+  npm install --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android \
     @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app \
     @codetrix-studio/capacitor-google-auth
   [[ -d android ]] || npx cap add android
@@ -68,7 +68,7 @@ fi
 
 # 6. Electron desktop (optional)
 if ask "[6/8] Package as Electron desktop app for this OS?"; then
-  npm install --save-dev electron @electron/packager
+  npm install --legacy-peer-deps --save-dev electron @electron/packager
   PLAT="linux"; [[ "$(uname)" == "Darwin" ]] && PLAT="darwin"
   npx @electron/packager . "CriderGPT" \
     --platform=$PLAT --arch=x64 --out=electron-release --overwrite \
