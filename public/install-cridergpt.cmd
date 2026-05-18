@@ -76,7 +76,7 @@ REM ---------- 5. Capacitor / Android (optional) ----------
 echo.
 choice /C YN /M "[5/9] Sync Android (Capacitor) project now"
 if errorlevel 2 goto SKIP_ANDROID
-  call npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app @codetrix-studio/capacitor-google-auth
+  call npm install --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app @codetrix-studio/capacitor-google-auth
   if not exist android (call npx cap add android)
   call npx cap sync android
 :SKIP_ANDROID
