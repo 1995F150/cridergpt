@@ -142,19 +142,8 @@ Deno.serve(async (req) => {
       if (!AGENT_URL) {
         return json({ command: ytCmd, error: 'HOME_SERVER_AGENT_URL not set — copy this command and run it on the server.' }, 200);
       }
-      const t0 = Date.now();
-      try {
-        const res = await fetch(AGENT_URL.replace(/\/$/, '') + '/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command: ytCmd }),
-          signal: AbortSignal.timeout(600000),
-        });
-        const text = await res.text();
-        return json({ status: res.status, ok: res.ok, latency_ms: Date.now() - t0, command: ytCmd, output: text });
-      } catch (e) {
-        return json({ error: e instanceof Error ? e.message : String(e), command: ytCmd, latency_ms: Date.now() - t0 }, 502);
-      }
+      const r = await agentCall('/run', { command: ytCmd, timeout: 600 }, 600000);
+      return json({ command: ytCmd, ...r });
     }
 
     if (action === 'command') {
