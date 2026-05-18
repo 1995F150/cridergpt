@@ -59,7 +59,7 @@ npm run build
 
 # 5. Capacitor Android (optional)
 if ask "[5/8] Sync Android (Capacitor) project?"; then
-  npm install @capacitor/core @capacitor/cli @capacitor/android \
+  npm install --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android \
     @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app \
     @codetrix-studio/capacitor-google-auth
   [[ -d android ]] || npx cap add android
