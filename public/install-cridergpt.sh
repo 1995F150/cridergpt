@@ -68,7 +68,7 @@ fi
 
 # 6. Electron desktop (optional)
 if ask "[6/8] Package as Electron desktop app for this OS?"; then
-  npm install --save-dev electron @electron/packager
+  npm install --legacy-peer-deps --save-dev electron @electron/packager
   PLAT="linux"; [[ "$(uname)" == "Darwin" ]] && PLAT="darwin"
   npx @electron/packager . "CriderGPT" \
     --platform=$PLAT --arch=x64 --out=electron-release --overwrite \
