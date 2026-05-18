@@ -34,6 +34,7 @@ import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator';
 import { BarcodeGenerator } from '@/components/admin/BarcodeGenerator';
 import { PointOfSale } from '@/components/admin/PointOfSale';
 import { AIInfrastructure } from '@/components/admin/AIInfrastructure';
+import { PCRemotePanel } from '@/components/admin/PCRemotePanel';
 
 export function AdminPanel() {
   const { isAdmin, loading } = useAdmin();
@@ -185,6 +186,9 @@ export function AdminPanel() {
           <TabsTrigger value="ai-infra" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Brain className="h-4 w-4" /> AI Infrastructure
           </TabsTrigger>
+          <TabsTrigger value="pc-remote" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Cpu className="h-4 w-4" /> PC Remote
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4" /> Settings
           </TabsTrigger>
@@ -235,6 +239,7 @@ export function AdminPanel() {
         <TabsContent value="home-server"><HomeServerPanel /></TabsContent>
         <TabsContent value="launch-planner"><LaunchPlanner /></TabsContent>
         <TabsContent value="ai-infra"><AIInfrastructure /></TabsContent>
+        <TabsContent value="pc-remote"><PCRemotePanel /></TabsContent>
       </Tabs>
     </div>
   );
