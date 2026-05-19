@@ -41,6 +41,7 @@ import GuideDetail from "./pages/GuideDetail";
 import Recipes from "./pages/Recipes";
 import LinkPC from "./pages/LinkPC";
 import LinkPCToken from "./pages/LinkPCToken";
+import PCFeed from "./pages/PCFeed";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
@@ -146,6 +147,7 @@ const App = () => {
                       <Route path="/recipes" element={<Recipes />} />
                       <Route path="/link-pc" element={<LinkPC />} />
                       <Route path="/link-pc-token" element={<LinkPCToken />} />
+                      <Route path="/pc-feed" element={<PCFeed />} />
 
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />
