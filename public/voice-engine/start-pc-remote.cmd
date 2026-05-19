@@ -1,11 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
-title CriderGPT - Auto Link PC
+title CriderGPT - Link PC (LAN mode)
 color 0A
 
 echo ============================================================
-echo   CriderGPT - One-Click PC Link
-echo   No secrets to copy. No Supabase dashboard. Just go.
+echo   CriderGPT - One-Click PC Link  (LAN / no tunnel)
+echo   Phone + PC must be on the same Wi-Fi.
 echo ============================================================
 echo.
 
@@ -20,12 +20,20 @@ where python >nul 2>nul || ( echo Install Python first: https://python.org & pau
 python -m pip install --quiet --upgrade pip
 python -m pip install --quiet flask flask-cors pyautogui pillow
 
-REM ---- cloudflared check ----
-where cloudflared >nul 2>nul
+REM ---- detect LAN IP ----
+for /f "tokens=*" %%I in ('powershell -nologo -command "(Get-NetIPAddress -AddressFamily IPv4 ^| Where-Object { $_.PrefixOrigin -eq 'Dhcp' -or $_.PrefixOrigin -eq 'Manual' } ^| Where-Object { $_.IPAddress -notlike '169.*' -and $_.IPAddress -ne '127.0.0.1' } ^| Select-Object -First 1).IPAddress"') do set "LANIP=%%I"
+
+if "%LANIP%"=="" (
+  echo Could not detect LAN IP. Run 'ipconfig' and pick the IPv4 of your Wi-Fi adapter.
+  pause
+  exit /b 1
+)
+
+REM ---- open firewall (idempotent) ----
+netsh advfirewall firewall show rule name="CriderGPT Agent 8787" >nul 2>nul
 if errorlevel 1 (
-  echo Downloading cloudflared...
-  powershell -nologo -command "Invoke-WebRequest -Uri 'https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe' -OutFile '%USERPROFILE%\cloudflared.exe'"
-  set "PATH=%USERPROFILE%;%PATH%"
+  echo Opening Windows Firewall port 8787 (requires admin if prompted)...
+  netsh advfirewall firewall add rule name="CriderGPT Agent 8787" dir=in action=allow protocol=TCP localport=8787 >nul 2>nul
 )
 
 REM ---- download python agent if missing ----
@@ -38,39 +46,15 @@ REM ---- start agent ----
 start "CriderGPT Agent" cmd /k "set CRIDERGPT_AGENT_TOKEN=%TOKEN% && python ""%AGENT%"""
 timeout /t 3 >nul
 
-REM ---- start tunnel + capture URL ----
-echo Starting Cloudflare tunnel and capturing public URL...
-set "TUNNEL_LOG=%TEMP%\cridergpt-tunnel.log"
-del "%TUNNEL_LOG%" 2>nul
-start "CriderGPT Tunnel" cmd /k "cloudflared tunnel --url http://localhost:8787 --logfile ""%TUNNEL_LOG%"""
-
-echo Waiting for public URL...
-set "PUBURL="
-for /l %%i in (1,1,30) do (
-  timeout /t 1 >nul
-  for /f "tokens=*" %%U in ('findstr /R /C:"https://[a-z0-9-]*\.trycloudflare\.com" "%TUNNEL_LOG%" 2^>nul') do (
-    for /f "tokens=2 delims= " %%T in ("%%U") do set "PUBURL=%%T"
-  )
-  if defined PUBURL goto :got_url
-)
-:got_url
-
-if not defined PUBURL (
-  echo Could not detect tunnel URL automatically. Check the Tunnel window for the https://...trycloudflare.com URL.
-  pause
-  exit /b 1
-)
-
-REM strip trailing | or extra junk
-for /f "tokens=1" %%X in ("%PUBURL%") do set "PUBURL=%%X"
+set "PUBURL=http://%LANIP%:8787"
 
 echo.
 echo ============================================================
-echo   Tunnel URL: %PUBURL%
-echo   Token:      %TOKEN%
+echo   Agent URL: %PUBURL%
+echo   Token:     %TOKEN%
 echo ============================================================
 echo.
-echo Opening browser to auto-save this to your CriderGPT account...
+echo Opening browser to auto-link your CriderGPT account...
 echo (You must be signed in.)
 echo.
 
@@ -78,7 +62,8 @@ set "LINK=https://cridergpt.com/link-pc?url=%PUBURL%^&token=%TOKEN%^&label=%COMP
 start "" "%LINK%"
 
 echo.
-echo Done. Keep the Agent and Tunnel windows open. Close them to stop remote access.
+echo Done. Keep the Agent window open. Close it to stop remote access.
+echo Note: this only works while your phone/browser is on the same Wi-Fi.
 echo.
 pause
 endlocal
