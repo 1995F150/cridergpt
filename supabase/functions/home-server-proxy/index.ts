@@ -17,22 +17,24 @@ const corsHeaders = {
 };
 
 const VM_URL = 'https://vm.cridergpt.com';
-const AGENT_URL = Deno.env.get('HOME_SERVER_AGENT_URL') ?? '';
-const AGENT_TOKEN = Deno.env.get('HOME_SERVER_AGENT_TOKEN') ?? '';
+const ENV_AGENT_URL = Deno.env.get('HOME_SERVER_AGENT_URL') ?? '';
+const ENV_AGENT_TOKEN = Deno.env.get('HOME_SERVER_AGENT_TOKEN') ?? '';
 
-function agentHeaders(): Record<string, string> {
-  const h: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (AGENT_TOKEN) h['Authorization'] = `Bearer ${AGENT_TOKEN}`;
-  return h;
-}
-
-async function agentCall(path: string, body: unknown, timeoutMs = 30000) {
-  if (!AGENT_URL) return { status: 0, ok: false, error: 'HOME_SERVER_AGENT_URL not set', configured: false };
+async function agentCall(
+  path: string,
+  body: unknown,
+  agentUrl: string,
+  agentToken: string,
+  timeoutMs = 30000,
+) {
+  if (!agentUrl) return { status: 0, ok: false, error: 'No PC linked. Run start-pc-remote.cmd to link.', configured: false };
   const t0 = Date.now();
   try {
-    const res = await fetch(AGENT_URL.replace(/\/$/, '') + path, {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (agentToken) headers['Authorization'] = `Bearer ${agentToken}`;
+    const res = await fetch(agentUrl.replace(/\/$/, '') + path, {
       method: 'POST',
-      headers: agentHeaders(),
+      headers,
       body: JSON.stringify(body ?? {}),
       signal: AbortSignal.timeout(timeoutMs),
     });
