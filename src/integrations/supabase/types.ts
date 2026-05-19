@@ -2872,6 +2872,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pc_links: {
+        Row: {
+          agent_token: string
+          agent_url: string
+          created_at: string
+          label: string | null
+          last_seen: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_token: string
+          agent_url: string
+          created_at?: string
+          label?: string | null
+          last_seen?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_token?: string
+          agent_url?: string
+          created_at?: string
+          label?: string | null
+          last_seen?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pending_tasks: {
         Row: {
           created_at: string | null
