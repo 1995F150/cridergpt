@@ -2872,6 +2872,63 @@ export type Database = {
         }
         Relationships: []
       }
+      pc_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          source_label: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          source_label?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          source_label?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pc_ingest_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          last_used_at: string | null
+          revoked_at: string | null
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          last_used_at?: string | null
+          revoked_at?: string | null
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          last_used_at?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pc_links: {
         Row: {
           agent_token: string
@@ -2898,6 +2955,36 @@ export type Database = {
           label?: string | null
           last_seen?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pc_outbox: {
+        Row: {
+          command: string
+          created_at: string
+          delivered_at: string | null
+          id: string
+          payload: Json
+          status: string
+          user_id: string
+        }
+        Insert: {
+          command: string
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          payload?: Json
+          status?: string
+          user_id: string
+        }
+        Update: {
+          command?: string
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          payload?: Json
+          status?: string
           user_id?: string
         }
         Relationships: []

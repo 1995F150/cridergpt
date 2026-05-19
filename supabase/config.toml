@@ -71,3 +71,9 @@ verify_jwt = false
 
 [functions.generate-video]
 verify_jwt = false
+
+[functions.pc-ingest]
+verify_jwt = false
+
+[functions.mint-pc-token]
+verify_jwt = false
