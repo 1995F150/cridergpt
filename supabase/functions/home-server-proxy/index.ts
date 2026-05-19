@@ -17,22 +17,24 @@ const corsHeaders = {
 };
 
 const VM_URL = 'https://vm.cridergpt.com';
-const AGENT_URL = Deno.env.get('HOME_SERVER_AGENT_URL') ?? '';
-const AGENT_TOKEN = Deno.env.get('HOME_SERVER_AGENT_TOKEN') ?? '';
+const ENV_AGENT_URL = Deno.env.get('HOME_SERVER_AGENT_URL') ?? '';
+const ENV_AGENT_TOKEN = Deno.env.get('HOME_SERVER_AGENT_TOKEN') ?? '';
 
-function agentHeaders(): Record<string, string> {
-  const h: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (AGENT_TOKEN) h['Authorization'] = `Bearer ${AGENT_TOKEN}`;
-  return h;
-}
-
-async function agentCall(path: string, body: unknown, timeoutMs = 30000) {
-  if (!AGENT_URL) return { status: 0, ok: false, error: 'HOME_SERVER_AGENT_URL not set', configured: false };
+async function agentCall(
+  path: string,
+  body: unknown,
+  agentUrl: string,
+  agentToken: string,
+  timeoutMs = 30000,
+) {
+  if (!agentUrl) return { status: 0, ok: false, error: 'No PC linked. Run start-pc-remote.cmd to link.', configured: false };
   const t0 = Date.now();
   try {
-    const res = await fetch(AGENT_URL.replace(/\/$/, '') + path, {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (agentToken) headers['Authorization'] = `Bearer ${agentToken}`;
+    const res = await fetch(agentUrl.replace(/\/$/, '') + path, {
       method: 'POST',
-      headers: agentHeaders(),
+      headers,
       body: JSON.stringify(body ?? {}),
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -71,6 +73,19 @@ Deno.serve(async (req) => {
     });
     if (!isAdmin) return json({ error: 'Forbidden — admin only' }, 403);
 
+    // Per-user PC link (preferred) → fallback to project env secrets
+    let AGENT_URL = ENV_AGENT_URL;
+    let AGENT_TOKEN = ENV_AGENT_TOKEN;
+    const { data: link } = await supabase
+      .from('pc_links')
+      .select('agent_url, agent_token')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (link?.agent_url && link?.agent_token) {
+      AGENT_URL = link.agent_url;
+      AGENT_TOKEN = link.agent_token;
+    }
+
     const body = await req.json().catch(() => ({}));
     const action = String(body.action ?? 'status');
 
@@ -84,39 +99,31 @@ Deno.serve(async (req) => {
       let httpStatus = 0;
       let error: string | null = null;
       try {
-        const res = await fetch(VM_URL, {
-          method: 'HEAD',
-          signal: AbortSignal.timeout(5000),
-        });
+        const res = await fetch(VM_URL, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
         httpStatus = res.status;
         online = res.status > 0 && res.status < 500;
       } catch (e) {
         error = e instanceof Error ? e.message : String(e);
       }
       return json({
-        online,
-        http_status: httpStatus,
-        latency_ms: Date.now() - t0,
-        vm_url: VM_URL,
-        agent_configured: !!AGENT_URL,
-        error,
-        checked_at: new Date().toISOString(),
+        online, http_status: httpStatus, latency_ms: Date.now() - t0,
+        vm_url: VM_URL, agent_configured: !!AGENT_URL,
+        agent_source: link?.agent_url ? 'user_link' : (ENV_AGENT_URL ? 'env' : 'none'),
+        error, checked_at: new Date().toISOString(),
       });
     }
 
     if (action === 'youtube') {
-      // Build a yt-dlp command from structured inputs and forward as a normal command
       const url = String(body.url ?? '').trim();
       if (!/^https?:\/\//i.test(url)) return json({ error: 'valid url required' }, 400);
-      const format = String(body.format ?? 'mp4'); // mp4 | mp3
-      const quality = String(body.quality ?? 'best'); // best | 1080 | 720 | 480 | 360 | 192k | 320k
+      const format = String(body.format ?? 'mp4');
+      const quality = String(body.quality ?? 'best');
       const subtitles = !!body.subtitles;
       const thumbnail = !!body.thumbnail;
       const playlist = !!body.playlist;
       const startTime = String(body.startTime ?? '').trim();
       const endTime = String(body.endTime ?? '').trim();
       const outDir = '~/Downloads/cridergpt-yt';
-
       const safeUrl = url.replace(/'/g, "'\\''");
       const parts: string[] = [`mkdir -p ${outDir}`, '&&', 'yt-dlp'];
       if (!playlist) parts.push('--no-playlist');
@@ -131,34 +138,28 @@ Deno.serve(async (req) => {
         parts.push(`-x --audio-format mp3 --audio-quality ${abr}`);
       } else {
         const heightFilter = /^\d+$/.test(quality) ? `[height<=${quality}]` : '';
-        parts.push(
-          `-f "bv*${heightFilter}+ba/b${heightFilter}" --merge-output-format mp4`,
-        );
+        parts.push(`-f "bv*${heightFilter}+ba/b${heightFilter}" --merge-output-format mp4`);
       }
       parts.push(`-o "${outDir}/%(title).100s [%(id)s].%(ext)s"`);
       parts.push(`'${safeUrl}'`);
       const ytCmd = parts.join(' ');
-
-      if (!AGENT_URL) {
-        return json({ command: ytCmd, error: 'HOME_SERVER_AGENT_URL not set — copy this command and run it on the server.' }, 200);
-      }
-      const r = await agentCall('/run', { command: ytCmd, timeout: 600 }, 600000);
+      if (!AGENT_URL) return json({ command: ytCmd, error: 'No PC linked — copy this command and run it on the server.' }, 200);
+      const r = await agentCall('/run', { command: ytCmd, timeout: 600 }, AGENT_URL, AGENT_TOKEN, 600000);
       return json({ command: ytCmd, ...r });
     }
 
     if (action === 'command') {
       const command = String(body.command ?? '').trim();
       if (!command) return json({ error: 'command is required' }, 400);
-      const r = await agentCall('/run', { command, timeout: body.timeout ?? 60 });
+      const r = await agentCall('/run', { command, timeout: body.timeout ?? 60 }, AGENT_URL, AGENT_TOKEN);
       return json(r);
     }
 
-    // ----- PC remote-control actions (Windows/Mac/Linux agent) -----
-    if (action === 'pc-screenshot') return json(await agentCall('/screenshot', {}, 15000));
-    if (action === 'pc-click')      return json(await agentCall('/click',  { x: body.x, y: body.y }, 10000));
-    if (action === 'pc-type')       return json(await agentCall('/type',   { text: body.text }, 15000));
-    if (action === 'pc-hotkey')     return json(await agentCall('/hotkey', { keys: body.keys }, 10000));
-    if (action === 'pc-sysinfo')    return json(await agentCall('/sysinfo', {}, 10000));
+    if (action === 'pc-screenshot') return json(await agentCall('/screenshot', {}, AGENT_URL, AGENT_TOKEN, 15000));
+    if (action === 'pc-click')      return json(await agentCall('/click',  { x: body.x, y: body.y }, AGENT_URL, AGENT_TOKEN, 10000));
+    if (action === 'pc-type')       return json(await agentCall('/type',   { text: body.text }, AGENT_URL, AGENT_TOKEN, 15000));
+    if (action === 'pc-hotkey')     return json(await agentCall('/hotkey', { keys: body.keys }, AGENT_URL, AGENT_TOKEN, 10000));
+    if (action === 'pc-sysinfo')    return json(await agentCall('/sysinfo', {}, AGENT_URL, AGENT_TOKEN, 10000));
 
     return json({ error: `Unknown action: ${action}` }, 400);
   } catch (e) {
