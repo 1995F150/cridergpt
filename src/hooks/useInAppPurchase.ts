@@ -162,13 +162,29 @@ export function useInAppPurchase() {
       }
 
       if (platform === 'android') {
-        // Android: Digital purchases go through Google Play Billing
+        // Android digital goods MUST go through Google Play Billing.
+        // We call a Capacitor plugin if installed (cordova-plugin-purchase /
+        // @capacitor-community/in-app-purchases), otherwise we surface a clear message.
+        const store = (window as any).CdvPurchase?.store
+                   ?? (window as any).Capacitor?.Plugins?.InAppPurchases;
+
+        if (store?.order) {
+          // cordova-plugin-purchase API
+          try {
+            await store.order(productId);
+            toast({ title: 'Google Play', description: `Opening Play Billing for ${product.title}…` });
+            // The plugin fires an 'approved' event -> call verifyPurchase() with token there.
+          } catch (e: any) {
+            toast({ title: 'Play Billing error', description: e?.message || 'Purchase failed', variant: 'destructive' });
+          }
+          return;
+        }
+
         toast({
-          title: "Google Play Purchase",
-          description: `Purchase ${product.title} through Google Play. Tap to continue.`,
+          title: 'Google Play Billing not active',
+          description: 'Run on the signed Android build to purchase. Billing plugin loads only inside the installed app.',
+          variant: 'destructive',
         });
-        // Native Capacitor/Google Billing layer handles the purchase
-        // After native purchase completes, call verifyPurchase() with the token
         return;
       }
 
