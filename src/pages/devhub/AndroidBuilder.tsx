@@ -20,6 +20,7 @@ const DEFAULT_GH_USER = localStorage.getItem('builderGithubUser') || '1995F150';
 
 export default function AndroidBuilder() {
   const [host, setHost] = useState(DEFAULT_HOST);
+  const [ghUser, setGhUser] = useState(DEFAULT_GH_USER);
   const [status, setStatus] = useState<BuilderStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [triggering, setTriggering] = useState(false);
