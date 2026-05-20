@@ -1357,6 +1357,57 @@ export type Database = {
         }
         Relationships: []
       }
+      dev_tasks: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          model: string
+          priority: number
+          prompt: string
+          result: string | null
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          model?: string
+          priority?: number
+          prompt: string
+          result?: string | null
+          started_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          model?: string
+          priority?: number
+          prompt?: string
+          result?: string | null
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       digest_preferences: {
         Row: {
           day_of_week: number
