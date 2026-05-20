@@ -20,6 +20,7 @@ interface HeaderProps {
 
 export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { isInstallable, promptInstall } = usePWAInstall();
