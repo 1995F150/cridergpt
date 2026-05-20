@@ -117,7 +117,14 @@ serve(async (req) => {
 
   try {
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured');
+    if (!OPENAI_API_KEY) {
+      return new Response(JSON.stringify({
+        error: 'CALL_MODE_UNAVAILABLE',
+        message: "Voice call mode needs an OpenAI Realtime key. Gemini Live ain't exposed over WebRTC through Lovable Gateway yet, so voice calls are paused until OpenAI credits are topped up. Text chat still works fine on Gemini.",
+        fallback_suggestion: 'Use text chat or browser push-to-talk with speech-to-text.',
+      }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
