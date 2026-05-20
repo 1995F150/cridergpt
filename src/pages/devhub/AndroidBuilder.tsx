@@ -16,9 +16,11 @@ interface BuilderStatus {
 }
 
 const DEFAULT_HOST = localStorage.getItem('builderHost') || 'http://localhost:5100';
+const DEFAULT_GH_USER = localStorage.getItem('builderGithubUser') || '1995F150';
 
 export default function AndroidBuilder() {
   const [host, setHost] = useState(DEFAULT_HOST);
+  const [ghUser, setGhUser] = useState(DEFAULT_GH_USER);
   const [status, setStatus] = useState<BuilderStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [triggering, setTriggering] = useState(false);
@@ -79,16 +81,33 @@ export default function AndroidBuilder() {
 
       <Card>
         <CardHeader><CardTitle className="text-sm">Server</CardTitle></CardHeader>
-        <CardContent className="space-y-2">
-          <Input
-            value={host}
-            onChange={(e) => setHost(e.target.value)}
-            onBlur={(e) => saveHost(e.target.value)}
-            placeholder="http://your-server:5100"
-          />
+        <CardContent className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Builder host</label>
+            <Input
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+              onBlur={(e) => saveHost(e.target.value)}
+              placeholder="http://your-server:5100"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">GitHub username</label>
+            <Input
+              value={ghUser}
+              onChange={(e) => setGhUser(e.target.value)}
+              onBlur={(e) => { localStorage.setItem('builderGithubUser', e.target.value); }}
+              placeholder="1995F150"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">One-shot install command (paste on Ubuntu server)</label>
+            <pre className="text-[10px] bg-muted p-2 rounded overflow-x-auto whitespace-pre-wrap">
+{`GITHUB_USER=${ghUser} bash -c "$(curl -fsSL https://cridergpt.com/voice-engine/android-builder/install.sh)"`}
+            </pre>
+          </div>
           <p className="text-xs text-muted-foreground">
-            Point this at your Ubuntu builder. Use Tailscale, Cloudflare Tunnel,
-            or your LAN IP. Saved locally on this device.
+            Point the host at your Ubuntu builder (LAN IP, Tailscale, or Cloudflare Tunnel). Saved locally on this device.
           </p>
         </CardContent>
       </Card>
