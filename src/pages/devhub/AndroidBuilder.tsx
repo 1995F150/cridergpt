@@ -16,6 +16,7 @@ interface BuilderStatus {
 }
 
 const DEFAULT_HOST = localStorage.getItem('builderHost') || 'http://localhost:5100';
+const DEFAULT_GH_USER = localStorage.getItem('builderGithubUser') || '1995F150';
 
 export default function AndroidBuilder() {
   const [host, setHost] = useState(DEFAULT_HOST);
