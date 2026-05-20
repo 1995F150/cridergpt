@@ -1,0 +1,29 @@
+{
+  "common": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "language": "Sprache",
+    "install_app": "App installieren",
+    "files": "Dateien",
+    "toggle_theme": "Design wechseln",
+    "settings": "Einstellungen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "loading": "Wird geladen...",
+    "search": "Suchen"
+  },
+  "header": {
+    "ai_assistant": "KI-Assistent",
+    "tts_policy": "TTS-Richtlinie"
+  },
+  "chat": {
+    "placeholder": "Frag CriderGPT alles...",
+    "send": "Senden",
+    "new_chat": "Neuer Chat"
+  },
+  "auth": {
+    "sign_in_google": "Mit Google fortfahren",
+    "email": "E-Mail",
+    "password": "Passwort"
+  }
+}

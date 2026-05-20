@@ -1,0 +1,29 @@
+{
+  "common": {
+    "login": "Login",
+    "logout": "Sign Out",
+    "language": "Language",
+    "install_app": "Install App",
+    "files": "Files",
+    "toggle_theme": "Toggle theme",
+    "settings": "Settings",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "search": "Search"
+  },
+  "header": {
+    "ai_assistant": "AI Assistant",
+    "tts_policy": "TTS Policy"
+  },
+  "chat": {
+    "placeholder": "Ask CriderGPT anything...",
+    "send": "Send",
+    "new_chat": "New Chat"
+  },
+  "auth": {
+    "sign_in_google": "Continue with Google",
+    "email": "Email",
+    "password": "Password"
+  }
+}

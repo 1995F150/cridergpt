@@ -8,8 +8,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { OfflineStatusBadge } from "@/components/OfflineIndicator";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
@@ -18,6 +20,7 @@ interface HeaderProps {
 
 export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { isInstallable, promptInstall } = usePWAInstall();
@@ -66,7 +69,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
             />
           </div>
           <Badge variant="secondary" className="bg-cyber-blue/10 text-cyber-blue border-cyber-blue/20 hidden sm:flex">
-            AI Assistant
+            {t('header.ai_assistant')}
           </Badge>
           {user && isActive && planBadgeConfig[plan] && (
             <Badge variant="outline" className={`hidden sm:flex ${planBadgeConfig[plan].className}`}>
@@ -87,10 +90,12 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
               className="hidden sm:flex gap-2 border-primary/30 hover:bg-primary/10"
             >
               <Download className="h-4 w-4" />
-              <span className="hidden md:inline">Install App</span>
+              <span className="hidden md:inline">{t('common.install_app')}</span>
             </Button>
           )}
-          
+
+          <LanguageSelector />
+
           <Button
             variant="ghost"
             size="sm"
@@ -102,7 +107,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
             ) : (
               <Moon className="h-4 w-4" />
             )}
-            <span className="sr-only">Toggle theme</span>
+            <span className="sr-only">{t('common.toggle_theme')}</span>
           </Button>
           
           {user ? (
@@ -114,17 +119,17 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
                 onClick={() => window.open('/tts-policy', '_blank')}
                 className="hidden md:flex"
               >
-                TTS Policy
+                {t('header.tts_policy')}
               </Button>
               <Button variant="ghost" size="sm" className="hidden md:flex">
                 <Upload className="h-4 w-4 mr-2" />
-                Files
+                {t('common.files')}
               </Button>
               <ProfileDropdown />
             </>
           ) : (
             <Button onClick={handleAuthAction} className="bg-cyber-blue hover:bg-cyber-blue/90 text-sm px-3 md:px-4">
-              Login
+              {t('common.login')}
             </Button>
           )}
         </div>
