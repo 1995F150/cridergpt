@@ -15,9 +15,11 @@ const TIKTOK_URL = 'https://www.tiktok.com/@1stgendodge52ldairyfarm';
 const TIKTOK_HANDLE = '@1stgendodge52ldairyfarm';
 
 // CriderGPT model registry — maps named CriderGPT models to backend + personality + temp
+// All CriderGPT models now route through Lovable AI Gateway (Gemini) by default.
+// OpenAI is only used as a fallback if LOVABLE_API_KEY is missing AND OPENAI_API_KEY is set.
 const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number; personality: string; vision: boolean }> = {
   'cridergpt-4.1': {
-    backend: 'openai/gpt-5-nano',
+    backend: 'google/gemini-2.5-flash-lite',
     temperature: 0.85,
     vision: false,
     personality: `MODE: CriderGPT 4.1 - Fast Casual Chat
@@ -26,7 +28,7 @@ const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number;
 - Default to 1-3 sentences unless deeper detail is requested`,
   },
   'cridergpt-5.0': {
-    backend: 'openai/gpt-5-mini',
+    backend: 'google/gemini-3-flash-preview',
     temperature: 0.75,
     vision: false,
     personality: `MODE: CriderGPT 5.0 - Balanced
@@ -35,7 +37,7 @@ const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number;
 - Don't over-structure; humans don't write in perfect bullet lists`,
   },
   'cridergpt-5.0-pro': {
-    backend: 'openai/gpt-5',
+    backend: 'google/gemini-2.5-pro',
     temperature: 0.7,
     vision: false,
     personality: `MODE: CriderGPT 5.0 Pro - Deep Work
@@ -44,7 +46,7 @@ const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number;
 - Handle multi-part tasks in one pass`,
   },
   'cridergpt-5.0-vision': {
-    backend: 'openai/gpt-5',
+    backend: 'google/gemini-2.5-pro',
     temperature: 0.6,
     vision: true,
     personality: `MODE: CriderGPT 5.0 Vision - Visual Analysis
@@ -52,7 +54,7 @@ const CRIDERGPT_REGISTRY: Record<string, { backend: string; temperature: number;
 - For livestock: identify breed/condition signals when visible`,
   },
   'cridergpt-5.0-reasoning': {
-    backend: 'openai/gpt-5',
+    backend: 'google/gemini-2.5-pro',
     temperature: 0.4,
     vision: false,
     personality: `MODE: CriderGPT 5.0 Reasoning - Step-by-step
