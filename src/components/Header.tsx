@@ -119,17 +119,17 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
                 onClick={() => window.open('/tts-policy', '_blank')}
                 className="hidden md:flex"
               >
-                TTS Policy
+                {t('header.tts_policy')}
               </Button>
               <Button variant="ghost" size="sm" className="hidden md:flex">
                 <Upload className="h-4 w-4 mr-2" />
-                Files
+                {t('common.files')}
               </Button>
               <ProfileDropdown />
             </>
           ) : (
             <Button onClick={handleAuthAction} className="bg-cyber-blue hover:bg-cyber-blue/90 text-sm px-3 md:px-4">
-              Login
+              {t('common.login')}
             </Button>
           )}
         </div>
