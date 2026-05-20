@@ -69,7 +69,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
             />
           </div>
           <Badge variant="secondary" className="bg-cyber-blue/10 text-cyber-blue border-cyber-blue/20 hidden sm:flex">
-            AI Assistant
+            {t('header.ai_assistant')}
           </Badge>
           {user && isActive && planBadgeConfig[plan] && (
             <Badge variant="outline" className={`hidden sm:flex ${planBadgeConfig[plan].className}`}>
