@@ -42,6 +42,17 @@ import Recipes from "./pages/Recipes";
 import LinkPC from "./pages/LinkPC";
 import LinkPCToken from "./pages/LinkPCToken";
 import PCFeed from "./pages/PCFeed";
+import DevHub from "./pages/devhub/DevHub";
+import DevServerConsole from "./pages/devhub/ServerConsole";
+import DevMachineDesigner from "./pages/devhub/MachineDesigner";
+import DevCodeGenerator from "./pages/devhub/CodeGenerator";
+import DevLaserStudio from "./pages/devhub/LaserStudio";
+import DevIncomeCalc from "./pages/devhub/IncomeCalc";
+import DevServerHealth from "./pages/devhub/ServerHealth";
+import DevKnowledgeVault from "./pages/devhub/KnowledgeVault";
+import DevAgentDispatcher from "./pages/devhub/AgentDispatcher";
+import DevWeldJobs from "./pages/devhub/WeldJobs";
+import DevModPacker from "./pages/devhub/ModPacker";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
@@ -148,6 +159,21 @@ const App = () => {
                       <Route path="/link-pc" element={<LinkPC />} />
                       <Route path="/link-pc-token" element={<LinkPCToken />} />
                       <Route path="/pc-feed" element={<PCFeed />} />
+
+                      {/* Owner-locked Dev Hub */}
+                      <Route path="/devhub" element={<DevHub />} />
+                      <Route path="/devhub/server-console" element={<DevServerConsole />} />
+                      <Route path="/devhub/server-health" element={<DevServerHealth />} />
+                      <Route path="/devhub/vault" element={<DevKnowledgeVault />} />
+                      <Route path="/devhub/machine-designer" element={<DevMachineDesigner />} />
+                      <Route path="/devhub/code-generator" element={<DevCodeGenerator />} />
+                      <Route path="/devhub/agent-dispatcher" element={<DevAgentDispatcher />} />
+                      <Route path="/devhub/laser-studio" element={<DevLaserStudio />} />
+                      <Route path="/devhub/income" element={<DevIncomeCalc />} />
+                      <Route path="/devhub/weld-jobs" element={<DevWeldJobs />} />
+                      <Route path="/devhub/mod-packer" element={<DevModPacker />} />
+
+
 
                       {/* Home route - now public, handles guest and authenticated users */}
                       <Route path="/" element={<Index />} />
