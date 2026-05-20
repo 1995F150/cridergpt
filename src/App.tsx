@@ -175,6 +175,7 @@ const App = () => {
                       <Route path="/devhub/weld-jobs" element={<DevWeldJobs />} />
                       <Route path="/devhub/mod-packer" element={<DevModPacker />} />
                       <Route path="/devhub/autopilot" element={<DevAutopilotQueue />} />
+                      <Route path="/devhub/android-builder" element={<DevAndroidBuilder />} />
 
 
 
