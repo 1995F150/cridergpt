@@ -13,6 +13,7 @@ const modules = [
   { to: "/devhub/machine-designer", icon: Cpu, title: "Autonomous Machine Designer", desc: "Describe a robot/task → AI drafts parts list, wiring, control loop, firmware.", tag: "Builder" },
   { to: "/devhub/code-generator", icon: Code2, title: "App & Site Code Generator", desc: "Generate Android (Kotlin), iOS (Swift), or Web (React) starter projects.", tag: "Builder" },
   { to: "/devhub/agent-dispatcher", icon: Bot, title: "AGI Agent Dispatcher", desc: "Fire off background agents to research, scaffold, or refactor.", tag: "Builder" },
+  { to: "/devhub/autopilot", icon: Rocket, title: "Autopilot Queue", desc: "Queue dev tasks. Runner drains them every 2 min. Live status board.", tag: "Builder" },
   { to: "/devhub/laser-studio", icon: Flame, title: "Laser Engraver Studio", desc: "SVG/PNG → G-code with power/speed presets for your engraver.", tag: "Shop + Money" },
   { to: "/devhub/income", icon: DollarSign, title: "Income & Business Calculator", desc: "Welding ($25/hr × 14h × 7d = $2,450/wk) + ad/IAP/Stripe rollup + tax est.", tag: "Shop + Money" },
   { to: "/devhub/weld-jobs", icon: Wrench, title: "Welding Job Tracker", desc: "Clock hours at the shop, log jobs, export weekly timesheet.", tag: "Shop + Money" },
