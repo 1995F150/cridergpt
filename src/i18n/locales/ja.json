@@ -1,0 +1,29 @@
+{
+  "common": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "language": "言語",
+    "install_app": "アプリをインストール",
+    "files": "ファイル",
+    "toggle_theme": "テーマ切り替え",
+    "settings": "設定",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "loading": "読み込み中...",
+    "search": "検索"
+  },
+  "header": {
+    "ai_assistant": "AIアシスタント",
+    "tts_policy": "TTSポリシー"
+  },
+  "chat": {
+    "placeholder": "CriderGPTに何でも聞いてください...",
+    "send": "送信",
+    "new_chat": "新しいチャット"
+  },
+  "auth": {
+    "sign_in_google": "Googleで続行",
+    "email": "メール",
+    "password": "パスワード"
+  }
+}
