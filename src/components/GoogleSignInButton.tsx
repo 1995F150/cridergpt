@@ -2,110 +2,81 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Capacitor } from '@capacitor/core';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { Browser } from '@capacitor/browser';
+import { App as CapApp } from '@capacitor/app';
 import { Loader2 } from 'lucide-react';
 
-// Web client ID from Google Cloud Console
-const GOOGLE_WEB_CLIENT_ID = '117996162498-3k9k9kdpt6elh5mdtd4sjqb2v22h4b89.apps.googleusercontent.com';
-
+/**
+ * SHA-1-free Google Sign-In.
+ *
+ * Web    -> Supabase OAuth in a centered popup window (ChatGPT-style).
+ * Native -> Supabase OAuth opened in an in-app Chrome Custom Tab via @capacitor/browser.
+ *           The OAuth redirect comes back to `app.cridergpt.android://oauth` (deep link),
+ *           Supabase parses the URL and creates the session. No GoogleAuth plugin,
+ *           no Firebase, no SHA-1 fingerprint required.
+ */
 export default function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
 
+  // Listen for the deep-link callback on native after the browser tab finishes auth
   useEffect(() => {
-    // Initialize GoogleAuth on native platforms
-    if (Capacitor.isNativePlatform()) {
-      GoogleAuth.initialize({
-        clientId: GOOGLE_WEB_CLIENT_ID,
-        scopes: ['profile', 'email'],
-        grantOfflineAccess: true,
-      });
-    }
+    if (!Capacitor.isNativePlatform()) return;
+    const sub = CapApp.addListener('appUrlOpen', async ({ url }) => {
+      if (!url.includes('oauth') && !url.includes('access_token') && !url.includes('code=')) return;
+      try {
+        await Browser.close().catch(() => {});
+        // Supabase v2 parses the URL fragment/query and sets the session
+        const { error } = await supabase.auth.exchangeCodeForSession(url);
+        if (error) console.error('[oauth] exchange error', error);
+        setLoading(false);
+      } catch (e) {
+        console.error('[oauth] callback error', e);
+        setLoading(false);
+      }
+    });
+    return () => { sub.then(s => s.remove()); };
   }, []);
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      
-      if (Capacitor.isNativePlatform()) {
-        // Native: Use Google's native sign-in popup (like ChatGPT)
-        console.log('🔐 Starting native Google Sign-In...');
-        
-        const googleUser = await GoogleAuth.signIn();
-        console.log('✅ Google user:', googleUser.email);
-        
-        // Get the ID token from the Google response
-        const idToken = googleUser.authentication.idToken;
-        
-        if (!idToken) {
-          throw new Error('No ID token received from Google');
-        }
-        
-        // Use Supabase's signInWithIdToken for native auth
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: idToken,
-        });
-        
-        if (error) {
-          console.error('❌ Supabase auth error:', error);
-          throw error;
-        }
-        
-        console.log('✅ Successfully signed in with Supabase:', data.user?.email);
-      } else {
-        // Web: Use popup window instead of redirect (ChatGPT-style)
-        console.log('🔐 Starting web Google Sign-In with popup...');
-        
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.origin,
-            skipBrowserRedirect: true, // Don't auto-redirect, we'll handle it
-          },
-        });
-        
-        if (error) {
-          console.error('Google sign-in error:', error.message);
-          throw error;
-        }
+      const isNative = Capacitor.isNativePlatform();
+      const redirectTo = isNative
+        ? 'app.cridergpt.android://oauth'
+        : window.location.origin;
 
-        if (data?.url) {
-          // Open OAuth in a centered popup window (like ChatGPT)
-          const width = 500;
-          const height = 600;
-          const left = window.screenX + (window.outerWidth - width) / 2;
-          const top = window.screenY + (window.outerHeight - height) / 2;
-          
-          const popup = window.open(
-            data.url,
-            'google-auth',
-            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,status=yes`
-          );
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (!data?.url) throw new Error('No OAuth URL returned');
 
-          // Listen for the popup to close or auth to complete
-          const checkPopup = setInterval(async () => {
-            if (popup?.closed) {
-              clearInterval(checkPopup);
-              setLoading(false);
-              
-              // Check if we got authenticated
-              const { data: session } = await supabase.auth.getSession();
-              if (session?.session) {
-                console.log('✅ Successfully signed in via popup');
-                window.location.reload(); // Refresh to update auth state
-              }
-            }
-          }, 500);
-
-          // Timeout after 2 minutes
-          setTimeout(() => {
-            clearInterval(checkPopup);
-            setLoading(false);
-          }, 120000);
-        }
+      if (isNative) {
+        // In-app browser tab — no SHA-1, no Firebase config needed
+        await Browser.open({ url: data.url, presentationStyle: 'popover' });
+        return; // session is set by the deep-link listener above
       }
-    } catch (error: any) {
-      console.error('❌ Google sign-in error:', error);
+
+      // Web popup (ChatGPT-style)
+      const width = 500, height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top  = window.screenY + (window.outerHeight - height) / 2;
+      const popup = window.open(
+        data.url, 'google-auth',
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+      );
+      const check = setInterval(async () => {
+        if (popup?.closed) {
+          clearInterval(check);
+          setLoading(false);
+          const { data: s } = await supabase.auth.getSession();
+          if (s?.session) window.location.reload();
+        }
+      }, 500);
+      setTimeout(() => { clearInterval(check); setLoading(false); }, 120000);
+    } catch (err) {
+      console.error('Google sign-in error', err);
       setLoading(false);
     }
   };
