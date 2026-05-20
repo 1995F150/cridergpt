@@ -53,6 +53,7 @@ import DevKnowledgeVault from "./pages/devhub/KnowledgeVault";
 import DevAgentDispatcher from "./pages/devhub/AgentDispatcher";
 import DevWeldJobs from "./pages/devhub/WeldJobs";
 import DevModPacker from "./pages/devhub/ModPacker";
+import DevAutopilotQueue from "./pages/devhub/AutopilotQueue";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
