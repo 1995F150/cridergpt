@@ -8,8 +8,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { OfflineStatusBadge } from "@/components/OfflineIndicator";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
