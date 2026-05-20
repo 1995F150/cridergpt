@@ -53,6 +53,7 @@ import DevKnowledgeVault from "./pages/devhub/KnowledgeVault";
 import DevAgentDispatcher from "./pages/devhub/AgentDispatcher";
 import DevWeldJobs from "./pages/devhub/WeldJobs";
 import DevModPacker from "./pages/devhub/ModPacker";
+import DevAutopilotQueue from "./pages/devhub/AutopilotQueue";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
@@ -172,6 +173,7 @@ const App = () => {
                       <Route path="/devhub/income" element={<DevIncomeCalc />} />
                       <Route path="/devhub/weld-jobs" element={<DevWeldJobs />} />
                       <Route path="/devhub/mod-packer" element={<DevModPacker />} />
+                      <Route path="/devhub/autopilot" element={<DevAutopilotQueue />} />
 
 
 

@@ -1,5 +1,9 @@
 project_id = "udpldrrpebdyuiqdtqnq"
 
+[functions.dev-autopilot-runner]
+verify_jwt = false
+
+
 [functions.calendar-events]
 verify_jwt = false
 
