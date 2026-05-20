@@ -90,10 +90,12 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
               className="hidden sm:flex gap-2 border-primary/30 hover:bg-primary/10"
             >
               <Download className="h-4 w-4" />
-              <span className="hidden md:inline">Install App</span>
+              <span className="hidden md:inline">{t('common.install_app')}</span>
             </Button>
           )}
-          
+
+          <LanguageSelector />
+
           <Button
             variant="ghost"
             size="sm"
@@ -105,7 +107,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
             ) : (
               <Moon className="h-4 w-4" />
             )}
-            <span className="sr-only">Toggle theme</span>
+            <span className="sr-only">{t('common.toggle_theme')}</span>
           </Button>
           
           {user ? (
