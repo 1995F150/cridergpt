@@ -459,6 +459,7 @@ export type Database = {
           metadata: Json | null
           model: string | null
           status: string | null
+          stt_requests: number
           tokens_used: number
           tts_requests: number | null
           updated_at: string | null
@@ -473,6 +474,7 @@ export type Database = {
           metadata?: Json | null
           model?: string | null
           status?: string | null
+          stt_requests?: number
           tokens_used?: number
           tts_requests?: number | null
           updated_at?: string | null
@@ -487,6 +489,7 @@ export type Database = {
           metadata?: Json | null
           model?: string | null
           status?: string | null
+          stt_requests?: number
           tokens_used?: number
           tts_requests?: number | null
           updated_at?: string | null

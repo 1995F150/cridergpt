@@ -4,7 +4,8 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useRealtimeCall } from '@/hooks/useRealtimeCall';
+import { useDIYCallMode } from '@/hooks/useDIYCallMode';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CallModeInterfaceProps {
   onClose?: () => void;
@@ -21,17 +22,32 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
     showCC,
     transcripts,
     micError,
+    voice,
+    setVoice,
     startCall,
     endCall,
     toggleMute,
     adjustVolume,
     toggleCC,
     formatDuration,
-  } = useRealtimeCall();
+  } = useDIYCallMode();
 
   if (!isCallActive) {
     return (
       <div className="flex flex-col justify-center items-center gap-3 p-4">
+        <Select value={voice} onValueChange={setVoice}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Voice" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="onyx">Onyx (deep male)</SelectItem>
+            <SelectItem value="alloy">Alloy (neutral)</SelectItem>
+            <SelectItem value="echo">Echo (warm male)</SelectItem>
+            <SelectItem value="fable">Fable (British)</SelectItem>
+            <SelectItem value="nova">Nova (female)</SelectItem>
+            <SelectItem value="shimmer">Shimmer (soft female)</SelectItem>
+          </SelectContent>
+        </Select>
         <Button
           onClick={startCall}
           size="lg"
