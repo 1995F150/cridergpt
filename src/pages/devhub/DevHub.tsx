@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard
 } from "lucide-react";
 
 const modules = [
@@ -18,6 +18,7 @@ const modules = [
   { to: "/devhub/income", icon: DollarSign, title: "Income & Business Calculator", desc: "Welding ($25/hr × 14h × 7d = $2,450/wk) + ad/IAP/Stripe rollup + tax est.", tag: "Shop + Money" },
   { to: "/devhub/weld-jobs", icon: Wrench, title: "Welding Job Tracker", desc: "Clock hours at the shop, log jobs, export weekly timesheet.", tag: "Shop + Money" },
   { to: "/devhub/mod-packer", icon: Boxes, title: "FS25 / FS22 Mod Packer", desc: "Unpack a mod ZIP, edit XML, repack signed. Hooks into process-mod-zip.", tag: "Builder" },
+  { to: "/devhub/keyboard-blueprint", icon: Keyboard, title: "Project AETHER", desc: "Concept blueprint for a futuristic transparent wireless keyboard with per-key lighting.", tag: "Builder" },
 ];
 
 export default function DevHub() {

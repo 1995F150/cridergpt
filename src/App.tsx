@@ -55,6 +55,7 @@ import DevWeldJobs from "./pages/devhub/WeldJobs";
 import DevModPacker from "./pages/devhub/ModPacker";
 import DevAutopilotQueue from "./pages/devhub/AutopilotQueue";
 import DevAndroidBuilder from "./pages/devhub/AndroidBuilder";
+import DevKeyboardBlueprint from "./pages/devhub/KeyboardBlueprint";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
@@ -176,6 +177,7 @@ const App = () => {
                       <Route path="/devhub/mod-packer" element={<DevModPacker />} />
                       <Route path="/devhub/autopilot" element={<DevAutopilotQueue />} />
                       <Route path="/devhub/android-builder" element={<DevAndroidBuilder />} />
+                      <Route path="/devhub/keyboard-blueprint" element={<DevKeyboardBlueprint />} />
 
 
 
