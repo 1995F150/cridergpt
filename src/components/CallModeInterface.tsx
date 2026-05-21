@@ -35,6 +35,19 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
   if (!isCallActive) {
     return (
       <div className="flex flex-col justify-center items-center gap-3 p-4">
+        <Select value={voice} onValueChange={setVoice}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Voice" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="onyx">Onyx (deep male)</SelectItem>
+            <SelectItem value="alloy">Alloy (neutral)</SelectItem>
+            <SelectItem value="echo">Echo (warm male)</SelectItem>
+            <SelectItem value="fable">Fable (British)</SelectItem>
+            <SelectItem value="nova">Nova (female)</SelectItem>
+            <SelectItem value="shimmer">Shimmer (soft female)</SelectItem>
+          </SelectContent>
+        </Select>
         <Button
           onClick={startCall}
           size="lg"
