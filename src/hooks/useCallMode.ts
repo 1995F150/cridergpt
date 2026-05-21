@@ -386,7 +386,7 @@ export function useCallMode() {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      const { data: sessionData, error: sessionError } = await supabase.functions.invoke("realtime-token", {
+      const { data: sessionData, error: sessionError } = await supabase.functions.invoke("openai-realtime-token", {
         body: {
           model: REALTIME_MODEL,
           voice: REALTIME_VOICE,
@@ -399,7 +399,7 @@ export function useCallMode() {
 
       const ephemeralKey = sessionData?.client_secret?.value;
       if (!ephemeralKey) {
-        throw new Error("Missing ephemeral client secret from realtime-token");
+        throw new Error("Missing ephemeral client secret from openai-realtime-token");
       }
 
       const sdpResponse = await fetch(
