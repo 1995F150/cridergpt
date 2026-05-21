@@ -93,7 +93,12 @@ export function useDIYCallMode() {
       historyRef.current.push({ role: 'user', content: userText });
 
       const { data: chatData, error: chatErr } = await supabase.functions.invoke('chat-with-ai', {
-        body: { message: userText, model: 'gpt-4o-mini' },
+        body: {
+          message: userText,
+          model: 'cridergpt-4.1',
+          conversationHistory: historyRef.current.slice(-10),
+          mode: 'call',
+        },
       });
       if (chatErr) throw chatErr;
       const aiText: string = chatData?.response || '';
