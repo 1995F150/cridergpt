@@ -63,9 +63,9 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
           
           <div className="flex items-center space-x-2">
             <img 
-              src="/lovable-uploads/1b1242ff-1483-4ec4-ba1d-41b6c2478a76.png" 
+              src="/cridergpt-logo-horizontal.png" 
               alt="CriderGPT Logo" 
-              className="h-8 md:h-12 w-auto"
+              className="h-8 md:h-10 w-auto"
             />
           </div>
           <Badge variant="secondary" className="bg-cyber-blue/10 text-cyber-blue border-cyber-blue/20 hidden sm:flex">
