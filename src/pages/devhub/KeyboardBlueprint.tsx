@@ -6,103 +6,85 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Keyboard, Wifi, Lightbulb, MousePointer, Zap,
-  Layers, Battery, Cpu, DollarSign, Clock, HardDrive, Shield, Radio
+  Layers, Battery, Cpu, DollarSign, Clock, Vibrate, Smartphone
 } from "lucide-react";
 
 const features = [
   {
-    icon: Layers,
-    title: "Transparent Chassis",
-    desc: "Laser-cut 5mm polycarbonate base plate with frosted acrylic diffuser layers. The entire body is see-through — you see the PCB, switches, and lighting from every angle.",
-    spec: "Material: Polycarbonate + Frosted Acrylic",
+    icon: Smartphone,
+    title: "Full Glass Touchscreen Surface",
+    desc: "The entire typing area is one big LCD touchscreen — like a phone keyboard but desk-sized. No physical keys, no moving parts. The layout is drawn in pixels, so you can swap between QWERTY, Dvorak, a piano, a Photoshop shortcut grid, or a custom FFA livestock entry pad on the fly.",
+    spec: "Display: 14\" 1920×720 capacitive touchscreen LCD",
     glow: "from-cyan-500/20 to-blue-500/20",
     border: "border-cyan-500/30",
   },
   {
-    icon: Lightbulb,
-    title: "Per-Key Adaptive Lighting",
-    desc: "Every key has its own RGB LED that can glow independently. Certain keys light up based on context — Enter pulses green when data syncs, numbers flash red for low inventory, WASD glows for gaming mode.",
-    spec: "LEDs: WS2812B-mini, 104 individually addressable",
+    icon: Vibrate,
+    title: "Haptic Buzz Feedback",
+    desc: "A tiny linear vibration motor lives under the glass. Every time your finger lands on a key, it gives a sharp little click-buzz so your brain registers the press — same trick the iPhone trackpad uses. Feels like real keys without any of the wear.",
+    spec: "Motor: LRA linear resonant actuator (Taptic-style)",
     glow: "from-amber-500/20 to-orange-500/20",
     border: "border-amber-500/30",
   },
   {
     icon: MousePointer,
-    title: "Integrated Trackpad Panel",
-    desc: "A glass-covered capacitive trackpad built into the right-side number pad zone. Replaces your mouse entirely when desk space is tight. Supports multi-finger gestures and pressure sensitivity.",
-    spec: "Sensor: TTP224 4-channel capacitive touch IC",
+    title: "Dedicated Trackpad Zone (Corner)",
+    desc: "Bottom-right corner has its own smaller dedicated screen — about the size of a laptop trackpad. Always-on cursor control, multi-finger gestures, pressure-sensitive clicks. Keeps the typing area clean while still killing your need for a mouse.",
+    spec: "Zone: 4\" × 3\" secondary touchscreen panel",
     glow: "from-emerald-500/20 to-teal-500/20",
     border: "border-emerald-500/30",
   },
   {
-    icon: Wifi,
-    title: "Dual Wireless Connectivity",
-    desc: "Connects via Bluetooth 5.2 for laptops and phones, or 2.4GHz USB dongle for gaming with sub-1ms latency. Seamlessly switch between up to 3 paired devices with a key combo.",
-    spec: "Protocol: BLE 5.2 + 2.4GHz proprietary dongle",
+    icon: Lightbulb,
+    title: "Context-Aware Key Layouts",
+    desc: "Since the keys are just pixels, the keyboard rearranges itself based on what app you're in. Gaming pulls up WASD + hotbar. Photoshop shows brush/layer shortcuts. Chat mode brings up emojis. CriderGPT mode shows your saved AI prompt shortcuts.",
+    spec: "Software: ZMK + custom layout profiles",
     glow: "from-violet-500/20 to-purple-500/20",
     border: "border-violet-500/30",
   },
   {
-    icon: Zap,
-    title: "USB-C + Passthrough Hub",
-    desc: "One cable powers the keyboard, charges the internal battery, and passes through data to a built-in USB-A 3.0 port on the back. Plug a flash drive or phone directly into your keyboard.",
-    spec: "Ports: USB-C PD 65W input, USB-A 3.0 passthrough",
+    icon: Wifi,
+    title: "Dual Wireless + USB-C",
+    desc: "Bluetooth 5.2 for laptops and phones, 2.4GHz dongle for sub-1ms gaming latency, or just plug in USB-C for power + data. Pair up to 3 devices and swap with a gesture on the trackpad zone.",
+    spec: "Protocol: BLE 5.2 + 2.4GHz NRF52840 + USB-C",
     glow: "from-rose-500/20 to-pink-500/20",
     border: "border-rose-500/30",
   },
   {
     icon: Battery,
-    title: "Wireless Power System",
-    desc: "4000mAh Li-Po battery hidden in the rear housing, good for 40+ hours with lights on, or 120+ hours with lighting disabled. Qi wireless charging pad compatible — just set it down.",
-    spec: "Battery: 3.7V 4000mAh, Qi wireless charging coil",
+    title: "All-Day Battery + Qi Charging",
+    desc: "5000mAh battery hidden behind the screen. ~12 hours of full-brightness use, or 24+ hours in low-power monochrome mode. Drop it on a Qi pad overnight, no cables.",
+    spec: "Battery: 3.7V 5000mAh Li-Po + Qi receiver coil",
     glow: "from-lime-500/20 to-green-500/20",
     border: "border-lime-500/30",
   },
 ];
 
 const partsList = [
-  { name: "Polycarbonate base plate (3×)", category: "Chassis", est: "$35" },
-  { name: "Frosted acrylic diffuser layers (2×)", category: "Chassis", est: "$20" },
-  { name: "Gateron Clear switches (110-pack)", category: "Switches", est: "$45" },
-  { name: "Clear/transparent keycaps (full set)", category: "Keycaps", est: "$40" },
-  { name: "WS2812B-mini LEDs (110-pack)", category: "Electronics", est: "$18" },
-  { name: "Nice!Nano v2 (wireless controller)", category: "Electronics", est: "$25" },
-  { name: "TTP224 capacitive touch module", category: "Electronics", est: "$6" },
+  { name: "14\" 1920×720 capacitive touchscreen LCD", category: "Display", est: "$120" },
+  { name: "4\" secondary touchscreen panel (trackpad zone)", category: "Display", est: "$28" },
+  { name: "Tempered glass overlay (cut-to-size)", category: "Chassis", est: "$25" },
+  { name: "Aluminum CNC frame + back plate", category: "Chassis", est: "$45" },
+  { name: "LRA haptic vibration motor (×4 distributed)", category: "Haptics", est: "$16" },
+  { name: "Haptic driver IC (DRV2605L)", category: "Haptics", est: "$6" },
+  { name: "Raspberry Pi Zero 2W (display controller)", category: "Electronics", est: "$15" },
+  { name: "Nice!Nano v2 (BLE keyboard controller)", category: "Electronics", est: "$25" },
   { name: "TP4056 Li-Po charging module", category: "Electronics", est: "$4" },
-  { name: "3.7V 4000mAh Li-Po flat battery", category: "Battery", est: "$18" },
+  { name: "3.7V 5000mAh Li-Po flat battery", category: "Battery", est: "$22" },
   { name: "Qi wireless receiver coil", category: "Battery", est: "$12" },
   { name: "USB-C PD breakout board", category: "Electronics", est: "$8" },
-  { name: "USB-A 3.0 passthrough module", category: "Electronics", est: "$10" },
   { name: "2.4GHz NRF52840 USB dongle", category: "Wireless", est: "$15" },
   { name: "Rubber anti-slip feet (8-pack)", category: "Hardware", est: "$5" },
   { name: "M3 brass standoffs + screws", category: "Hardware", est: "$8" },
 ];
 
-const serverIdeas = [
-  {
-    icon: Shield,
-    title: "Network-Wide Ad Blocker (AdGuard Home)",
-    desc: "Block ads and trackers on EVERY device in your house — phones, TVs, smart fridges, everything. One Docker container, network-wide protection.",
-    why: "You already run a 4-container stack. This is the #1 QoL upgrade.",
-  },
-  {
-    icon: Radio,
-    title: "Personal VPN (WireGuard)",
-    desc: "Remote access to your server from anywhere. Secure your phone on sketchy public WiFi, access your files remotely, or tunnel into your home network.",
-    why: "Takes 10 min to set up with wg-easy Docker. Free. No subscription.",
-  },
-  {
-    icon: HardDrive,
-    title: "Media Server (Jellyfin)",
-    desc: "Self-hosted Netflix for your movie/TV collection. You already have XTTS-v2 and MusicGen — might as well stream it all from one place.",
-    why: "You have the media engine. Now give it a front end.",
-  },
-  {
-    icon: Cpu,
-    title: "Service Monitor (Uptime Kuma)",
-    desc: "Dashboard that pings all your containers every 30 seconds and texts/emails you when something crashes. Know before your users do.",
-    why: "You have a lot of moving parts now. Monitor them.",
-  },
+const layoutProfiles = [
+  { name: "QWERTY Classic", desc: "Standard typing layout with a number row." },
+  { name: "Gaming Mode", desc: "WASD highlighted, hotbar 1-9 enlarged, mouse zone activates." },
+  { name: "FFA Livestock Entry", desc: "Quick-tap buttons for tag scan, weight, breed, notes." },
+  { name: "CriderGPT Prompts", desc: "Your saved AI shortcuts and slash commands as big buttons." },
+  { name: "Photoshop / Editor", desc: "Brush size, layer toggles, undo/redo as dedicated keys." },
+  { name: "Piano / MIDI", desc: "Two octaves of touch piano keys for music apps." },
 ];
 
 export default function KeyboardBlueprint() {
@@ -114,8 +96,8 @@ export default function KeyboardBlueprint() {
   return (
     <>
       <Helmet>
-        <title>Project AETHER — Transparent Keyboard Blueprint | CriderGPT</title>
-        <meta name="description" content="Concept blueprint for a futuristic see-through wireless keyboard with per-key adaptive lighting and integrated trackpad panel." />
+        <title>Project AETHER — Touchscreen Keyboard Blueprint | CriderGPT</title>
+        <meta name="description" content="Concept blueprint for a full touchscreen PC keyboard with haptic feedback and built-in digital trackpad — like a giant phone keyboard for your desk." />
       </Helmet>
 
       <div className="min-h-screen bg-background">
@@ -135,7 +117,7 @@ export default function KeyboardBlueprint() {
               </div>
             </div>
             <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
-              Concept Phase
+              Concept Phase · v2
             </Badge>
           </div>
         </header>
@@ -151,21 +133,47 @@ export default function KeyboardBlueprint() {
                 AETHER
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                A fully transparent, wireless mechanical keyboard with per-key adaptive RGB lighting
-                and a built-in glass trackpad panel. Inspired by the tech of <em>The 100</em> — 
-                something that looks like it came from the future, but built with parts you can order today.
+                A full-glass touchscreen keyboard for PCs — basically a phone keyboard, scaled up to desk size,
+                with a built-in trackpad in the corner. No physical keys. Haptic buzz under every tap.
+                The layout changes based on what you're doing. Built from parts you can actually order.
               </p>
               <div className="flex flex-wrap gap-3 mt-6">
+                <Badge variant="secondary"><Smartphone className="h-3 w-3 mr-1" /> Touchscreen</Badge>
+                <Badge variant="secondary"><Vibrate className="h-3 w-3 mr-1" /> Haptic Feedback</Badge>
+                <Badge variant="secondary"><MousePointer className="h-3 w-3 mr-1" /> Digital Trackpad</Badge>
                 <Badge variant="secondary"><Wifi className="h-3 w-3 mr-1" /> Wireless</Badge>
-                <Badge variant="secondary"><Lightbulb className="h-3 w-3 mr-1" /> Adaptive RGB</Badge>
-                <Badge variant="secondary"><MousePointer className="h-3 w-3 mr-1" /> Trackpad</Badge>
-                <Badge variant="secondary"><Layers className="h-3 w-3 mr-1" /> See-Through</Badge>
               </div>
             </div>
-            {/* Decorative keyboard silhouette */}
             <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden lg:block opacity-10">
-              <Keyboard className="w-64 h-64" strokeWidth={0.5} />
+              <Smartphone className="w-64 h-64" strokeWidth={0.5} />
             </div>
+          </section>
+
+          {/* ASCII Layout Diagram */}
+          <section>
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" /> Surface Layout
+            </h3>
+            <Card>
+              <CardContent className="p-4 sm:p-6">
+                <pre className="text-[10px] sm:text-xs text-muted-foreground font-mono leading-tight overflow-x-auto">
+{`┌──────────────────────────────────────────────────────────────────┐
+│  [ESC] [F1] [F2] [F3] [F4] [F5] [F6] [F7] [F8] [F9] [F10] [DEL] │
+│  [ \` ] [ 1] [ 2] [ 3] [ 4] [ 5] [ 6] [ 7] [ 8] [ 9] [ 0]  [⌫]   │
+│  [TAB] [Q ] [W ] [E ] [R ] [T ] [Y ] [U ] [I ] [O ] [P ]  [\\]   │
+│  [CAPS][A ] [S ] [D ] [F ] [G ] [H ] [J ] [K ] [L ] [;]   [⏎]   │
+│  [⇧  ] [Z ] [X ] [C ] [V ] [B ] [N ] [M ] [,] [.] [/]    [⇧]    │
+│  [CTL][WIN][ALT] [_________ SPACE _________] [ALT][FN]┌─────────┐│
+│                                                       │ TRACKPAD ││
+│                                                       │   ZONE   ││
+│                                                       └─────────┘│
+└──────────────────────────────────────────────────────────────────┘`}
+                </pre>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Main display area (left + center): full QWERTY drawn in pixels, swappable to any layout. Corner panel (right): always-on trackpad with multi-touch gestures.
+                </p>
+              </CardContent>
+            </Card>
           </section>
 
           {/* Feature Grid */}
@@ -191,6 +199,25 @@ export default function KeyboardBlueprint() {
                   </Card>
                 );
               })}
+            </div>
+          </section>
+
+          {/* Layout Profiles */}
+          <section>
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" /> Swappable Layout Profiles
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {layoutProfiles.map((p) => (
+                <Card key={p.name} className="border-border/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">{p.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xs text-muted-foreground">{p.desc}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </section>
 
@@ -230,7 +257,7 @@ export default function KeyboardBlueprint() {
               </CardContent>
             </Card>
             <p className="text-xs text-muted-foreground mt-2">
-              Prices are rough estimates based on AliExpress / Amazon / Digi-Key. You could knock $50+ off by sourcing from bulk Chinese suppliers or skipping the Qi wireless charging.
+              The 14" touchscreen is the big-ticket item. You can shave $40-60 by going with a 12" panel or sourcing a used phone/tablet LCD off iFixit.
             </p>
           </section>
 
@@ -241,14 +268,14 @@ export default function KeyboardBlueprint() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { phase: "Phase 1", title: "Design & CAD", status: "Done (in your head)", desc: "Sketch layout, measure key spacing, plan layer stack." },
-                { phase: "Phase 2", title: "Order Parts", status: "Blocked — no funds", desc: "Order PCBs, acrylic, switches, and controller. ~$269 total." },
-                { phase: "Phase 3", title: "Assembly", status: "Future", desc: "Solder LEDs, flash Nice!Nano firmware, stack acrylic layers." },
-                { phase: "Phase 4", title: "Firmware & Polish", status: "Future", desc: "ZMK firmware for wireless, lighting profiles, trackpad gestures." },
+                { phase: "Phase 1", title: "Mock UI in Software", status: "Doable now", desc: "Build the touchscreen keyboard UI as a webpage that runs on any tablet. Test layouts, haptics, gestures." },
+                { phase: "Phase 2", title: "Order Parts", status: "Blocked — no funds", desc: "Touchscreen LCD, Pi Zero 2W, haptic motors, battery, frame. ~$354 total." },
+                { phase: "Phase 3", title: "Assembly", status: "Future", desc: "Mount LCD in CNC frame, wire haptic motors under glass, connect Pi + Nice!Nano controllers." },
+                { phase: "Phase 4", title: "Firmware & Profiles", status: "Future", desc: "ZMK keyboard logic, layout profile engine, gesture recognizer for the trackpad corner." },
               ].map((phase) => (
                 <Card key={phase.phase} className="border-border/60">
                   <CardHeader className="pb-2">
-                    <Badge variant={phase.status.includes("Done") ? "default" : phase.status.includes("Blocked") ? "destructive" : "outline"} className="w-fit mb-1 text-[10px]">
+                    <Badge variant={phase.status.includes("Doable") ? "default" : phase.status.includes("Blocked") ? "destructive" : "outline"} className="w-fit mb-1 text-[10px]">
                       {phase.status}
                     </Badge>
                     <CardTitle className="text-sm">{phase.phase}: {phase.title}</CardTitle>
@@ -261,45 +288,50 @@ export default function KeyboardBlueprint() {
             </div>
           </section>
 
-          {/* Server Expansion Ideas */}
+          {/* Pro/Con Reality Check */}
           <section>
             <h3 className="text-xl font-semibold mb-5 flex items-center gap-2">
-              <Cpu className="h-5 w-5 text-primary" /> While You're Dreaming — Server Upgrades
+              <Cpu className="h-5 w-5 text-primary" /> Honest Trade-Offs
             </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              You said you were wondering what else to throw on that AMD Ryzen server. Here's four actually-useful containers that cost $0 and run on what you already have:
-            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {serverIdeas.map((idea) => {
-                const Icon = idea.icon;
-                return (
-                  <Card key={idea.title} className="border-border/60 hover:border-primary/40 transition-colors">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Icon className="h-4 w-4 text-primary" />
-                        </div>
-                        <Badge variant="outline" className="text-[10px]">Free</Badge>
-                      </div>
-                      <CardTitle className="text-sm mt-2">{idea.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <p className="text-sm text-muted-foreground">{idea.desc}</p>
-                      <p className="text-xs text-primary font-medium">{idea.why}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-emerald-400">Wins</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside">
+                    <li>Infinitely customizable layouts — one device, every app</li>
+                    <li>No moving parts to wear out or get sticky</li>
+                    <li>Spill-proof (it's just glass)</li>
+                    <li>Looks like nothing else on the market</li>
+                    <li>Built-in trackpad kills your need for a mouse</li>
+                  </ul>
+                </CardContent>
+              </Card>
+              <Card className="border-rose-500/30 bg-gradient-to-br from-rose-500/10 to-transparent">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-rose-400">Trade-offs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside">
+                    <li>Touch typing without raised keys takes practice</li>
+                    <li>Burns more battery than a mechanical board</li>
+                    <li>Glass shows fingerprints fast</li>
+                    <li>Haptic ≠ real key travel for hardcore gamers</li>
+                    <li>Single point of failure — cracked screen = dead keyboard</li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </section>
 
           {/* Footer Note */}
           <div className="text-center py-8 border-t border-border">
             <p className="text-sm text-muted-foreground">
-              This is a concept document. Nothing here is for sale. If you ever build it, you have the receipts.
+              This is a concept document. Nothing here is for sale yet. If you ever build it, you have the receipts.
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Project AETHER — conceived by Jessie Crider, documented by CriderGPT.
+              Project AETHER v2 — conceived by Jessie Crider, documented by CriderGPT.
             </p>
           </div>
         </main>
