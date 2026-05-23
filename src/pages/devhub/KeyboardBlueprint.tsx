@@ -320,8 +320,28 @@ export default function KeyboardBlueprint() {
               </Card>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Recommendation: start with the <span className="text-emerald-400 font-semibold">$60 screen-only</span> as a working prototype. Prove the layout software, then upgrade the same chassis to wireless and haptics later.
+              Locked in: the <span className="text-amber-300 font-semibold">$140 Bluetooth + battery build</span>. It pairs to the PC natively over BT (no extra dongle taking up a USB port), runs ~8 hrs unplugged, and the same chassis can grow into the full AETHER later by bolting on haptics and the corner trackpad.
             </p>
+          </section>
+
+          {/* Who Builds the Software */}
+          <section>
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2">
+              <Cpu className="h-5 w-5 text-primary" /> Who Writes The Code?
+            </h3>
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
+              <CardContent className="pt-6 space-y-3 text-sm text-muted-foreground">
+                <p><span className="text-primary font-semibold">Short answer:</span> CriderGPT writes 90% of it, you assemble. You don't need to learn C++ or firmware from scratch.</p>
+                <p><span className="text-foreground font-semibold">How it actually breaks down:</span></p>
+                <ul className="space-y-2 list-disc list-inside text-xs">
+                  <li><span className="text-primary">Keyboard UI (React/TS):</span> AI generates it — you already have the whole CriderGPT React stack to copy from. ~1 day of prompting.</li>
+                  <li><span className="text-primary">ZMK Bluetooth firmware (C++):</span> ZMK is open-source and config-driven. You edit a YAML keymap, not raw C++. AI writes the YAML.</li>
+                  <li><span className="text-primary">Pi boot scripts (bash):</span> 20 lines total. AI writes it, you paste into Termius.</li>
+                  <li><span className="text-primary">You only do:</span> flash the firmware (one command), wire 4 things together, screw the case shut.</li>
+                </ul>
+                <p className="text-xs pt-2 border-t border-border"><span className="text-foreground font-semibold">Time estimate:</span> ~2 weekends end-to-end if parts ship on time. Software side is a couple evenings of AI-assisted prompting.</p>
+              </CardContent>
+            </Card>
           </section>
 
           {/* Software & Languages */}
