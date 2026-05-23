@@ -283,20 +283,24 @@ export default function KeyboardBlueprint() {
                   <p className="text-[11px] text-emerald-400">No battery · No haptics · No wireless</p>
                 </CardContent>
               </Card>
-              <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent">
+              <Card className="border-amber-500/50 bg-gradient-to-br from-amber-500/15 to-transparent ring-2 ring-amber-500/40">
                 <CardHeader className="pb-2">
-                  <Badge className="w-fit bg-amber-500/20 text-amber-300 border-amber-500/40">Mid · ~$140</Badge>
-                  <CardTitle className="text-sm mt-2">Wireless + Battery</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <Badge className="w-fit bg-amber-500/20 text-amber-300 border-amber-500/40">Mid · ~$140</Badge>
+                    <Badge className="w-fit bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px]">YOUR PICK</Badge>
+                  </div>
+                  <CardTitle className="text-sm mt-2">Wireless + Battery (Bluetooth)</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Goes cord-free. Adds a Pi Zero 2W as the brain so it works without being tethered to a PC.</p>
+                  <p className="text-xs text-muted-foreground">Pairs to your PC over plain Bluetooth — looks like any other BT keyboard to Windows. No USB dongle, no driver install. Battery lets you carry it room-to-room.</p>
                   <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside">
                     <li>10" Waveshare HDMI+touch — $75</li>
-                    <li>Raspberry Pi Zero 2W — $15</li>
-                    <li>3000mAh Li-Po + TP4056 — $22</li>
-                    <li>BLE module (Nice!Nano) — $25</li>
+                    <li>Raspberry Pi Zero 2W (the brain) — $15</li>
+                    <li>3000mAh Li-Po + TP4056 charger — $22</li>
+                    <li>Nice!Nano BLE HID module — $25</li>
+                    <li>USB-C port (charging + backup wired mode) — $3</li>
                   </ul>
-                  <p className="text-[11px] text-amber-400">No haptics · Plastic frame</p>
+                  <p className="text-[11px] text-amber-400">BT 5.2 HID · 8–10 hr battery · No haptics yet</p>
                 </CardContent>
               </Card>
               <Card className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent">
