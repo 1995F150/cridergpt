@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Hammer, Download, RefreshCw, Loader2 } from 'lucide-react';
+import { Hammer, Download, RefreshCw, Loader2, Copy, Check, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BuilderStatus {
