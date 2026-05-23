@@ -201,7 +201,6 @@ export default function AndroidBuilder() {
           ))}
         </CardContent>
       </Card>
-      </Card>
 
       <div className="flex gap-2">
         <Button onClick={triggerBuild} disabled={triggering || status?.state === 'building'}>
