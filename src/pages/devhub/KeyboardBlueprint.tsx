@@ -261,6 +261,131 @@ export default function KeyboardBlueprint() {
             </p>
           </section>
 
+          {/* Budget Tiers */}
+          <section>
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" /> Budget Tiers — Pick Your Route
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent">
+                <CardHeader className="pb-2">
+                  <Badge className="w-fit bg-emerald-500/20 text-emerald-300 border-emerald-500/40">Cheap · ~$60</Badge>
+                  <CardTitle className="text-sm mt-2">Screen-Only Build</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Plug straight into your PC over USB-C. PC does all the typing logic; the keyboard is literally just a 2nd touchscreen running a webpage.</p>
+                  <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>Salvaged 10" tablet LCD (eBay) — $30</li>
+                    <li>USB-C touch controller — $12</li>
+                    <li>Acrylic frame + feet — $10</li>
+                    <li>Cables + screws — $8</li>
+                  </ul>
+                  <p className="text-[11px] text-emerald-400">No battery · No haptics · No wireless</p>
+                </CardContent>
+              </Card>
+              <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent">
+                <CardHeader className="pb-2">
+                  <Badge className="w-fit bg-amber-500/20 text-amber-300 border-amber-500/40">Mid · ~$140</Badge>
+                  <CardTitle className="text-sm mt-2">Wireless + Battery</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Goes cord-free. Adds a Pi Zero 2W as the brain so it works without being tethered to a PC.</p>
+                  <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>10" Waveshare HDMI+touch — $75</li>
+                    <li>Raspberry Pi Zero 2W — $15</li>
+                    <li>3000mAh Li-Po + TP4056 — $22</li>
+                    <li>BLE module (Nice!Nano) — $25</li>
+                  </ul>
+                  <p className="text-[11px] text-amber-400">No haptics · Plastic frame</p>
+                </CardContent>
+              </Card>
+              <Card className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent">
+                <CardHeader className="pb-2">
+                  <Badge className="w-fit bg-cyan-500/20 text-cyan-300 border-cyan-500/40">Full · ~${totalEst}</Badge>
+                  <CardTitle className="text-sm mt-2">Full AETHER Build</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Everything in the parts list — 14" main display, corner trackpad zone, haptic motors, Qi charging, CNC aluminum frame.</p>
+                  <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>Sells for $700–$1,000 retail-comparable</li>
+                    <li>Profit per unit ≈ $350–650 if you parts-source bulk</li>
+                    <li>Build time: ~14 hrs first unit, ~4 hrs after jig is made</li>
+                  </ul>
+                  <p className="text-[11px] text-cyan-400">Sell-worthy on Amazon / Etsy</p>
+                </CardContent>
+              </Card>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Recommendation: start with the <span className="text-emerald-400 font-semibold">$60 screen-only</span> as a working prototype. Prove the layout software, then upgrade the same chassis to wireless and haptics later.
+            </p>
+          </section>
+
+          {/* Software & Languages */}
+          <section>
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2">
+              <Cpu className="h-5 w-5 text-primary" /> Software Stack & Languages
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Keyboard UI (the touchscreen layout)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs text-muted-foreground">
+                  <p><span className="text-primary font-semibold">Language:</span> TypeScript + React (same stack as CriderGPT — code re-uses your existing components).</p>
+                  <p><span className="text-primary font-semibold">Renderer:</span> Runs as a kiosk-mode Chromium tab on the Pi. Full-screen, no browser chrome, boots straight in.</p>
+                  <p><span className="text-primary font-semibold">Why:</span> You already know it. Layouts become React components. Profile swaps are state changes — instant.</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Keypress → PC Bridge</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs text-muted-foreground">
+                  <p><span className="text-primary font-semibold">Language:</span> C++ firmware on the Nice!Nano controller (via ZMK framework).</p>
+                  <p><span className="text-primary font-semibold">Protocol:</span> HID over BLE 5.2 — looks like a regular Bluetooth keyboard to Windows/Mac/Linux. No driver install needed.</p>
+                  <p><span className="text-primary font-semibold">Wired fallback:</span> USB-C HID composite (keyboard + mouse + touchscreen).</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Haptic Engine</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs text-muted-foreground">
+                  <p><span className="text-primary font-semibold">Language:</span> Python service on the Pi listening over I²C to the DRV2605L driver.</p>
+                  <p><span className="text-primary font-semibold">Patterns:</span> 123-effect library (sharp click, double tap, long buzz, error rumble). UI just sends an effect ID.</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">CriderGPT Integration</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs text-muted-foreground">
+                  <p><span className="text-primary font-semibold">Connection:</span> WebSocket from the keyboard UI to <code className="text-[10px] bg-muted px-1">cridergpt.com</code>.</p>
+                  <p><span className="text-primary font-semibold">Auth:</span> Same Supabase JWT your phone uses — scan a QR code from the app to pair.</p>
+                  <p><span className="text-primary font-semibold">Sync:</span> Custom layouts, prompt shortcuts, and saved snippets all pull from your existing <code className="text-[10px] bg-muted px-1">ai_memory</code> table.</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Storage</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs text-muted-foreground">
+                  <p><span className="text-primary font-semibold">Local:</span> 16GB or 32GB microSD card in the Pi (~$8). Holds the OS, layout profiles, offline cache.</p>
+                  <p><span className="text-primary font-semibold">Cloud:</span> Supabase row for synced profiles — same setup as the rest of CriderGPT.</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">OTA Updates</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs text-muted-foreground">
+                  <p><span className="text-primary font-semibold">Mechanism:</span> Pi polls a GitHub release URL every boot + every 6 hrs. New version = git pull + restart kiosk.</p>
+                  <p><span className="text-primary font-semibold">Firmware:</span> ZMK supports DFU over USB — flash a new <code className="text-[10px] bg-muted px-1">.uf2</code> by dragging it onto the device when plugged in.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
           {/* Build Timeline */}
           <section>
             <h3 className="text-xl font-semibold mb-5 flex items-center gap-2">
