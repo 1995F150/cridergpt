@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer
 } from "lucide-react";
 
 const modules = [
@@ -19,6 +19,7 @@ const modules = [
   { to: "/devhub/weld-jobs", icon: Wrench, title: "Welding Job Tracker", desc: "Clock hours at the shop, log jobs, export weekly timesheet.", tag: "Shop + Money" },
   { to: "/devhub/mod-packer", icon: Boxes, title: "FS25 / FS22 Mod Packer", desc: "Unpack a mod ZIP, edit XML, repack signed. Hooks into process-mod-zip.", tag: "Builder" },
   { to: "/devhub/keyboard-blueprint", icon: Keyboard, title: "Project AETHER", desc: "Concept blueprint for a futuristic transparent wireless keyboard with per-key lighting.", tag: "Builder" },
+  { to: "/devhub/android-builder", icon: Hammer, title: "Android Auto-Builder", desc: "One-shot Ubuntu install commands + dashboard. Builds a signed APK + AAB every time you press Update.", tag: "Server + AI Ops" },
 ];
 
 export default function DevHub() {
