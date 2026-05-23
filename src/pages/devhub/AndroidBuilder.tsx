@@ -24,7 +24,15 @@ export default function AndroidBuilder() {
   const [status, setStatus] = useState<BuilderStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [triggering, setTriggering] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const copy = (label: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(label);
+    toast({ title: 'Copied', description: label });
+    setTimeout(() => setCopied(null), 1500);
+  };
 
   const fetchStatus = async () => {
     setLoading(true);
