@@ -283,20 +283,24 @@ export default function KeyboardBlueprint() {
                   <p className="text-[11px] text-emerald-400">No battery · No haptics · No wireless</p>
                 </CardContent>
               </Card>
-              <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent">
+              <Card className="border-amber-500/50 bg-gradient-to-br from-amber-500/15 to-transparent ring-2 ring-amber-500/40">
                 <CardHeader className="pb-2">
-                  <Badge className="w-fit bg-amber-500/20 text-amber-300 border-amber-500/40">Mid · ~$140</Badge>
-                  <CardTitle className="text-sm mt-2">Wireless + Battery</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <Badge className="w-fit bg-amber-500/20 text-amber-300 border-amber-500/40">Mid · ~$140</Badge>
+                    <Badge className="w-fit bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px]">YOUR PICK</Badge>
+                  </div>
+                  <CardTitle className="text-sm mt-2">Wireless + Battery (Bluetooth)</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Goes cord-free. Adds a Pi Zero 2W as the brain so it works without being tethered to a PC.</p>
+                  <p className="text-xs text-muted-foreground">Pairs to your PC over plain Bluetooth — looks like any other BT keyboard to Windows. No USB dongle, no driver install. Battery lets you carry it room-to-room.</p>
                   <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside">
                     <li>10" Waveshare HDMI+touch — $75</li>
-                    <li>Raspberry Pi Zero 2W — $15</li>
-                    <li>3000mAh Li-Po + TP4056 — $22</li>
-                    <li>BLE module (Nice!Nano) — $25</li>
+                    <li>Raspberry Pi Zero 2W (the brain) — $15</li>
+                    <li>3000mAh Li-Po + TP4056 charger — $22</li>
+                    <li>Nice!Nano BLE HID module — $25</li>
+                    <li>USB-C port (charging + backup wired mode) — $3</li>
                   </ul>
-                  <p className="text-[11px] text-amber-400">No haptics · Plastic frame</p>
+                  <p className="text-[11px] text-amber-400">BT 5.2 HID · 8–10 hr battery · No haptics yet</p>
                 </CardContent>
               </Card>
               <Card className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent">
@@ -316,8 +320,28 @@ export default function KeyboardBlueprint() {
               </Card>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Recommendation: start with the <span className="text-emerald-400 font-semibold">$60 screen-only</span> as a working prototype. Prove the layout software, then upgrade the same chassis to wireless and haptics later.
+              Locked in: the <span className="text-amber-300 font-semibold">$140 Bluetooth + battery build</span>. It pairs to the PC natively over BT (no extra dongle taking up a USB port), runs ~8 hrs unplugged, and the same chassis can grow into the full AETHER later by bolting on haptics and the corner trackpad.
             </p>
+          </section>
+
+          {/* Who Builds the Software */}
+          <section>
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2">
+              <Cpu className="h-5 w-5 text-primary" /> Who Writes The Code?
+            </h3>
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
+              <CardContent className="pt-6 space-y-3 text-sm text-muted-foreground">
+                <p><span className="text-primary font-semibold">Short answer:</span> CriderGPT writes 90% of it, you assemble. You don't need to learn C++ or firmware from scratch.</p>
+                <p><span className="text-foreground font-semibold">How it actually breaks down:</span></p>
+                <ul className="space-y-2 list-disc list-inside text-xs">
+                  <li><span className="text-primary">Keyboard UI (React/TS):</span> AI generates it — you already have the whole CriderGPT React stack to copy from. ~1 day of prompting.</li>
+                  <li><span className="text-primary">ZMK Bluetooth firmware (C++):</span> ZMK is open-source and config-driven. You edit a YAML keymap, not raw C++. AI writes the YAML.</li>
+                  <li><span className="text-primary">Pi boot scripts (bash):</span> 20 lines total. AI writes it, you paste into Termius.</li>
+                  <li><span className="text-primary">You only do:</span> flash the firmware (one command), wire 4 things together, screw the case shut.</li>
+                </ul>
+                <p className="text-xs pt-2 border-t border-border"><span className="text-foreground font-semibold">Time estimate:</span> ~2 weekends end-to-end if parts ship on time. Software side is a couple evenings of AI-assisted prompting.</p>
+              </CardContent>
+            </Card>
           </section>
 
           {/* Software & Languages */}
