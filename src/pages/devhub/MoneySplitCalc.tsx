@@ -215,7 +215,7 @@ export default function MoneySplitCalc() {
       <Card className="mt-4">
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="text-base">Split Your {period === "weekly" ? "Paycheck" : period === "monthly" ? "Month" : "Year"}</CardTitle>
+            <CardTitle className="text-base">Split Your {period === "daily" ? "Day" : period === "weekly" ? "Paycheck" : period === "biweekly" ? "2 Weeks" : period === "monthly" ? "Month" : "Year"}</CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant={overBudget ? "destructive" : underBudget ? "secondary" : "default"}>
                 {totalPct}% allocated
