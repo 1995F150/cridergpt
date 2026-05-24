@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DevHubPage } from "./_layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import {
-  PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw
+  PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
+  History, Trash2, Save
 } from "lucide-react";
+import { toast } from "sonner";
 
-type Period = "weekly" | "monthly" | "yearly";
+type Period = "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
+
+interface HistoryEntry {
+  id: string;
+  ts: number;
+  income: number;
+  period: Period;
+  pct: Record<string, number>;
+}
+
+const HISTORY_KEY = "money-split-history";
 
 interface Bucket {
   key: string;
