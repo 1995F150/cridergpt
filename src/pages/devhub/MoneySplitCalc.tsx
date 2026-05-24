@@ -158,13 +158,13 @@ export default function MoneySplitCalc() {
                 className="mt-1"
               />
             </div>
-            <div className="flex gap-2">
-              {(["weekly", "monthly", "yearly"] as Period[]).map(p => (
+            <div className="grid grid-cols-3 gap-2">
+              {(["daily", "weekly", "biweekly", "monthly", "yearly"] as Period[]).map(p => (
                 <Button
                   key={p}
                   variant={period === p ? "default" : "outline"}
                   size="sm"
-                  className="flex-1 capitalize"
+                  className="capitalize text-xs"
                   onClick={() => setPeriod(p)}
                 >
                   {p}
@@ -174,6 +174,9 @@ export default function MoneySplitCalc() {
             <div className="text-sm text-muted-foreground">
               Yearly equivalent: <span className="font-mono font-bold text-foreground">{fmt(yearlyIncome)}</span>
             </div>
+            <Button onClick={saveToHistory} className="w-full" size="sm">
+              <Save className="w-4 h-4 mr-2" /> Save This Calculation
+            </Button>
           </CardContent>
         </Card>
 
