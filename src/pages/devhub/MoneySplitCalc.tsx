@@ -63,6 +63,19 @@ export default function MoneySplitCalc() {
   const [income, setIncome] = useState(1000);
   const [period, setPeriod] = useState<Period>("weekly");
   const [pct, setPct] = useState<Record<string, number>>({ ...DEFAULTS });
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (raw) setHistory(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const persistHistory = (next: HistoryEntry[]) => {
+    setHistory(next);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+  };
 
   const totalPct = useMemo(() => Object.values(pct).reduce((a, b) => a + b, 0), [pct]);
   const overBudget = totalPct > 100;
@@ -70,7 +83,9 @@ export default function MoneySplitCalc() {
 
   const yearlyIncome = useMemo(() => {
     switch (period) {
+      case "daily": return income * 365;
       case "weekly": return income * 52;
+      case "biweekly": return income * 26;
       case "monthly": return income * 12;
       case "yearly": return income;
     }
@@ -80,7 +95,9 @@ export default function MoneySplitCalc() {
 
   const periodMultiplier = useMemo(() => {
     switch (period) {
+      case "daily": return 1 / 365;
       case "weekly": return 1 / 52;
+      case "biweekly": return 1 / 26;
       case "monthly": return 1 / 12;
       case "yearly": return 1;
     }
@@ -91,6 +108,35 @@ export default function MoneySplitCalc() {
   };
 
   const reset = () => setPct({ ...DEFAULTS });
+
+  const saveToHistory = () => {
+    const entry: HistoryEntry = {
+      id: crypto.randomUUID(),
+      ts: Date.now(),
+      income,
+      period,
+      pct: { ...pct },
+    };
+    const next = [entry, ...history].slice(0, 50);
+    persistHistory(next);
+    toast.success("Saved to history");
+  };
+
+  const loadEntry = (e: HistoryEntry) => {
+    setIncome(e.income);
+    setPeriod(e.period);
+    setPct({ ...e.pct });
+    toast.success("Loaded from history");
+  };
+
+  const removeEntry = (id: string) => {
+    persistHistory(history.filter(h => h.id !== id));
+  };
+
+  const clearHistory = () => {
+    persistHistory([]);
+    toast.success("History cleared");
+  };
 
   return (
     <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, fun, and savings">
