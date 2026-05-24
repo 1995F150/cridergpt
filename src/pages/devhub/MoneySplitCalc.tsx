@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DevHubPage } from "./_layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import {
-  PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw
+  PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
+  History, Trash2, Save
 } from "lucide-react";
+import { toast } from "sonner";
 
-type Period = "weekly" | "monthly" | "yearly";
+type Period = "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
+
+interface HistoryEntry {
+  id: string;
+  ts: number;
+  income: number;
+  period: Period;
+  pct: Record<string, number>;
+}
+
+const HISTORY_KEY = "money-split-history";
 
 interface Bucket {
   key: string;
@@ -51,6 +63,19 @@ export default function MoneySplitCalc() {
   const [income, setIncome] = useState(1000);
   const [period, setPeriod] = useState<Period>("weekly");
   const [pct, setPct] = useState<Record<string, number>>({ ...DEFAULTS });
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (raw) setHistory(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const persistHistory = (next: HistoryEntry[]) => {
+    setHistory(next);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+  };
 
   const totalPct = useMemo(() => Object.values(pct).reduce((a, b) => a + b, 0), [pct]);
   const overBudget = totalPct > 100;
@@ -58,7 +83,9 @@ export default function MoneySplitCalc() {
 
   const yearlyIncome = useMemo(() => {
     switch (period) {
+      case "daily": return income * 365;
       case "weekly": return income * 52;
+      case "biweekly": return income * 26;
       case "monthly": return income * 12;
       case "yearly": return income;
     }
@@ -68,7 +95,9 @@ export default function MoneySplitCalc() {
 
   const periodMultiplier = useMemo(() => {
     switch (period) {
+      case "daily": return 1 / 365;
       case "weekly": return 1 / 52;
+      case "biweekly": return 1 / 26;
       case "monthly": return 1 / 12;
       case "yearly": return 1;
     }
@@ -79,6 +108,35 @@ export default function MoneySplitCalc() {
   };
 
   const reset = () => setPct({ ...DEFAULTS });
+
+  const saveToHistory = () => {
+    const entry: HistoryEntry = {
+      id: crypto.randomUUID(),
+      ts: Date.now(),
+      income,
+      period,
+      pct: { ...pct },
+    };
+    const next = [entry, ...history].slice(0, 50);
+    persistHistory(next);
+    toast.success("Saved to history");
+  };
+
+  const loadEntry = (e: HistoryEntry) => {
+    setIncome(e.income);
+    setPeriod(e.period);
+    setPct({ ...e.pct });
+    toast.success("Loaded from history");
+  };
+
+  const removeEntry = (id: string) => {
+    persistHistory(history.filter(h => h.id !== id));
+  };
+
+  const clearHistory = () => {
+    persistHistory([]);
+    toast.success("History cleared");
+  };
 
   return (
     <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, fun, and savings">
@@ -100,13 +158,13 @@ export default function MoneySplitCalc() {
                 className="mt-1"
               />
             </div>
-            <div className="flex gap-2">
-              {(["weekly", "monthly", "yearly"] as Period[]).map(p => (
+            <div className="grid grid-cols-3 gap-2">
+              {(["daily", "weekly", "biweekly", "monthly", "yearly"] as Period[]).map(p => (
                 <Button
                   key={p}
                   variant={period === p ? "default" : "outline"}
                   size="sm"
-                  className="flex-1 capitalize"
+                  className="capitalize text-xs"
                   onClick={() => setPeriod(p)}
                 >
                   {p}
@@ -116,6 +174,9 @@ export default function MoneySplitCalc() {
             <div className="text-sm text-muted-foreground">
               Yearly equivalent: <span className="font-mono font-bold text-foreground">{fmt(yearlyIncome)}</span>
             </div>
+            <Button onClick={saveToHistory} className="w-full" size="sm">
+              <Save className="w-4 h-4 mr-2" /> Save This Calculation
+            </Button>
           </CardContent>
         </Card>
 
@@ -154,7 +215,7 @@ export default function MoneySplitCalc() {
       <Card className="mt-4">
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="text-base">Split Your {period === "weekly" ? "Paycheck" : period === "monthly" ? "Month" : "Year"}</CardTitle>
+            <CardTitle className="text-base">Split Your {period === "daily" ? "Day" : period === "weekly" ? "Paycheck" : period === "biweekly" ? "2 Weeks" : period === "monthly" ? "Month" : "Year"}</CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant={overBudget ? "destructive" : underBudget ? "secondary" : "default"}>
                 {totalPct}% allocated
@@ -255,6 +316,63 @@ export default function MoneySplitCalc() {
             title="📦 Bulk Buy Savings"
             desc="Use the ‘Fun’ bucket for bulk welding supplies once/quarter instead of weekly runs."
           />
+        </CardContent>
+      </Card>
+
+      {/* History */}
+      <Card className="mt-4">
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <History className="w-4 h-4" /> Calculation History
+              <Badge variant="secondary" className="ml-1">{history.length}</Badge>
+            </CardTitle>
+            {history.length > 0 && (
+              <Button variant="outline" size="sm" onClick={clearHistory}>
+                <Trash2 className="w-4 h-4 mr-1" /> Clear All
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {history.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Hit <span className="font-medium text-foreground">Save This Calculation</span> to keep a record of every paycheck you split.
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {history.map(h => {
+                const top = BUCKETS
+                  .map(b => ({ label: b.label, emoji: b.emoji, val: h.pct[b.key] ?? 0 }))
+                  .sort((a, b) => b.val - a.val)
+                  .slice(0, 3);
+                return (
+                  <div key={h.id} className="p-3 rounded-lg bg-muted/40 border border-border/60 flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-bold">{fmt(h.income)}</span>
+                        <Badge variant="outline" className="capitalize text-[10px]">{h.period}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(h.ts).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 truncate">
+                        {top.map(t => `${t.emoji} ${t.val}%`).join(" · ")}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="sm" onClick={() => loadEntry(h)}>
+                        Load
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeEntry(h.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </DevHubPage>
