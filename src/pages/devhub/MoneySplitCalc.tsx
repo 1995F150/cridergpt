@@ -318,6 +318,63 @@ export default function MoneySplitCalc() {
           />
         </CardContent>
       </Card>
+
+      {/* History */}
+      <Card className="mt-4">
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <History className="w-4 h-4" /> Calculation History
+              <Badge variant="secondary" className="ml-1">{history.length}</Badge>
+            </CardTitle>
+            {history.length > 0 && (
+              <Button variant="outline" size="sm" onClick={clearHistory}>
+                <Trash2 className="w-4 h-4 mr-1" /> Clear All
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {history.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Hit <span className="font-medium text-foreground">Save This Calculation</span> to keep a record of every paycheck you split.
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {history.map(h => {
+                const top = BUCKETS
+                  .map(b => ({ label: b.label, emoji: b.emoji, val: h.pct[b.key] ?? 0 }))
+                  .sort((a, b) => b.val - a.val)
+                  .slice(0, 3);
+                return (
+                  <div key={h.id} className="p-3 rounded-lg bg-muted/40 border border-border/60 flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-bold">{fmt(h.income)}</span>
+                        <Badge variant="outline" className="capitalize text-[10px]">{h.period}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(h.ts).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 truncate">
+                        {top.map(t => `${t.emoji} ${t.val}%`).join(" · ")}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="sm" onClick={() => loadEntry(h)}>
+                        Load
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeEntry(h.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </DevHubPage>
   );
 }
