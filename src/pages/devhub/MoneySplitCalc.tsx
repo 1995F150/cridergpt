@@ -377,6 +377,14 @@ export default function MoneySplitCalc() {
             <Button onClick={saveToHistory} className="w-full" size="sm">
               <Save className="w-4 h-4 mr-2" /> Save This Calculation
             </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => exportPDF()} variant="outline" size="sm">
+                <FileDown className="w-4 h-4 mr-1" /> PDF
+              </Button>
+              <Button onClick={() => exportCSV()} variant="outline" size="sm">
+                <FileSpreadsheet className="w-4 h-4 mr-1" /> CSV
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
