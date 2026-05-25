@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
-  History, Trash2, Save
+  History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,7 +22,17 @@ interface HistoryEntry {
   pct: Record<string, number>;
 }
 
+interface Txn {
+  id: string;
+  ts: number;
+  bucket: string;
+  amount: number; // + deposit, - withdraw
+  note: string;
+}
+
 const HISTORY_KEY = "money-split-history";
+const ENVELOPE_KEY = "money-split-envelopes";
+const TXN_KEY = "money-split-txns";
 
 interface Bucket {
   key: string;
