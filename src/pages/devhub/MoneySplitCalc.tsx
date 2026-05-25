@@ -357,6 +357,109 @@ export default function MoneySplitCalc() {
         })}
       </div>
 
+      {/* Virtual Lockbox / Envelopes */}
+      <Card className="mt-4 border-amber-400/40">
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Lock className="w-4 h-4 text-amber-400" /> Virtual Lockbox
+              <Badge variant="secondary" className="ml-1">{fmt(totalLockbox)} total</Badge>
+            </CardTitle>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={depositPaycheck} disabled={income <= 0 || totalPct === 0}>
+                <ArrowDownToLine className="w-4 h-4 mr-1" /> Deposit {fmt(income)} paycheck
+              </Button>
+              <Button size="sm" variant="outline" onClick={resetEnvelopes}>
+                <RotateCcw className="w-4 h-4 mr-1" /> Reset
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Each envelope holds real money you've set aside. Hit <b>Deposit paycheck</b> to auto-split your income using the percentages above, or move money in/out of any envelope by hand.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {BUCKETS.map(bucket => {
+            const bal = envelopes[bucket.key] ?? 0;
+            const Icon = bucket.icon;
+            const amtStr = manualAmt[bucket.key] ?? "";
+            const amt = parseFloat(amtStr) || 0;
+            return (
+              <div key={bucket.key} className="p-3 rounded-lg border border-border bg-muted/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-md ${bucket.bg} flex items-center justify-center`}>
+                      <Icon className={`w-4 h-4 ${bucket.color}`} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">{bucket.emoji} {bucket.label}</div>
+                      <div className="text-[11px] text-muted-foreground">{pct[bucket.key] ?? 0}% allocation</div>
+                    </div>
+                  </div>
+                  <div className="font-mono font-bold text-lg">{fmt(bal)}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={amtStr}
+                    onChange={e => setManualAmt(prev => ({ ...prev, [bucket.key]: e.target.value }))}
+                    className="h-8 text-sm"
+                  />
+                  <Button size="sm" variant="outline" className="h-8 px-2"
+                    onClick={() => adjustEnvelope(bucket.key, amt, "Manual deposit")}
+                    disabled={amt <= 0}>
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 px-2"
+                    onClick={() => adjustEnvelope(bucket.key, -amt, "Manual withdraw")}
+                    disabled={amt <= 0}>
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Lockbox transactions */}
+      {txns.length > 0 && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <History className="w-4 h-4" /> Envelope Activity
+              <Badge variant="secondary" className="ml-1">{txns.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1 max-h-72 overflow-y-auto">
+              {txns.map(t => {
+                const b = BUCKETS.find(x => x.key === t.bucket);
+                const positive = t.amount >= 0;
+                return (
+                  <div key={t.id} className="flex items-center justify-between text-xs py-1.5 px-2 rounded hover:bg-muted/40">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span>{b?.emoji ?? "•"}</span>
+                      <span className="truncate">{b?.label ?? t.bucket}</span>
+                      <span className="text-muted-foreground truncate hidden sm:inline">— {t.note}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className={`font-mono font-bold ${positive ? "text-emerald-400" : "text-red-400"}`}>
+                        {positive ? "+" : ""}{fmt(t.amount)}
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">
+                        {new Date(t.ts).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Suggestions */}
       <Card className="mt-4">
         <CardHeader>
