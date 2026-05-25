@@ -213,6 +213,131 @@ export default function MoneySplitCalc() {
     toast.success("History cleared");
   };
 
+  const slug = (s: string) =>
+    s.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
+
+  const buildFilename = (ext: string, label = "money-split") => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    return `CriderGPT_${slug(label)}_${stamp}.${ext}`;
+  };
+
+  type Snapshot = { income: number; period: Period; pct: Record<string, number>; ts: number };
+
+  const currentSnapshot = (): Snapshot => ({ income, period, pct, ts: Date.now() });
+
+  const exportPDF = async (snap: Snapshot = currentSnapshot()) => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 20;
+      let y = await addPDFHeader(doc);
+
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Money Split Breakdown", margin, y);
+      y += 8;
+
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${new Date(snap.ts).toLocaleString()}`, margin, y);
+      y += 6;
+      doc.text(`Income: ${fmt(snap.income)} / ${snap.period}`, margin, y);
+      y += 6;
+      const yearly =
+        snap.period === "daily" ? snap.income * 365 :
+        snap.period === "weekly" ? snap.income * 52 :
+        snap.period === "biweekly" ? snap.income * 26 :
+        snap.period === "monthly" ? snap.income * 12 : snap.income;
+      doc.text(`Yearly equivalent: ${fmt(yearly)}`, margin, y);
+      y += 10;
+
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Bucket", margin, y);
+      doc.text("%", margin + 80, y);
+      doc.text("Per period", margin + 105, y);
+      doc.text("Per year", margin + 150, y);
+      y += 4;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
+
+      doc.setFontSize(10);
+      let totalPctSum = 0;
+      let totalPeriod = 0;
+      let totalYear = 0;
+      BUCKETS.forEach(b => {
+        const v = snap.pct[b.key] ?? 0;
+        const perYear = yearly * (v / 100);
+        const perPeriod = snap.income * (v / 100);
+        totalPctSum += v;
+        totalYear += perYear;
+        totalPeriod += perPeriod;
+        if (y > 260) { doc.addPage(); y = 25; }
+        doc.text(`${b.emoji} ${b.label}`, margin, y);
+        doc.text(`${v}%`, margin + 80, y);
+        doc.text(fmt(perPeriod), margin + 105, y);
+        doc.text(fmt(perYear), margin + 150, y);
+        y += 7;
+        doc.setTextColor(120, 120, 120);
+        const descLines = doc.splitTextToSize(b.desc, pageWidth - margin * 2 - 5);
+        doc.text(descLines, margin + 5, y);
+        y += descLines.length * 4 + 3;
+        doc.setTextColor(0, 0, 0);
+      });
+
+      y += 4;
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
+      doc.setFont(undefined, "bold");
+      doc.text("Totals", margin, y);
+      doc.text(`${totalPctSum}%`, margin + 80, y);
+      doc.text(fmt(totalPeriod), margin + 105, y);
+      doc.text(fmt(totalYear), margin + 150, y);
+      doc.setFont(undefined, "normal");
+
+      addPDFFooter(doc);
+      await addCornerWatermark(doc);
+      doc.save(buildFilename("pdf"));
+      toast.success("PDF exported");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to export PDF");
+    }
+  };
+
+  const exportCSV = (snap: Snapshot = currentSnapshot()) => {
+    const yearly =
+      snap.period === "daily" ? snap.income * 365 :
+      snap.period === "weekly" ? snap.income * 52 :
+      snap.period === "biweekly" ? snap.income * 26 :
+      snap.period === "monthly" ? snap.income * 12 : snap.income;
+    const rows: string[] = [];
+    rows.push(`CriderGPT Money Split`);
+    rows.push(`Generated,${new Date(snap.ts).toLocaleString()}`);
+    rows.push(`Income,${snap.income},${snap.period}`);
+    rows.push(`Yearly Equivalent,${yearly.toFixed(2)}`);
+    rows.push("");
+    rows.push("Bucket,Percent,Per Period,Per Year,Description");
+    BUCKETS.forEach(b => {
+      const v = snap.pct[b.key] ?? 0;
+      const perPeriod = snap.income * (v / 100);
+      const perYear = yearly * (v / 100);
+      const desc = `"${b.desc.replace(/"/g, '""')}"`;
+      rows.push(`"${b.label}",${v},${perPeriod.toFixed(2)},${perYear.toFixed(2)},${desc}`);
+    });
+    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = buildFilename("csv");
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported");
+  };
+
   return (
     <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, fun, and savings">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
