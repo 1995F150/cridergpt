@@ -675,6 +675,14 @@ export default function MoneySplitCalc() {
                       <Button variant="ghost" size="sm" onClick={() => loadEntry(h)}>
                         Load
                       </Button>
+                      <Button variant="ghost" size="sm" title="Export PDF"
+                        onClick={() => exportPDF({ income: h.income, period: h.period, pct: h.pct, ts: h.ts })}>
+                        <FileDown className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" title="Export CSV"
+                        onClick={() => exportCSV({ income: h.income, period: h.period, pct: h.pct, ts: h.ts })}>
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => removeEntry(h.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
