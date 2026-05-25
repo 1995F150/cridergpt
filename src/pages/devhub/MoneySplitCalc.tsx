@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
-  History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine
+  History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet
 } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import { addPDFHeader, addPDFFooter, addCornerWatermark } from "@/utils/pdfWatermark";
 
 type Period = "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
 
