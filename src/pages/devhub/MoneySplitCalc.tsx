@@ -74,11 +74,18 @@ export default function MoneySplitCalc() {
   const [period, setPeriod] = useState<Period>("weekly");
   const [pct, setPct] = useState<Record<string, number>>({ ...DEFAULTS });
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [envelopes, setEnvelopes] = useState<Record<string, number>>({});
+  const [txns, setTxns] = useState<Txn[]>([]);
+  const [manualAmt, setManualAmt] = useState<Record<string, string>>({});
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(HISTORY_KEY);
       if (raw) setHistory(JSON.parse(raw));
+      const env = localStorage.getItem(ENVELOPE_KEY);
+      if (env) setEnvelopes(JSON.parse(env));
+      const tx = localStorage.getItem(TXN_KEY);
+      if (tx) setTxns(JSON.parse(tx));
     } catch {}
   }, []);
 
@@ -86,6 +93,62 @@ export default function MoneySplitCalc() {
     setHistory(next);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
   };
+
+  const persistEnvelopes = (next: Record<string, number>) => {
+    setEnvelopes(next);
+    localStorage.setItem(ENVELOPE_KEY, JSON.stringify(next));
+  };
+
+  const persistTxns = (next: Txn[]) => {
+    setTxns(next);
+    localStorage.setItem(TXN_KEY, JSON.stringify(next));
+  };
+
+  const logTxn = (bucket: string, amount: number, note: string, currentTxns: Txn[]) => {
+    const entry: Txn = { id: crypto.randomUUID(), ts: Date.now(), bucket, amount, note };
+    return [entry, ...currentTxns].slice(0, 200);
+  };
+
+  const depositPaycheck = () => {
+    const nextEnv = { ...envelopes };
+    let nextTx = [...txns];
+    BUCKETS.forEach(b => {
+      const cut = income * ((pct[b.key] ?? 0) / 100);
+      if (cut > 0) {
+        nextEnv[b.key] = (nextEnv[b.key] ?? 0) + cut;
+        nextTx = logTxn(b.key, cut, `Paycheck split (${period})`, nextTx);
+      }
+    });
+    persistEnvelopes(nextEnv);
+    persistTxns(nextTx);
+    toast.success(`Deposited ${fmt(income)} across envelopes`);
+  };
+
+  const adjustEnvelope = (bucket: string, delta: number, note: string) => {
+    if (!delta || isNaN(delta)) return;
+    const current = envelopes[bucket] ?? 0;
+    if (delta < 0 && current + delta < 0) {
+      toast.error("Not enough in that envelope");
+      return;
+    }
+    const nextEnv = { ...envelopes, [bucket]: current + delta };
+    const nextTx = logTxn(bucket, delta, note, txns);
+    persistEnvelopes(nextEnv);
+    persistTxns(nextTx);
+    setManualAmt(prev => ({ ...prev, [bucket]: "" }));
+  };
+
+  const resetEnvelopes = () => {
+    if (!confirm("Empty every envelope and clear all transactions? This can't be undone.")) return;
+    persistEnvelopes({});
+    persistTxns([]);
+    toast.success("Lockbox reset");
+  };
+
+  const totalLockbox = useMemo(
+    () => Object.values(envelopes).reduce((a, b) => a + b, 0),
+    [envelopes]
+  );
 
   const totalPct = useMemo(() => Object.values(pct).reduce((a, b) => a + b, 0), [pct]);
   const overBudget = totalPct > 100;
