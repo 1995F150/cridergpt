@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles
 } from "lucide-react";
 
 const modules = [
@@ -21,6 +21,7 @@ const modules = [
   { to: "/devhub/keyboard-blueprint", icon: Keyboard, title: "Project AETHER", desc: "Concept blueprint for a futuristic transparent wireless keyboard with per-key lighting.", tag: "Builder" },
   { to: "/devhub/android-builder", icon: Hammer, title: "Android Auto-Builder", desc: "One-shot Ubuntu install commands + dashboard. Builds a signed APK + AAB every time you press Update.", tag: "Server + AI Ops" },
   { to: "/devhub/money-split", icon: PiggyBank, title: "Money Split Calculator", desc: "Drop your paycheck in, set % for CriderGPT, emergency, fun, and savings. See where every dollar goes.", tag: "Shop + Money" },
+  { to: "/devhub/aether", icon: Sparkles, title: "AETHER Control Panel", desc: "Design key layouts, tune haptic + trackpad, push live to the glass keyboard.", tag: "Builder" },
 ];
 
 export default function DevHub() {

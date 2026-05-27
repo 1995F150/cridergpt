@@ -57,6 +57,7 @@ import DevAutopilotQueue from "./pages/devhub/AutopilotQueue";
 import DevAndroidBuilder from "./pages/devhub/AndroidBuilder";
 import DevKeyboardBlueprint from "./pages/devhub/KeyboardBlueprint";
 import DevMoneySplitCalc from "./pages/devhub/MoneySplitCalc";
+import DevAetherControl from "./pages/devhub/AetherControl";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
@@ -180,6 +181,7 @@ const App = () => {
                       <Route path="/devhub/android-builder" element={<DevAndroidBuilder />} />
                       <Route path="/devhub/keyboard-blueprint" element={<DevKeyboardBlueprint />} />
                       <Route path="/devhub/money-split" element={<DevMoneySplitCalc />} />
+                      <Route path="/devhub/aether" element={<DevAetherControl />} />
 
 
 
