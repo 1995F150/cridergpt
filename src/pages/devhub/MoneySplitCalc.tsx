@@ -379,6 +379,35 @@ export default function MoneySplitCalc() {
       doc.text(`Yearly equivalent: ${fmt(yearly)}`, margin, y);
       y += 10;
 
+      const snapshotBills = snap.cashBills ? sanitizeCashBills(snap.cashBills) : makeEmptyCashBills();
+      const snapshotCashTotal = getCashBillTotal(snapshotBills);
+      const snapshotCashPlan = buildCashPlan(snap.pct, snapshotBills);
+
+      if (snapshotCashTotal > 0) {
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text("Physical Cash Lockbox Plan", margin, y);
+        y += 6;
+        doc.setFontSize(10);
+        doc.setTextColor(90, 90, 90);
+        doc.text(`Bills entered: ${billSummary(snapshotBills)} (${fmt(snapshotCashTotal)} total)`, margin, y);
+        y += 7;
+
+        snapshotCashPlan.forEach(row => {
+          if (y > 260) { doc.addPage(); y = 25; }
+          doc.setTextColor(0, 0, 0);
+          doc.text(`${row.emoji} ${row.label}`, margin, y);
+          doc.text(fmt(row.amount), margin + 85, y);
+          doc.text(billSummary(row.bills), margin + 120, y);
+          y += 5;
+          doc.setTextColor(120, 120, 120);
+          doc.text(`Target: ${fmt(row.target)} (${row.percent.toFixed(0)}%)`, margin + 5, y);
+          y += 6;
+        });
+
+        y += 4;
+      }
+
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
       doc.text("Bucket", margin, y);
@@ -446,6 +475,17 @@ export default function MoneySplitCalc() {
     rows.push(`Income,${snap.income},${snap.period}`);
     rows.push(`Yearly Equivalent,${yearly.toFixed(2)}`);
     rows.push("");
+    const snapshotBills = snap.cashBills ? sanitizeCashBills(snap.cashBills) : makeEmptyCashBills();
+    const snapshotCashTotal = getCashBillTotal(snapshotBills);
+    if (snapshotCashTotal > 0) {
+      rows.push("Physical Cash Lockbox Plan");
+      rows.push(`Bills,"${billSummary(snapshotBills)}",Total,${snapshotCashTotal.toFixed(2)}`);
+      rows.push("Slot,Target,Actual,Bills,Percent");
+      buildCashPlan(snap.pct, snapshotBills).forEach(row => {
+        rows.push(`"${row.label}",${row.target.toFixed(2)},${row.amount.toFixed(2)},"${billSummary(row.bills)}",${row.percent.toFixed(2)}`);
+      });
+      rows.push("");
+    }
     rows.push("Bucket,Percent,Per Period,Per Year,Description");
     BUCKETS.forEach(b => {
       const v = snap.pct[b.key] ?? 0;
