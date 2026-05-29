@@ -190,6 +190,7 @@ export default function MoneySplitCalc() {
   const [envelopes, setEnvelopes] = useState<Record<string, number>>({});
   const [txns, setTxns] = useState<Txn[]>([]);
   const [manualAmt, setManualAmt] = useState<Record<string, string>>({});
+  const [cashBills, setCashBills] = useState<CashBills>(() => makeEmptyCashBills());
 
   useEffect(() => {
     try {
@@ -199,6 +200,8 @@ export default function MoneySplitCalc() {
       if (env) setEnvelopes(JSON.parse(env));
       const tx = localStorage.getItem(TXN_KEY);
       if (tx) setTxns(JSON.parse(tx));
+      const bills = localStorage.getItem(CASH_BILLS_KEY);
+      if (bills) setCashBills(sanitizeCashBills(JSON.parse(bills)));
     } catch {}
   }, []);
 
@@ -215,6 +218,14 @@ export default function MoneySplitCalc() {
   const persistTxns = (next: Txn[]) => {
     setTxns(next);
     localStorage.setItem(TXN_KEY, JSON.stringify(next));
+  };
+
+  const updateCashBills = (value: BillValue, count: number) => {
+    setCashBills(prev => {
+      const next = { ...prev, [value]: Math.max(0, Math.floor(count || 0)) };
+      localStorage.setItem(CASH_BILLS_KEY, JSON.stringify(next));
+      return next;
+    });
   };
 
   const logTxn = (bucket: string, amount: number, note: string, currentTxns: Txn[]) => {
@@ -266,6 +277,8 @@ export default function MoneySplitCalc() {
   const totalPct = useMemo(() => Object.values(pct).reduce((a, b) => a + b, 0), [pct]);
   const overBudget = totalPct > 100;
   const underBudget = totalPct < 100;
+  const totalCash = useMemo(() => getCashBillTotal(cashBills), [cashBills]);
+  const cashPlan = useMemo(() => buildCashPlan(pct, cashBills), [pct, cashBills]);
 
   const yearlyIncome = useMemo(() => {
     switch (period) {
@@ -302,6 +315,7 @@ export default function MoneySplitCalc() {
       income,
       period,
       pct: { ...pct },
+      cashBills: { ...cashBills },
     };
     const next = [entry, ...history].slice(0, 50);
     persistHistory(next);
@@ -312,6 +326,7 @@ export default function MoneySplitCalc() {
     setIncome(e.income);
     setPeriod(e.period);
     setPct({ ...e.pct });
+    if (e.cashBills) setCashBills(sanitizeCashBills(e.cashBills));
     toast.success("Loaded from history");
   };
 
@@ -334,9 +349,9 @@ export default function MoneySplitCalc() {
     return `CriderGPT_${slug(label)}_${stamp}.${ext}`;
   };
 
-  type Snapshot = { income: number; period: Period; pct: Record<string, number>; ts: number };
+  type Snapshot = { income: number; period: Period; pct: Record<string, number>; ts: number; cashBills?: CashBills };
 
-  const currentSnapshot = (): Snapshot => ({ income, period, pct, ts: Date.now() });
+  const currentSnapshot = (): Snapshot => ({ income, period, pct, cashBills, ts: Date.now() });
 
   const exportPDF = async (snap: Snapshot = currentSnapshot()) => {
     try {
