@@ -64,7 +64,7 @@ const BUCKETS: Bucket[] = [
 ];
 
 const PRESETS = [
-  { name: "4-Slot Cash Lockbox", desc: "CriderGPT 20% / Emergency 40% / Bills 40%", values: { cridergpt: 20, emergency: 40, living: 40, fun: 0, savings: 0, taxes: 0 } },
+  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, savings: 0, taxes: 0 } },
   { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, taxes: 0 } },
   { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 25, fun: 10, savings: 10, taxes: 5 } },
   { name: "Survival Mode", desc: "Bare minimum, stack cash", values: { living: 60, emergency: 20, fun: 5, savings: 10, cridergpt: 0, taxes: 5 } },
