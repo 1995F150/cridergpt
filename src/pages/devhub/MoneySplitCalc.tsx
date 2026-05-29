@@ -603,6 +603,85 @@ export default function MoneySplitCalc() {
         </Card>
       </div>
 
+      {/* Physical Cash Planner */}
+      <Card className="mt-4 border-primary/30">
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Banknote className="w-4 h-4" /> Physical Cash Mode
+              <Badge variant="secondary" className="ml-1">{fmt(totalCash)} cash</Badge>
+            </CardTitle>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setIncome(totalCash)} disabled={totalCash <= 0}>
+                Use cash total
+              </Button>
+              <Button size="sm" onClick={depositCashPlan} disabled={totalCash <= 0 || cashPlan.length === 0}>
+                <ArrowDownToLine className="w-4 h-4 mr-1" /> Stuff lockbox
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Enter the bills you actually have. The calculator will round the split to real $20/$10/$5/$1 bills instead of telling you to make impossible cash amounts.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {BILL_VALUES.map(value => (
+              <div key={value} className="space-y-1">
+                <Label className="text-xs">${value} bills</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={cashBills[value]}
+                  onChange={e => updateCashBills(value, Number(e.target.value))}
+                  className="h-9 font-mono"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-muted-foreground">Bills entered</div>
+              <div className="font-mono font-bold text-sm mt-1">{billSummary(cashBills)}</div>
+            </div>
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-muted-foreground">Active lockbox slots</div>
+              <div className="font-mono font-bold text-sm mt-1">{activeLockboxSlots} / 4</div>
+            </div>
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-muted-foreground">Cash split rule</div>
+              <div className="font-medium mt-1">Nearest real bills wins</div>
+            </div>
+          </div>
+
+          {activeLockboxSlots > 4 && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              You have {activeLockboxSlots} categories turned on but only 4 lockbox slots. Set the lowest-priority sliders to 0 or use the 4-Slot Cash Lockbox preset.
+            </div>
+          )}
+
+          {totalCash > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Real bill stuffing plan</div>
+              {cashPlan.map(row => (
+                <div key={row.key} className="rounded-lg border border-border bg-muted/20 p-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{row.emoji} {row.label}</div>
+                    <div className="text-xs text-muted-foreground">Target {fmt(row.target)} · {row.percent.toFixed(0)}%</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-mono font-bold">{fmt(row.amount)}</div>
+                    <div className="text-xs text-muted-foreground">{billSummary(row.bills)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Sliders */}
       <Card className="mt-4">
         <CardHeader>
