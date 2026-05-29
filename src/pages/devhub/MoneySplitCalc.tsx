@@ -22,6 +22,7 @@ interface HistoryEntry {
   income: number;
   period: Period;
   pct: Record<string, number>;
+  cashBills?: CashBills;
 }
 
 interface Txn {
@@ -35,6 +36,13 @@ interface Txn {
 const HISTORY_KEY = "money-split-history";
 const ENVELOPE_KEY = "money-split-envelopes";
 const TXN_KEY = "money-split-txns";
+const CASH_BILLS_KEY = "money-split-cash-bills";
+
+type BillValue = 20 | 10 | 5 | 1;
+type CashBills = Record<BillValue, number>;
+
+const BILL_VALUES: BillValue[] = [20, 10, 5, 1];
+const makeEmptyCashBills = (): CashBills => ({ 20: 0, 10: 0, 5: 0, 1: 0 });
 
 interface Bucket {
   key: string;
@@ -56,6 +64,7 @@ const BUCKETS: Bucket[] = [
 ];
 
 const PRESETS = [
+  { name: "4-Slot Cash Lockbox", desc: "CriderGPT 20% / Emergency 40% / Bills 40%", values: { cridergpt: 20, emergency: 40, living: 40, fun: 0, savings: 0, taxes: 0 } },
   { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, taxes: 0 } },
   { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 25, fun: 10, savings: 10, taxes: 5 } },
   { name: "Survival Mode", desc: "Bare minimum, stack cash", values: { living: 60, emergency: 20, fun: 5, savings: 10, cridergpt: 0, taxes: 5 } },
@@ -69,6 +78,108 @@ const DEFAULTS: Record<string, number> = {
   fun: 10,
   savings: 15,
   taxes: 10,
+};
+
+interface CashPlanRow {
+  key: string;
+  label: string;
+  emoji: string;
+  target: number;
+  amount: number;
+  percent: number;
+  bills: CashBills;
+  isUnallocated?: boolean;
+}
+
+const sanitizeCashBills = (raw: unknown): CashBills => {
+  const source = typeof raw === "object" && raw !== null ? raw as Record<string, unknown> : {};
+  return BILL_VALUES.reduce((acc, value) => {
+    const parsed = Number(source[String(value)] ?? source[value]);
+    acc[value] = Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+    return acc;
+  }, makeEmptyCashBills());
+};
+
+const getCashBillTotal = (bills: CashBills) =>
+  BILL_VALUES.reduce((sum, value) => sum + value * (bills[value] ?? 0), 0);
+
+const billSummary = (bills: CashBills) =>
+  BILL_VALUES
+    .filter(value => (bills[value] ?? 0) > 0)
+    .map(value => `$${value}×${bills[value]}`)
+    .join("  ") || "—";
+
+const buildCashPlan = (pct: Record<string, number>, cashBills: CashBills): CashPlanRow[] => {
+  const totalCash = getCashBillTotal(cashBills);
+  if (totalCash <= 0) return [];
+
+  const totalPct = Object.values(pct).reduce((sum, value) => sum + Math.max(0, value || 0), 0);
+  const rows: CashPlanRow[] = BUCKETS
+    .filter(bucket => (pct[bucket.key] ?? 0) > 0)
+    .map(bucket => {
+      const percent = totalPct > 100 ? ((pct[bucket.key] ?? 0) / totalPct) * 100 : (pct[bucket.key] ?? 0);
+      return {
+        key: bucket.key,
+        label: bucket.label,
+        emoji: bucket.emoji,
+        percent,
+        target: totalCash * (percent / 100),
+        amount: 0,
+        bills: makeEmptyCashBills(),
+      };
+    });
+
+  if (totalPct < 100) {
+    rows.push({
+      key: "unallocated",
+      label: "Not stuffed / keep loose",
+      emoji: "💵",
+      percent: 100 - totalPct,
+      target: totalCash * ((100 - totalPct) / 100),
+      amount: 0,
+      bills: makeEmptyCashBills(),
+      isUnallocated: true,
+    });
+  }
+
+  if (rows.length === 0) {
+    rows.push({
+      key: "unallocated",
+      label: "Not stuffed / keep loose",
+      emoji: "💵",
+      percent: 100,
+      target: totalCash,
+      amount: 0,
+      bills: makeEmptyCashBills(),
+      isUnallocated: true,
+    });
+  }
+
+  const looseBills = BILL_VALUES.flatMap(value =>
+    Array.from({ length: cashBills[value] ?? 0 }, () => value)
+  );
+
+  looseBills.forEach(bill => {
+    let bestIndex = 0;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    rows.forEach((row, candidateIndex) => {
+      const score = rows.reduce((sum, candidateRow, index) => {
+        const nextAmount = candidateRow.amount + (index === candidateIndex ? bill : 0);
+        return sum + Math.abs(candidateRow.target - nextAmount);
+      }, 0) + (row.isUnallocated ? 0.01 : 0);
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndex = candidateIndex;
+      }
+    });
+
+    rows[bestIndex].amount += bill;
+    rows[bestIndex].bills[bill] = (rows[bestIndex].bills[bill] ?? 0) + 1;
+  });
+
+  return rows.filter(row => row.amount > 0 || row.target > 0);
 };
 
 export default function MoneySplitCalc() {
