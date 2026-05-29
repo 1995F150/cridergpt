@@ -202,7 +202,9 @@ export default function MoneySplitCalc() {
       if (tx) setTxns(JSON.parse(tx));
       const bills = localStorage.getItem(CASH_BILLS_KEY);
       if (bills) setCashBills(sanitizeCashBills(JSON.parse(bills)));
-    } catch {}
+    } catch (error) {
+      console.warn("Could not load money split data", error);
+    }
   }, []);
 
   const persistHistory = (next: HistoryEntry[]) => {
