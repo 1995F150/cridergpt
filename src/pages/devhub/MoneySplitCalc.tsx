@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
-  History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet
+  History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet, Banknote
 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -22,6 +22,7 @@ interface HistoryEntry {
   income: number;
   period: Period;
   pct: Record<string, number>;
+  cashBills?: CashBills;
 }
 
 interface Txn {
@@ -35,6 +36,13 @@ interface Txn {
 const HISTORY_KEY = "money-split-history";
 const ENVELOPE_KEY = "money-split-envelopes";
 const TXN_KEY = "money-split-txns";
+const CASH_BILLS_KEY = "money-split-cash-bills";
+
+type BillValue = 20 | 10 | 5 | 1;
+type CashBills = Record<BillValue, number>;
+
+const BILL_VALUES: BillValue[] = [20, 10, 5, 1];
+const makeEmptyCashBills = (): CashBills => ({ 20: 0, 10: 0, 5: 0, 1: 0 });
 
 interface Bucket {
   key: string;
@@ -56,6 +64,7 @@ const BUCKETS: Bucket[] = [
 ];
 
 const PRESETS = [
+  { name: "4-Slot Cash Lockbox", desc: "CriderGPT 20% / Emergency 40% / Bills 40%", values: { cridergpt: 20, emergency: 40, living: 40, fun: 0, savings: 0, taxes: 0 } },
   { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, taxes: 0 } },
   { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 25, fun: 10, savings: 10, taxes: 5 } },
   { name: "Survival Mode", desc: "Bare minimum, stack cash", values: { living: 60, emergency: 20, fun: 5, savings: 10, cridergpt: 0, taxes: 5 } },
@@ -71,6 +80,108 @@ const DEFAULTS: Record<string, number> = {
   taxes: 10,
 };
 
+interface CashPlanRow {
+  key: string;
+  label: string;
+  emoji: string;
+  target: number;
+  amount: number;
+  percent: number;
+  bills: CashBills;
+  isUnallocated?: boolean;
+}
+
+const sanitizeCashBills = (raw: unknown): CashBills => {
+  const source = typeof raw === "object" && raw !== null ? raw as Record<string, unknown> : {};
+  return BILL_VALUES.reduce((acc, value) => {
+    const parsed = Number(source[String(value)] ?? source[value]);
+    acc[value] = Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+    return acc;
+  }, makeEmptyCashBills());
+};
+
+const getCashBillTotal = (bills: CashBills) =>
+  BILL_VALUES.reduce((sum, value) => sum + value * (bills[value] ?? 0), 0);
+
+const billSummary = (bills: CashBills) =>
+  BILL_VALUES
+    .filter(value => (bills[value] ?? 0) > 0)
+    .map(value => `$${value}×${bills[value]}`)
+    .join("  ") || "—";
+
+const buildCashPlan = (pct: Record<string, number>, cashBills: CashBills): CashPlanRow[] => {
+  const totalCash = getCashBillTotal(cashBills);
+  if (totalCash <= 0) return [];
+
+  const totalPct = Object.values(pct).reduce((sum, value) => sum + Math.max(0, value || 0), 0);
+  const rows: CashPlanRow[] = BUCKETS
+    .filter(bucket => (pct[bucket.key] ?? 0) > 0)
+    .map(bucket => {
+      const percent = totalPct > 100 ? ((pct[bucket.key] ?? 0) / totalPct) * 100 : (pct[bucket.key] ?? 0);
+      return {
+        key: bucket.key,
+        label: bucket.label,
+        emoji: bucket.emoji,
+        percent,
+        target: totalCash * (percent / 100),
+        amount: 0,
+        bills: makeEmptyCashBills(),
+      };
+    });
+
+  if (totalPct < 100) {
+    rows.push({
+      key: "unallocated",
+      label: "Not stuffed / keep loose",
+      emoji: "💵",
+      percent: 100 - totalPct,
+      target: totalCash * ((100 - totalPct) / 100),
+      amount: 0,
+      bills: makeEmptyCashBills(),
+      isUnallocated: true,
+    });
+  }
+
+  if (rows.length === 0) {
+    rows.push({
+      key: "unallocated",
+      label: "Not stuffed / keep loose",
+      emoji: "💵",
+      percent: 100,
+      target: totalCash,
+      amount: 0,
+      bills: makeEmptyCashBills(),
+      isUnallocated: true,
+    });
+  }
+
+  const looseBills = BILL_VALUES.flatMap(value =>
+    Array.from({ length: cashBills[value] ?? 0 }, () => value)
+  );
+
+  looseBills.forEach(bill => {
+    let bestIndex = 0;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    rows.forEach((row, candidateIndex) => {
+      const score = rows.reduce((sum, candidateRow, index) => {
+        const nextAmount = candidateRow.amount + (index === candidateIndex ? bill : 0);
+        return sum + Math.abs(candidateRow.target - nextAmount);
+      }, 0) + (row.isUnallocated ? 0.01 : 0);
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndex = candidateIndex;
+      }
+    });
+
+    rows[bestIndex].amount += bill;
+    rows[bestIndex].bills[bill] = (rows[bestIndex].bills[bill] ?? 0) + 1;
+  });
+
+  return rows.filter(row => row.amount > 0 || row.target > 0);
+};
+
 export default function MoneySplitCalc() {
   const [income, setIncome] = useState(1000);
   const [period, setPeriod] = useState<Period>("weekly");
@@ -79,6 +190,7 @@ export default function MoneySplitCalc() {
   const [envelopes, setEnvelopes] = useState<Record<string, number>>({});
   const [txns, setTxns] = useState<Txn[]>([]);
   const [manualAmt, setManualAmt] = useState<Record<string, string>>({});
+  const [cashBills, setCashBills] = useState<CashBills>(() => makeEmptyCashBills());
 
   useEffect(() => {
     try {
@@ -88,7 +200,11 @@ export default function MoneySplitCalc() {
       if (env) setEnvelopes(JSON.parse(env));
       const tx = localStorage.getItem(TXN_KEY);
       if (tx) setTxns(JSON.parse(tx));
-    } catch {}
+      const bills = localStorage.getItem(CASH_BILLS_KEY);
+      if (bills) setCashBills(sanitizeCashBills(JSON.parse(bills)));
+    } catch (error) {
+      console.warn("Could not load money split data", error);
+    }
   }, []);
 
   const persistHistory = (next: HistoryEntry[]) => {
@@ -104,6 +220,14 @@ export default function MoneySplitCalc() {
   const persistTxns = (next: Txn[]) => {
     setTxns(next);
     localStorage.setItem(TXN_KEY, JSON.stringify(next));
+  };
+
+  const updateCashBills = (value: BillValue, count: number) => {
+    setCashBills(prev => {
+      const next = { ...prev, [value]: Math.max(0, Math.floor(count || 0)) };
+      localStorage.setItem(CASH_BILLS_KEY, JSON.stringify(next));
+      return next;
+    });
   };
 
   const logTxn = (bucket: string, amount: number, note: string, currentTxns: Txn[]) => {
@@ -124,6 +248,20 @@ export default function MoneySplitCalc() {
     persistEnvelopes(nextEnv);
     persistTxns(nextTx);
     toast.success(`Deposited ${fmt(income)} across envelopes`);
+  };
+
+  const depositCashPlan = () => {
+    if (cashPlan.length === 0 || totalCash <= 0) return;
+    const nextEnv = { ...envelopes };
+    let nextTx = [...txns];
+    cashPlan.forEach(row => {
+      if (row.isUnallocated || row.amount <= 0) return;
+      nextEnv[row.key] = (nextEnv[row.key] ?? 0) + row.amount;
+      nextTx = logTxn(row.key, row.amount, `Physical cash stuffed: ${billSummary(row.bills)}`, nextTx);
+    });
+    persistEnvelopes(nextEnv);
+    persistTxns(nextTx);
+    toast.success(`Deposited ${fmt(totalCash)} physical cash plan`);
   };
 
   const adjustEnvelope = (bucket: string, delta: number, note: string) => {
@@ -155,6 +293,12 @@ export default function MoneySplitCalc() {
   const totalPct = useMemo(() => Object.values(pct).reduce((a, b) => a + b, 0), [pct]);
   const overBudget = totalPct > 100;
   const underBudget = totalPct < 100;
+  const totalCash = useMemo(() => getCashBillTotal(cashBills), [cashBills]);
+  const cashPlan = useMemo(() => buildCashPlan(pct, cashBills), [pct, cashBills]);
+  const activeLockboxSlots = useMemo(
+    () => BUCKETS.filter(bucket => (pct[bucket.key] ?? 0) > 0).length,
+    [pct]
+  );
 
   const yearlyIncome = useMemo(() => {
     switch (period) {
@@ -191,6 +335,7 @@ export default function MoneySplitCalc() {
       income,
       period,
       pct: { ...pct },
+      cashBills: { ...cashBills },
     };
     const next = [entry, ...history].slice(0, 50);
     persistHistory(next);
@@ -201,6 +346,7 @@ export default function MoneySplitCalc() {
     setIncome(e.income);
     setPeriod(e.period);
     setPct({ ...e.pct });
+    if (e.cashBills) setCashBills(sanitizeCashBills(e.cashBills));
     toast.success("Loaded from history");
   };
 
@@ -223,9 +369,9 @@ export default function MoneySplitCalc() {
     return `CriderGPT_${slug(label)}_${stamp}.${ext}`;
   };
 
-  type Snapshot = { income: number; period: Period; pct: Record<string, number>; ts: number };
+  type Snapshot = { income: number; period: Period; pct: Record<string, number>; ts: number; cashBills?: CashBills };
 
-  const currentSnapshot = (): Snapshot => ({ income, period, pct, ts: Date.now() });
+  const currentSnapshot = (): Snapshot => ({ income, period, pct, cashBills, ts: Date.now() });
 
   const exportPDF = async (snap: Snapshot = currentSnapshot()) => {
     try {
@@ -252,6 +398,35 @@ export default function MoneySplitCalc() {
         snap.period === "monthly" ? snap.income * 12 : snap.income;
       doc.text(`Yearly equivalent: ${fmt(yearly)}`, margin, y);
       y += 10;
+
+      const snapshotBills = snap.cashBills ? sanitizeCashBills(snap.cashBills) : makeEmptyCashBills();
+      const snapshotCashTotal = getCashBillTotal(snapshotBills);
+      const snapshotCashPlan = buildCashPlan(snap.pct, snapshotBills);
+
+      if (snapshotCashTotal > 0) {
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text("Physical Cash Lockbox Plan", margin, y);
+        y += 6;
+        doc.setFontSize(10);
+        doc.setTextColor(90, 90, 90);
+        doc.text(`Bills entered: ${billSummary(snapshotBills)} (${fmt(snapshotCashTotal)} total)`, margin, y);
+        y += 7;
+
+        snapshotCashPlan.forEach(row => {
+          if (y > 260) { doc.addPage(); y = 25; }
+          doc.setTextColor(0, 0, 0);
+          doc.text(`${row.emoji} ${row.label}`, margin, y);
+          doc.text(fmt(row.amount), margin + 85, y);
+          doc.text(billSummary(row.bills), margin + 120, y);
+          y += 5;
+          doc.setTextColor(120, 120, 120);
+          doc.text(`Target: ${fmt(row.target)} (${row.percent.toFixed(0)}%)`, margin + 5, y);
+          y += 6;
+        });
+
+        y += 4;
+      }
 
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
@@ -320,6 +495,17 @@ export default function MoneySplitCalc() {
     rows.push(`Income,${snap.income},${snap.period}`);
     rows.push(`Yearly Equivalent,${yearly.toFixed(2)}`);
     rows.push("");
+    const snapshotBills = snap.cashBills ? sanitizeCashBills(snap.cashBills) : makeEmptyCashBills();
+    const snapshotCashTotal = getCashBillTotal(snapshotBills);
+    if (snapshotCashTotal > 0) {
+      rows.push("Physical Cash Lockbox Plan");
+      rows.push(`Bills,"${billSummary(snapshotBills)}",Total,${snapshotCashTotal.toFixed(2)}`);
+      rows.push("Slot,Target,Actual,Bills,Percent");
+      buildCashPlan(snap.pct, snapshotBills).forEach(row => {
+        rows.push(`"${row.label}",${row.target.toFixed(2)},${row.amount.toFixed(2)},"${billSummary(row.bills)}",${row.percent.toFixed(2)}`);
+      });
+      rows.push("");
+    }
     rows.push("Bucket,Percent,Per Period,Per Year,Description");
     BUCKETS.forEach(b => {
       const v = snap.pct[b.key] ?? 0;
@@ -418,6 +604,85 @@ export default function MoneySplitCalc() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Physical Cash Planner */}
+      <Card className="mt-4 border-primary/30">
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Banknote className="w-4 h-4" /> Physical Cash Mode
+              <Badge variant="secondary" className="ml-1">{fmt(totalCash)} cash</Badge>
+            </CardTitle>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setIncome(totalCash)} disabled={totalCash <= 0}>
+                Use cash total
+              </Button>
+              <Button size="sm" onClick={depositCashPlan} disabled={totalCash <= 0 || cashPlan.length === 0}>
+                <ArrowDownToLine className="w-4 h-4 mr-1" /> Stuff lockbox
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Enter the bills you actually have. The calculator will round the split to real $20/$10/$5/$1 bills instead of telling you to make impossible cash amounts.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {BILL_VALUES.map(value => (
+              <div key={value} className="space-y-1">
+                <Label className="text-xs">${value} bills</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={cashBills[value]}
+                  onChange={e => updateCashBills(value, Number(e.target.value))}
+                  className="h-9 font-mono"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-muted-foreground">Bills entered</div>
+              <div className="font-mono font-bold text-sm mt-1">{billSummary(cashBills)}</div>
+            </div>
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-muted-foreground">Active lockbox slots</div>
+              <div className="font-mono font-bold text-sm mt-1">{activeLockboxSlots} / 4</div>
+            </div>
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-muted-foreground">Cash split rule</div>
+              <div className="font-medium mt-1">Nearest real bills wins</div>
+            </div>
+          </div>
+
+          {activeLockboxSlots > 4 && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              You have {activeLockboxSlots} categories turned on but only 4 lockbox slots. Set the lowest-priority sliders to 0 or use the 4-Slot Cash Lockbox preset.
+            </div>
+          )}
+
+          {totalCash > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Real bill stuffing plan</div>
+              {cashPlan.map(row => (
+                <div key={row.key} className="rounded-lg border border-border bg-muted/20 p-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{row.emoji} {row.label}</div>
+                    <div className="text-xs text-muted-foreground">Target {fmt(row.target)} · {row.percent.toFixed(0)}%</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-mono font-bold">{fmt(row.amount)}</div>
+                    <div className="text-xs text-muted-foreground">{billSummary(row.bills)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Sliders */}
       <Card className="mt-4">
@@ -676,11 +941,11 @@ export default function MoneySplitCalc() {
                         Load
                       </Button>
                       <Button variant="ghost" size="sm" title="Export PDF"
-                        onClick={() => exportPDF({ income: h.income, period: h.period, pct: h.pct, ts: h.ts })}>
+                        onClick={() => exportPDF({ income: h.income, period: h.period, pct: h.pct, cashBills: h.cashBills, ts: h.ts })}>
                         <FileDown className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="sm" title="Export CSV"
-                        onClick={() => exportCSV({ income: h.income, period: h.period, pct: h.pct, ts: h.ts })}>
+                        onClick={() => exportCSV({ income: h.income, period: h.period, pct: h.pct, cashBills: h.cashBills, ts: h.ts })}>
                         <FileSpreadsheet className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => removeEntry(h.id)}>
