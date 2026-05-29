@@ -248,6 +248,20 @@ export default function MoneySplitCalc() {
     toast.success(`Deposited ${fmt(income)} across envelopes`);
   };
 
+  const depositCashPlan = () => {
+    if (cashPlan.length === 0 || totalCash <= 0) return;
+    const nextEnv = { ...envelopes };
+    let nextTx = [...txns];
+    cashPlan.forEach(row => {
+      if (row.isUnallocated || row.amount <= 0) return;
+      nextEnv[row.key] = (nextEnv[row.key] ?? 0) + row.amount;
+      nextTx = logTxn(row.key, row.amount, `Physical cash stuffed: ${billSummary(row.bills)}`, nextTx);
+    });
+    persistEnvelopes(nextEnv);
+    persistTxns(nextTx);
+    toast.success(`Deposited ${fmt(totalCash)} physical cash plan`);
+  };
+
   const adjustEnvelope = (bucket: string, delta: number, note: string) => {
     if (!delta || isNaN(delta)) return;
     const current = envelopes[bucket] ?? 0;
@@ -279,6 +293,10 @@ export default function MoneySplitCalc() {
   const underBudget = totalPct < 100;
   const totalCash = useMemo(() => getCashBillTotal(cashBills), [cashBills]);
   const cashPlan = useMemo(() => buildCashPlan(pct, cashBills), [pct, cashBills]);
+  const activeLockboxSlots = useMemo(
+    () => BUCKETS.filter(bucket => (pct[bucket.key] ?? 0) > 0).length,
+    [pct]
+  );
 
   const yearlyIncome = useMemo(() => {
     switch (period) {
