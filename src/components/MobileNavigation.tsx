@@ -58,6 +58,7 @@ interface NavItem {
   emailRestricted?: string[];
   external?: boolean;
   url?: string;
+  route?: string;
 }
 
 interface NavGroup {
