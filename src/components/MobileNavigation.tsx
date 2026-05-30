@@ -125,6 +125,12 @@ const navigationGroups: NavGroup[] = [
       { id: 'memorial', label: 'Memorial', icon: Heart },
       { id: 'contact', label: 'Contact', icon: Mail },
     ]
+  },
+  {
+    label: 'DEVELOPER',
+    items: [
+      { id: 'devhub', label: 'Dev Hub', icon: Terminal, developerOnly: true, route: '/devhub' },
+    ]
   }
 ];
 
