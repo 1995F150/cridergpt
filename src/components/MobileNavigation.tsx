@@ -34,8 +34,10 @@ import {
   Beef,
   HandCoins,
   Usb,
-  AudioLines
+  AudioLines,
+  Terminal
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 
