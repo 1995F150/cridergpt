@@ -147,6 +147,7 @@ export function MobileNavigation({
 }: MobileNavigationProps) {
   const { isAdmin } = useAdmin();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleNavClick = (id: string) => {
     onTabChange(id);
