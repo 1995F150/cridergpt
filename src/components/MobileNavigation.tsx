@@ -34,8 +34,10 @@ import {
   Beef,
   HandCoins,
   Usb,
-  AudioLines
+  AudioLines,
+  Terminal
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -56,6 +58,7 @@ interface NavItem {
   emailRestricted?: string[];
   external?: boolean;
   url?: string;
+  route?: string;
 }
 
 interface NavGroup {
@@ -122,6 +125,12 @@ const navigationGroups: NavGroup[] = [
       { id: 'memorial', label: 'Memorial', icon: Heart },
       { id: 'contact', label: 'Contact', icon: Mail },
     ]
+  },
+  {
+    label: 'DEVELOPER',
+    items: [
+      { id: 'devhub', label: 'Dev Hub', icon: Terminal, developerOnly: true, route: '/devhub' },
+    ]
   }
 ];
 
@@ -138,6 +147,7 @@ export function MobileNavigation({
 }: MobileNavigationProps) {
   const { isAdmin } = useAdmin();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleNavClick = (id: string) => {
     onTabChange(id);
@@ -181,6 +191,24 @@ export function MobileNavigation({
         </Button>
       );
     }
+
+    if (item.route) {
+      return (
+        <Button
+          key={item.id}
+          variant="ghost"
+          className="w-full justify-start gap-3 h-11 text-sm"
+          onClick={() => {
+            navigate(item.route!);
+            onOpenChange(false);
+          }}
+        >
+          <Icon className="h-4 w-4" />
+          {item.label}
+        </Button>
+      );
+    }
+    
     
     return (
       <Button
