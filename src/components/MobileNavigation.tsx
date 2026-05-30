@@ -191,6 +191,24 @@ export function MobileNavigation({
         </Button>
       );
     }
+
+    if (item.route) {
+      return (
+        <Button
+          key={item.id}
+          variant="ghost"
+          className="w-full justify-start gap-3 h-11 text-sm"
+          onClick={() => {
+            navigate(item.route!);
+            onOpenChange(false);
+          }}
+        >
+          <Icon className="h-4 w-4" />
+          {item.label}
+        </Button>
+      );
+    }
+    
     
     return (
       <Button
