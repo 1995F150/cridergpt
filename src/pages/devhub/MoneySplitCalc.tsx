@@ -960,6 +960,41 @@ export default function MoneySplitCalc() {
         </CardContent>
       </Card>
 
+      {/* Coverage Guide — what each bucket is allowed to pay for */}
+      <Card className="mt-4 border-amber-400/30">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-amber-400" /> Spending Guide
+            <Badge variant="secondary" className="ml-1">What each bucket pays for</Badge>
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Before you pull cash out of an envelope, check this list. If it ain't on the list for that bucket, it pulls from <b>Fun</b> or it waits.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {BUCKETS.filter(b => (pct[b.key] ?? 0) > 0).map(bucket => {
+            const Icon = bucket.icon;
+            return (
+              <div key={bucket.key} className={`p-3 rounded-lg border border-border ${bucket.bg}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className={`w-4 h-4 ${bucket.color}`} />
+                  <span className="text-sm font-semibold">{bucket.emoji} {bucket.label}</span>
+                  <Badge variant="outline" className="ml-auto text-[10px]">{pct[bucket.key] ?? 0}%</Badge>
+                </div>
+                <ul className="space-y-1">
+                  {bucket.covers.map((item, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <CheckCircle2 className={`w-3 h-3 mt-0.5 shrink-0 ${bucket.color}`} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
       {/* History */}
       <Card className="mt-4">
         <CardHeader>
