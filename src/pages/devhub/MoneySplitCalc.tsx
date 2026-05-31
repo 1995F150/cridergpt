@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
-  History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet, Banknote
+  History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet, Banknote,
+  UtensilsCrossed, Wrench, BookOpen, CheckCircle2
 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -52,33 +53,49 @@ interface Bucket {
   color: string;
   bg: string;
   desc: string;
+  covers: string[];
 }
 
 const BUCKETS: Bucket[] = [
-  { key: "cridergpt", label: "CriderGPT / Business", emoji: "🚀", icon: Zap, color: "text-amber-400", bg: "bg-amber-400/10", desc: "Reinvest into the app, ads, new builds" },
-  { key: "emergency", label: "Emergency Fund", emoji: "🛡️", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-400/10", desc: "3–6 months expenses, do not touch" },
-  { key: "living", label: "Bills / Living", emoji: "🏠", icon: Home, color: "text-blue-400", bg: "bg-blue-400/10", desc: "Rent, utilities, food, gas, phone" },
-  { key: "fun", label: "Personal / Fun", emoji: "🎮", icon: Wallet, color: "text-emerald-400", bg: "bg-emerald-400/10", desc: "Gaming, going out, treats for yourself" },
-  { key: "savings", label: "Savings / Invest", emoji: "📈", icon: TrendingUp, color: "text-violet-400", bg: "bg-violet-400/10", desc: "Stocks, crypto, long-term wealth" },
-  { key: "taxes", label: "Taxes (set-aside)", emoji: "📝", icon: PiggyBank, color: "text-slate-400", bg: "bg-slate-400/10", desc: "Self-employment tax reserve" },
+  { key: "cridergpt", label: "CriderGPT / Business", emoji: "🚀", icon: Zap, color: "text-amber-400", bg: "bg-amber-400/10", desc: "Reinvest into the app, ads, new builds",
+    covers: ["Google Play Console fee ($25 one-time)", "Supabase / backend hosting", "Domain renewal (cridergpt.com)", "Wi-Fi router upgrade for dev box", "Ad spend (TikTok / Snapchat lenses)"] },
+  { key: "emergency", label: "Emergency Fund", emoji: "🛡️", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-400/10", desc: "3–6 months expenses, do not touch",
+    covers: ["Truck breakdown / tire blowout", "Medical / dental surprise", "Lost income week (sick days)", "Livestock vet emergency", "DO NOT spend on wants"] },
+  { key: "living", label: "Bills / Living", emoji: "🏠", icon: Home, color: "text-blue-400", bg: "bg-blue-400/10", desc: "Rent, utilities, phone, gas",
+    covers: ["Phone bill", "Gas in the truck", "Electric / water share", "Internet", "Household basics (toothpaste, soap)"] },
+  { key: "food", label: "Food / Groceries", emoji: "🍽️", icon: UtensilsCrossed, color: "text-orange-400", bg: "bg-orange-400/10", desc: "Weekly groceries, no eating out",
+    covers: ["Weekly grocery run", "Lunch meat / eggs / milk staples", "Bulk meat from livestock buddy", "Coffee + drinks", "Eating out ONLY if leftover at week end"] },
+  { key: "bathhouse", label: "Bath House Remodel", emoji: "🔧", icon: Wrench, color: "text-cyan-400", bg: "bg-cyan-400/10", desc: "Materials for pump house / bath house rebuild with Dad",
+    covers: ["Metal roofing panels + screws", "2x4s / framing lumber", "Wall sheathing + insulation", "Roof leak patch / sealant", "Plumbing fittings for pump house"] },
+  { key: "fun", label: "Personal / Fun", emoji: "🎮", icon: Wallet, color: "text-emerald-400", bg: "bg-emerald-400/10", desc: "Gaming, going out, treats for yourself",
+    covers: ["Game / DLC purchase", "Snacks / energy drinks", "Movie or hangout night", "New shirt / boots", "Anything you just want"] },
+  { key: "savings", label: "Savings / Invest", emoji: "📈", icon: TrendingUp, color: "text-violet-400", bg: "bg-violet-400/10", desc: "Stocks, crypto, long-term wealth",
+    covers: ["High-yield savings (4–5% APY)", "Index fund / brokerage deposit", "Long-term truck / land fund", "Money counter machine fund", "Do not touch for 12+ months"] },
+  { key: "taxes", label: "Taxes (set-aside)", emoji: "📝", icon: PiggyBank, color: "text-slate-400", bg: "bg-slate-400/10", desc: "Self-employment tax reserve",
+    covers: ["Quarterly estimated tax (IRS)", "State income tax", "1099 self-employment 15.3% bite", "CPA filing fee in April", "Never spend, this is the IRS's money"] },
 ];
 
 const PRESETS = [
-  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, savings: 0, taxes: 0 } },
-  { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, taxes: 0 } },
-  { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 25, fun: 10, savings: 10, taxes: 5 } },
-  { name: "Survival Mode", desc: "Bare minimum, stack cash", values: { living: 60, emergency: 20, fun: 5, savings: 10, cridergpt: 0, taxes: 5 } },
-  { name: "Balanced Builder", desc: "Grow business + life", values: { cridergpt: 25, emergency: 10, living: 30, fun: 15, savings: 15, taxes: 5 } },
+  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0 } },
+  { name: "Friday $500 Plan", desc: "Bills 30 / Food 20 / CriderGPT 15 / Emergency 15 / Bath House 10 / Fun 10", values: { living: 30, food: 20, cridergpt: 15, emergency: 15, bathhouse: 10, fun: 10, savings: 0, taxes: 0 } },
+  { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, food: 0, bathhouse: 0, taxes: 0 } },
+  { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 20, food: 10, fun: 10, savings: 5, bathhouse: 0, taxes: 5 } },
+  { name: "Bath House Sprint", desc: "Stack remodel cash fast", values: { bathhouse: 35, living: 25, food: 15, emergency: 10, cridergpt: 10, fun: 5, savings: 0, taxes: 0 } },
 ];
 
 const DEFAULTS: Record<string, number> = {
-  cridergpt: 20,
-  emergency: 10,
-  living: 35,
+  cridergpt: 15,
+  emergency: 15,
+  living: 25,
+  food: 15,
+  bathhouse: 10,
   fun: 10,
-  savings: 15,
-  taxes: 10,
+  savings: 5,
+  taxes: 5,
 };
+
+type RoundMode = "off" | "1" | "5" | "10" | "20";
+const ROUND_KEY = "money-split-round-mode";
 
 interface CashPlanRow {
   key: string;
@@ -191,6 +208,7 @@ export default function MoneySplitCalc() {
   const [txns, setTxns] = useState<Txn[]>([]);
   const [manualAmt, setManualAmt] = useState<Record<string, string>>({});
   const [cashBills, setCashBills] = useState<CashBills>(() => makeEmptyCashBills());
+  const [roundMode, setRoundMode] = useState<RoundMode>("off");
 
   useEffect(() => {
     try {
@@ -202,6 +220,8 @@ export default function MoneySplitCalc() {
       if (tx) setTxns(JSON.parse(tx));
       const bills = localStorage.getItem(CASH_BILLS_KEY);
       if (bills) setCashBills(sanitizeCashBills(JSON.parse(bills)));
+      const rm = localStorage.getItem(ROUND_KEY);
+      if (rm === "1" || rm === "5" || rm === "10" || rm === "20" || rm === "off") setRoundMode(rm);
     } catch (error) {
       console.warn("Could not load money split data", error);
     }
@@ -239,7 +259,7 @@ export default function MoneySplitCalc() {
     const nextEnv = { ...envelopes };
     let nextTx = [...txns];
     BUCKETS.forEach(b => {
-      const cut = income * ((pct[b.key] ?? 0) / 100);
+      const cut = roundCash(income * ((pct[b.key] ?? 0) / 100));
       if (cut > 0) {
         nextEnv[b.key] = (nextEnv[b.key] ?? 0) + cut;
         nextTx = logTxn(b.key, cut, `Paycheck split (${period})`, nextTx);
@@ -311,6 +331,13 @@ export default function MoneySplitCalc() {
   }, [income, period]);
 
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+  const roundStep = roundMode === "off" ? 0 : Number(roundMode);
+  const roundCash = (n: number) => roundStep > 0 ? Math.round(n / roundStep) * roundStep : n;
+  const updateRoundMode = (mode: RoundMode) => {
+    setRoundMode(mode);
+    localStorage.setItem(ROUND_KEY, mode);
+  };
 
   const periodMultiplier = useMemo(() => {
     switch (period) {
@@ -525,7 +552,21 @@ export default function MoneySplitCalc() {
   };
 
   return (
-    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, fun, and savings">
+    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, food, fun, savings">
+      {/* Hero strip */}
+      <div className="mb-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/15 via-amber-400/10 to-emerald-400/10 p-4 flex items-center gap-3 shadow-lg shadow-primary/5">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 flex items-center justify-center text-2xl shadow-inner">
+          💰
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-bold tracking-tight">Lockbox total: <span className="font-mono">{fmt(totalLockbox)}</span></div>
+          <div className="text-xs text-muted-foreground truncate">
+            {roundStep > 0 ? `Rounding every cut to nearest $${roundStep} bill · ` : "Set round mode below to lock to even bills · "}
+            {BUCKETS.filter(b => (pct[b.key] ?? 0) > 0).length} active categories
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Inputs */}
         <Card className="lg:col-span-1">
@@ -559,6 +600,25 @@ export default function MoneySplitCalc() {
             </div>
             <div className="text-sm text-muted-foreground">
               Yearly equivalent: <span className="font-mono font-bold text-foreground">{fmt(yearlyIncome)}</span>
+            </div>
+            <div>
+              <Label className="text-xs">Round each cut to bill size</Label>
+              <div className="grid grid-cols-5 gap-1 mt-1">
+                {(["off","1","5","10","20"] as RoundMode[]).map(m => (
+                  <Button
+                    key={m}
+                    variant={roundMode === m ? "default" : "outline"}
+                    size="sm"
+                    className="text-xs h-8 px-1"
+                    onClick={() => updateRoundMode(m)}
+                  >
+                    {m === "off" ? "Off" : `$${m}`}
+                  </Button>
+                ))}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1">
+                Forces every category to an even bill amount so you never get "$11.50" splits.
+              </div>
             </div>
             <Button onClick={saveToHistory} className="w-full" size="sm">
               <Save className="w-4 h-4 mr-2" /> Save This Calculation
@@ -717,7 +777,12 @@ export default function MoneySplitCalc() {
                   </div>
                   <div className="text-right">
                     <div className="font-mono font-bold text-sm">{val}%</div>
-                    <div className="text-xs text-muted-foreground">{fmt(dollar)} / {period}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {fmt(roundCash(dollar))} / {period}
+                      {roundStep > 0 && Math.abs(roundCash(dollar) - dollar) > 0.01 && (
+                        <span className="ml-1 text-[10px] opacity-70">(raw {fmt(dollar)})</span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Slider
@@ -748,9 +813,9 @@ export default function MoneySplitCalc() {
                   <Icon className={`w-4 h-4 ${bucket.color}`} />
                   <span className="text-sm font-medium">{bucket.label}</span>
                 </div>
-                <div className="text-2xl font-mono font-bold">{fmt(dollarPeriod)}</div>
+                <div className="text-2xl font-mono font-bold">{fmt(roundCash(dollarPeriod))}</div>
                 <div className="text-xs text-muted-foreground">{fmt(dollarYear)} / year</div>
-                <div className="text-xs font-medium">{val}% of income</div>
+                <div className="text-xs font-medium">{val}% of income{roundStep > 0 ? ` · rounded $${roundStep}` : ""}</div>
               </CardContent>
             </Card>
           );
@@ -892,6 +957,41 @@ export default function MoneySplitCalc() {
             title="📦 Bulk Buy Savings"
             desc="Use the ‘Fun’ bucket for bulk welding supplies once/quarter instead of weekly runs."
           />
+        </CardContent>
+      </Card>
+
+      {/* Coverage Guide — what each bucket is allowed to pay for */}
+      <Card className="mt-4 border-amber-400/30">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-amber-400" /> Spending Guide
+            <Badge variant="secondary" className="ml-1">What each bucket pays for</Badge>
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Before you pull cash out of an envelope, check this list. If it ain't on the list for that bucket, it pulls from <b>Fun</b> or it waits.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {BUCKETS.filter(b => (pct[b.key] ?? 0) > 0).map(bucket => {
+            const Icon = bucket.icon;
+            return (
+              <div key={bucket.key} className={`p-3 rounded-lg border border-border ${bucket.bg}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className={`w-4 h-4 ${bucket.color}`} />
+                  <span className="text-sm font-semibold">{bucket.emoji} {bucket.label}</span>
+                  <Badge variant="outline" className="ml-auto text-[10px]">{pct[bucket.key] ?? 0}%</Badge>
+                </div>
+                <ul className="space-y-1">
+                  {bucket.covers.map((item, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <CheckCircle2 className={`w-3 h-3 mt-0.5 shrink-0 ${bucket.color}`} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
