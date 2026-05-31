@@ -780,9 +780,9 @@ export default function MoneySplitCalc() {
                   <Icon className={`w-4 h-4 ${bucket.color}`} />
                   <span className="text-sm font-medium">{bucket.label}</span>
                 </div>
-                <div className="text-2xl font-mono font-bold">{fmt(dollarPeriod)}</div>
+                <div className="text-2xl font-mono font-bold">{fmt(roundCash(dollarPeriod))}</div>
                 <div className="text-xs text-muted-foreground">{fmt(dollarYear)} / year</div>
-                <div className="text-xs font-medium">{val}% of income</div>
+                <div className="text-xs font-medium">{val}% of income{roundStep > 0 ? ` · rounded $${roundStep}` : ""}</div>
               </CardContent>
             </Card>
           );
