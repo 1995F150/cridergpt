@@ -53,33 +53,49 @@ interface Bucket {
   color: string;
   bg: string;
   desc: string;
+  covers: string[];
 }
 
 const BUCKETS: Bucket[] = [
-  { key: "cridergpt", label: "CriderGPT / Business", emoji: "🚀", icon: Zap, color: "text-amber-400", bg: "bg-amber-400/10", desc: "Reinvest into the app, ads, new builds" },
-  { key: "emergency", label: "Emergency Fund", emoji: "🛡️", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-400/10", desc: "3–6 months expenses, do not touch" },
-  { key: "living", label: "Bills / Living", emoji: "🏠", icon: Home, color: "text-blue-400", bg: "bg-blue-400/10", desc: "Rent, utilities, food, gas, phone" },
-  { key: "fun", label: "Personal / Fun", emoji: "🎮", icon: Wallet, color: "text-emerald-400", bg: "bg-emerald-400/10", desc: "Gaming, going out, treats for yourself" },
-  { key: "savings", label: "Savings / Invest", emoji: "📈", icon: TrendingUp, color: "text-violet-400", bg: "bg-violet-400/10", desc: "Stocks, crypto, long-term wealth" },
-  { key: "taxes", label: "Taxes (set-aside)", emoji: "📝", icon: PiggyBank, color: "text-slate-400", bg: "bg-slate-400/10", desc: "Self-employment tax reserve" },
+  { key: "cridergpt", label: "CriderGPT / Business", emoji: "🚀", icon: Zap, color: "text-amber-400", bg: "bg-amber-400/10", desc: "Reinvest into the app, ads, new builds",
+    covers: ["Google Play Console fee ($25 one-time)", "Supabase / backend hosting", "Domain renewal (cridergpt.com)", "Wi-Fi router upgrade for dev box", "Ad spend (TikTok / Snapchat lenses)"] },
+  { key: "emergency", label: "Emergency Fund", emoji: "🛡️", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-400/10", desc: "3–6 months expenses, do not touch",
+    covers: ["Truck breakdown / tire blowout", "Medical / dental surprise", "Lost income week (sick days)", "Livestock vet emergency", "DO NOT spend on wants"] },
+  { key: "living", label: "Bills / Living", emoji: "🏠", icon: Home, color: "text-blue-400", bg: "bg-blue-400/10", desc: "Rent, utilities, phone, gas",
+    covers: ["Phone bill", "Gas in the truck", "Electric / water share", "Internet", "Household basics (toothpaste, soap)"] },
+  { key: "food", label: "Food / Groceries", emoji: "🍽️", icon: UtensilsCrossed, color: "text-orange-400", bg: "bg-orange-400/10", desc: "Weekly groceries, no eating out",
+    covers: ["Weekly grocery run", "Lunch meat / eggs / milk staples", "Bulk meat from livestock buddy", "Coffee + drinks", "Eating out ONLY if leftover at week end"] },
+  { key: "bathhouse", label: "Bath House Remodel", emoji: "🔧", icon: Wrench, color: "text-cyan-400", bg: "bg-cyan-400/10", desc: "Materials for pump house / bath house rebuild with Dad",
+    covers: ["Metal roofing panels + screws", "2x4s / framing lumber", "Wall sheathing + insulation", "Roof leak patch / sealant", "Plumbing fittings for pump house"] },
+  { key: "fun", label: "Personal / Fun", emoji: "🎮", icon: Wallet, color: "text-emerald-400", bg: "bg-emerald-400/10", desc: "Gaming, going out, treats for yourself",
+    covers: ["Game / DLC purchase", "Snacks / energy drinks", "Movie or hangout night", "New shirt / boots", "Anything you just want"] },
+  { key: "savings", label: "Savings / Invest", emoji: "📈", icon: TrendingUp, color: "text-violet-400", bg: "bg-violet-400/10", desc: "Stocks, crypto, long-term wealth",
+    covers: ["High-yield savings (4–5% APY)", "Index fund / brokerage deposit", "Long-term truck / land fund", "Money counter machine fund", "Do not touch for 12+ months"] },
+  { key: "taxes", label: "Taxes (set-aside)", emoji: "📝", icon: PiggyBank, color: "text-slate-400", bg: "bg-slate-400/10", desc: "Self-employment tax reserve",
+    covers: ["Quarterly estimated tax (IRS)", "State income tax", "1099 self-employment 15.3% bite", "CPA filing fee in April", "Never spend, this is the IRS's money"] },
 ];
 
 const PRESETS = [
-  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, savings: 0, taxes: 0 } },
-  { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, taxes: 0 } },
-  { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 25, fun: 10, savings: 10, taxes: 5 } },
-  { name: "Survival Mode", desc: "Bare minimum, stack cash", values: { living: 60, emergency: 20, fun: 5, savings: 10, cridergpt: 0, taxes: 5 } },
-  { name: "Balanced Builder", desc: "Grow business + life", values: { cridergpt: 25, emergency: 10, living: 30, fun: 15, savings: 15, taxes: 5 } },
+  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0 } },
+  { name: "Friday $500 Plan", desc: "Bills 30 / Food 20 / CriderGPT 15 / Emergency 15 / Bath House 10 / Fun 10", values: { living: 30, food: 20, cridergpt: 15, emergency: 15, bathhouse: 10, fun: 10, savings: 0, taxes: 0 } },
+  { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, food: 0, bathhouse: 0, taxes: 0 } },
+  { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 20, food: 10, fun: 10, savings: 5, bathhouse: 0, taxes: 5 } },
+  { name: "Bath House Sprint", desc: "Stack remodel cash fast", values: { bathhouse: 35, living: 25, food: 15, emergency: 10, cridergpt: 10, fun: 5, savings: 0, taxes: 0 } },
 ];
 
 const DEFAULTS: Record<string, number> = {
-  cridergpt: 20,
-  emergency: 10,
-  living: 35,
+  cridergpt: 15,
+  emergency: 15,
+  living: 25,
+  food: 15,
+  bathhouse: 10,
   fun: 10,
-  savings: 15,
-  taxes: 10,
+  savings: 5,
+  taxes: 5,
 };
+
+type RoundMode = "off" | "1" | "5" | "10" | "20";
+const ROUND_KEY = "money-split-round-mode";
 
 interface CashPlanRow {
   key: string;
