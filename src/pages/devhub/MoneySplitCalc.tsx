@@ -259,7 +259,7 @@ export default function MoneySplitCalc() {
     const nextEnv = { ...envelopes };
     let nextTx = [...txns];
     BUCKETS.forEach(b => {
-      const cut = income * ((pct[b.key] ?? 0) / 100);
+      const cut = roundCash(income * ((pct[b.key] ?? 0) / 100));
       if (cut > 0) {
         nextEnv[b.key] = (nextEnv[b.key] ?? 0) + cut;
         nextTx = logTxn(b.key, cut, `Paycheck split (${period})`, nextTx);
