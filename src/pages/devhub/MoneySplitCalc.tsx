@@ -332,6 +332,13 @@ export default function MoneySplitCalc() {
 
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
+  const roundStep = roundMode === "off" ? 0 : Number(roundMode);
+  const roundCash = (n: number) => roundStep > 0 ? Math.round(n / roundStep) * roundStep : n;
+  const updateRoundMode = (mode: RoundMode) => {
+    setRoundMode(mode);
+    localStorage.setItem(ROUND_KEY, mode);
+  };
+
   const periodMultiplier = useMemo(() => {
     switch (period) {
       case "daily": return 1 / 365;
