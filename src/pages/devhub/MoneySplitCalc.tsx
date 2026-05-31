@@ -744,7 +744,12 @@ export default function MoneySplitCalc() {
                   </div>
                   <div className="text-right">
                     <div className="font-mono font-bold text-sm">{val}%</div>
-                    <div className="text-xs text-muted-foreground">{fmt(dollar)} / {period}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {fmt(roundCash(dollar))} / {period}
+                      {roundStep > 0 && Math.abs(roundCash(dollar) - dollar) > 0.01 && (
+                        <span className="ml-1 text-[10px] opacity-70">(raw {fmt(dollar)})</span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Slider
