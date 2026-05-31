@@ -552,7 +552,21 @@ export default function MoneySplitCalc() {
   };
 
   return (
-    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, fun, and savings">
+    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, food, fun, savings">
+      {/* Hero strip */}
+      <div className="mb-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/15 via-amber-400/10 to-emerald-400/10 p-4 flex items-center gap-3 shadow-lg shadow-primary/5">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 flex items-center justify-center text-2xl shadow-inner">
+          💰
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-bold tracking-tight">Lockbox total: <span className="font-mono">{fmt(totalLockbox)}</span></div>
+          <div className="text-xs text-muted-foreground truncate">
+            {roundStep > 0 ? `Rounding every cut to nearest $${roundStep} bill · ` : "Set round mode below to lock to even bills · "}
+            {BUCKETS.filter(b => (pct[b.key] ?? 0) > 0).length} active categories
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Inputs */}
         <Card className="lg:col-span-1">
