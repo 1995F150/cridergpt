@@ -601,6 +601,25 @@ export default function MoneySplitCalc() {
             <div className="text-sm text-muted-foreground">
               Yearly equivalent: <span className="font-mono font-bold text-foreground">{fmt(yearlyIncome)}</span>
             </div>
+            <div>
+              <Label className="text-xs">Round each cut to bill size</Label>
+              <div className="grid grid-cols-5 gap-1 mt-1">
+                {(["off","1","5","10","20"] as RoundMode[]).map(m => (
+                  <Button
+                    key={m}
+                    variant={roundMode === m ? "default" : "outline"}
+                    size="sm"
+                    className="text-xs h-8 px-1"
+                    onClick={() => updateRoundMode(m)}
+                  >
+                    {m === "off" ? "Off" : `$${m}`}
+                  </Button>
+                ))}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1">
+                Forces every category to an even bill amount so you never get "$11.50" splits.
+              </div>
+            </div>
             <Button onClick={saveToHistory} className="w-full" size="sm">
               <Save className="w-4 h-4 mr-2" /> Save This Calculation
             </Button>
