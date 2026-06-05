@@ -555,7 +555,7 @@ export default function MoneySplitCalc() {
   };
 
   return (
-    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, food, fun, savings">
+    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, food, fun, savings, livestock">
       {/* Hero strip */}
       <div className="mb-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/15 via-amber-400/10 to-emerald-400/10 p-4 flex items-center gap-3 shadow-lg shadow-primary/5">
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 flex items-center justify-center text-2xl shadow-inner">
@@ -662,7 +662,7 @@ export default function MoneySplitCalc() {
               onClick={reset}
             >
               <span className="font-semibold text-sm flex items-center gap-1"><RotateCcw className="w-3 h-3" /> Reset to Default</span>
-              <span className="text-xs text-muted-foreground">20% CriderGPT / 35% Living / 15% Savings</span>
+              <span className="text-xs text-muted-foreground">15% CriderGPT / 25% Living / 15% Food / 10% Bath House / 10% Fun / 5% Savings / 5% Taxes / 5% Livestock</span>
             </Button>
           </CardContent>
         </Card>
