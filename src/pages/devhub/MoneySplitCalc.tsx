@@ -212,6 +212,7 @@ export default function MoneySplitCalc() {
   const [manualAmt, setManualAmt] = useState<Record<string, string>>({});
   const [cashBills, setCashBills] = useState<CashBills>(() => makeEmptyCashBills());
   const [roundMode, setRoundMode] = useState<RoundMode>("off");
+  const [autoBalance, setAutoBalance] = useState<boolean>(true);
 
   useEffect(() => {
     try {
