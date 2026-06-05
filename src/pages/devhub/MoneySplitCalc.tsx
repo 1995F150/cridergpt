@@ -88,7 +88,7 @@ const PRESETS = [
 const DEFAULTS: Record<string, number> = {
   cridergpt: 15,
   emergency: 15,
-  living: 25,
+  living: 20,
   food: 15,
   bathhouse: 10,
   fun: 10,
