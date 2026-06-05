@@ -839,12 +839,26 @@ export default function MoneySplitCalc() {
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-base">Split Your {period === "daily" ? "Day" : period === "weekly" ? "Paycheck" : period === "biweekly" ? "2 Weeks" : period === "monthly" ? "Month" : "Year"}</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant={overBudget ? "destructive" : underBudget ? "secondary" : "default"}>
                 {totalPct}% allocated
               </Badge>
               {overBudget && <span className="text-xs text-destructive font-medium">You’re {totalPct - 100}% over budget</span>}
               {underBudget && <span className="text-xs text-muted-foreground font-medium">{100 - totalPct}% unallocated</span>}
+              <Button
+                size="sm"
+                variant={autoBalance ? "default" : "outline"}
+                onClick={() => setAutoBalance(v => !v)}
+                className="h-7 text-xs"
+                title="When ON, moving a slider automatically rebalances the others so the total always equals 100%"
+              >
+                Auto-balance: {autoBalance ? "ON" : "OFF"}
+              </Button>
+              {totalPct !== 100 && (
+                <Button size="sm" variant="outline" onClick={fitTo100} className="h-7 text-xs">
+                  Fit to 100%
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
