@@ -9,7 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
   History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet, Banknote,
-  UtensilsCrossed, Wrench, BookOpen, CheckCircle2
+  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef
 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -73,14 +73,16 @@ const BUCKETS: Bucket[] = [
     covers: ["High-yield savings (4–5% APY)", "Index fund / brokerage deposit", "Long-term truck / land fund", "Money counter machine fund", "Do not touch for 12+ months"] },
   { key: "taxes", label: "Taxes (set-aside)", emoji: "📝", icon: PiggyBank, color: "text-slate-400", bg: "bg-slate-400/10", desc: "Self-employment tax reserve",
     covers: ["Quarterly estimated tax (IRS)", "State income tax", "1099 self-employment 15.3% bite", "CPA filing fee in April", "Never spend, this is the IRS's money"] },
+  { key: "livestock", label: "Livestock / Feed", emoji: "🐄", icon: Beef, color: "text-lime-400", bg: "bg-lime-400/10", desc: "Animal feed, vet, show fees, tags",
+    covers: ["Cattle / goat / sheep feed", "Hay, minerals, supplements", "Vet visits & vaccines", "Show entry fees & transport", "CriderGPT NFC tags & supplies"] },
 ];
 
 const PRESETS = [
-  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0 } },
-  { name: "Friday $500 Plan", desc: "Bills 30 / Food 20 / CriderGPT 15 / Emergency 15 / Bath House 10 / Fun 10", values: { living: 30, food: 20, cridergpt: 15, emergency: 15, bathhouse: 10, fun: 10, savings: 0, taxes: 0 } },
-  { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, food: 0, bathhouse: 0, taxes: 0 } },
-  { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 20, food: 10, fun: 10, savings: 5, bathhouse: 0, taxes: 5 } },
-  { name: "Bath House Sprint", desc: "Stack remodel cash fast", values: { bathhouse: 35, living: 25, food: 15, emergency: 10, cridergpt: 10, fun: 5, savings: 0, taxes: 0 } },
+  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0, livestock: 0 } },
+  { name: "Friday $500 Plan", desc: "Bills 30 / Food 20 / CriderGPT 15 / Emergency 15 / Bath House 10 / Fun 10", values: { living: 30, food: 20, cridergpt: 15, emergency: 15, bathhouse: 10, fun: 10, savings: 0, taxes: 0, livestock: 0 } },
+  { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, food: 0, bathhouse: 0, taxes: 0, livestock: 0 } },
+  { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 20, food: 10, fun: 10, savings: 5, bathhouse: 0, taxes: 5, livestock: 0 } },
+  { name: "Bath House Sprint", desc: "Stack remodel cash fast", values: { bathhouse: 35, living: 25, food: 15, emergency: 10, cridergpt: 10, fun: 5, savings: 0, taxes: 0, livestock: 0 } },
 ];
 
 const DEFAULTS: Record<string, number> = {
@@ -92,6 +94,7 @@ const DEFAULTS: Record<string, number> = {
   fun: 10,
   savings: 5,
   taxes: 5,
+  livestock: 5,
 };
 
 type RoundMode = "off" | "1" | "5" | "10" | "20";
@@ -552,7 +555,7 @@ export default function MoneySplitCalc() {
   };
 
   return (
-    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, food, fun, savings">
+    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, food, fun, savings, livestock">
       {/* Hero strip */}
       <div className="mb-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/15 via-amber-400/10 to-emerald-400/10 p-4 flex items-center gap-3 shadow-lg shadow-primary/5">
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 flex items-center justify-center text-2xl shadow-inner">
@@ -659,7 +662,7 @@ export default function MoneySplitCalc() {
               onClick={reset}
             >
               <span className="font-semibold text-sm flex items-center gap-1"><RotateCcw className="w-3 h-3" /> Reset to Default</span>
-              <span className="text-xs text-muted-foreground">20% CriderGPT / 35% Living / 15% Savings</span>
+              <span className="text-xs text-muted-foreground">15% CriderGPT / 25% Living / 15% Food / 10% Bath House / 10% Fun / 5% Savings / 5% Taxes / 5% Livestock</span>
             </Button>
           </CardContent>
         </Card>
