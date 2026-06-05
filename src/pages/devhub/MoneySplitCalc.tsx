@@ -88,7 +88,7 @@ const PRESETS = [
 const DEFAULTS: Record<string, number> = {
   cridergpt: 15,
   emergency: 15,
-  living: 25,
+  living: 20,
   food: 15,
   bathhouse: 10,
   fun: 10,
@@ -212,6 +212,7 @@ export default function MoneySplitCalc() {
   const [manualAmt, setManualAmt] = useState<Record<string, string>>({});
   const [cashBills, setCashBills] = useState<CashBills>(() => makeEmptyCashBills());
   const [roundMode, setRoundMode] = useState<RoundMode>("off");
+  const [autoBalance, setAutoBalance] = useState<boolean>(true);
 
   useEffect(() => {
     try {
@@ -357,6 +358,92 @@ export default function MoneySplitCalc() {
   };
 
   const reset = () => setPct({ ...DEFAULTS });
+
+  // Proportionally rescale OTHER buckets so total = 100 after changing `changedKey` to `newVal`.
+  const rebalance = (prev: Record<string, number>, changedKey: string, newVal: number): Record<string, number> => {
+    const clamped = Math.max(0, Math.min(100, Math.round(newVal)));
+    const remaining = 100 - clamped;
+    const others = BUCKETS.map(b => b.key).filter(k => k !== changedKey);
+    const otherSum = others.reduce((s, k) => s + Math.max(0, prev[k] ?? 0), 0);
+
+    const next: Record<string, number> = { ...prev, [changedKey]: clamped };
+
+    if (remaining <= 0) {
+      others.forEach(k => { next[k] = 0; });
+      return next;
+    }
+
+    if (otherSum <= 0) {
+      // Spread remainder evenly across other buckets
+      const base = Math.floor(remaining / others.length);
+      let leftover = remaining - base * others.length;
+      others.forEach(k => {
+        next[k] = base + (leftover > 0 ? 1 : 0);
+        if (leftover > 0) leftover--;
+      });
+      return next;
+    }
+
+    // Scale others, then fix rounding drift onto the largest other bucket
+    let assigned = 0;
+    const scaled: Array<{ k: string; v: number }> = others.map(k => {
+      const v = Math.round(((prev[k] ?? 0) / otherSum) * remaining);
+      assigned += v;
+      return { k, v };
+    });
+    let drift = remaining - assigned;
+    if (drift !== 0) {
+      scaled.sort((a, b) => b.v - a.v);
+      let i = 0;
+      while (drift !== 0 && scaled.length > 0) {
+        const target = scaled[i % scaled.length];
+        const step = drift > 0 ? 1 : -1;
+        if (target.v + step >= 0 && target.v + step <= 100) {
+          target.v += step;
+          drift -= step;
+        }
+        i++;
+        if (i > 500) break;
+      }
+    }
+    scaled.forEach(({ k, v }) => { next[k] = Math.max(0, v); });
+    return next;
+  };
+
+  const handleSlider = (key: string, v: number) => {
+    setPct(prev => autoBalance ? rebalance(prev, key, v) : { ...prev, [key]: v });
+  };
+
+  const fitTo100 = () => {
+    setPct(prev => {
+      const keys = BUCKETS.map(b => b.key);
+      const sum = keys.reduce((s, k) => s + Math.max(0, prev[k] ?? 0), 0);
+      if (sum === 0) return { ...DEFAULTS };
+      const next: Record<string, number> = {};
+      let assigned = 0;
+      const scaled = keys.map(k => {
+        const v = Math.round(((prev[k] ?? 0) / sum) * 100);
+        assigned += v;
+        next[k] = v;
+        return k;
+      });
+      let drift = 100 - assigned;
+      const sortedKeys = [...scaled].sort((a, b) => (next[b] - next[a]));
+      let i = 0;
+      while (drift !== 0 && sortedKeys.length > 0) {
+        const k = sortedKeys[i % sortedKeys.length];
+        const step = drift > 0 ? 1 : -1;
+        if (next[k] + step >= 0) {
+          next[k] += step;
+          drift -= step;
+        }
+        i++;
+        if (i > 500) break;
+      }
+      return next;
+    });
+    toast.success("Adjusted to exactly 100%");
+  };
 
   const saveToHistory = () => {
     const entry: HistoryEntry = {
@@ -752,12 +839,26 @@ export default function MoneySplitCalc() {
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-base">Split Your {period === "daily" ? "Day" : period === "weekly" ? "Paycheck" : period === "biweekly" ? "2 Weeks" : period === "monthly" ? "Month" : "Year"}</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant={overBudget ? "destructive" : underBudget ? "secondary" : "default"}>
                 {totalPct}% allocated
               </Badge>
               {overBudget && <span className="text-xs text-destructive font-medium">You’re {totalPct - 100}% over budget</span>}
               {underBudget && <span className="text-xs text-muted-foreground font-medium">{100 - totalPct}% unallocated</span>}
+              <Button
+                size="sm"
+                variant={autoBalance ? "default" : "outline"}
+                onClick={() => setAutoBalance(v => !v)}
+                className="h-7 text-xs"
+                title="When ON, moving a slider automatically rebalances the others so the total always equals 100%"
+              >
+                Auto-balance: {autoBalance ? "ON" : "OFF"}
+              </Button>
+              {totalPct !== 100 && (
+                <Button size="sm" variant="outline" onClick={fitTo100} className="h-7 text-xs">
+                  Fit to 100%
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -790,7 +891,7 @@ export default function MoneySplitCalc() {
                 </div>
                 <Slider
                   value={[val]}
-                  onValueChange={([v]) => setPct(prev => ({ ...prev, [bucket.key]: v }))}
+                  onValueChange={([v]) => handleSlider(bucket.key, v)}
                   max={100}
                   step={1}
                   className="w-full"
