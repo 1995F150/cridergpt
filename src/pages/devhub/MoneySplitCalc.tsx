@@ -73,6 +73,8 @@ const BUCKETS: Bucket[] = [
     covers: ["High-yield savings (4–5% APY)", "Index fund / brokerage deposit", "Long-term truck / land fund", "Money counter machine fund", "Do not touch for 12+ months"] },
   { key: "taxes", label: "Taxes (set-aside)", emoji: "📝", icon: PiggyBank, color: "text-slate-400", bg: "bg-slate-400/10", desc: "Self-employment tax reserve",
     covers: ["Quarterly estimated tax (IRS)", "State income tax", "1099 self-employment 15.3% bite", "CPA filing fee in April", "Never spend, this is the IRS's money"] },
+  { key: "livestock", label: "Livestock / Feed", emoji: "🐄", icon: Beef, color: "text-lime-400", bg: "bg-lime-400/10", desc: "Animal feed, vet, show fees, tags",
+    covers: ["Cattle / goat / sheep feed", "Hay, minerals, supplements", "Vet visits & vaccines", "Show entry fees & transport", "CriderGPT NFC tags & supplies"] },
 ];
 
 const PRESETS = [
