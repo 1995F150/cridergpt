@@ -891,7 +891,7 @@ export default function MoneySplitCalc() {
                 </div>
                 <Slider
                   value={[val]}
-                  onValueChange={([v]) => setPct(prev => ({ ...prev, [bucket.key]: v }))}
+                  onValueChange={([v]) => handleSlider(bucket.key, v)}
                   max={100}
                   step={1}
                   className="w-full"
