@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone
 } from "lucide-react";
 
 const modules = [
@@ -22,6 +22,7 @@ const modules = [
   { to: "/devhub/android-builder", icon: Hammer, title: "Android Auto-Builder", desc: "One-shot Ubuntu install commands + dashboard. Builds a signed APK + AAB every time you press Update.", tag: "Server + AI Ops" },
   { to: "/devhub/money-split", icon: PiggyBank, title: "Money Split Calculator", desc: "Drop your paycheck in, set % for CriderGPT, emergency, fun, and savings. See where every dollar goes.", tag: "Shop + Money" },
   { to: "/devhub/aether", icon: Sparkles, title: "AETHER Control Panel", desc: "Design key layouts, tune haptic + trackpad, push live to the glass keyboard.", tag: "Builder" },
+  { to: "/devhub/android-app-ideas", icon: Smartphone, title: "Android App Ideas", desc: "150 one-time-purchase app concepts. Copy a ready-to-paste Gemini/Android Studio prompt with app name + package id.", tag: "Builder" },
 ];
 
 export default function DevHub() {

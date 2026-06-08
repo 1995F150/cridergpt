@@ -6,12 +6,22 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
 import { useLifetimePlan } from "@/hooks/useLifetimePlan";
+import { useInAppPurchase } from "@/hooks/useInAppPurchase";
+import { Capacitor } from "@capacitor/core";
 
 const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
-const { plans } = usePlanConfigurations();
-const { isLifetimeAvailable, getSlotsRemaining, getPromotionMessage, getSoldOutMessage } = useLifetimePlan();
+  const { plans } = usePlanConfigurations();
+  const { isLifetimeAvailable, getSlotsRemaining, getPromotionMessage, getSoldOutMessage } = useLifetimePlan();
+  const { purchaseProduct, platform } = useInAppPurchase();
+
+  // Native digital goods must go through Play Billing / StoreKit per store policy.
+  const iapProductMap: Record<string, string> = {
+    plus: "com.cridergpt.plus.monthly",
+    pro: "com.cridergpt.pro.monthly",
+    lifetime: "com.cridergpt.lifetime",
+  };
 
 // Auth state for clearer CTA text
 const [isSignedIn, setIsSignedIn] = useState(false);
@@ -49,6 +59,24 @@ useEffect(() => {
     }
 
     setLoading(planName);
+
+    // On native iOS/Android, route to IAP instead of Stripe (Play/App Store policy).
+    if (Capacitor.isNativePlatform() || platform === "ios" || platform === "android") {
+      try {
+        const productId = iapProductMap[planName];
+        if (!productId) throw new Error("No IAP product mapped for this plan");
+        await purchaseProduct(productId);
+      } catch (err: any) {
+        toast({
+          title: "In-App Purchase Error",
+          description: err?.message || "Failed to start in-app purchase",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(null);
+      }
+      return;
+    }
 
     try {
       const {
