@@ -851,6 +851,9 @@ export default function AndroidAppIdeas() {
                 <Badge variant="default" className="bg-primary/10 text-primary border-primary/30">
                   Owner Vault
                 </Badge>
+                <a href="/devhub/builder-resources">
+                  <Button size="sm" variant="outline">Builder Tools</Button>
+                </a>
                 <Button size="sm" onClick={openAdd}>
                   <Plus className="w-4 h-4 mr-1" /> Add App
                 </Button>
