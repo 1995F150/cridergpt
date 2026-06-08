@@ -11,6 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 type Idea = { name: string; pkg: string; desc: string; price: number };
 
 const IDEAS: Idea[] = [
+  // Premium Flagship Suites ($199+)
+  { name: "CriderOps Ranch Command Center", pkg: "com.crider.ranchcommand", desc: "Enterprise-grade ranch operations platform: multi-property livestock, employee payroll/timecards, equipment fleet, GPS pasture mapping, AI yield forecasting, integrated accounting, USDA-compliant traceability exports, custom dashboards for owners + foremen. Lifetime license.", price: 399.00 },
+  { name: "WeldShop Enterprise Suite", pkg: "com.crider.weldshopent", desc: "Complete fabrication shop manager: job estimating, AWS-compliant WPS/PQR documentation, welder certification tracking, material inventory, customer CRM, invoicing, photo job logs, multi-user shop floor terminals. Lifetime license.", price: 299.00 },
+  { name: "FFA Chapter Pro Admin", pkg: "com.crider.ffachapterpro", desc: "Full chapter management for advisors: member roster, SAE record books, CDE team prep, fundraiser ledger, parent communications, banquet planner, officer election system, state report exports. Lifetime per chapter.", price: 249.00 },
+  { name: "AgriTrack Commercial Cattle Suite", pkg: "com.crider.agritrack", desc: "Commercial cow-calf and feedlot operation: EID integration, individual animal P/L, ration formulator, breeding genetics tracker, market price feed, hauling logs, lender-ready financial reports. Lifetime license.", price: 199.00 },
+
   // Shop / Trade Utilities
   { name: "Complete Farm & Livestock Manager Pro", pkg: "com.crider.farmpro", desc: "All-in-one farm management: livestock records, breeding calendar, feed rations, equipment maintenance, pasture rotation, sales ledger, vet log, financial reports, and weather integration. Multi-property, full offline, optional cloud sync.", price: 10.00 },
   { name: "Welding Hours Tracker", pkg: "com.crider.weldhours", desc: "Clock in/out at the shop, log job notes, export weekly CSV/PDF timesheet. Local SQLite only.", price: 1.99 },
