@@ -498,6 +498,51 @@ export type Database = {
         }
         Relationships: []
       }
+      android_app_ideas: {
+        Row: {
+          builder_tool: string
+          category: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+          needs_backend: boolean
+          pkg: string
+          price: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          builder_tool?: string
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          needs_backend?: boolean
+          pkg: string
+          price?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          builder_tool?: string
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          needs_backend?: boolean
+          pkg?: string
+          price?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
