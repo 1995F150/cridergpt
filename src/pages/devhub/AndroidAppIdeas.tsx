@@ -1,12 +1,49 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Copy, Smartphone, Search, ArrowUpDown } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Copy, Smartphone, Search, ArrowUpDown, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+const BUILDER_TOOLS = [
+  { value: "android-studio", label: "Android Studio (Gemini)" },
+  { value: "rork", label: "Rork" },
+  { value: "flutterflow", label: "FlutterFlow" },
+  { value: "bolt", label: "Bolt.new" },
+  { value: "lovable", label: "Lovable" },
+  { value: "a0dev", label: "a0.dev" },
+  { value: "replit", label: "Replit Agent" },
+  { value: "other", label: "Other" },
+];
+
+const STATUSES = [
+  { value: "idea", label: "Idea" },
+  { value: "building", label: "Building" },
+  { value: "published", label: "Published" },
+];
+
+type DBIdea = {
+  id: string;
+  user_id: string;
+  name: string;
+  pkg: string;
+  description: string;
+  price: number;
+  builder_tool: string;
+  needs_backend: boolean;
+  category: string;
+  status: string;
+};
 
 type Idea = { name: string; pkg: string; desc: string; price: number };
 
@@ -532,69 +569,182 @@ const IDEAS: Idea[] = [
 
 ];
 
-function buildPrompt(idea: Idea): string {
-  return `You are an expert Android engineer working inside Android Studio (Gemini in-IDE). Scaffold a complete, production-ready Android app.
+function builderIntro(tool: string): string {
+  switch (tool) {
+    case "rork":
+      return "You are an expert React Native + Expo engineer in Rork. Scaffold a production-ready cross-platform mobile app (iOS + Android) ready for TestFlight and Play Internal Testing.";
+    case "flutterflow":
+      return "You are an expert Flutter engineer working inside FlutterFlow. Scaffold a production-ready Flutter app targeting iOS, Android, and web from one codebase.";
+    case "bolt":
+      return "You are an expert Expo React Native engineer in Bolt.new. Scaffold a production-ready mobile app ready to publish via EAS Build.";
+    case "lovable":
+      return "You are an expert React + Vite + Tailwind engineer in Lovable. Scaffold a production-ready installable PWA, optionally wrappable with Capacitor for native stores.";
+    case "a0dev":
+      return "You are an expert Expo engineer in a0.dev. Scaffold a production-ready mobile app with live QR preview support.";
+    case "replit":
+      return "You are an expert full-stack engineer using Replit Agent. Scaffold a production-ready app with hosting auto-configured.";
+    case "android-studio":
+    default:
+      return "You are an expert Android engineer working inside Android Studio (Gemini in-IDE). Scaffold a complete, production-ready Android app in Kotlin with Jetpack Compose, Material 3, MVVM + Hilt, Room, DataStore, and Compose Navigation.";
+  }
+}
+
+function buildPrompt(idea: DBIdea): string {
+  const backendLine = idea.needs_backend
+    ? "- Backend: Supabase (Postgres + Auth + RLS). Include schema, RLS policies, and a Supabase client wired up."
+    : "- NO backend, NO accounts, NO network calls unless a specific feature requires it. Local storage only.";
+  return `${builderIntro(idea.builder_tool)}
 
 APP NAME: ${idea.name}
-PACKAGE: ${idea.pkg}
-ONE-LINER: ${idea.desc}
-PRICE: $${idea.price.toFixed(2)} one-time purchase on Google Play
+PACKAGE / BUNDLE ID: ${idea.pkg}
+ONE-LINER: ${idea.description}
+PRICE: $${Number(idea.price).toFixed(2)} one-time purchase
+CATEGORY: ${idea.category}
 
 REQUIREMENTS
-- Language: Kotlin, single-module
-- Min SDK 24, Target SDK 34, AGP 8.7, Kotlin 1.9.25
-- UI: Jetpack Compose + Material 3, dark/light theme support
-- Architecture: MVVM with ViewModel + StateFlow, Hilt for DI
-- Persistence: Room (local SQLite). NO backend, NO accounts, NO network calls unless feature requires it
-- Storage: DataStore Preferences for settings
-- Navigation: Compose Navigation
-- Testing: JUnit + Compose UI test for one happy-path
-- Build a clean settings screen with: theme toggle, units (imperial/metric where relevant), export data, about
-- One-time purchase model: gate all premium features behind a single Google Play in-app product id "${idea.pkg}.unlock_pro" using BillingClient v6. Show paywall sheet for locked features.
-- Include export to CSV and share-sheet for primary records
-- Include adaptive launcher icon placeholder
-- Provide proper AndroidManifest permissions (only what's needed) and runtime permission flows
-- Include a README.md explaining build, signing, and Play Store release steps
-- Code must compile out of the box with \`./gradlew assembleDebug\`
+- Dark + light theme, polished UI, accessible
+${backendLine}
+- One-time purchase paywall using the native store billing (Google Play Billing on Android, StoreKit on iOS). Product id: "${idea.pkg}.unlock_pro"
+- Export primary records to CSV with share-sheet
+- Settings screen: theme toggle, units, export, about
+- Adaptive launcher icon placeholder
+- Request only the permissions the feature needs, with runtime prompts
+- README.md covering build, signing, and store release steps
+- Compile clean out of the box
 
 DELIVER
 1. Full project tree
-2. All Kotlin source files
-3. build.gradle (project + app)
-4. AndroidManifest.xml
-5. Compose screens for: main feature, history/list, detail, settings, paywall
-6. Room entities, DAOs, database
-7. Sample data seeded on first launch
-8. README with one-time purchase setup in Play Console
+2. All source files
+3. Build config
+4. Screens for: main feature, history/list, detail, settings, paywall
+5. Local persistence layer
+6. Sample data seeded on first launch
+7. README with one-time purchase setup
 
-Begin scaffolding now. Use idiomatic 2026 Android best practices. No deprecated APIs.`;
+Begin scaffolding now. Use idiomatic 2026 best practices. No deprecated APIs.`;
 }
+
+type FormState = {
+  name: string;
+  pkg: string;
+  description: string;
+  price: string;
+  builder_tool: string;
+  needs_backend: boolean;
+  category: string;
+  status: string;
+};
+
+const EMPTY_FORM: FormState = {
+  name: "",
+  pkg: "",
+  description: "",
+  price: "0.99",
+  builder_tool: "android-studio",
+  needs_backend: false,
+  category: "general",
+  status: "idea",
+};
 
 export default function AndroidAppIdeas() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"default" | "priceHigh" | "priceLow">("default");
+  const [builderFilter, setBuilderFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [ideas, setIdeas] = useState<DBIdea[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const sb = supabase as any;
+
+  const loadIdeas = async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await sb
+      .from("android_app_ideas")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(2000);
+    if (error) {
+      toast({ title: "Load failed", description: error.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+    const rows = (data || []) as DBIdea[];
+    // First-run seed from the hardcoded IDEAS catalog
+    if (rows.length === 0 && IDEAS.length > 0) {
+      setSeeding(true);
+      const seedRows = IDEAS.map((i) => ({
+        user_id: user.id,
+        name: i.name,
+        pkg: i.pkg,
+        description: i.desc,
+        price: i.price,
+        builder_tool: "android-studio",
+        needs_backend: false,
+        category: "general",
+        status: "idea",
+      }));
+      // Insert in chunks to stay under PostgREST limits
+      const CHUNK = 100;
+      for (let k = 0; k < seedRows.length; k += CHUNK) {
+        const slice = seedRows.slice(k, k + CHUNK);
+        const { error: insErr } = await sb.from("android_app_ideas").insert(slice);
+        if (insErr) {
+          toast({ title: "Seed failed", description: insErr.message, variant: "destructive" });
+          break;
+        }
+      }
+      setSeeding(false);
+      const { data: after } = await sb
+        .from("android_app_ideas")
+        .select("*")
+        .order("created_at", { ascending: true })
+        .limit(2000);
+      setIdeas((after || []) as DBIdea[]);
+    } else {
+      setIdeas(rows);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadIdeas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     let result = s
-      ? IDEAS.filter(
+      ? ideas.filter(
           (i) =>
             i.name.toLowerCase().includes(s) ||
             i.pkg.toLowerCase().includes(s) ||
-            i.desc.toLowerCase().includes(s) ||
-            i.price.toFixed(2).includes(s)
+            i.description.toLowerCase().includes(s) ||
+            Number(i.price).toFixed(2).includes(s)
         )
-      : [...IDEAS];
+      : [...ideas];
 
-    if (sort === "priceHigh") {
-      result.sort((a, b) => b.price - a.price);
-    } else if (sort === "priceLow") {
-      result.sort((a, b) => a.price - b.price);
+    if (builderFilter !== "all") {
+      result = result.filter((i) => i.builder_tool === builderFilter);
+    }
+    if (statusFilter !== "all") {
+      result = result.filter((i) => i.status === statusFilter);
     }
 
+    if (sort === "priceHigh") result.sort((a, b) => Number(b.price) - Number(a.price));
+    else if (sort === "priceLow") result.sort((a, b) => Number(a.price) - Number(b.price));
+
     return result;
-  }, [q, sort]);
+  }, [q, sort, ideas, builderFilter, statusFilter]);
 
   const copy = async (text: string, label: string) => {
     try {
@@ -603,6 +753,83 @@ export default function AndroidAppIdeas() {
     } catch {
       toast({ title: "Copy failed", description: "Long-press to copy manually", variant: "destructive" });
     }
+  };
+
+  const openAdd = () => {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (idea: DBIdea) => {
+    setEditingId(idea.id);
+    setForm({
+      name: idea.name,
+      pkg: idea.pkg,
+      description: idea.description,
+      price: String(idea.price),
+      builder_tool: idea.builder_tool,
+      needs_backend: idea.needs_backend,
+      category: idea.category,
+      status: idea.status,
+    });
+    setDialogOpen(true);
+  };
+
+  const saveForm = async () => {
+    if (!user) return;
+    if (!form.name.trim() || !form.pkg.trim()) {
+      toast({ title: "Missing fields", description: "Name and package are required", variant: "destructive" });
+      return;
+    }
+    const priceNum = parseFloat(form.price);
+    if (Number.isNaN(priceNum) || priceNum < 0) {
+      toast({ title: "Bad price", description: "Enter a number ≥ 0", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    const payload = {
+      name: form.name.trim(),
+      pkg: form.pkg.trim(),
+      description: form.description.trim(),
+      price: priceNum,
+      builder_tool: form.builder_tool,
+      needs_backend: form.needs_backend,
+      category: form.category.trim() || "general",
+      status: form.status,
+    };
+    if (editingId) {
+      const { error } = await sb.from("android_app_ideas").update(payload).eq("id", editingId);
+      if (error) {
+        toast({ title: "Update failed", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Updated", description: form.name });
+        setDialogOpen(false);
+        await loadIdeas();
+      }
+    } else {
+      const { error } = await sb.from("android_app_ideas").insert({ ...payload, user_id: user.id });
+      if (error) {
+        toast({ title: "Add failed", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Added", description: form.name });
+        setDialogOpen(false);
+        await loadIdeas();
+      }
+    }
+    setSaving(false);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await sb.from("android_app_ideas").delete().eq("id", deleteId);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Deleted" });
+      setIdeas((prev) => prev.filter((i) => i.id !== deleteId));
+    }
+    setDeleteId(null);
   };
 
   return (
@@ -617,34 +844,55 @@ export default function AndroidAppIdeas() {
                   Android App Ideas
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {IDEAS.length} one-time-purchase app ideas. Tap an idea to copy the AI prompt for Android Studio (Gemini).
+                  {ideas.length} saved ideas. Tap Prompt to copy an AI prompt tailored to the chosen builder tool.
                 </p>
               </div>
-              <Badge variant="default" className="bg-primary/10 text-primary border-primary/30">
-                Owner Vault
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-primary/10 text-primary border-primary/30">
+                  Owner Vault
+                </Badge>
+                <Button size="sm" onClick={openAdd}>
+                  <Plus className="w-4 h-4 mr-1" /> Add App
+                </Button>
+              </div>
             </div>
 
-            <div className="mt-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="mt-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-wrap">
               <div className="relative w-full sm:max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder={`Search ${IDEAS.length} ideas…`}
+                  placeholder={`Search ${ideas.length} ideas…`}
                   className="pl-9"
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
-                <Select value={sort} onValueChange={(v) => setSort(v as "default" | "priceHigh" | "priceLow")}>
-                  <SelectTrigger className="h-9 w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={sort} onValueChange={(v) => setSort(v as any)}>
+                  <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="priceHigh">Price: High to Low</SelectItem>
-                    <SelectItem value="priceLow">Price: Low to High</SelectItem>
+                    <SelectItem value="priceHigh">Price: High → Low</SelectItem>
+                    <SelectItem value="priceLow">Price: Low → High</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={builderFilter} onValueChange={setBuilderFilter}>
+                  <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All builders</SelectItem>
+                    {BUILDER_TOOLS.map((b) => (
+                      <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    {STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -653,44 +901,158 @@ export default function AndroidAppIdeas() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((idea) => {
-              const prompt = buildPrompt(idea);
-              return (
-                <Card key={idea.pkg} className="hover:border-primary/60 transition-colors">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-base">{idea.name}</CardTitle>
-                      <Badge variant="secondary" className="shrink-0 text-xs font-semibold">
-                        ${idea.price.toFixed(2)}
-                      </Badge>
-                    </div>
-                    <CardDescription className="font-mono text-[10px] break-all">
-                      {idea.pkg}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-xs text-muted-foreground line-clamp-3">{idea.desc}</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button size="sm" variant="outline" onClick={() => copy(idea.name, "App name")}>
-                        <Copy className="w-3 h-3 mr-1" />Name
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => copy(idea.pkg, "Package id")}>
-                        <Copy className="w-3 h-3 mr-1" />Pkg
-                      </Button>
-                      <Button size="sm" onClick={() => copy(prompt, "Gemini prompt")}>
-                        <Copy className="w-3 h-3 mr-1" />Prompt
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-          {filtered.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-12">No ideas match &quot;{q}&quot;.</p>
+          {(loading || seeding) && (
+            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {seeding ? "Seeding 488 starter ideas into your account…" : "Loading…"}
+            </div>
+          )}
+          {!loading && !seeding && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map((idea) => {
+                  const prompt = buildPrompt(idea);
+                  const builderLabel = BUILDER_TOOLS.find((b) => b.value === idea.builder_tool)?.label || idea.builder_tool;
+                  const statusLabel = STATUSES.find((s) => s.value === idea.status)?.label || idea.status;
+                  return (
+                    <Card key={idea.id} className="hover:border-primary/60 transition-colors">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="text-base">{idea.name}</CardTitle>
+                          <Badge variant="secondary" className="shrink-0 text-xs font-semibold">
+                            ${Number(idea.price).toFixed(2)}
+                          </Badge>
+                        </div>
+                        <CardDescription className="font-mono text-[10px] break-all">
+                          {idea.pkg}
+                        </CardDescription>
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          <Badge variant="outline" className="text-[10px]">{builderLabel}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{statusLabel}</Badge>
+                          {idea.needs_backend && (
+                            <Badge variant="outline" className="text-[10px]">Backend</Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-xs text-muted-foreground line-clamp-3">{idea.description}</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Button size="sm" variant="outline" onClick={() => copy(idea.name, "App name")}>
+                            <Copy className="w-3 h-3 mr-1" />Name
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => copy(idea.pkg, "Package id")}>
+                            <Copy className="w-3 h-3 mr-1" />Pkg
+                          </Button>
+                          <Button size="sm" onClick={() => copy(prompt, "AI prompt")}>
+                            <Copy className="w-3 h-3 mr-1" />Prompt
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(idea)}>
+                            <Pencil className="w-3 h-3 mr-1" />Edit
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(idea.id)}>
+                            <Trash2 className="w-3 h-3 mr-1" />Delete
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              {filtered.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-12">
+                  {ideas.length === 0 ? "No ideas yet. Tap Add App to create your first one." : `No ideas match the current filters.`}
+                </p>
+              )}
+            </>
           )}
         </div>
+
+        {/* Add / Edit dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingId ? "Edit App Idea" : "Add App Idea"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="f-name">App name</Label>
+                <Input id="f-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="My Cool App" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="f-pkg">Package / Bundle ID</Label>
+                <Input id="f-pkg" value={form.pkg} onChange={(e) => setForm({ ...form, pkg: e.target.value })} placeholder="com.crider.coolapp" className="font-mono text-xs" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="f-desc">Description</Label>
+                <Textarea id="f-desc" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="One-liner about what it does." />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="f-price">Price (USD)</Label>
+                  <Input id="f-price" type="number" step="0.01" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="f-cat">Category</Label>
+                  <Input id="f-cat" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="general" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label>Builder tool</Label>
+                <Select value={form.builder_tool} onValueChange={(v) => setForm({ ...form, builder_tool: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {BUILDER_TOOLS.map((b) => (
+                      <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-border p-3">
+                <div>
+                  <Label htmlFor="f-backend" className="text-sm">Needs backend?</Label>
+                  <p className="text-xs text-muted-foreground">Turn on for GPS loggers, multi-device sync, etc.</p>
+                </div>
+                <Switch id="f-backend" checked={form.needs_backend} onCheckedChange={(v) => setForm({ ...form, needs_backend: v })} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button onClick={saveForm} disabled={saving}>
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {editingId ? "Save" : "Add"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete confirm */}
+        <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this app idea?</AlertDialogTitle>
+              <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DevHubGuard>
   );
