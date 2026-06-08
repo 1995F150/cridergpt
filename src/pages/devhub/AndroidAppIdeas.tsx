@@ -15,6 +15,36 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+const BUILDER_TOOLS = [
+  { value: "android-studio", label: "Android Studio (Gemini)" },
+  { value: "rork", label: "Rork" },
+  { value: "flutterflow", label: "FlutterFlow" },
+  { value: "bolt", label: "Bolt.new" },
+  { value: "lovable", label: "Lovable" },
+  { value: "a0dev", label: "a0.dev" },
+  { value: "replit", label: "Replit Agent" },
+  { value: "other", label: "Other" },
+];
+
+const STATUSES = [
+  { value: "idea", label: "Idea" },
+  { value: "building", label: "Building" },
+  { value: "published", label: "Published" },
+];
+
+type DBIdea = {
+  id: string;
+  user_id: string;
+  name: string;
+  pkg: string;
+  description: string;
+  price: number;
+  builder_tool: string;
+  needs_backend: boolean;
+  category: string;
+  status: string;
+};
+
 type Idea = { name: string; pkg: string; desc: string; price: number };
 
 const IDEAS: Idea[] = [
