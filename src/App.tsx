@@ -42,6 +42,7 @@ import Recipes from "./pages/Recipes";
 import LinkPC from "./pages/LinkPC";
 import LinkPCToken from "./pages/LinkPCToken";
 import PCFeed from "./pages/PCFeed";
+import AccountManagement from "./pages/AccountManagement";
 import DevHub from "./pages/devhub/DevHub";
 import DevServerConsole from "./pages/devhub/ServerConsole";
 import DevMachineDesigner from "./pages/devhub/MachineDesigner";
@@ -165,6 +166,9 @@ const App = () => {
                       <Route path="/link-pc" element={<LinkPC />} />
                       <Route path="/link-pc-token" element={<LinkPCToken />} />
                       <Route path="/pc-feed" element={<PCFeed />} />
+                      <Route path="/account" element={<AccountManagement />} />
+                      <Route path="/manage-account" element={<Navigate to="/account" replace />} />
+                      <Route path="/delete-account" element={<Navigate to="/account" replace />} />
 
                       {/* Owner-locked Dev Hub */}
                       <Route path="/devhub" element={<DevHub />} />
