@@ -259,3 +259,51 @@ After making changes in Lovable:
 - **capacitor-google-auth Version**: 3.x
 - **Min Android SDK**: 22 (Android 5.1)
 - **Target Android SDK**: 34 (Android 14)
+
+---
+
+## Step 11: Google Play Billing Setup (REQUIRED before publishing)
+
+The Pricing screen in the app calls `useInAppPurchase().purchaseProduct(productId)` automatically on Android. You must register matching products in the Play Console for the purchase sheet to open.
+
+### 11a. Install the billing plugin
+
+```bash
+npm install @capacitor-community/in-app-purchases
+# or, if you prefer the cordova bridge:
+# npm install cordova-plugin-purchase
+npx cap sync android
+```
+
+### 11b. Create the products in Play Console
+
+In **Play Console → Monetize → Products**, create these exact IDs (they match the map in `src/components/Pricing.tsx` and `src/hooks/useInAppPurchase.ts`):
+
+| Plan | Type | Product ID |
+|------|------|------------|
+| Plus | Subscription (monthly) | `com.cridergpt.plus.monthly` |
+| Pro  | Subscription (monthly) | `com.cridergpt.pro.monthly` |
+| Lifetime | One-time (managed) | `com.cridergpt.lifetime` |
+| 100 credits  | Consumable | `com.cridergpt.credits.100` |
+| 500 credits  | Consumable | `com.cridergpt.credits.500` |
+| 1000 credits | Consumable | `com.cridergpt.credits.1000` |
+
+### 11c. Verify on the backend
+
+The `verify-iap` Supabase edge function already validates Play purchase tokens against the Google Play Developer API. Confirm these secrets are set:
+
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` — service-account JSON with **Android Publisher** read access
+- `GOOGLE_PLAY_PACKAGE_NAME` — must equal `app.cridergpt.android`
+
+### 11d. What still uses Stripe (and that's OK)
+
+- **`/store` (Smart Tags / merch)** — physical goods are exempt from Play Billing, Stripe is allowed and remains active.
+- **Web build at https://cridergpt.com** — Stripe still handles all upgrades. The platform check inside `useInAppPurchase` falls back to Stripe on web automatically.
+
+### Compliance checklist before submitting the AAB
+
+- [ ] Pricing screen on Android opens the Google Play sheet (not a Stripe URL)
+- [ ] All six product IDs above exist and are **Active** in Play Console
+- [ ] `verify-iap` returns `{ success: true }` for a real test purchase
+- [ ] `/store` Smart Tag checkout still opens Stripe (intentional)
+- [ ] Pre-launch report has no policy warnings about external payment links
