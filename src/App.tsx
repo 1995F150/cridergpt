@@ -61,6 +61,7 @@ import DevKeyboardBlueprint from "./pages/devhub/KeyboardBlueprint";
 import DevMoneySplitCalc from "./pages/devhub/MoneySplitCalc";
 import DevAetherControl from "./pages/devhub/AetherControl";
 import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
+import DevBuilderResources from "./pages/devhub/BuilderResources";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
