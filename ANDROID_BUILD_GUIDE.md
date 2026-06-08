@@ -1,6 +1,8 @@
 # CriderGPT Android APK Build Guide
 
-This guide explains how to build the CriderGPT Android APK from this project with all features working: **Google Sign-In**, **Push Notifications**, and **Safe-Area UI**.
+This guide explains how to build the CriderGPT Android APK with all features working: **Google Sign-In**, **Push Notifications**, **Safe-Area UI**, and **Google Play Billing for all digital upgrades** (Stripe is only used for physical products like Smart Tags).
+
+> ⚠️ **Play Store policy reminder (2026):** All digital goods, subscriptions, and the Lifetime plan MUST use Google Play Billing inside the Android build. Stripe is allowed ONLY for physical merchandise (Smart Tags, hardware). The in-app Pricing screen now auto-detects Capacitor and routes through `useInAppPurchase` on Android — do NOT revert it to a direct `create-checkout` call or the app will be rejected.
 
 ## Prerequisites
 
