@@ -854,6 +854,9 @@ export default function AndroidAppIdeas() {
                 <a href="/devhub/builder-resources">
                   <Button size="sm" variant="outline">Builder Tools</Button>
                 </a>
+                <a href="/devhub/ad-networks">
+                  <Button size="sm" variant="outline">Ad Networks</Button>
+                </a>
                 <Button size="sm" onClick={openAdd}>
                   <Plus className="w-4 h-4 mr-1" /> Add App
                 </Button>

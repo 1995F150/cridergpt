@@ -62,6 +62,7 @@ import DevMoneySplitCalc from "./pages/devhub/MoneySplitCalc";
 import DevAetherControl from "./pages/devhub/AetherControl";
 import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
 import DevBuilderResources from "./pages/devhub/BuilderResources";
+import DevAdNetworks from "./pages/devhub/AdNetworks";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 
 const queryClient = new QueryClient({
@@ -191,6 +192,7 @@ const App = () => {
                       <Route path="/devhub/aether" element={<DevAetherControl />} />
                       <Route path="/devhub/android-app-ideas" element={<DevAndroidAppIdeas />} />
                       <Route path="/devhub/builder-resources" element={<DevBuilderResources />} />
+                      <Route path="/devhub/ad-networks" element={<DevAdNetworks />} />
 
 
 
