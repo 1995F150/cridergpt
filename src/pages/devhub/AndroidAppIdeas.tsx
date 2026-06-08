@@ -11,6 +11,7 @@ type Idea = { name: string; pkg: string; desc: string; price: number };
 
 const IDEAS: Idea[] = [
   // Shop / Trade Utilities
+  { name: "Complete Farm & Livestock Manager Pro", pkg: "com.crider.farmpro", desc: "All-in-one farm management: livestock records, breeding calendar, feed rations, equipment maintenance, pasture rotation, sales ledger, vet log, financial reports, and weather integration. Multi-property, full offline, optional cloud sync.", price: 10.00 },
   { name: "Welding Hours Tracker", pkg: "com.crider.weldhours", desc: "Clock in/out at the shop, log job notes, export weekly CSV/PDF timesheet. Local SQLite only.", price: 1.99 },
   { name: "Cattle Weight Estimator", pkg: "com.crider.cattleweight", desc: "Heart-girth + length input, returns estimated lbs using Schaeffer formula. Save history per animal.", price: 0.99 },
   { name: "Hay Bale Calculator", pkg: "com.crider.haycalc", desc: "Compute bales needed per head per winter. Inputs: head count, days, lbs/day, bale weight.", price: 0.99 },
