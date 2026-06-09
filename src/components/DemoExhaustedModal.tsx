@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, MessageSquare, ArrowRight, Calculator, Tractor, BookOpen } from 'lucide-react';
+import { Sparkles, MessageSquare, Calculator, Tractor, BookOpen, PlayCircle } from 'lucide-react';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
+import { useAds } from '@/hooks/useAds';
+import { useDemoMode } from '@/hooks/useDemoMode';
+import { toast } from 'sonner';
 
 interface DemoExhaustedModalProps {
   open: boolean;
@@ -12,10 +14,29 @@ interface DemoExhaustedModalProps {
 
 export function DemoExhaustedModal({ open, onOpenChange }: DemoExhaustedModalProps) {
   const [isNavigating, setIsNavigating] = useState(false);
+  const [watchingAd, setWatchingAd] = useState(false);
+  const { showAds, showRewarded } = useAds();
+  const { grantBonusMessages } = useDemoMode();
 
   const handleSignUp = () => {
     setIsNavigating(true);
     window.location.href = '/auth?mode=signup';
+  };
+
+  const handleWatchAd = async () => {
+    setWatchingAd(true);
+    try {
+      const reward = await showRewarded();
+      if (reward) {
+        grantBonusMessages(5);
+        toast.success("+5 messages unlocked", { description: "Keep chatting!" });
+        onOpenChange(false);
+      } else {
+        toast.error("Ad unavailable", { description: "Try again in a moment." });
+      }
+    } finally {
+      setWatchingAd(false);
+    }
   };
 
   return (
