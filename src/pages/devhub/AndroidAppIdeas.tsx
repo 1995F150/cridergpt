@@ -663,6 +663,42 @@ export default function AndroidAppIdeas() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [iconBusyId, setIconBusyId] = useState<string | null>(null);
+
+  const generateIcon = async (idea: DBIdea) => {
+    setIconBusyId(idea.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-app-icon", {
+        body: { name: idea.name, category: idea.category, description: idea.description },
+      });
+      if (error) throw error;
+      const iconUrl = (data as any)?.icon_url;
+      if (!iconUrl) throw new Error("No icon returned");
+
+      const { error: upErr } = await (supabase as any)
+        .from("android_app_ideas")
+        .update({ icon_url: iconUrl })
+        .eq("id", idea.id);
+      if (upErr) throw upErr;
+
+      setIdeas((prev) => prev.map((i) => (i.id === idea.id ? { ...i, icon_url: iconUrl } : i)));
+      toast({ title: "Icon generated", description: idea.name });
+    } catch (e: any) {
+      toast({ title: "Icon failed", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setIconBusyId(null);
+    }
+  };
+
+  const downloadIcon = (idea: DBIdea) => {
+    if (!idea.icon_url) return;
+    const a = document.createElement("a");
+    a.href = idea.icon_url;
+    a.download = `${idea.pkg}-icon-512.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const sb = supabase as any;
 
