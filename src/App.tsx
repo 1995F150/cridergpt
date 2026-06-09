@@ -200,6 +200,7 @@ const App = () => {
                       <Route path="/devhub/android-app-ideas" element={<DevAndroidAppIdeas />} />
                       <Route path="/devhub/builder-resources" element={<DevBuilderResources />} />
                       <Route path="/devhub/ad-networks" element={<DevAdNetworks />} />
+                      <Route path="/devhub/backend-blueprints" element={<DevBackendBlueprints />} />
 
 
 
