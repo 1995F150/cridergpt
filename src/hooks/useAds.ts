@@ -3,7 +3,8 @@ import { Capacitor } from "@capacitor/core";
 import {
   AdMob,
   RewardAdPluginEvents,
-  InterstitialAdPluginEvents,
+  BannerAdPosition,
+  BannerAdSize,
   type AdMobRewardItem,
 } from "@capacitor-community/admob";
 import { useSubscriptionStatus } from "./useSubscriptionStatus";
@@ -104,10 +105,37 @@ export function useAds() {
     }
   }, [showAds]);
 
+  /** Show a bottom banner. Safe to call repeatedly. */
+  const showBanner = useCallback(async (): Promise<void> => {
+    if (!showAds || !AD_UNITS.banner) return;
+    try {
+      await AdMob.showBanner({
+        adId: AD_UNITS.banner,
+        adSize: BannerAdSize.ADAPTIVE_BANNER,
+        position: BannerAdPosition.BOTTOM_CENTER,
+        margin: 0,
+      });
+    } catch (err) {
+      console.warn("[AdMob] banner failed", err);
+    }
+  }, [showAds]);
+
+  const hideBanner = useCallback(async (): Promise<void> => {
+    if (!isNative) return;
+    try {
+      await AdMob.hideBanner();
+      await AdMob.removeBanner();
+    } catch {
+      /* no-op */
+    }
+  }, [isNative]);
+
   return {
     /** True only on native Android for non-paid users. Use to gate UI like "Watch ad for +5 messages". */
     showAds,
     showRewarded,
     showInterstitial,
+    showBanner,
+    hideBanner,
   };
 }

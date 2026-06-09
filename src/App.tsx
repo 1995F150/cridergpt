@@ -65,6 +65,7 @@ import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
 import DevBuilderResources from "./pages/devhub/BuilderResources";
 import DevAdNetworks from "./pages/devhub/AdNetworks";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
+import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -135,6 +136,7 @@ const App = () => {
               <BrowserRouter>
                 <AuthProvider>
                 <ReferralCaptureMount />
+                <AppOpenInterstitial />
                 <MaintenanceGuard>
                   <OfflineBanner />
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>

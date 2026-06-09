@@ -28,6 +28,7 @@ import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatGallery } from "@/components/chat/ChatGallery";
 import { DemoExhaustedModal } from "@/components/DemoExhaustedModal";
+import { AdSurfaceBanner } from "@/components/AdSurfaceBanner";
 import { GuestWelcomeHero } from "@/components/GuestWelcomeHero";
 import { SuggestionChips } from "@/components/chat/SuggestionChips";
 import { PendingTasksBanner } from "@/components/chat/PendingTasksBanner";
@@ -869,6 +870,7 @@ Make it detailed and actionable.`;
 
       {/* Demo Exhausted Modal */}
       <DemoExhaustedModal open={showDemoModal} onOpenChange={setShowDemoModal} />
+      {!user && <AdSurfaceBanner />}
     </div>
   );
 }
