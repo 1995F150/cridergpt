@@ -64,6 +64,7 @@ import DevAetherControl from "./pages/devhub/AetherControl";
 import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
 import DevBuilderResources from "./pages/devhub/BuilderResources";
 import DevAdNetworks from "./pages/devhub/AdNetworks";
+import DevBackendBlueprints from "./pages/devhub/BackendBlueprints";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -199,6 +200,7 @@ const App = () => {
                       <Route path="/devhub/android-app-ideas" element={<DevAndroidAppIdeas />} />
                       <Route path="/devhub/builder-resources" element={<DevBuilderResources />} />
                       <Route path="/devhub/ad-networks" element={<DevAdNetworks />} />
+                      <Route path="/devhub/backend-blueprints" element={<DevBackendBlueprints />} />
 
 
 
