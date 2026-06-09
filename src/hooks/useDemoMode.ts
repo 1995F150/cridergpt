@@ -95,10 +95,26 @@ export function useDemoMode() {
     loadDemoUsage();
   }, []);
 
+  const grantBonusMessages = (n: number) => {
+    const newUsage = {
+      ...demoUsage,
+      maxMessages: demoUsage.maxMessages + n,
+      isExhausted: demoUsage.messagesUsed >= demoUsage.maxMessages + n,
+    };
+    setDemoUsage(newUsage);
+    try {
+      localStorage.setItem('cridergpt_demo_usage', JSON.stringify(newUsage));
+    } catch (error) {
+      console.error('Error saving bonus messages:', error);
+    }
+    return newUsage;
+  };
+
   return {
     demoUsage,
     canSendMessage,
     incrementDemoUsage,
-    resetDemoUsage
+    resetDemoUsage,
+    grantBonusMessages,
   };
 }
