@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Copy, Smartphone, Search, ArrowUpDown, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Copy, Smartphone, Search, ArrowUpDown, Plus, Pencil, Trash2, Loader2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -951,6 +951,32 @@ export default function AndroidAppIdeas() {
                           </Button>
                           <Button size="sm" onClick={() => copy(prompt, "AI prompt")}>
                             <Copy className="w-3 h-3 mr-1" />Prompt
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              copy(
+                                `https://cridergpt.com/privacy/${idea.pkg}?name=${encodeURIComponent(idea.name)}`,
+                                "Privacy Policy URL"
+                              )
+                            }
+                          >
+                            <Copy className="w-3 h-3 mr-1" />Privacy URL
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              window.open(
+                                `/privacy/${idea.pkg}?name=${encodeURIComponent(idea.name)}`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            <ShieldCheck className="w-3 h-3 mr-1" />Preview Policy
                           </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">

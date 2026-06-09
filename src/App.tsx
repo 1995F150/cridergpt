@@ -174,6 +174,7 @@ const App = () => {
                       <Route path="/manage-account" element={<Navigate to="/account" replace />} />
                       <Route path="/delete-account" element={<DeleteAccountInfo />} />
                       <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/privacy/:pkg" element={<PrivacyPolicy />} />
                       <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
 
                       {/* Owner-locked Dev Hub */}
