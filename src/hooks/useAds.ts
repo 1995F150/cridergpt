@@ -19,8 +19,7 @@ export const ADMOB_APP_ID = "ca-app-pub-1884621321896668~7174244598";
 export const AD_UNITS = {
   rewarded: "ca-app-pub-1884621321896668/8461902383",
   interstitial: "ca-app-pub-1884621321896668/6979140189",
-  // TODO: paste banner ID once created in AdMob console
-  banner: "",
+  banner: "ca-app-pub-1884621321896668/5478019545",
 } as const;
 
 const PAID_PLANS = new Set(["plus", "pro", "lifetime"]);
