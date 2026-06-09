@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Copy, Smartphone, Search, ArrowUpDown, Plus, Pencil, Trash2, Loader2, ShieldCheck } from "lucide-react";
+import { Copy, Smartphone, Search, ArrowUpDown, Plus, Pencil, Trash2, Loader2, ShieldCheck, Sparkles, Download, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,6 +43,7 @@ type DBIdea = {
   needs_backend: boolean;
   category: string;
   status: string;
+  icon_url: string | null;
 };
 
 type Idea = { name: string; pkg: string; desc: string; price: number };
@@ -662,6 +663,42 @@ export default function AndroidAppIdeas() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [iconBusyId, setIconBusyId] = useState<string | null>(null);
+
+  const generateIcon = async (idea: DBIdea) => {
+    setIconBusyId(idea.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-app-icon", {
+        body: { name: idea.name, category: idea.category, description: idea.description },
+      });
+      if (error) throw error;
+      const iconUrl = (data as any)?.icon_url;
+      if (!iconUrl) throw new Error("No icon returned");
+
+      const { error: upErr } = await (supabase as any)
+        .from("android_app_ideas")
+        .update({ icon_url: iconUrl })
+        .eq("id", idea.id);
+      if (upErr) throw upErr;
+
+      setIdeas((prev) => prev.map((i) => (i.id === idea.id ? { ...i, icon_url: iconUrl } : i)));
+      toast({ title: "Icon generated", description: idea.name });
+    } catch (e: any) {
+      toast({ title: "Icon failed", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setIconBusyId(null);
+    }
+  };
+
+  const downloadIcon = (idea: DBIdea) => {
+    if (!idea.icon_url) return;
+    const a = document.createElement("a");
+    a.href = idea.icon_url;
+    a.download = `${idea.pkg}-icon-512.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const sb = supabase as any;
 
@@ -941,7 +978,39 @@ export default function AndroidAppIdeas() {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <p className="text-xs text-muted-foreground line-clamp-3">{idea.description}</p>
+                        <div className="flex gap-3 items-start">
+                          <div className="w-16 h-16 rounded-2xl border border-border bg-muted/40 flex items-center justify-center shrink-0 overflow-hidden">
+                            {idea.icon_url ? (
+                              <img src={idea.icon_url} alt={`${idea.name} icon`} className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-4 flex-1">{idea.description}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={iconBusyId === idea.id}
+                            onClick={() => generateIcon(idea)}
+                          >
+                            {iconBusyId === idea.id ? (
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3 h-3 mr-1" />
+                            )}
+                            {idea.icon_url ? "Regen Icon" : "Generate Icon"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!idea.icon_url}
+                            onClick={() => downloadIcon(idea)}
+                          >
+                            <Download className="w-3 h-3 mr-1" />Download
+                          </Button>
+                        </div>
                         <div className="grid grid-cols-3 gap-2">
                           <Button size="sm" variant="outline" onClick={() => copy(idea.name, "App name")}>
                             <Copy className="w-3 h-3 mr-1" />Name
