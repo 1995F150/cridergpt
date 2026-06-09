@@ -64,6 +64,7 @@ import DevAetherControl from "./pages/devhub/AetherControl";
 import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
 import DevBuilderResources from "./pages/devhub/BuilderResources";
 import DevAdNetworks from "./pages/devhub/AdNetworks";
+import DevBackendBlueprints from "./pages/devhub/BackendBlueprints";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
