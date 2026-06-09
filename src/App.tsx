@@ -65,6 +65,7 @@ import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
 import DevBuilderResources from "./pages/devhub/BuilderResources";
 import DevAdNetworks from "./pages/devhub/AdNetworks";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
+import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
 const queryClient = new QueryClient({
   defaultOptions: {
