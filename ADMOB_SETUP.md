@@ -1,80 +1,73 @@
-# AdMob Pre-Stage Guide (Post-June 2026)
+# AdMob Setup — CriderGPT
 
-This is a **placeholder setup** so once Jessie turns 18 and opens an AdMob account, wiring real ads is a 15-minute job, not a 3-day refactor.
+## ✅ Live IDs (Android)
 
-## Step 0 — Prerequisites (June+)
-1. Open a Google AdSense / AdMob account: https://admob.google.com
-2. Create app entries for:
-   - **Android**: package `com.cridergpt.android`
-   - **iOS** (later): bundle `app.cridergpt.ios` (or whatever you pick)
-3. Grab the **App ID** (looks like `ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY`) and at least these **Ad Unit IDs**:
-   - Rewarded video (best ROI — used to unlock free features)
-   - Interstitial (between sessions, not mid-task)
-   - Banner (optional, bottom of free-tier pages)
+| Slot | ID |
+|---|---|
+| **App ID** | `ca-app-pub-1884621321896668~7174244598` |
+| **Rewarded — Unlock Messages** (+5 msgs) | `ca-app-pub-1884621321896668/8461902383` |
+| Interstitial — Session Break | _TODO: create in AdMob console_ |
+| Banner — Demo Page | _TODO: create in AdMob console_ |
 
-## Step 1 — Install Capacitor AdMob plugin (when ready)
-```bash
-npm install @capacitor-community/admob
-npx cap sync
+iOS IDs: not created yet (no Apple Dev account).
+
+## 🔧 Android Manifest (action required for external builder)
+
+The `android/` folder is externally managed — the self-hosted Ubuntu builder needs to add this **inside `<application>`** in `AndroidManifest.xml`:
+
+```xml
+<meta-data
+  android:name="com.google.android.gms.ads.APPLICATION_ID"
+  android:value="ca-app-pub-1884621321896668~7174244598"/>
 ```
 
-## Step 2 — Drop the App ID
-- Android: edit `android_app/app/src/main/AndroidManifest.xml` and add inside `<application>`:
-  ```xml
-  <meta-data
-    android:name="com.google.android.gms.ads.APPLICATION_ID"
-    android:value="ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY"/>
-  ```
-  (⚠️ memory rule: `android_app/` is externally managed — coordinate before editing)
-- iOS: edit `ios/App/App/Info.plist` similarly with `GADApplicationIdentifier`
+Without this, the app will **crash on launch**. This is the only Android-side change needed.
 
-## Step 3 — Frontend hook (already pre-staged shape)
-When you're ready, create `src/hooks/useAds.ts` along these lines:
+## 📦 Frontend wiring
+
+Plugin installed: `@capacitor-community/admob`
+Hook: `src/hooks/useAds.ts`
 
 ```ts
-import { AdMob, RewardAdPluginEvents, AdMobRewardItem } from '@capacitor-community/admob';
+import { useAds } from "@/hooks/useAds";
 
-const REWARDED_AD_ID = 'ca-app-pub-XXXX/REWARD_UNIT';
+function MessageCapHit() {
+  const { showAds, showRewarded } = useAds();
 
-export function useAds() {
-  const init = async () => {
-    await AdMob.initialize({ testingDevices: [], initializeForTesting: false });
-  };
+  if (!showAds) return null; // hidden on web + paid plans
 
-  const showRewarded = (): Promise<AdMobRewardItem | null> =>
-    new Promise(async (resolve) => {
-      AdMob.addListener(RewardAdPluginEvents.Rewarded, (reward) => resolve(reward));
-      AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => resolve(null));
-      await AdMob.prepareRewardVideoAd({ adId: REWARDED_AD_ID });
-      await AdMob.showRewardVideoAd();
-    });
-
-  return { init, showRewarded };
+  return (
+    <Button
+      onClick={async () => {
+        const reward = await showRewarded();
+        if (reward) {
+          // grant +5 messages to user
+          await grantBonusMessages(reward.amount);
+        }
+      }}
+    >
+      📺 Watch ad → +5 messages
+    </Button>
+  );
 }
 ```
 
-## Step 4 — Where to show ads (revenue strategy)
-| Surface | Ad type | Why |
+The hook auto-checks `useSubscriptionStatus` — paid users (`plus`/`pro`/`lifetime`) **never** see ads, and the web/PWA build never loads the plugin.
+
+## 🎯 Where to surface
+
+| Surface | Ad type | Trigger |
 |---|---|---|
-| Free user hits message cap | Rewarded video → +5 messages | Highest eCPM, users CHOOSE to watch |
-| Image generation cooldown | Rewarded video → skip cooldown | Same logic, high intent |
-| Between chat sessions (every 10th open) | Interstitial | Don't interrupt mid-task |
-| Public demo page (`/demo`) | Banner | Catches non-signed-up traffic |
-| AGI Mode / Pro features preview | Rewarded video → 1 free use | Conversion funnel |
+| Free user hits message cap | Rewarded → +5 msgs | Daily limit reached |
+| Image gen cooldown | Rewarded → skip cooldown | Cooldown timer active |
+| Between chat sessions (every 10th open) | Interstitial | App resume counter |
+| Public `/demo` page | Banner | Always (guest traffic) |
+| AGI Mode preview | Rewarded → 1 free use | Free user opens AGI |
 
-**Never** show ads to paid subscribers (Plus / Pro / Lifetime) — check `useSubscriptionStatus().plan`.
+## 📋 Next steps
 
-## Step 5 — Compliance
-- Add AdMob to your **Privacy Policy** (`/privacy`) — required by Play Store
-- Enable **UMP consent SDK** for GDPR / iOS ATT
-- Tag your app as **non-child-directed** in AdMob console (CriderGPT skews high-school+)
-
-## Estimated revenue ballpark
-- Rewarded video eCPM in US ag/edu vertical: **$8-$15 / 1000 impressions**
-- 500 daily active users × 2 rewarded watches/day × $10 eCPM = **~$10/day** = **~$300/month**
-- Scales linearly with DAU — first real $$ comes around 1k DAU
-
-## Don't do this yet
-- ❌ Don't install the plugin until the AdMob account exists (it'll spam test ads in dev)
-- ❌ Don't push App Store / Play Store builds with placeholder IDs
-- ❌ Don't mix ads into paid-tier surfaces
+1. Create the **Interstitial** ad unit in AdMob console, paste ID into `AD_UNITS.interstitial` in `src/hooks/useAds.ts`.
+2. Same for **Banner**.
+3. Tell the external Android builder to add the `<meta-data>` line above to `AndroidManifest.xml`.
+4. Add AdMob disclosure to `/privacy` (Play Store requires it — already noted there).
+5. Enable **UMP consent SDK** for GDPR (Capacitor plugin handles it; we can wire later).
