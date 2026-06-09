@@ -3,7 +3,8 @@ import { Capacitor } from "@capacitor/core";
 import {
   AdMob,
   RewardAdPluginEvents,
-  InterstitialAdPluginEvents,
+  BannerAdPosition,
+  BannerAdSize,
   type AdMobRewardItem,
 } from "@capacitor-community/admob";
 import { useSubscriptionStatus } from "./useSubscriptionStatus";
