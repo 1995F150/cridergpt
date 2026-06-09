@@ -65,6 +65,9 @@ const IDEAS: Idea[] = [
   { name: "FarmStream TV", pkg: "com.crider.farmstream", desc: "Curated ag/ranch/FFA video streaming app: creator channels, livestock judging replays, how-to libraries, kids-safe mode. Creators upload to their own server, app aggregates. One-time license.", price: 19.99 },
   { name: "PaddockPosts Marketplace + Social", pkg: "com.crider.paddockposts", desc: "Hybrid social + classifieds for ag community: post hay for sale, cattle, equipment alongside daily ranch updates. Local-first feed by county. One-time unlock.", price: 19.99 },
 
+  // Client Builds (built under Crider dev account for family/friends)
+  { name: "Him and Her Boutique", pkg: "com.crider.himandher", desc: "Mobile clothing boutique app for Him & Her. Dual-gender storefront (Men / Women toggle), product catalog with high-res photo galleries + size/color variants, search & filter by category (tops, bottoms, outerwear, accessories), wishlist, cart, Stripe Checkout (cards + Apple Pay + Google Pay), guest checkout, customer accounts with order history + saved addresses, push notifications for new drops + sales, promo codes, shipping rate calculator (USPS/UPS), order tracking, admin web dashboard for inventory + order fulfillment, Supabase backend (products, variants, orders, customers, inventory tables with RLS), email receipts via Resend. Client build for family — published under Crider dev account.", price: 0.00 },
+
 
 
   // Shop / Trade Utilities
