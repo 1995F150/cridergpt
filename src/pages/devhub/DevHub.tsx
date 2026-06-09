@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database
 } from "lucide-react";
 
 const modules = [
