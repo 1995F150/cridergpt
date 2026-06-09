@@ -870,6 +870,7 @@ Make it detailed and actionable.`;
 
       {/* Demo Exhausted Modal */}
       <DemoExhaustedModal open={showDemoModal} onOpenChange={setShowDemoModal} />
+      {!user && <AdSurfaceBanner />}
     </div>
   );
 }
