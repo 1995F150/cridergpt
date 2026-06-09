@@ -55,6 +55,18 @@ const IDEAS: Idea[] = [
   { name: "FFA Chapter Pro Admin", pkg: "com.crider.ffachapterpro", desc: "Full chapter management for advisors: member roster, SAE record books, CDE team prep, fundraiser ledger, parent communications, banquet planner, officer election system, state report exports. Lifetime per chapter.", price: 249.00 },
   { name: "AgriTrack Commercial Cattle Suite", pkg: "com.crider.agritrack", desc: "Commercial cow-calf and feedlot operation: EID integration, individual animal P/L, ration formulator, breeding genetics tracker, market price feed, hauling logs, lender-ready financial reports. Lifetime license.", price: 199.00 },
 
+  // Social Media / Streaming / Creator Platform ($20-$50 tier, self-hosted-first)
+  { name: "CriderFeed Social", pkg: "com.crider.feed", desc: "Private-first social network: text/photo/short-video posts, ranch-style group circles (Family, Chapter, Crew), end-to-end encrypted DMs, no ad tracking, no algorithm — chronological feed. Optional federation with self-hosted nodes. One-time unlock.", price: 19.99 },
+  { name: "CriderTube Self-Hosted Streaming", pkg: "com.crider.tube", desc: "YouTube-style video platform where creators host their OWN server (Docker image + web upload). Adaptive HLS streaming, channel subscriptions, live chat, monetization via creator-set tip jars. Mobile app pairs to your server URL. One-time license.", price: 49.99 },
+  { name: "RanchLive Streaming Studio", pkg: "com.crider.ranchlive", desc: "Go live to your own server or RTMP destinations (YouTube, Twitch, Facebook). Multi-camera switching from paired phones, overlays, chat moderation, instant VOD save. One-time pro license.", price: 49.99 },
+  { name: "CriderCast Podcast Network", pkg: "com.crider.cast", desc: "Self-hosted podcast publishing + listening: record, edit, generate RSS, host audio on your own server or S3, listener app with offline downloads + chapter art. One-time unlock.", price: 19.99 },
+  { name: "CreatorVault Storage Hub", pkg: "com.crider.vault", desc: "Self-hosted media library you control: photos, videos, voice notes, documents. Auto-backup from phone over wifi to your home server. End-to-end encrypted, no cloud subscription. One-time license.", price: 49.99 },
+  { name: "ChapterChat Community", pkg: "com.crider.chapterchat", desc: "Discord-style chapter/team chat: voice channels, threaded text, file share, event RSVPs, role permissions. Self-hosted backend option, no monthly fees. One-time per chapter.", price: 19.99 },
+  { name: "FarmStream TV", pkg: "com.crider.farmstream", desc: "Curated ag/ranch/FFA video streaming app: creator channels, livestock judging replays, how-to libraries, kids-safe mode. Creators upload to their own server, app aggregates. One-time license.", price: 19.99 },
+  { name: "PaddockPosts Marketplace + Social", pkg: "com.crider.paddockposts", desc: "Hybrid social + classifieds for ag community: post hay for sale, cattle, equipment alongside daily ranch updates. Local-first feed by county. One-time unlock.", price: 19.99 },
+
+
+
   // Shop / Trade Utilities
   { name: "Complete Farm & Livestock Manager Pro", pkg: "com.crider.farmpro", desc: "All-in-one farm management: livestock records, breeding calendar, feed rations, equipment maintenance, pasture rotation, sales ledger, vet log, financial reports, and weather integration. Multi-property, full offline, optional cloud sync.", price: 10.00 },
   { name: "Welding Hours Tracker", pkg: "com.crider.weldhours", desc: "Clock in/out at the shop, log job notes, export weekly CSV/PDF timesheet. Local SQLite only.", price: 1.99 },
