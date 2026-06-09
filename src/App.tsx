@@ -44,6 +44,7 @@ import LinkPCToken from "./pages/LinkPCToken";
 import PCFeed from "./pages/PCFeed";
 import AccountManagement from "./pages/AccountManagement";
 import DeleteAccountInfo from "./pages/DeleteAccountInfo";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DevHub from "./pages/devhub/DevHub";
 import DevServerConsole from "./pages/devhub/ServerConsole";
 import DevMachineDesigner from "./pages/devhub/MachineDesigner";
@@ -172,6 +173,8 @@ const App = () => {
                       <Route path="/account" element={<AccountManagement />} />
                       <Route path="/manage-account" element={<Navigate to="/account" replace />} />
                       <Route path="/delete-account" element={<DeleteAccountInfo />} />
+                      <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
 
                       {/* Owner-locked Dev Hub */}
                       <Route path="/devhub" element={<DevHub />} />
