@@ -22,6 +22,9 @@ verify_jwt = false
 [functions.generate-ai-image]
 verify_jwt = false
 
+[functions.generate-app-icon]
+verify_jwt = false
+
 [functions.chapter-request-email]
 verify_jwt = false
 
