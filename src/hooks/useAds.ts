@@ -18,8 +18,8 @@ export const ADMOB_APP_ID = "ca-app-pub-1884621321896668~7174244598";
 
 export const AD_UNITS = {
   rewarded: "ca-app-pub-1884621321896668/8461902383",
-  // TODO: paste these once created in AdMob console
-  interstitial: "",
+  interstitial: "ca-app-pub-1884621321896668/6979140189",
+  // TODO: paste banner ID once created in AdMob console
   banner: "",
 } as const;
 
