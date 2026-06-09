@@ -954,6 +954,32 @@ export default function AndroidAppIdeas() {
                           </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              copy(
+                                `https://cridergpt.com/privacy/${idea.pkg}?name=${encodeURIComponent(idea.name)}`,
+                                "Privacy Policy URL"
+                              )
+                            }
+                          >
+                            <Copy className="w-3 h-3 mr-1" />Privacy URL
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              window.open(
+                                `/privacy/${idea.pkg}?name=${encodeURIComponent(idea.name)}`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            <ShieldCheck className="w-3 h-3 mr-1" />Preview Policy
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
                           <Button size="sm" variant="ghost" onClick={() => openEdit(idea)}>
                             <Pencil className="w-3 h-3 mr-1" />Edit
                           </Button>
