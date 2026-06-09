@@ -75,6 +75,19 @@ export function DemoExhaustedModal({ open, onOpenChange }: DemoExhaustedModalPro
             {isNavigating && <div className="ml-2 w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />}
           </Button>
 
+          {showAds && (
+            <Button
+              onClick={handleWatchAd}
+              disabled={watchingAd}
+              variant="outline"
+              className="w-full font-semibold"
+              size="lg"
+            >
+              <PlayCircle className="mr-2 h-4 w-4" />
+              {watchingAd ? "Loading ad…" : "Watch ad for +5 messages"}
+            </Button>
+          )}
+
           {/* Features you'll unlock */}
           <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
             <h4 className="font-semibold text-foreground text-sm mb-2">What you'll unlock for free:</h4>
