@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone
 } from "lucide-react";
 
 const modules = [
@@ -29,6 +29,7 @@ const modules = [
   { to: "/devhub/swift-code-generator", icon: Code2, title: "Swift Code Generator", desc: "Unified cross-platform: type a feature, get Kotlin + Compose and Swift + SwiftUI side-by-side.", tag: "iOS" },
   { to: "/devhub/capacitor-ios-porter", icon: ArrowRightLeft, title: "Capacitor → iOS Porter", desc: "Paste AndroidManifest + package.json → Info.plist keys, Xcode capabilities, Swift bridge notes.", tag: "iOS" },
   { to: "/devhub/native-rebuild-prompt", icon: Rocket, title: "CriderGPT Full-Native Rebuild Prompt", desc: "One giant master prompt: Android (Kotlin) + iOS (Swift) + Desktop (Tauri). All 60+ features, same Supabase. Copy/paste into Cursor or Claude Code.", tag: "Builder" },
+  { to: "/devhub/admob-addon-prompt", icon: Megaphone, title: "AdMob Add-On Prompt", desc: "Scope-limited prompt: wire AdMob rewarded, interstitial, and banner into an existing native app. Subscription-gated. Copy/paste ready.", tag: "Builder" },
 ];
 
 export default function DevHub() {
