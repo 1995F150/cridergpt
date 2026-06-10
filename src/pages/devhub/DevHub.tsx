@@ -28,6 +28,7 @@ const modules = [
   { to: "/devhub/ios-asset-studio", icon: ImageIcon, title: "iOS Asset Studio", desc: "One source image → all 17 iOS icon sizes, Android mipmaps, App Store screenshot template. ZIP download.", tag: "iOS" },
   { to: "/devhub/swift-code-generator", icon: Code2, title: "Swift Code Generator", desc: "Unified cross-platform: type a feature, get Kotlin + Compose and Swift + SwiftUI side-by-side.", tag: "iOS" },
   { to: "/devhub/capacitor-ios-porter", icon: ArrowRightLeft, title: "Capacitor → iOS Porter", desc: "Paste AndroidManifest + package.json → Info.plist keys, Xcode capabilities, Swift bridge notes.", tag: "iOS" },
+  { to: "/devhub/native-rebuild-prompt", icon: Rocket, title: "CriderGPT Full-Native Rebuild Prompt", desc: "One giant master prompt: Android (Kotlin) + iOS (Swift) + Desktop (Tauri). All 60+ features, same Supabase. Copy/paste into Cursor or Claude Code.", tag: "Builder" },
 ];
 
 export default function DevHub() {
