@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, CreditCard, Star, Zap, Crown } from "lucide-react";
+import { Check, CreditCard, Star, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -17,14 +17,12 @@ export function PaymentPanel() {
   const priceIdMap: Record<string, string> = {
     plus: "price_1TExZhP90uC07RqGdJ8loF2z",
     pro: "price_1TExa8P90uC07RqGHYMMlGbX",
-    lifetime: "price_1TExaUP90uC07RqG1CX0lf9B",
   };
 
   const iconMap: Record<string, React.ReactNode> = {
     free: <CreditCard className="h-6 w-6" />,
     plus: <Zap className="h-6 w-6" />,
     pro: <Star className="h-6 w-6" />,
-    lifetime: <Crown className="h-6 w-6 text-yellow-500" />,
   };
 
   const handlePlanSelect = async (planName: string) => {
