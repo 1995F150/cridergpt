@@ -154,7 +154,7 @@ const App = () => {
                       <Route path="/cancel" element={<Cancel />} />
                       <Route path="/upgrade" element={<Navigate to="/" replace />} />
                       <Route path="/pricing" element={<Navigate to="/" replace />} />
-                      <Route path="/payment" element={<Navigate to="/" replace />} />
+                      
                       <Route path="/system-diagnostics" element={<SystemDiagnostics />} />
                       <Route path="/tts-policy" element={<TTSPolicyPage />} />
                       <Route path="/snapchat-lens" element={<SnapchatLensPage />} />
