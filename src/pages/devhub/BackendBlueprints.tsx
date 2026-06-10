@@ -667,24 +667,28 @@ $$;`,
 // ============================================================
 const MARKETPLACE: Blueprint = {
   slug: "him-and-her-marketplace",
-  name: "B: Multi-Vendor Marketplace",
+  name: "B: Multi-Vendor Marketplace ($12.99/mo seller membership)",
   pkg: "com.crider.himandher",
-  tagline: "Anyone signs up as a seller. Stripe Connect splits payment to each seller, platform takes a cut.",
+  tagline: "Youth clothing marketplace. Anyone can sell — but must hold an active $12.99/mo Seller Membership to list. Stripe Connect splits each sale to the seller; platform takes a % cut on top of the membership.",
   supabaseProject: "SAME new Supabase project as Option A — but run THIS SQL instead. Pick ONE.",
   secrets: [
     "STRIPE_SECRET_KEY  (sk_live_... or sk_test_...)",
     "STRIPE_WEBHOOK_SECRET  (whsec_...)",
     "STRIPE_CONNECT_CLIENT_ID  (ca_... from Stripe Connect settings)",
+    "STRIPE_SELLER_MEMBERSHIP_PRICE_ID  (price_... for the $12.99/mo recurring price you create in Stripe)",
     "RESEND_API_KEY",
-    "PLATFORM_FEE_PERCENT  (e.g. 8 = aunt takes 8% of every sale)",
+    "PLATFORM_FEE_PERCENT  (e.g. 8 = aunt takes 8% of every sale, on top of the $12.99 membership)",
   ],
   edgeFunctions: [
     { name: "create-checkout", purpose: "Builds Stripe Checkout with destination charges → seller's Connect account, platform fee deducted." },
-    { name: "stripe-webhook", purpose: "Marks order paid, splits to sellers, decrements per-seller inventory." },
+    { name: "stripe-webhook", purpose: "Marks order paid, splits to sellers, decrements per-seller inventory, AND flips seller_memberships.active on subscription events." },
     { name: "connect-onboard", purpose: "Creates Stripe Express account + onboarding link so sellers can accept payouts." },
+    { name: "seller-membership-checkout", purpose: "Starts the $12.99/mo Seller Membership subscription for the signed-in user (gate to list items)." },
+    { name: "check-seller-membership", purpose: "Returns { active: boolean } so the app can show/hide the 'List an Item' button." },
     { name: "send-receipt", purpose: "Sends receipt to buyer + sale notification to each seller." },
     { name: "moderate-listing", purpose: "Admin action: hide/ban listings or sellers." },
   ],
+
   blocks: [
     {
       id: "m01-extensions",
