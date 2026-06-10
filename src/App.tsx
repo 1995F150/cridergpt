@@ -210,6 +210,7 @@ const App = () => {
                       <Route path="/devhub/ios-asset-studio" element={<DevIOSAssetStudio />} />
                       <Route path="/devhub/swift-code-generator" element={<DevSwiftCodeGenerator />} />
                       <Route path="/devhub/capacitor-ios-porter" element={<DevCapacitorIOSPorter />} />
+                      <Route path="/devhub/native-rebuild-prompt" element={<DevNativeRebuildPrompt />} />
 
 
 
