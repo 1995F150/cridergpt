@@ -103,12 +103,12 @@ export function PaymentPanel() {
 
         <ManageSubscription />
 
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          {allPlans.map((plan) => (
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          {plans.map((plan) => (
             <Card
               key={plan.plan_name}
               className={`relative transition-all duration-300 ${
-                plan.plan_name === "pro" || plan.plan_name === "lifetime"
+                plan.plan_name === "pro"
                   ? "border-2 border-primary bg-primary/5 shadow-lg shadow-primary/20"
                   : "border border-border hover:border-primary/50"
               }`}
@@ -122,15 +122,6 @@ export function PaymentPanel() {
                 </Badge>
               )}
 
-              {plan.plan_name === "lifetime" && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black border-0"
-                >
-                  Founder Deal
-                </Badge>
-              )}
-
               <CardHeader className="text-center">
                 <div className="flex items-center justify-center mb-2">
                   {iconMap[plan.plan_name] || <CreditCard className="h-6 w-6" />}
@@ -140,15 +131,13 @@ export function PaymentPanel() {
                   {plan.plan_name === "free" && "Perfect for getting started"}
                   {plan.plan_name === "plus" && "Enhanced features for power users"}
                   {plan.plan_name === "pro" && "Complete solution for professionals"}
-                  {plan.plan_name === "lifetime" &&
-                    "One-time payment – no monthly fees"}
                 </CardDescription>
                 <div className="flex items-baseline justify-center mt-4">
                   <span className="text-4xl font-bold text-primary">
                     ${plan.price_monthly}
                   </span>
                   <span className="text-muted-foreground ml-1">
-                    {plan.plan_name === "lifetime" ? "one-time" : "/month"}
+                    /month
                   </span>
                 </div>
               </CardHeader>
@@ -165,7 +154,7 @@ export function PaymentPanel() {
 
                 <Button
                   className={`w-full ${
-                    plan.plan_name === "pro" || plan.plan_name === "lifetime"
+                    plan.plan_name === "pro"
                       ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
                       : "bg-primary hover:bg-primary/90"
                   }`}
@@ -177,8 +166,6 @@ export function PaymentPanel() {
                     ? "Processing..."
                     : plan.plan_name === "free"
                     ? "Get Started Free"
-                    : plan.plan_name === "lifetime"
-                    ? "Buy Now"
                     : "Subscribe Now"}
                 </Button>
               </CardContent>
