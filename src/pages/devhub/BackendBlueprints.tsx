@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Check, Database, ShieldCheck, Webhook, Mail, ListChecks } from "lucide-react";
+import { Copy, Check, Database, ShieldCheck, Webhook, Mail, ListChecks, Code2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Block = {
