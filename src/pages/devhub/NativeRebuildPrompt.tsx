@@ -216,7 +216,10 @@ Package / Bundle ID: \`${opts.packageId}\`
 8. **Livestock NFC tags MUST stay plain-text \`CriderGPT-XXXXXX\`** — never lock the hardware, never change the format.
 9. **Scan-only livestock workflow** — animals are identified by NFC scan, never manually-typed IDs.
 10. **Do NOT modify any externally-managed \`android/\` folder.** Build a fresh native tree.
-11. **Owner-only Dev Hub** — gate every dev tool behind an RPC that verifies Jessie's identity.
+11. **Owner-only Dev Hub + Admin Panel** — gate every dev tool and admin route behind the \`verify_owner_identity\` RPC + \`has_role(auth.uid(),'admin')\`. Both surfaces must exist natively, not as webviews.
+12. **Respect system insets on every screen.** No UI element may sit under the status bar (battery/clock/notch) or the gesture/nav bar. See §7 Safe-Area Rules — this is a ship-blocker if violated.
+
+
 
 ---
 
