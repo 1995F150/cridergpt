@@ -40,7 +40,8 @@ import {
   Radar,
   Tag,
   Music,
-  Lightbulb
+  Lightbulb,
+  Terminal
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
