@@ -88,30 +88,6 @@ export function PaymentPanel() {
     }
   };
 
-  // 🔑 Ensure Lifetime shows only once
-  const allPlans = [...plans];
-  if (!allPlans.some((p) => p.plan_name === "lifetime")) {
-    allPlans.push({
-      plan_name: "lifetime",
-      plan_display_name: "Lifetime Founder",
-      price_monthly: 30,
-      features: [
-        "Unlimited messages forever",
-        "Unlimited TTS forever",
-        "Priority support",
-        "All future features included",
-        "Lifetime Founder badge",
-      ],
-      limits: {
-        messages: 9999999,
-        tts: 9999999,
-        projects: 9999999,
-        api_keys: 9999999,
-        file_upload_mb: 9999999,
-      },
-      sort_order: 99,
-    });
-  }
 
   return (
     <div className="panel h-full w-full p-6 overflow-y-auto">
