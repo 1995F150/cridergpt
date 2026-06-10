@@ -65,6 +65,10 @@ import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
 import DevBuilderResources from "./pages/devhub/BuilderResources";
 import DevAdNetworks from "./pages/devhub/AdNetworks";
 import DevBackendBlueprints from "./pages/devhub/BackendBlueprints";
+import DevIOSBuilder from "./pages/devhub/IOSBuilder";
+import DevIOSAssetStudio from "./pages/devhub/IOSAssetStudio";
+import DevSwiftCodeGenerator from "./pages/devhub/SwiftCodeGenerator";
+import DevCapacitorIOSPorter from "./pages/devhub/CapacitorIOSPorter";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -201,6 +205,10 @@ const App = () => {
                       <Route path="/devhub/builder-resources" element={<DevBuilderResources />} />
                       <Route path="/devhub/ad-networks" element={<DevAdNetworks />} />
                       <Route path="/devhub/backend-blueprints" element={<DevBackendBlueprints />} />
+                      <Route path="/devhub/ios-builder" element={<DevIOSBuilder />} />
+                      <Route path="/devhub/ios-asset-studio" element={<DevIOSAssetStudio />} />
+                      <Route path="/devhub/swift-code-generator" element={<DevSwiftCodeGenerator />} />
+                      <Route path="/devhub/capacitor-ios-porter" element={<DevCapacitorIOSPorter />} />
 
 
 
