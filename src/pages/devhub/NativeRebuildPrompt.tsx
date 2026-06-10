@@ -76,7 +76,7 @@ const FEATURE_GROUPS: { name: string; items: string[] }[] = [
   {
     name: "Monetization",
     items: [
-      "Plans: Free / Plus / Pro / Lifetime (plan_configurations, lifetime_plan_config)",
+      "Plans: Free / Plus / Pro (plan_configurations)",
       "Stripe subscriptions for web (subscriptions, user_subscriptions)",
       "Native IAP for mobile digital goods (iap_purchases, platform_subscriptions)",
       "NEVER use Stripe for mobile digital goods (Apple/Google policy)",
