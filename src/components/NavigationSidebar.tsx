@@ -40,7 +40,8 @@ import {
   Radar,
   Tag,
   Music,
-  Lightbulb
+  Lightbulb,
+  Terminal
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -294,6 +295,14 @@ export function NavigationSidebar({ activeTab, onTabChange, isDeveloper = false 
                 >
                   <Lightbulb className="h-4 w-4" />
                   Idea Planner
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 h-10 text-sm mt-2 hover:bg-primary/10 hover:text-primary"
+                  onClick={() => navigate('/devhub')}
+                >
+                  <Terminal className="h-4 w-4" />
+                  Dev Hub
                 </Button>
               </div>
             </>
