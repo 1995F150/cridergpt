@@ -29,7 +29,6 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
   const planBadgeConfig: Record<string, { label: string; className: string }> = {
     plus: { label: 'Plus', className: 'bg-cyber-blue/20 text-cyber-blue border-cyber-blue/30' },
     pro: { label: 'Pro', className: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
-    lifetime: { label: '🏆 Lifetime', className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
   };
 
   const handleAuthAction = () => {

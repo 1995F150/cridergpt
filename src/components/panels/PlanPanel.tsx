@@ -149,7 +149,6 @@ export function PlanPanel() {
         plu: { messages: 100, tts: 100 },   // Legacy format
         plus: { messages: 100, tts: 100 },  // New format  
         pro: { messages: 500, tts: 9999999 }, // High limit for Pro
-        lifetime: { messages: 9999999, tts: 9999999 } // Unlimited for Lifetime
       };
 
       const currentLimits = limits[plan as keyof typeof limits] || limits.free;
@@ -237,7 +236,6 @@ export function PlanPanel() {
             {currentPlan === 'free' && 'Basic features with limited usage'}
             {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits — CriderGPT Plus ($3/mo)'}
             {currentPlan === 'pro' && 'Full power with advanced features — CriderGPT Pro ($7/mo)'}
-            {currentPlan === 'lifetime' && 'Unlimited everything forever — CriderGPT Lifetime Founder'}
           </p>
         </CardHeader>
       </Card>
