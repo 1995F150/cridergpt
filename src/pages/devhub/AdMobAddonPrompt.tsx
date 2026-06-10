@@ -96,7 +96,7 @@ suspend fun shouldShowAds(userId: String): Boolean {
   val sub = supabase.from("user_subscriptions")
     .select { filter { eq("user_id", userId); eq("status", "active") } }
     .decodeSingleOrNull<UserSubscription>()
-  val paid = setOf("plus", "pro", "lifetime")
+  val paid = setOf("plus", "pro")
   return sub?.plan?.let { it !in paid } ?: true  // no sub = free = show ads
 }
 \`\`\`
@@ -135,7 +135,7 @@ class AdMobManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val supabase: SupabaseClient
 ) {
-    private val paidPlans = setOf("plus", "pro", "lifetime")
+    private val paidPlans = setOf("plus", "pro")
     private var initialized = false
 
     suspend fun initialize(userId: String) {
@@ -247,7 +247,7 @@ Add \`Google-Mobile-Ads-SDK\` via SPM or CocoaPods.
 \`\`\`swift
 @MainActor
 class AdMobManager: ObservableObject {
-    private let paidPlans: Set<String> = ["plus", "pro", "lifetime"]
+    private let paidPlans: Set<String> = ["plus", "pro"]
     private var initialized = false
 
     func initialize(userId: String) async {
