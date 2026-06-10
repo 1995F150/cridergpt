@@ -216,7 +216,10 @@ Package / Bundle ID: \`${opts.packageId}\`
 8. **Livestock NFC tags MUST stay plain-text \`CriderGPT-XXXXXX\`** — never lock the hardware, never change the format.
 9. **Scan-only livestock workflow** — animals are identified by NFC scan, never manually-typed IDs.
 10. **Do NOT modify any externally-managed \`android/\` folder.** Build a fresh native tree.
-11. **Owner-only Dev Hub** — gate every dev tool behind an RPC that verifies Jessie's identity.
+11. **Owner-only Dev Hub + Admin Panel** — gate every dev tool and admin route behind the \`verify_owner_identity\` RPC + \`has_role(auth.uid(),'admin')\`. Both surfaces must exist natively, not as webviews.
+12. **Respect system insets on every screen.** No UI element may sit under the status bar (battery/clock/notch) or the gesture/nav bar. See §7 Safe-Area Rules — this is a ship-blocker if violated.
+
+
 
 ---
 
@@ -282,25 +285,34 @@ ${PLATFORM_BLOCKS.desktop}
 
 ---
 
-## 7. DESIGN SYSTEM
+## 7. DESIGN SYSTEM + SAFE-AREA RULES
 - Dark theme by default. Brand color: deep red/black palette (match existing web).
 - Typography: SF Pro on iOS, Inter on Android/Desktop, NEVER serif.
 - Icons: lucide-react on desktop, SF Symbols on iOS, Material Symbols on Android.
 - Mobile lists: horizontal scroll with \`overflow-x-auto no-scrollbar\` semantics.
 - NO purple/indigo AI-default gradients. NO "brain" icons in branding.
 
+**Safe-area / status-bar handling (mandatory — do NOT overlap the battery icon, clock, notch, camera cutout, or gesture bar):**
+- **Android (Compose):** call \`enableEdgeToEdge()\` in every Activity \`onCreate\`. Wrap root in \`Scaffold\` and consume \`WindowInsets.systemBars\` / \`WindowInsets.displayCutout\` via \`Modifier.windowInsetsPadding(...)\`. Top app bars use \`TopAppBarDefaults\` with \`windowInsets = TopAppBarDefaults.windowInsets\`. Bottom nav uses \`NavigationBar\` (auto-handles nav bar inset). For full-bleed screens use \`Modifier.safeDrawingPadding()\`. Set \`android:windowSoftInputMode="adjustResize"\` + use \`imePadding()\` so the keyboard never covers inputs. Status bar icons: \`WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false\` for the dark theme.
+- **iOS (SwiftUI):** never set \`.ignoresSafeArea()\` on interactive content. Use \`NavigationStack\` + \`.safeAreaInset(edge:)\` for custom bars. For full-bleed backgrounds, paint the background with \`.ignoresSafeArea()\` but keep foreground inside the safe area. Honor Dynamic Island / notch via \`GeometryReader { $0.safeAreaInsets }\` when building custom headers. Status bar style: \`.preferredColorScheme(.dark)\` + \`UIStatusBarStyle.lightContent\`.
+- **Tauri desktop:** respect the title-bar region; if using \`decorations: false\` with a custom titlebar, reserve 32 px top drag region (macOS traffic-light inset = 80 px left padding when \`titleBarStyle: 'overlay'\`).
+- **Test matrix:** verify on Pixel 8 (punch-hole), Pixel Fold, iPhone 15 Pro (Dynamic Island), iPhone SE (no notch), iPad, and a 3-button-nav Android device. Screenshots of the home/chat/devhub screens must show ZERO overlap with system chrome.
+
 ---
 
 ## 8. BUILD ORDER (do them in this order, don't skip)
 1. **Auth** — Supabase + Google popup OAuth on all 3 platforms, profile sync.
-2. **Chat** — streaming chat against the \`chat\` edge function, Jessie persona, conversation list.
-3. **Local-first AI memory loop** — vector search + write-back.
-4. **Livestock scan-only workflow** — NFC read/write + animal CRUD.
-5. **Store** — product list, cart, Stripe checkout (desktop/Android web flow), StoreKit/Play Billing for IAP.
-6. **Chapters + Events** — two-tier visibility.
-7. **DevHub (owner-gated)** — server console, agent dispatcher, autopilot queue.
-8. **Integrations** — Snapchat, TikTok, USB hub, self-hosted Docker control.
-9. **Polish** — onboarding, paywall UX, error toasts, offline fallbacks.
+2. **App shell + safe-area scaffolding** — edge-to-edge enabled, insets consumed, tested on notch + gesture-nav devices BEFORE building any feature on top.
+3. **Chat** — streaming chat against the \`chat\` edge function, Jessie persona, conversation list.
+4. **Local-first AI memory loop** — vector search + write-back.
+5. **Livestock scan-only workflow** — NFC read/write + animal CRUD.
+6. **Store** — product list, cart, Stripe checkout (desktop/Android web flow), StoreKit/Play Billing for IAP.
+7. **Chapters + Events** — two-tier visibility.
+8. **Admin Panel (role-gated)** — user list, role assignment, subscription overrides, content moderation. Gate with \`has_role(auth.uid(),'admin')\`.
+9. **DevHub (owner-gated)** — server console, agent dispatcher, autopilot queue, native-rebuild tools, idea planner. Gate with \`verify_owner_identity\` RPC. Must live in the main nav alongside the Admin Panel (mirror the web app's Admin section).
+10. **Integrations** — Snapchat, TikTok, USB hub, self-hosted Docker control.
+11. **Polish** — onboarding, paywall UX, error toasts, offline fallbacks.
+
 
 ---
 
