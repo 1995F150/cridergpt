@@ -1,11 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Clock, Users } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
-import { useLifetimePlan } from "@/hooks/useLifetimePlan";
 import { useInAppPurchase } from "@/hooks/useInAppPurchase";
 import { Capacitor } from "@capacitor/core";
 
@@ -13,14 +12,12 @@ const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
   const { plans } = usePlanConfigurations();
-  const { isLifetimeAvailable, getSlotsRemaining, getPromotionMessage, getSoldOutMessage } = useLifetimePlan();
   const { purchaseProduct, platform } = useInAppPurchase();
 
   // Native digital goods must go through Play Billing / StoreKit per store policy.
   const iapProductMap: Record<string, string> = {
-    plus: "com.cridergpt.plus.monthly",
-    pro: "com.cridergpt.pro.monthly",
-    lifetime: "com.cridergpt.lifetime",
+    plus: "cridergpt_plus_monthly",
+    pro: "cridergpt_pro_monthly",
   };
 
 // Auth state for clearer CTA text
@@ -37,21 +34,9 @@ useEffect(() => {
   const priceIdMap: Record<string, string> = {
     plus: "price_1TExZhP90uC07RqGdJ8loF2z",
     pro: "price_1TExa8P90uC07RqGHYMMlGbX",
-    lifetime: "price_1TExaUP90uC07RqG1CX0lf9B",
   };
 
-  const lifetimePrice = 30; // one-time USD
-
   const handlePlanSelect = async (planName: string) => {
-    if (planName === "lifetime" && !isLifetimeAvailable()) {
-      toast({
-        title: "Plan Unavailable",
-        description: getSoldOutMessage(),
-        variant: "destructive",
-      });
-      return;
-    }
-
     const priceId = priceIdMap[planName];
     if (!priceId) {
       window.location.href = "/";
