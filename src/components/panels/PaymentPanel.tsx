@@ -57,11 +57,8 @@ export function PaymentPanel() {
         return;
       }
 
-      // Use correct edge function based on plan type
-      const functionName = planName === "lifetime" ? "create-checkout" : "create-checkout";
-      
       const { data, error } = await supabase.functions.invoke(
-        functionName,
+        'create-checkout',
         {
           body: {
             priceId,
