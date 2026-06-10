@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft
 } from "lucide-react";
 
 const modules = [
@@ -24,6 +24,10 @@ const modules = [
   { to: "/devhub/aether", icon: Sparkles, title: "AETHER Control Panel", desc: "Design key layouts, tune haptic + trackpad, push live to the glass keyboard.", tag: "Builder" },
   { to: "/devhub/android-app-ideas", icon: Smartphone, title: "Android App Ideas", desc: "150 one-time-purchase app concepts. Copy a ready-to-paste Gemini/Android Studio prompt with app name + package id.", tag: "Builder" },
   { to: "/devhub/backend-blueprints", icon: Database, title: "Backend Blueprints", desc: "Copy-paste SQL + secrets + edge function checklists for client apps (Him & Her Boutique, etc).", tag: "Builder" },
+  { to: "/devhub/ios-builder", icon: Apple, title: "iOS Builder", desc: "No-Mac signed .ipa via EAS Cloud Build. Generates eas.json, app.json, submit commands.", tag: "iOS" },
+  { to: "/devhub/ios-asset-studio", icon: ImageIcon, title: "iOS Asset Studio", desc: "One source image → all 17 iOS icon sizes, Android mipmaps, App Store screenshot template. ZIP download.", tag: "iOS" },
+  { to: "/devhub/swift-code-generator", icon: Code2, title: "Swift Code Generator", desc: "Unified cross-platform: type a feature, get Kotlin + Compose and Swift + SwiftUI side-by-side.", tag: "iOS" },
+  { to: "/devhub/capacitor-ios-porter", icon: ArrowRightLeft, title: "Capacitor → iOS Porter", desc: "Paste AndroidManifest + package.json → Info.plist keys, Xcode capabilities, Swift bridge notes.", tag: "iOS" },
 ];
 
 export default function DevHub() {
