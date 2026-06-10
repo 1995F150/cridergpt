@@ -149,7 +149,6 @@ export function PlanPanel() {
         plu: { messages: 100, tts: 100 },   // Legacy format
         plus: { messages: 100, tts: 100 },  // New format  
         pro: { messages: 500, tts: 9999999 }, // High limit for Pro
-        lifetime: { messages: 9999999, tts: 9999999 } // Unlimited for Lifetime
       };
 
       const currentLimits = limits[plan as keyof typeof limits] || limits.free;
@@ -200,10 +199,9 @@ export function PlanPanel() {
   }
 
   const currentPlan = subscriptionData?.plan || 'free';
-  const isLifetime = currentPlan === 'lifetime';
-  const planName = isLifetime ? 'Lifetime' : (isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plus' : 'Free');
-  const planIcon = isLifetime ? Crown : (isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap);
-  const planColor = isLifetime ? 'text-yellow-500' : (isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500');
+  const planName = isPlan('pro') ? 'Pro' : (isPlan('plu') || isPlan('plus')) ? 'Plus' : 'Free';
+  const planIcon = isPlan('pro') ? Crown : (isPlan('plu') || isPlan('plus')) ? Star : Zap;
+  const planColor = isPlan('pro') ? 'text-yellow-500' : (isPlan('plu') || isPlan('plus')) ? 'text-blue-500' : 'text-gray-500';
   const PlanIcon = planIcon;
 
   const messageUsagePercent = subscriptionData ? Math.min((subscriptionData.messagesUsed / subscriptionData.messageLimit) * 100, 100) : 0;
@@ -237,7 +235,6 @@ export function PlanPanel() {
             {currentPlan === 'free' && 'Basic features with limited usage'}
             {(currentPlan === 'plus' || currentPlan === 'plu') && 'Enhanced features with higher limits — CriderGPT Plus ($3/mo)'}
             {currentPlan === 'pro' && 'Full power with advanced features — CriderGPT Pro ($7/mo)'}
-            {currentPlan === 'lifetime' && 'Unlimited everything forever — CriderGPT Lifetime Founder'}
           </p>
         </CardHeader>
       </Card>

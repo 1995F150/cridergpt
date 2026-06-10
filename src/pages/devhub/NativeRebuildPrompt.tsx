@@ -76,7 +76,7 @@ const FEATURE_GROUPS: { name: string; items: string[] }[] = [
   {
     name: "Monetization",
     items: [
-      "Plans: Free / Plus / Pro / Lifetime (plan_configurations, lifetime_plan_config)",
+      "Plans: Free / Plus / Pro (plan_configurations)",
       "Stripe subscriptions for web (subscriptions, user_subscriptions)",
       "Native IAP for mobile digital goods (iap_purchases, platform_subscriptions)",
       "NEVER use Stripe for mobile digital goods (Apple/Google policy)",
@@ -303,7 +303,7 @@ ${PLATFORM_BLOCKS.desktop}
 
 **AdMob contract (identical across Android & iOS):**
 - Initialize once at app cold start: \`MobileAds.initialize(context)\` (Android) / \`GADMobileAds.sharedInstance().start()\` (iOS).
-- Before ANY ad load, check user's plan from Supabase. If plan ∈ {plus, pro, lifetime} → do not initialize/load/show.
+- Before ANY ad load, check user's plan from Supabase. If plan ∈ {plus, pro} → do not initialize/load/show.
 - Rewarded must ALWAYS be user-initiated (button tap). Never autoplay rewarded.
 - Interstitial cooldown: max 1 per 10 app opens, never between rapid screen changes.
 - Banner: bottom-center, adaptive size, removed when the screen leaves.

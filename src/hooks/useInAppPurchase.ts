@@ -32,55 +32,24 @@ const getPlatform = (): 'ios' | 'android' | 'web' => {
 };
 
 // CriderGPT IAP product catalog
+// Google Play Console product IDs:
+//   Plus Monthly  = cridergpt_plus_monthly
+//   Pro Monthly   = cridergpt_pro_monthly
 export const IAP_PRODUCTS: IAPProduct[] = [
-  // Subscriptions
   {
-    id: 'com.cridergpt.plus.monthly',
+    id: 'cridergpt_plus_monthly',
     title: 'CriderGPT Plus',
-    description: '100 messages/day, GPT-4o access, backend generator',
+    description: '100 messages/day, GPT-4o Mini, backend generator, 5 projects',
     price: '$3/mo',
     type: 'subscription',
     platform: getPlatform(),
   },
   {
-    id: 'com.cridergpt.pro.monthly',
+    id: 'cridergpt_pro_monthly',
     title: 'CriderGPT Pro',
-    description: '500 messages/day, unlimited projects, priority support',
+    description: '500 messages/day, GPT-4o, unlimited TTS, 10 projects, priority support',
     price: '$7/mo',
     type: 'subscription',
-    platform: getPlatform(),
-  },
-  {
-    id: 'com.cridergpt.lifetime',
-    title: 'CriderGPT Lifetime',
-    description: 'Unlimited everything, forever. One-time payment.',
-    price: '$30',
-    type: 'consumable', // one-time purchase
-    platform: getPlatform(),
-  },
-  // Consumables (credits)
-  {
-    id: 'com.cridergpt.credits.100',
-    title: '100 AI Credits',
-    description: 'Add 100 credits to your account',
-    price: '$0.99',
-    type: 'consumable',
-    platform: getPlatform(),
-  },
-  {
-    id: 'com.cridergpt.credits.500',
-    title: '500 AI Credits',
-    description: 'Add 500 credits to your account',
-    price: '$3.99',
-    type: 'consumable',
-    platform: getPlatform(),
-  },
-  {
-    id: 'com.cridergpt.credits.1000',
-    title: '1000 AI Credits',
-    description: 'Add 1000 credits to your account',
-    price: '$6.99',
-    type: 'consumable',
     platform: getPlatform(),
   },
 ];
@@ -188,11 +157,10 @@ export function useInAppPurchase() {
         return;
       }
 
-      // Web ONLY: Stripe checkout for digital subscriptions and products
+      // Web ONLY: Stripe checkout for digital subscriptions
       const priceIdMap: Record<string, { priceId: string; planName: string }> = {
-        'com.cridergpt.plus.monthly': { priceId: 'price_1TExZhP90uC07RqGdJ8loF2z', planName: 'plus' },
-        'com.cridergpt.pro.monthly': { priceId: 'price_1TExa8P90uC07RqGHYMMlGbX', planName: 'pro' },
-        'com.cridergpt.lifetime': { priceId: 'price_1TExaUP90uC07RqG1CX0lf9B', planName: 'lifetime' },
+        'cridergpt_plus_monthly': { priceId: 'price_1TExZhP90uC07RqGdJ8loF2z', planName: 'plus' },
+        'cridergpt_pro_monthly': { priceId: 'price_1TExa8P90uC07RqGHYMMlGbX', planName: 'pro' },
       };
 
       const stripeProduct = priceIdMap[productId];
@@ -212,10 +180,11 @@ export function useInAppPurchase() {
         }
       }
 
-      // For credit packs on web, create a simple Stripe payment
+      // No other products available on web
       toast({
-        title: "Credit packs coming soon",
-        description: "Credit pack purchases will be available shortly.",
+        title: "Unavailable",
+        description: "This product is not available for purchase on web.",
+        variant: "destructive",
       });
 
     } catch (err) {

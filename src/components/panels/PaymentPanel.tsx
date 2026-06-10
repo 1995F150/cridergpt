@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, CreditCard, Star, Zap, Crown } from "lucide-react";
+import { Check, CreditCard, Star, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -17,14 +17,12 @@ export function PaymentPanel() {
   const priceIdMap: Record<string, string> = {
     plus: "price_1TExZhP90uC07RqGdJ8loF2z",
     pro: "price_1TExa8P90uC07RqGHYMMlGbX",
-    lifetime: "price_1TExaUP90uC07RqG1CX0lf9B",
   };
 
   const iconMap: Record<string, React.ReactNode> = {
     free: <CreditCard className="h-6 w-6" />,
     plus: <Zap className="h-6 w-6" />,
     pro: <Star className="h-6 w-6" />,
-    lifetime: <Crown className="h-6 w-6 text-yellow-500" />,
   };
 
   const handlePlanSelect = async (planName: string) => {
@@ -59,11 +57,8 @@ export function PaymentPanel() {
         return;
       }
 
-      // Use correct edge function based on plan type
-      const functionName = planName === "lifetime" ? "create-checkout" : "create-checkout";
-      
       const { data, error } = await supabase.functions.invoke(
-        functionName,
+        'create-checkout',
         {
           body: {
             priceId,
@@ -93,30 +88,6 @@ export function PaymentPanel() {
     }
   };
 
-  // 🔑 Ensure Lifetime shows only once
-  const allPlans = [...plans];
-  if (!allPlans.some((p) => p.plan_name === "lifetime")) {
-    allPlans.push({
-      plan_name: "lifetime",
-      plan_display_name: "Lifetime Founder",
-      price_monthly: 30,
-      features: [
-        "Unlimited messages forever",
-        "Unlimited TTS forever",
-        "Priority support",
-        "All future features included",
-        "Lifetime Founder badge",
-      ],
-      limits: {
-        messages: 9999999,
-        tts: 9999999,
-        projects: 9999999,
-        api_keys: 9999999,
-        file_upload_mb: 9999999,
-      },
-      sort_order: 99,
-    });
-  }
 
   return (
     <div className="panel h-full w-full p-6 overflow-y-auto">
@@ -132,12 +103,12 @@ export function PaymentPanel() {
 
         <ManageSubscription />
 
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          {allPlans.map((plan) => (
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          {plans.map((plan) => (
             <Card
               key={plan.plan_name}
               className={`relative transition-all duration-300 ${
-                plan.plan_name === "pro" || plan.plan_name === "lifetime"
+                plan.plan_name === "pro"
                   ? "border-2 border-primary bg-primary/5 shadow-lg shadow-primary/20"
                   : "border border-border hover:border-primary/50"
               }`}
@@ -151,15 +122,6 @@ export function PaymentPanel() {
                 </Badge>
               )}
 
-              {plan.plan_name === "lifetime" && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black border-0"
-                >
-                  Founder Deal
-                </Badge>
-              )}
-
               <CardHeader className="text-center">
                 <div className="flex items-center justify-center mb-2">
                   {iconMap[plan.plan_name] || <CreditCard className="h-6 w-6" />}
@@ -169,15 +131,13 @@ export function PaymentPanel() {
                   {plan.plan_name === "free" && "Perfect for getting started"}
                   {plan.plan_name === "plus" && "Enhanced features for power users"}
                   {plan.plan_name === "pro" && "Complete solution for professionals"}
-                  {plan.plan_name === "lifetime" &&
-                    "One-time payment – no monthly fees"}
                 </CardDescription>
                 <div className="flex items-baseline justify-center mt-4">
                   <span className="text-4xl font-bold text-primary">
                     ${plan.price_monthly}
                   </span>
                   <span className="text-muted-foreground ml-1">
-                    {plan.plan_name === "lifetime" ? "one-time" : "/month"}
+                    /month
                   </span>
                 </div>
               </CardHeader>
@@ -194,7 +154,7 @@ export function PaymentPanel() {
 
                 <Button
                   className={`w-full ${
-                    plan.plan_name === "pro" || plan.plan_name === "lifetime"
+                    plan.plan_name === "pro"
                       ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
                       : "bg-primary hover:bg-primary/90"
                   }`}
@@ -206,8 +166,6 @@ export function PaymentPanel() {
                     ? "Processing..."
                     : plan.plan_name === "free"
                     ? "Get Started Free"
-                    : plan.plan_name === "lifetime"
-                    ? "Buy Now"
                     : "Subscribe Now"}
                 </Button>
               </CardContent>

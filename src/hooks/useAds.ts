@@ -23,7 +23,7 @@ export const AD_UNITS = {
   banner: "ca-app-pub-1884621321896668/5478019545",
 } as const;
 
-const PAID_PLANS = new Set(["plus", "pro", "lifetime"]);
+const PAID_PLANS = new Set(["plus", "pro"]);
 
 export function useAds() {
   const { plan, loading } = useSubscriptionStatus();
