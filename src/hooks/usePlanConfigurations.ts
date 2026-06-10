@@ -42,14 +42,6 @@ const STATIC_PLANS: PlanConfiguration[] = [
     features: ['500 messages/day', 'Unlimited TTS', 'GPT-4o model', 'Priority support', 'Advanced analytics', 'File upload (100MB)', '10 projects', 'Mod deployment', 'Automation tools'],
     limits: { messages: 500, tts: 999999, projects: 10, api_keys: 5, file_upload_mb: 100 },
     sort_order: 3
-  },
-  {
-    plan_name: 'lifetime',
-    plan_display_name: 'CriderGPT Lifetime',
-    price_monthly: 30,
-    features: ['Unlimited messages forever', 'Unlimited TTS forever', 'GPT-4o model', 'All current & future features', 'Unlimited projects', 'Founder badge', 'No monthly fees ever'],
-    limits: { messages: 9999999, tts: 9999999, projects: 999, api_keys: 99, file_upload_mb: 500 },
-    sort_order: 4
   }
 ];
 
