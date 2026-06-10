@@ -767,6 +767,154 @@ create policy "Admins manage shops" on public.shops for all to authenticated
   with check (public.has_role(auth.uid(), 'admin'));`,
     },
     {
+      id: "m02b-seller-memberships",
+      title: "2b. Seller memberships ($12.99/mo gate)",
+      desc: "Tracks who currently has an active $12.99/mo Seller Membership. Listings are blocked unless active=true.",
+      icon: Database,
+      language: "sql",
+      code: `create table public.seller_memberships (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  stripe_customer_id text,
+  stripe_subscription_id text unique,
+  status text not null default 'inactive',          -- mirrors Stripe: active, trialing, past_due, canceled, etc.
+  active boolean not null default false,            -- convenience flag (status in ('active','trialing'))
+  current_period_end timestamptz,
+  cancel_at_period_end boolean not null default false,
+  price_id text,                                    -- the $12.99/mo price id
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index on public.seller_memberships(active);
+
+grant select on public.seller_memberships to authenticated;
+grant all on public.seller_memberships to service_role;
+
+alter table public.seller_memberships enable row level security;
+
+create policy "User reads own membership" on public.seller_memberships for select to authenticated
+  using (user_id = auth.uid());
+create policy "Admins read all memberships" on public.seller_memberships for select to authenticated
+  using (public.has_role(auth.uid(), 'admin'));
+-- writes go through edge functions (service_role); no insert/update policy for users.
+
+-- Helper used by listings RLS to enforce the membership gate
+create or replace function public.has_active_seller_membership(_user_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.seller_memberships
+    where user_id = _user_id and active = true
+  )
+$$;
+
+-- HARDEN listings: only insert if seller's membership is active
+drop policy if exists "Sellers manage own listings" on public.listings;
+create policy "Sellers insert listings (membership required)" on public.listings for insert to authenticated
+  with check (
+    exists (select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid())
+    and public.has_active_seller_membership(auth.uid())
+  );
+create policy "Sellers update own listings" on public.listings for update to authenticated
+  using (exists (select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid()))
+  with check (exists (select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid()));
+create policy "Sellers delete own listings" on public.listings for delete to authenticated
+  using (exists (select 1 from public.shops s where s.id = shop_id and s.owner_id = auth.uid()));`,
+    },
+    {
+      id: "m02c-fn-seller-membership-checkout",
+      title: "Edge fn: seller-membership-checkout/index.ts",
+      desc: "Starts the $12.99/mo Stripe subscription for the signed-in seller. Returns Checkout URL.",
+      icon: Code2,
+      language: "ts",
+      code: `import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, content-type" };
+const PRICE_ID = Deno.env.get("STRIPE_SELLER_MEMBERSHIP_PRICE_ID")!;
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  try {
+    const auth = req.headers.get("Authorization")!;
+    const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: { user } } = await supa.auth.getUser(auth.replace("Bearer ", ""));
+    if (!user?.email) throw new Error("Not authed");
+
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2025-08-27.basil" });
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customerId = customers.data[0]?.id;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
+      line_items: [{ price: PRICE_ID, quantity: 1 }],
+      success_url: \`\${req.headers.get("origin")}/seller/dashboard?membership=ok\`,
+      cancel_url: \`\${req.headers.get("origin")}/seller/membership\`,
+      metadata: { user_id: user.id, purpose: "seller_membership" },
+      subscription_data: { metadata: { user_id: user.id, purpose: "seller_membership" } },
+    });
+
+    return new Response(JSON.stringify({ url: session.url }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: cors });
+  }
+});`,
+    },
+    {
+      id: "m02d-fn-check-seller-membership",
+      title: "Edge fn: check-seller-membership/index.ts",
+      desc: "Returns { active } so the app can show/hide the 'List an Item' button. Also syncs from Stripe if no row yet.",
+      icon: Code2,
+      language: "ts",
+      code: `import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, content-type" };
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  try {
+    const auth = req.headers.get("Authorization")!;
+    const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: { user } } = await supa.auth.getUser(auth.replace("Bearer ", ""));
+    if (!user?.email) throw new Error("Not authed");
+
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2025-08-27.basil" });
+
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    if (!customers.data.length) {
+      return new Response(JSON.stringify({ active: false }), { headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    const customerId = customers.data[0].id;
+    const subs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 5 });
+    const sub = subs.data.find(s => ["active","trialing","past_due"].includes(s.status));
+    const active = !!sub && (sub.status === "active" || sub.status === "trialing");
+
+    await admin.from("seller_memberships").upsert({
+      user_id: user.id,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: sub?.id ?? null,
+      status: sub?.status ?? "inactive",
+      active,
+      current_period_end: sub ? new Date(sub.current_period_end * 1000).toISOString() : null,
+      cancel_at_period_end: sub?.cancel_at_period_end ?? false,
+      price_id: sub?.items.data[0]?.price.id ?? null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+
+    return new Response(JSON.stringify({ active, status: sub?.status ?? "inactive" }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: cors });
+  }
+});`,
+    },
+    {
+
       id: "m03-listings",
       title: "3. Listings (per-seller products)",
       desc: "Replaces 'products'. Each listing belongs to ONE shop.",
