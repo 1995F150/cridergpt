@@ -127,26 +127,16 @@ useEffect(() => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.plan_name}
               className={`relative rounded-2xl p-6 border-2 transition-all duration-300 ${
-                plan.plan_name === "lifetime"
-                  ? "border-gradient-to-r from-yellow-400 to-orange-500 bg-gradient-to-br from-yellow-50/10 to-orange-50/10 shadow-lg shadow-yellow-400/20"
-                  : plan.plan_name === "pro"
+                plan.plan_name === "pro"
                   ? "border-cyber-blue bg-cyber-blue/5 shadow-lg shadow-cyber-blue/20"
                   : "border-border bg-card hover:border-cyber-blue/50"
               }`}
             >
-              {plan.plan_name === "lifetime" && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black border-0 font-bold"
-                >
-                  🏆 Founder Only
-                </Badge>
-              )}
               {plan.plan_name === "pro" && (
                 <Badge
                   variant="secondary"
@@ -157,32 +147,15 @@ useEffect(() => {
               )}
 
               <div className="text-center mb-6">
-                <h3
-                  className={`text-xl font-bold mb-2 ${
-                    plan.plan_name === "lifetime"
-                      ? "bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent"
-                      : "text-foreground"
-                  }`}
-                >
+                <h3 className="text-xl font-bold mb-2 text-foreground">
                   {plan.plan_display_name}
                 </h3>
                 <div className="flex items-baseline justify-center">
-                  <span
-                    className={`text-3xl font-bold ${
-                      plan.plan_name === "lifetime" ? "text-yellow-500" : "text-cyber-blue"
-                    }`}
-                  >
-                    {plan.plan_name === "lifetime" ? `$${lifetimePrice}` : `$${plan.price_monthly}`}
+                  <span className="text-3xl font-bold text-cyber-blue">
+                    ${plan.price_monthly}
                   </span>
-                  <span className="text-muted-foreground ml-1">
-                    {plan.plan_name === "lifetime" ? "one-time (not a subscription)" : "/month"}
-                  </span>
+                  <span className="text-muted-foreground ml-1">/month</span>
                 </div>
-                {plan.plan_name === "lifetime" && (
-                  <p className="text-sm text-yellow-600/80 text-center mt-1">
-                    One-Time Payment – No Renewal Fees
-                  </p>
-                )}
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -196,14 +169,12 @@ useEffect(() => {
 
               <Button
                 className={`w-full ${
-                  plan.plan_name === "lifetime"
-                    ? "bg-gradient-to-r from-yellow-400 to-orange-500 hover:opacity-90 text-black font-bold"
-                    : plan.plan_name === "pro"
+                  plan.plan_name === "pro"
                     ? "bg-gradient-to-r from-cyber-blue to-tech-accent hover:opacity-90"
                     : "bg-cyber-blue hover:bg-cyber-blue/90"
                 }`}
                 size="lg"
-                disabled={loading === plan.plan_name || (plan.plan_name === "lifetime" && !isLifetimeAvailable())}
+                disabled={loading === plan.plan_name}
                 onClick={() => handlePlanSelect(plan.plan_name)}
               >
                 {loading === plan.plan_name ? (
@@ -212,13 +183,9 @@ useEffect(() => {
                     Processing...
                   </span>
                 ) : !isSignedIn ? (
-                  plan.plan_name === "lifetime" ? "Sign in to purchase" : "Sign in to subscribe"
+                  "Sign in to subscribe"
                 ) : plan.plan_name === "free" ? (
                   "Get Started Free"
-                ) : plan.plan_name === "lifetime" && !isLifetimeAvailable() ? (
-                  "Sold Out"
-                ) : plan.plan_name === "lifetime" ? (
-                  "Buy Lifetime — $30 one-time"
                 ) : (
                   "Subscribe Now"
                 )}
