@@ -29,9 +29,9 @@ type Blueprint = {
 
 const HIM_AND_HER: Blueprint = {
   slug: "him-and-her",
-  name: "Him and Her Boutique",
+  name: "A: Single-Seller (Aunt Only)",
   pkg: "com.crider.himandher",
-  tagline: "Mobile clothing boutique — dual storefront, Stripe checkout, full inventory + orders backend.",
+  tagline: "Aunt is the ONLY seller. Customers browse + buy. Stripe Checkout straight to her account.",
   supabaseProject: "Create a NEW Supabase project (do not reuse CriderGPT). Name it 'himandher-boutique'.",
   secrets: [
     "STRIPE_SECRET_KEY  (sk_live_... or sk_test_...)",
