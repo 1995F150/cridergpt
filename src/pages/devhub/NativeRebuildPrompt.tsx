@@ -80,6 +80,7 @@ const FEATURE_GROUPS: { name: string; items: string[] }[] = [
       "Stripe subscriptions for web (subscriptions, user_subscriptions)",
       "Native IAP for mobile digital goods (iap_purchases, platform_subscriptions)",
       "NEVER use Stripe for mobile digital goods (Apple/Google policy)",
+      "AdMob rewarded video (+5 messages), interstitial (every 10th open), and banner (demo page) for free-tier Android/iOS ONLY. Paid users see zero ads.",
       "Usage controls, tier upgrade logs, feature throttles",
       "Referral codes + referrals tracking",
     ],
@@ -140,6 +141,14 @@ const PLATFORM_BLOCKS = {
 
 **Builder:** Self-hosted Ubuntu runner on AMD Ryzen — \`./gradlew bundleRelease assembleRelease\` signed w/ keystore on every web push.
 
+**AdMob (free-tier only):**
+- Gradle: \`com.google.android.gms:play-services-ads:23.+\`
+- Manifest \`<application>\`: \`<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-1884621321896668~7174244598"/>\`
+- Unit IDs (production): Rewarded \`ca-app-pub-1884621321896668/8461902383\`, Interstitial \`ca-app-pub-1884621321896668/6979140189\`, Banner \`ca-app-pub-1884621321896668/5478019545\`.
+- Gate every ad load behind the user's plan: query \`user_subscriptions\` / \`plan_configurations\`. If plan is Plus/Pro/Lifetime → skip load/show entirely.
+- Surfaces: Rewarded button "Watch ad for +5 messages" (message cap hit). Interstitial every 10th cold open. Banner on public/demo pages.
+- Use Google's test ad unit IDs during development. NEVER click your own ads.
+
 **DO NOT modify the externally managed \`android/\` folder if it exists. Generate a fresh \`android-native/\` tree instead.**
 `,
   ios: `### 🍎 iOS (Native — Swift + SwiftUI)
@@ -159,6 +168,14 @@ const PLATFORM_BLOCKS = {
 **IAP:** StoreKit 2 for Plus/Pro/Lifetime — mirror into \`iap_purchases\` table via Edge Function. NEVER Stripe for digital goods on iOS.
 
 **Build pipeline:** EAS Cloud Build or GitHub Actions w/ macOS runner — signed \`.ipa\` without owning a Mac. \`Info.plist\` keys: NSCameraUsageDescription, NSMicrophoneUsageDescription, NFCReaderUsageDescription, NSPhotoLibraryUsageDescription, NSLocationWhenInUseUsageDescription.
+
+**AdMob (free-tier only):**
+- SPM / CocoaPods: \`GoogleMobileAds\` SDK.
+- \`Info.plist\`: \`GADApplicationIdentifier\` = \`ca-app-pub-1884621321896668~7174244598\`.
+- Unit IDs: same string values as Android (Google serves the correct creative per platform): Rewarded \`ca-app-pub-1884621321896668/8461902383\`, Interstitial \`ca-app-pub-1884621321896668/6979140189\`, Banner \`ca-app-pub-1884621321896668/5478019545\`.
+- Gate all ads by subscription plan from Supabase. Plus/Pro/Lifetime = no ads.
+- Surfaces mirror Android: rewarded for +5 messages, interstitial every 10th open, banner on demo.
+- Use test IDs in development. NEVER click your own ads.
 `,
   desktop: `### 🖥️ DESKTOP (Native — Tauri 2 + Rust + React)
 
@@ -218,6 +235,7 @@ Package / Bundle ID: \`${opts.packageId}\`
 10. **Do NOT modify any externally-managed \`android/\` folder.** Build a fresh native tree.
 11. **Owner-only Dev Hub + Admin Panel** — gate every dev tool and admin route behind the \`verify_owner_identity\` RPC + \`has_role(auth.uid(),'admin')\`. Both surfaces must exist natively, not as webviews.
 12. **Respect system insets on every screen.** No UI element may sit under the status bar (battery/clock/notch) or the gesture/nav bar. See §7 Safe-Area Rules — this is a ship-blocker if violated.
+13. **AdMob is free-tier ONLY.** Plus/Pro/Lifetime users must see zero ads. Use Google's test ad unit IDs during development — never click your own ads.
 
 
 
@@ -283,6 +301,14 @@ ${PLATFORM_BLOCKS.desktop}
 
 **Error UX:** 429 = "Hold up, sugar — too many requests, try again in a sec." 402 = direct user to billing. Never swallow errors.
 
+**AdMob contract (identical across Android & iOS):**
+- Initialize once at app cold start: \`MobileAds.initialize(context)\` (Android) / \`GADMobileAds.sharedInstance().start()\` (iOS).
+- Before ANY ad load, check user's plan from Supabase. If plan ∈ {plus, pro, lifetime} → do not initialize/load/show.
+- Rewarded must ALWAYS be user-initiated (button tap). Never autoplay rewarded.
+- Interstitial cooldown: max 1 per 10 app opens, never between rapid screen changes.
+- Banner: bottom-center, adaptive size, removed when the screen leaves.
+- Test IDs during development; production IDs only in release builds.
+
 ---
 
 ## 7. DESIGN SYSTEM + SAFE-AREA RULES
@@ -307,11 +333,12 @@ ${PLATFORM_BLOCKS.desktop}
 4. **Local-first AI memory loop** — vector search + write-back.
 5. **Livestock scan-only workflow** — NFC read/write + animal CRUD.
 6. **Store** — product list, cart, Stripe checkout (desktop/Android web flow), StoreKit/Play Billing for IAP.
-7. **Chapters + Events** — two-tier visibility.
-8. **Admin Panel (role-gated)** — user list, role assignment, subscription overrides, content moderation. Gate with \`has_role(auth.uid(),'admin')\`.
-9. **DevHub (owner-gated)** — server console, agent dispatcher, autopilot queue, native-rebuild tools, idea planner. Gate with \`verify_owner_identity\` RPC. Must live in the main nav alongside the Admin Panel (mirror the web app's Admin section).
-10. **Integrations** — Snapchat, TikTok, USB hub, self-hosted Docker control.
-11. **Polish** — onboarding, paywall UX, error toasts, offline fallbacks.
+7. **AdMob SDK & ad surfaces** — initialize with App ID, wire rewarded/interstitial/banner units, gate every load behind subscription plan. Test with Google's test IDs first; production IDs only in release builds.
+8. **Chapters + Events** — two-tier visibility.
+9. **Admin Panel (role-gated)** — user list, role assignment, subscription overrides, content moderation. Gate with \`has_role(auth.uid(),'admin')\`.
+10. **DevHub (owner-gated)** — server console, agent dispatcher, autopilot queue, native-rebuild tools, idea planner. Gate with \`verify_owner_identity\` RPC. Must live in the main nav alongside the Admin Panel (mirror the web app's Admin section).
+11. **Integrations** — Snapchat, TikTok, USB hub, self-hosted Docker control.
+12. **Polish** — onboarding, paywall UX, error toasts, offline fallbacks.
 
 
 ---
