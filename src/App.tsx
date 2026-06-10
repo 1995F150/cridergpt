@@ -69,6 +69,7 @@ import DevIOSBuilder from "./pages/devhub/IOSBuilder";
 import DevIOSAssetStudio from "./pages/devhub/IOSAssetStudio";
 import DevSwiftCodeGenerator from "./pages/devhub/SwiftCodeGenerator";
 import DevCapacitorIOSPorter from "./pages/devhub/CapacitorIOSPorter";
+import DevNativeRebuildPrompt from "./pages/devhub/NativeRebuildPrompt";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
