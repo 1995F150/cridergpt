@@ -84,3 +84,6 @@ verify_jwt = false
 
 [functions.mint-pc-token]
 verify_jwt = false
+
+[functions.play-rtdn]
+verify_jwt = false
