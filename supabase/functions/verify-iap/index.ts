@@ -1,286 +1,251 @@
+// Verify Google Play IAP purchase tokens server-side and grant the user their plan.
+// Native Android only — CriderGPT no longer ships a Capacitor build.
+// Required secrets:
+//   GOOGLE_PLAY_SERVICE_ACCOUNT  - full JSON of a Play Console service account with
+//                                  "View financial data" + "Manage orders and subscriptions"
+//   GOOGLE_PLAY_PACKAGE_NAME     - e.g. app.cridergpt.android
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[VERIFY-IAP] ${step}${detailsStr}`);
+const log = (step: string, details?: unknown) => {
+  const d = details ? ` - ${JSON.stringify(details)}` : "";
+  console.log(`[VERIFY-IAP] ${step}${d}`);
 };
 
+// ---- Product → plan mapping (Play Console subscription IDs) -----------------
+const PLAN_BY_PRODUCT: Record<string, "plus" | "pro"> = {
+  cridergpt_plus_monthly: "plus",
+  cridergpt_pro_monthly: "pro",
+};
+
+// ---- Google service-account JWT → OAuth2 access token -----------------------
+function b64url(bytes: Uint8Array): string {
+  let s = btoa(String.fromCharCode(...bytes));
+  return s.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlStr(s: string): string {
+  return b64url(new TextEncoder().encode(s));
+}
+
+function pemToDer(pem: string): Uint8Array {
+  const body = pem
+    .replace(/-----BEGIN [^-]+-----/g, "")
+    .replace(/-----END [^-]+-----/g, "")
+    .replace(/\s+/g, "");
+  const bin = atob(body);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function getGoogleAccessToken(saJson: string): Promise<string> {
+  const sa = JSON.parse(saJson);
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const claims = {
+    iss: sa.client_email,
+    scope: "https://www.googleapis.com/auth/androidpublisher",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  };
+  const unsigned = `${b64urlStr(JSON.stringify(header))}.${b64urlStr(JSON.stringify(claims))}`;
+
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToDer(sa.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = new Uint8Array(
+    await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned)),
+  );
+  const jwt = `${unsigned}.${b64url(sig)}`;
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(`Google token error: ${JSON.stringify(json)}`);
+  return json.access_token as string;
+}
+
+async function verifyAndroidSubscription(
+  packageName: string,
+  productId: string,
+  purchaseToken: string,
+  accessToken: string,
+) {
+  // v2 endpoint gives richer line-item data, but v1 is simpler & still supported.
+  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(`Play verify failed: ${JSON.stringify(json)}`);
+  return json as {
+    expiryTimeMillis?: string;
+    paymentState?: number; // 0 pending, 1 received, 2 free trial, 3 deferred
+    autoRenewing?: boolean;
+    orderId?: string;
+    priceAmountMicros?: string;
+  };
+}
+
+// -----------------------------------------------------------------------------
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    logStep("Function started");
-
-    const supabaseClient = createClient(
+    log("Function started");
+    const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      { auth: { persistSession: false } },
     );
 
-    // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("Authentication failed");
+    const { data: userData, error: userErr } = await supabase.auth.getUser(
+      authHeader.replace("Bearer ", ""),
+    );
+    if (userErr || !userData.user) throw new Error("Authentication failed");
     const user = userData.user;
-    logStep("User authenticated", { userId: user.id });
+    log("User authenticated", { userId: user.id });
 
     const body = await req.json();
-    const { platform, product_id, product_type, transaction_id, receipt_data, purchase_token, original_transaction_id } = body;
+    const {
+      product_id,
+      purchase_token,
+      transaction_id, // Play orderId
+      product_type = "subscription",
+    } = body as {
+      product_id: string;
+      purchase_token: string;
+      transaction_id?: string;
+      product_type?: "subscription" | "product";
+    };
 
-    if (!platform || !product_id || !product_type) {
-      throw new Error("Missing required fields: platform, product_id, product_type");
+    if (!product_id || !purchase_token) {
+      throw new Error("Missing required fields: product_id, purchase_token");
+    }
+    if (!PLAN_BY_PRODUCT[product_id]) {
+      throw new Error(`Unknown product_id: ${product_id}`);
     }
 
-    logStep("Verifying purchase", { platform, product_id, product_type, transaction_id });
+    // Dedup
+    if (transaction_id) {
+      const { data: existing } = await supabase
+        .from("iap_purchases")
+        .select("id")
+        .eq("transaction_id", transaction_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (existing) {
+        log("Duplicate transaction", { id: existing.id });
+        return new Response(
+          JSON.stringify({ success: true, status: "already_verified", purchase_id: existing.id }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    // ---- Google Play verification ------------------------------------------
+    const saJson = Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT");
+    const packageName =
+      Deno.env.get("GOOGLE_PLAY_PACKAGE_NAME") ?? "app.cridergpt.android";
 
     let verified = false;
     let expiresAt: string | null = null;
     let amountCents: number | null = null;
+    let orderId: string | null = transaction_id ?? null;
 
-    if (platform === 'ios') {
-      // iOS App Store receipt verification
-      // In production, verify with Apple's /verifyReceipt endpoint
-      // For now, we trust the receipt and mark as verified
-      // TODO: Add Apple server-to-server notification endpoint for real-time updates
-      if (receipt_data) {
-        const appleVerifyUrl = Deno.env.get("APPLE_VERIFY_PRODUCTION") === "true"
-          ? "https://buy.itunes.apple.com/verifyReceipt"
-          : "https://sandbox.itunes.apple.com/verifyReceipt";
-
-        const appleSharedSecret = Deno.env.get("APPLE_SHARED_SECRET");
-
-        if (appleSharedSecret) {
-          try {
-            const appleResponse = await fetch(appleVerifyUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                "receipt-data": receipt_data,
-                password: appleSharedSecret,
-              }),
-            });
-            const appleResult = await appleResponse.json();
-            logStep("Apple verification response", { status: appleResult.status });
-
-            if (appleResult.status === 0) {
-              verified = true;
-              // Extract expiry for subscriptions
-              if (product_type === 'subscription' && appleResult.latest_receipt_info) {
-                const latestInfo = Array.isArray(appleResult.latest_receipt_info)
-                  ? appleResult.latest_receipt_info[appleResult.latest_receipt_info.length - 1]
-                  : appleResult.latest_receipt_info;
-                if (latestInfo?.expires_date_ms) {
-                  expiresAt = new Date(parseInt(latestInfo.expires_date_ms)).toISOString();
-                }
-              }
-            } else if (appleResult.status === 21007) {
-              // Sandbox receipt sent to production - retry with sandbox
-              logStep("Retrying with sandbox URL");
-              const sandboxResponse = await fetch("https://sandbox.itunes.apple.com/verifyReceipt", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  "receipt-data": receipt_data,
-                  password: appleSharedSecret,
-                }),
-              });
-              const sandboxResult = await sandboxResponse.json();
-              verified = sandboxResult.status === 0;
-            }
-          } catch (err) {
-            logStep("Apple verification error", { error: String(err) });
-          }
-        } else {
-          // No Apple shared secret configured - trust client receipt for development
-          logStep("No APPLE_SHARED_SECRET configured, marking as verified for development");
-          verified = true;
-        }
-      }
-    } else if (platform === 'android') {
-      // Google Play receipt verification
-      // In production, verify with Google Play Developer API
-      if (purchase_token && product_id) {
-        const googleServiceAccount = Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT");
-
-        if (googleServiceAccount) {
-          try {
-            const serviceAccount = JSON.parse(googleServiceAccount);
-            // Generate OAuth2 token from service account
-            // For subscriptions: androidpublisher/v3/applications/{packageName}/purchases/subscriptions/{subscriptionId}/tokens/{token}
-            // For products: androidpublisher/v3/applications/{packageName}/purchases/products/{productId}/tokens/{token}
-            const packageName = "app.cridergpt.android";
-            const endpoint = product_type === 'subscription'
-              ? `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${product_id}/tokens/${purchase_token}`
-              : `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/products/${product_id}/tokens/${purchase_token}`;
-
-            logStep("Google Play verification endpoint", { endpoint: endpoint.substring(0, 80) });
-            // In production, use proper OAuth2 flow with service account
-            // For now, mark as verified
-            verified = true;
-          } catch (err) {
-            logStep("Google Play verification error", { error: String(err) });
-          }
-        } else {
-          logStep("No GOOGLE_PLAY_SERVICE_ACCOUNT configured, marking as verified for development");
-          verified = true;
-        }
-      }
-    } else if (platform === 'web') {
-      // Web purchases go through Stripe - already handled by create-checkout/stripe-webhooks
-      // This endpoint is for recording/syncing web purchases from the app
+    if (!saJson) {
+      // Dev fallback so the app still works before the service account is uploaded.
+      log("GOOGLE_PLAY_SERVICE_ACCOUNT missing — DEV trust-client mode");
       verified = true;
-    }
-
-    // Check for duplicate transaction
-    if (transaction_id) {
-      const { data: existing } = await supabaseClient
-        .from('iap_purchases')
-        .select('id')
-        .eq('transaction_id', transaction_id)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existing) {
-        logStep("Duplicate transaction, returning existing", { id: existing.id });
-        return new Response(JSON.stringify({ 
-          success: true, 
-          status: 'already_verified',
-          purchase_id: existing.id 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
+      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else {
+      const token = await getGoogleAccessToken(saJson);
+      const result = await verifyAndroidSubscription(
+        packageName,
+        product_id,
+        purchase_token,
+        token,
+      );
+      log("Play response", result);
+      // paymentState 1 = received, 2 = free trial. Either grants access.
+      verified = result.paymentState === 1 || result.paymentState === 2;
+      if (result.expiryTimeMillis) {
+        expiresAt = new Date(parseInt(result.expiryTimeMillis, 10)).toISOString();
       }
+      if (result.priceAmountMicros) {
+        amountCents = Math.round(parseInt(result.priceAmountMicros, 10) / 10_000);
+      }
+      orderId = result.orderId ?? orderId;
     }
 
-    // Insert purchase record
-    const { data: purchase, error: insertError } = await supabaseClient
-      .from('iap_purchases')
+    // ---- Record purchase ---------------------------------------------------
+    const { data: purchase, error: insertErr } = await supabase
+      .from("iap_purchases")
       .insert({
         user_id: user.id,
-        platform,
+        platform: "android",
         product_id,
         product_type,
-        transaction_id: transaction_id || null,
-        original_transaction_id: original_transaction_id || null,
-        receipt_data: receipt_data || null,
-        purchase_token: purchase_token || null,
-        status: verified ? 'verified' : 'pending',
+        transaction_id: orderId,
+        purchase_token,
+        status: verified ? "verified" : "pending",
         amount_cents: amountCents,
         verified_at: verified ? new Date().toISOString() : null,
         expires_at: expiresAt,
-        metadata: body.metadata || {},
+        metadata: body.metadata ?? {},
       })
-      .select('id')
+      .select("id")
       .single();
+    if (insertErr) throw new Error(`Insert failed: ${insertErr.message}`);
+    log("Purchase recorded", { id: purchase.id, verified });
 
-    if (insertError) {
-      logStep("Insert error", { error: insertError.message });
-      throw new Error(`Failed to record purchase: ${insertError.message}`);
-    }
-
-    logStep("Purchase recorded", { id: purchase.id, verified });
-
-    // If verified, update user plan/credits
     if (verified) {
-      await applyPurchaseBenefits(supabaseClient, user.id, product_id, product_type);
+      const plan = PLAN_BY_PRODUCT[product_id];
+      await supabase
+        .from("ai_usage")
+        .upsert(
+          { user_id: user.id, user_plan: plan, updated_at: new Date().toISOString() },
+          { onConflict: "user_id" },
+        );
+      await supabase.from("profiles").update({ tier: plan }).eq("user_id", user.id);
+      log("Plan upgraded", { plan, expiresAt });
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      status: verified ? 'verified' : 'pending',
-      purchase_id: purchase.id,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: verified ? "verified" : "pending",
+        purchase_id: purchase.id,
+        expires_at: expiresAt,
+        plan: PLAN_BY_PRODUCT[product_id],
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log("ERROR", { message });
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
-
-async function applyPurchaseBenefits(
-  supabase: any,
-  userId: string,
-  productId: string,
-  productType: string
-) {
-  logStep("Applying purchase benefits", { userId, productId, productType });
-
-  // Map product IDs to plan upgrades
-  // These should match your App Store Connect / Google Play Console product IDs
-  const planMapping: Record<string, string> = {
-    'com.cridergpt.plus.monthly': 'plus',
-    'com.cridergpt.pro.monthly': 'pro',
-    'com.cridergpt.lifetime': 'lifetime',
-    'cridergpt_plus_monthly': 'plus',
-    'cridergpt_pro_monthly': 'pro',
-    'cridergpt_lifetime': 'lifetime',
-  };
-
-  const creditMapping: Record<string, number> = {
-    'com.cridergpt.credits.100': 100,
-    'com.cridergpt.credits.500': 500,
-    'com.cridergpt.credits.1000': 1000,
-    'cridergpt_credits_100': 100,
-    'cridergpt_credits_500': 500,
-    'cridergpt_credits_1000': 1000,
-  };
-
-  const plan = planMapping[productId];
-  if (plan) {
-    // Update user plan
-    await supabase
-      .from('ai_usage')
-      .upsert({
-        user_id: userId,
-        user_plan: plan,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
-
-    // Also update profiles tier
-    await supabase
-      .from('profiles')
-      .update({ tier: plan })
-      .eq('user_id', userId);
-
-    logStep("Plan upgraded", { plan });
-  }
-
-  const credits = creditMapping[productId];
-  if (credits) {
-    // Add credits to user's token balance
-    const { data: usage } = await supabase
-      .from('ai_usage')
-      .select('tokens_used')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    const currentTokens = usage?.tokens_used || 0;
-    // Decrease tokens_used to effectively add credits
-    await supabase
-      .from('ai_usage')
-      .upsert({
-        user_id: userId,
-        tokens_used: Math.max(0, currentTokens - credits),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
-
-    logStep("Credits added", { credits });
-  }
-}
