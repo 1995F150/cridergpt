@@ -233,8 +233,71 @@ const AGI_TOOLS = [
         required: ["query"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "tiktok_get_profile",
+      description: "Get the connected TikTok account info (open_id, display_name, follower count, video count). Use when the user asks about their TikTok account stats or profile.",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "tiktok_list_videos",
+      description: "List the user's recent TikTok videos with views, likes, comments, and shares. Use when the user asks about their TikTok posts, performance, or reposts.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "How many videos to fetch (default 10, max 20)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "tiktok_post_video",
+      description: "Post a video to the user's TikTok account from a publicly accessible video URL. Video uploads as PRIVATE (SELF_ONLY) — the user reviews and flips to public in the TikTok app. ALWAYS confirm caption + URL with the user before calling this.",
+      parameters: {
+        type: "object",
+        properties: {
+          video_url: { type: "string", description: "Public HTTPS URL to an MP4 video. Must be reachable by TikTok's servers." },
+          caption: { type: "string", description: "Caption / title for the post" }
+        },
+        required: ["video_url", "caption"]
+      }
+    }
   }
 ];
+
+// ===================== TIKTOK HELPERS =====================
+async function getTikTokAccessToken(supabaseAdmin: any, userId: string): Promise<string | null> {
+  const { data: tokenRow } = await supabaseAdmin
+    .from("tiktok_tokens").select("*").eq("user_id", userId).single();
+  if (!tokenRow) return null;
+  if (new Date(tokenRow.expires_at) > new Date()) return tokenRow.access_token;
+  const clientKey = Deno.env.get("TIKTOK_CLIENT_KEY");
+  const clientSecret = Deno.env.get("TIKTOK_CLIENT_SECRET");
+  if (!clientKey || !clientSecret) return null;
+  const r = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_key: clientKey, client_secret: clientSecret,
+      grant_type: "refresh_token", refresh_token: tokenRow.refresh_token,
+    }),
+  });
+  const d = await r.json();
+  if (d.error) return null;
+  await supabaseAdmin.from("tiktok_tokens").update({
+    access_token: d.access_token, refresh_token: d.refresh_token,
+    expires_at: new Date(Date.now() + d.expires_in * 1000).toISOString(),
+  }).eq("user_id", userId);
+  return d.access_token;
+}
+
 
 // ===================== TOOL EXECUTION =====================
 async function executeTool(
