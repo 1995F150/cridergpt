@@ -20,6 +20,18 @@ interface PromptBlock {
 }
 
 const KEY = "cridergpt-android-agent-prompts-v1";
+const NOTES_KEY = "cridergpt-android-agent-sync-notes-v1";
+
+function loadNotes(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(NOTES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {};
+}
+function saveNotes(n: Record<string, string>) {
+  localStorage.setItem(NOTES_KEY, JSON.stringify(n));
+}
 
 const SEED: PromptBlock[] = [
   {
@@ -161,7 +173,10 @@ const statusColor = (s: PromptBlock["status"]) =>
   : s === "now" ? "bg-orange-500/10 text-orange-700 border-orange-200"
   : "bg-gray-500/10 text-gray-700 border-gray-200";
 
-function buildSyncBlock(): PromptBlock {
+function buildSyncBlock(customNotes?: string): PromptBlock {
+  const notesSection = customNotes && customNotes.trim().length > 0
+    ? customNotes.trim()
+    : VERSION_FEATURES.map(f => `- ${f}`).join("\n");
   return {
     id: `sync-${APP_VERSION}`,
     part: `Sync v${APP_VERSION}`,
@@ -181,7 +196,7 @@ NO missing features between web and app.
 - OAuth deep link scheme: app.cridergpt.android://oauth/<provider>
 
 == What changed in this release ==
-${VERSION_FEATURES.map(f => `- ${f}`).join("\n")}
+${notesSection}
 
 == Required Android tasks ==
 1. Sync profiles, user_subscriptions, plan_configurations — pricing must match
@@ -209,11 +224,11 @@ Generated automatically from web v${APP_VERSION} on ${new Date().toISOString()}.
   };
 }
 
-function ensureSyncBlock(list: PromptBlock[], force = false): PromptBlock[] {
+function ensureSyncBlock(list: PromptBlock[], force = false, customNotes?: string): PromptBlock[] {
   const id = `sync-${APP_VERSION}`;
   if (!force && list.some(b => b.id === id)) return list;
   const without = list.filter(b => b.id !== id);
-  return [buildSyncBlock(), ...without];
+  return [buildSyncBlock(customNotes), ...without];
 }
 
 export default function AndroidAgentPrompts() {
@@ -222,6 +237,7 @@ export default function AndroidAgentPrompts() {
   const [newTitle, setNewTitle] = useState("");
   const [newPart, setNewPart] = useState("");
   const [newBody, setNewBody] = useState("");
+  const [releaseNotes, setReleaseNotes] = useState("");
 
   useEffect(() => {
     let initial: PromptBlock[] = SEED;
@@ -229,7 +245,12 @@ export default function AndroidAgentPrompts() {
       const raw = localStorage.getItem(KEY);
       if (raw) initial = JSON.parse(raw);
     } catch {}
-    const synced = ensureSyncBlock(initial);
+    const notes = loadNotes();
+    const current = notes[APP_VERSION] ?? "";
+    setReleaseNotes(current);
+    // Always refresh the sync block for the current version using saved notes
+    const filtered = initial.filter(b => b.id !== `sync-${APP_VERSION}`);
+    const synced = ensureSyncBlock(filtered, true, current);
     setBlocks(synced);
     localStorage.setItem(KEY, JSON.stringify(synced));
   }, []);
@@ -239,11 +260,29 @@ export default function AndroidAgentPrompts() {
     localStorage.setItem(KEY, JSON.stringify(next));
   };
 
-  const regenerateSync = () => {
+  const regenerateSync = (notesOverride?: string) => {
+    const notes = notesOverride ?? releaseNotes;
     const filtered = blocks.filter(b => !b.id.startsWith("sync-"));
-    persist(ensureSyncBlock(filtered, true));
+    persist(ensureSyncBlock(filtered, true, notes));
     toast.success(`Sync prompt regenerated for v${APP_VERSION}`);
   };
+
+  const saveReleaseNotes = () => {
+    const all = loadNotes();
+    all[APP_VERSION] = releaseNotes;
+    saveNotes(all);
+    regenerateSync(releaseNotes);
+  };
+
+  const resetReleaseNotes = () => {
+    const all = loadNotes();
+    delete all[APP_VERSION];
+    saveNotes(all);
+    setReleaseNotes("");
+    regenerateSync("");
+    toast.success("Release notes reset to defaults from appVersion.ts");
+  };
+
 
 
   const copy = async (b: PromptBlock) => {
@@ -282,12 +321,40 @@ export default function AndroidAgentPrompts() {
       title="Android Agent Prompts"
       subtitle="Section-by-section prompts for the Android Studio AI agent. Copy one block at a time so the agent doesn't lose context or insert placeholders."
     >
-      <div className="flex justify-end mb-3">
-        <Button size="sm" variant="outline" onClick={regenerateSync}>
-          <RefreshCw className="w-3 h-3 mr-1" /> Regenerate sync prompt
-        </Button>
-        <Button size="sm" variant="outline" onClick={resetSeed} className="ml-2">Reset to default plan</Button>
-      </div>
+      <Card className="mb-3">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" /> Release Notes — v{APP_VERSION}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[11px] text-muted-foreground">
+            Customize what the Android agent sees in the "What changed in this release" section of the Sync v{APP_VERSION} block.
+            Leave empty to fall back to VERSION_FEATURES from appVersion.ts. One bullet per line (prefix with "- " if you want).
+          </p>
+          <Textarea
+            rows={5}
+            placeholder={"- Added Marketing Auto-Post queue\n- Fixed TikTok refresh token bug\n- Bumped pricing card"}
+            value={releaseNotes}
+            onChange={e => setReleaseNotes(e.target.value)}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={saveReleaseNotes}>
+              <Check className="w-3 h-3 mr-1" /> Save & regenerate sync block
+            </Button>
+            <Button size="sm" variant="outline" onClick={resetReleaseNotes}>
+              Reset to defaults
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => regenerateSync()}>
+              <RefreshCw className="w-3 h-3 mr-1" /> Regenerate only
+            </Button>
+            <Button size="sm" variant="outline" onClick={resetSeed} className="ml-auto">
+              Reset full plan
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
 
       <div className="space-y-3 mb-6">
         {blocks.map((b) => (
