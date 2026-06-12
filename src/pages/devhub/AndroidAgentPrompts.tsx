@@ -173,7 +173,10 @@ const statusColor = (s: PromptBlock["status"]) =>
   : s === "now" ? "bg-orange-500/10 text-orange-700 border-orange-200"
   : "bg-gray-500/10 text-gray-700 border-gray-200";
 
-function buildSyncBlock(): PromptBlock {
+function buildSyncBlock(customNotes?: string): PromptBlock {
+  const notesSection = customNotes && customNotes.trim().length > 0
+    ? customNotes.trim()
+    : VERSION_FEATURES.map(f => `- ${f}`).join("\n");
   return {
     id: `sync-${APP_VERSION}`,
     part: `Sync v${APP_VERSION}`,
@@ -193,7 +196,7 @@ NO missing features between web and app.
 - OAuth deep link scheme: app.cridergpt.android://oauth/<provider>
 
 == What changed in this release ==
-${VERSION_FEATURES.map(f => `- ${f}`).join("\n")}
+${notesSection}
 
 == Required Android tasks ==
 1. Sync profiles, user_subscriptions, plan_configurations — pricing must match
@@ -221,11 +224,11 @@ Generated automatically from web v${APP_VERSION} on ${new Date().toISOString()}.
   };
 }
 
-function ensureSyncBlock(list: PromptBlock[], force = false): PromptBlock[] {
+function ensureSyncBlock(list: PromptBlock[], force = false, customNotes?: string): PromptBlock[] {
   const id = `sync-${APP_VERSION}`;
   if (!force && list.some(b => b.id === id)) return list;
   const without = list.filter(b => b.id !== id);
-  return [buildSyncBlock(), ...without];
+  return [buildSyncBlock(customNotes), ...without];
 }
 
 export default function AndroidAgentPrompts() {
