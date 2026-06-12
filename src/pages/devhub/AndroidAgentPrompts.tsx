@@ -283,7 +283,10 @@ export default function AndroidAgentPrompts() {
       subtitle="Section-by-section prompts for the Android Studio AI agent. Copy one block at a time so the agent doesn't lose context or insert placeholders."
     >
       <div className="flex justify-end mb-3">
-        <Button size="sm" variant="outline" onClick={resetSeed}>Reset to default plan</Button>
+        <Button size="sm" variant="outline" onClick={regenerateSync}>
+          <RefreshCw className="w-3 h-3 mr-1" /> Regenerate sync prompt
+        </Button>
+        <Button size="sm" variant="outline" onClick={resetSeed} className="ml-2">Reset to default plan</Button>
       </div>
 
       <div className="space-y-3 mb-6">
