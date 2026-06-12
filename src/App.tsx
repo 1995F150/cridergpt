@@ -214,6 +214,7 @@ const App = () => {
                       <Route path="/devhub/capacitor-ios-porter" element={<DevCapacitorIOSPorter />} />
                       <Route path="/devhub/native-rebuild-prompt" element={<DevNativeRebuildPrompt />} />
                       <Route path="/devhub/admob-addon-prompt" element={<DevAdMobAddonPrompt />} />
+                      <Route path="/devhub/marketing-auto-post" element={<DevMarketingAutoPost />} />
 
 
 
