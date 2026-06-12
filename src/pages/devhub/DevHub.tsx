@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe
 } from "lucide-react";
 
 const modules = [
@@ -32,6 +32,9 @@ const modules = [
   { to: "/devhub/admob-addon-prompt", icon: Megaphone, title: "AdMob Add-On Prompt", desc: "Scope-limited prompt: wire AdMob rewarded, interstitial, and banner into an existing native app. Subscription-gated. Copy/paste ready.", tag: "Builder" },
   { to: "/devhub/marketing-auto-post", icon: Music2, title: "TikTok Marketing Auto-Post", desc: "Auto-queues a TikTok post when a new store product, SEO guide, or your livestock is added. Live queue, manual posts, runs every 15 min.", tag: "Shop + Money" },
   { to: "/devhub/android-agent-prompts", icon: ClipboardList, title: "Android Agent Prompts", desc: "Section-by-section prompts (Part 1, 2, 3...) for the Android Studio AI agent. Copy one block at a time so it doesn't get overwhelmed and leave placeholders. Add your own.", tag: "Builder" },
+  { to: "/devhub/ios-app-ideas", icon: Apple, title: "iOS App Ideas", desc: "Same 150 concepts as Android, rewritten for native Swift/SwiftUI + StoreKit 2 unlocks. Copy a Xcode/Cursor-ready prompt per idea.", tag: "iOS" },
+  { to: "/devhub/website-ideas", icon: Globe, title: "Website Ideas (Lovable)", desc: "Same 150 concepts rewritten as Lovable web prompts. Forces Supabase (not Lovable Cloud) per your preference. Copy and paste straight into a new Lovable project.", tag: "Builder" },
+  { to: "/devhub/cross-platform-release-notes", icon: ArrowRightLeft, title: "Cross-Platform Release Notes", desc: "Web vs iOS vs Android side-by-side for the current version, plus an editable feature parity matrix. One click copies a full report.", tag: "Builder" },
 ];
 
 export default function DevHub() {

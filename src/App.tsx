@@ -73,6 +73,9 @@ import DevCapacitorIOSPorter from "./pages/devhub/CapacitorIOSPorter";
 import DevNativeRebuildPrompt from "./pages/devhub/NativeRebuildPrompt";
 import DevAdMobAddonPrompt from "./pages/devhub/AdMobAddonPrompt";
 import DevAndroidAgentPrompts from "./pages/devhub/AndroidAgentPrompts";
+import DevIOSAppIdeas from "./pages/devhub/IOSAppIdeas";
+import DevWebsiteIdeas from "./pages/devhub/WebsiteIdeas";
+import DevCrossPlatformReleaseNotes from "./pages/devhub/CrossPlatformReleaseNotes";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -217,6 +220,9 @@ const App = () => {
                       <Route path="/devhub/admob-addon-prompt" element={<DevAdMobAddonPrompt />} />
                       <Route path="/devhub/marketing-auto-post" element={<DevMarketingAutoPost />} />
                       <Route path="/devhub/android-agent-prompts" element={<DevAndroidAgentPrompts />} />
+                      <Route path="/devhub/ios-app-ideas" element={<DevIOSAppIdeas />} />
+                      <Route path="/devhub/website-ideas" element={<DevWebsiteIdeas />} />
+                      <Route path="/devhub/cross-platform-release-notes" element={<DevCrossPlatformReleaseNotes />} />
 
 
 
