@@ -161,6 +161,61 @@ const statusColor = (s: PromptBlock["status"]) =>
   : s === "now" ? "bg-orange-500/10 text-orange-700 border-orange-200"
   : "bg-gray-500/10 text-gray-700 border-gray-200";
 
+function buildSyncBlock(): PromptBlock {
+  return {
+    id: `sync-${APP_VERSION}`,
+    part: `Sync v${APP_VERSION}`,
+    title: `Auto-Sync — ${VERSION_NAME}`,
+    status: "now",
+    body: `# Android Agent Auto-Sync Prompt — v${APP_VERSION} (${RELEASE_DATE})
+Release: ${VERSION_NAME}
+
+Goal: Bring the native Android app (android_app/, package app.cridergpt.android)
+into parity with the web build at https://cridergpt.lovable.app so users see
+NO missing features between web and app.
+
+== Backend constants ==
+- Supabase URL: https://udpldrrpebdyuiqdtqnq.supabase.co
+- Anon key: BuildConfig.SUPABASE_ANON_KEY
+- Edge functions base: <SUPABASE_URL>/functions/v1/
+- OAuth deep link scheme: app.cridergpt.android://oauth/<provider>
+
+== What changed in this release ==
+${VERSION_FEATURES.map(f => `- ${f}`).join("\n")}
+
+== Required Android tasks ==
+1. Sync profiles, user_subscriptions, plan_configurations — pricing must match
+   web (Plus $3/mo, Pro $7/mo, Lifetime $30).
+2. For each new supabase.functions.invoke('...') call in src/pages or src/hooks,
+   add the Kotlin equivalent in NetworkClient.kt.
+3. Strip any re-introduced placeholders ("John Doe", "user@example.com").
+4. Re-verify owner gating via RPC is_owner(auth.uid()). DevHub hidden otherwise.
+5. Marketing Auto-Post: Realtime sub on marketing_auto_post_queue + POST to
+   /functions/v1/marketing-auto-post still works.
+6. TikTok: Chrome Custom Tab → /functions/v1/tiktok-auth round-trip writes
+   tiktok_tokens.
+
+== Verification ==
+- Settings shows version ${APP_VERSION}
+- Google + email sign-in on clean install
+- Every web screen reachable in drawer or DevHub
+- Dark mode persists across cold start
+
+DO NOT modify the android/ folder (externally managed) or bump build.gradle
+dependency versions. Only touch android_app/.
+
+Generated automatically from web v${APP_VERSION} on ${new Date().toISOString()}.`,
+    createdAt: Date.now(),
+  };
+}
+
+function ensureSyncBlock(list: PromptBlock[], force = false): PromptBlock[] {
+  const id = `sync-${APP_VERSION}`;
+  if (!force && list.some(b => b.id === id)) return list;
+  const without = list.filter(b => b.id !== id);
+  return [buildSyncBlock(), ...without];
+}
+
 export default function AndroidAgentPrompts() {
   const [blocks, setBlocks] = useState<PromptBlock[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
