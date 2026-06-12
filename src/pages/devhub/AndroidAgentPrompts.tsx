@@ -169,23 +169,27 @@ export default function AndroidAgentPrompts() {
   const [newBody, setNewBody] = useState("");
 
   useEffect(() => {
+    let initial: PromptBlock[] = SEED;
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) {
-        setBlocks(JSON.parse(raw));
-      } else {
-        setBlocks(SEED);
-        localStorage.setItem(KEY, JSON.stringify(SEED));
-      }
-    } catch {
-      setBlocks(SEED);
-    }
+      if (raw) initial = JSON.parse(raw);
+    } catch {}
+    const synced = ensureSyncBlock(initial);
+    setBlocks(synced);
+    localStorage.setItem(KEY, JSON.stringify(synced));
   }, []);
 
   const persist = (next: PromptBlock[]) => {
     setBlocks(next);
     localStorage.setItem(KEY, JSON.stringify(next));
   };
+
+  const regenerateSync = () => {
+    const filtered = blocks.filter(b => !b.id.startsWith("sync-"));
+    persist(ensureSyncBlock(filtered, true));
+    toast.success(`Sync prompt regenerated for v${APP_VERSION}`);
+  };
+
 
   const copy = async (b: PromptBlock) => {
     await navigator.clipboard.writeText(b.body);
