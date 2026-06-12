@@ -127,6 +127,26 @@ const SEED: DebugNote[] = [
     fix: "Either (a) hide these from the iOS drawer until they ship, or (b) render the real web-app version inside an in-app WebView so they’re not empty. RDR2 Guide and USB Hub already exist on web — wire those first. Add a ‘Beta’ badge for ones that are intentionally stubs.",
     createdAt: new Date().toISOString(),
   },
+  {
+    id: "seed-11",
+    platform: "android",
+    screen: "Livestock → Scan tab (scan-tag edge function)",
+    severity: "high",
+    status: "open",
+    issue: "Tapping the big yellow SCAN button with an empty Tag ID input fires the edge function and shows toast: `Scan failed: {\"error\":\"tag_id is required\"}`. Native should never call the function without a tag_id — the button should be disabled or short-circuit with a friendly ‘Enter or tap a tag first’ message.",
+    fix: "In the native Scan screen: disable the SCAN button while the input is empty (mirror web TagScanner which already does `disabled={!manualTag.trim()}`). Also trim+validate the CriderGPT-XXXXXX format client-side before invoking the edge function. Replace the raw JSON error toast with a humanized message.",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "seed-12",
+    platform: "android",
+    screen: "Auth → Google Sign-In (GoogleSignInClient + Web Client ID)",
+    severity: "blocker",
+    status: "open",
+    issue: "Google sign-in keeps failing on the native Android app. Using the Web OAuth Client ID (117996162498-3k9k9kdpt6elh5mdtd4sjqb2v22h4b89...) in AuthFragment.kt's `requestIdToken(...)`. Common failure causes: (1) SHA-1 of the signing key isn't registered on an Android-type OAuth client in Google Cloud Console, (2) using Web client ID alone without a matching Android client ID + SHA-1, (3) package name `app.cridergpt.android` vs `com.cridergpt.android` mismatch — AndroidManifest uses `com.cridergpt.android` but the memory says deep link scheme is `app.cridergpt.android`.",
+    fix: "Two valid paths: (A) Keep native GoogleSignIn — create an **Android** OAuth Client ID in Google Cloud with the exact package name from AndroidManifest (`com.cridergpt.android`) and the SHA-1 of your release + debug keystores (`keytool -list -v -keystore ...`). Keep `requestIdToken(WEB_CLIENT_ID)` — the Web ID is correct for the token audience, but the Android client must also exist so Google Play Services trusts the app. (B) Drop GoogleSignIn SDK entirely and use the SHA-1-free Chrome Custom Tabs + Supabase OAuth flow already implemented in `src/components/GoogleSignInButton.tsx` — redirect to `com.cridergpt.android://oauth` (match your manifest scheme), no SHA-1 ever required. Recommended: option B for parity with web and zero Firebase/SHA maintenance.",
+    createdAt: new Date().toISOString(),
+  },
 ];
 
 const sevColor: Record<Severity, string> = {
