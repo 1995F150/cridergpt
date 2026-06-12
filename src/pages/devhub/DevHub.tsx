@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug
 } from "lucide-react";
 
 const modules = [
@@ -35,6 +35,7 @@ const modules = [
   { to: "/devhub/ios-app-ideas", icon: Apple, title: "iOS App Ideas", desc: "Same 150 concepts as Android, rewritten for native Swift/SwiftUI + StoreKit 2 unlocks. Copy a Xcode/Cursor-ready prompt per idea.", tag: "iOS" },
   { to: "/devhub/website-ideas", icon: Globe, title: "Website Ideas (Lovable)", desc: "Same 150 concepts rewritten as Lovable web prompts. Forces Supabase (not Lovable Cloud) per your preference. Copy and paste straight into a new Lovable project.", tag: "Builder" },
   { to: "/devhub/cross-platform-release-notes", icon: ArrowRightLeft, title: "Cross-Platform Release Notes", desc: "Web vs iOS vs Android side-by-side for the current version, plus an editable feature parity matrix. One click copies a full report.", tag: "Builder" },
+  { to: "/devhub/native-debug-notes", icon: Bug, title: "Native App Debug Notes", desc: "Log iOS/Android bugs you see in the live app (drawer overlay, Google sign-in error, NFC button on iPhone, etc.). Severity + status + copy-as-markdown report.", tag: "iOS" },
 ];
 
 export default function DevHub() {

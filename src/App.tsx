@@ -76,6 +76,7 @@ import DevAndroidAgentPrompts from "./pages/devhub/AndroidAgentPrompts";
 import DevIOSAppIdeas from "./pages/devhub/IOSAppIdeas";
 import DevWebsiteIdeas from "./pages/devhub/WebsiteIdeas";
 import DevCrossPlatformReleaseNotes from "./pages/devhub/CrossPlatformReleaseNotes";
+import DevNativeAppDebugNotes from "./pages/devhub/NativeAppDebugNotes";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -222,7 +223,8 @@ const App = () => {
                       <Route path="/devhub/android-agent-prompts" element={<DevAndroidAgentPrompts />} />
                       <Route path="/devhub/ios-app-ideas" element={<DevIOSAppIdeas />} />
                       <Route path="/devhub/website-ideas" element={<DevWebsiteIdeas />} />
-                      <Route path="/devhub/cross-platform-release-notes" element={<DevCrossPlatformReleaseNotes />} />
+                     <Route path="/devhub/cross-platform-release-notes" element={<DevCrossPlatformReleaseNotes />} />
+                     <Route path="/devhub/native-debug-notes" element={<DevNativeAppDebugNotes />} />
 
 
 
