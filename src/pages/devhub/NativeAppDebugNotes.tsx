@@ -24,12 +24,12 @@ interface DebugNote {
   createdAt: string;
 }
 
-const STORAGE_KEY = "cridergpt_native_debug_notes_v2";
+const STORAGE_KEY = "cridergpt_native_debug_notes_v3";
 
 const SEED: DebugNote[] = [
   {
     id: "seed-1",
-    platform: "ios",
+    platform: "android",
     screen: "Auth / Sign In",
     severity: "high",
     status: "open",
@@ -39,7 +39,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-2",
-    platform: "ios",
+    platform: "android",
     screen: "Side Drawer / Menu",
     severity: "med",
     status: "open",
@@ -49,7 +49,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-3",
-    platform: "ios",
+    platform: "android",
     screen: "Payment / Subscription",
     severity: "blocker",
     status: "open",
@@ -59,7 +59,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-4",
-    platform: "ios",
+    platform: "android",
     screen: "Livestock / Scan Tag",
     severity: "med",
     status: "open",
@@ -69,7 +69,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-5",
-    platform: "ios",
+    platform: "android",
     screen: "Chat / Welcome",
     severity: "low",
     status: "open",
@@ -79,7 +79,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-6",
-    platform: "ios",
+    platform: "android",
     screen: "Chat / Send Message",
     severity: "blocker",
     status: "open",
@@ -89,7 +89,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-7",
-    platform: "ios",
+    platform: "android",
     screen: "Camera / Gallery Sheet",
     severity: "med",
     status: "open",
@@ -99,7 +99,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-8",
-    platform: "ios",
+    platform: "android",
     screen: "Settings / Dark Mode + Notifications",
     severity: "high",
     status: "open",
@@ -109,7 +109,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-9",
-    platform: "ios",
+    platform: "android",
     screen: "Receipts",
     severity: "low",
     status: "open",
@@ -119,7 +119,7 @@ const SEED: DebugNote[] = [
   },
   {
     id: "seed-10",
-    platform: "ios",
+    platform: "android",
     screen: "Placeholder modules (Timeline, Updates, RDR2 Guide, USB Hub, Sensors, Code Editor)",
     severity: "med",
     status: "open",
