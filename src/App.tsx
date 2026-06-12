@@ -72,6 +72,7 @@ import DevSwiftCodeGenerator from "./pages/devhub/SwiftCodeGenerator";
 import DevCapacitorIOSPorter from "./pages/devhub/CapacitorIOSPorter";
 import DevNativeRebuildPrompt from "./pages/devhub/NativeRebuildPrompt";
 import DevAdMobAddonPrompt from "./pages/devhub/AdMobAddonPrompt";
+import DevAndroidAgentPrompts from "./pages/devhub/AndroidAgentPrompts";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -215,6 +216,7 @@ const App = () => {
                       <Route path="/devhub/native-rebuild-prompt" element={<DevNativeRebuildPrompt />} />
                       <Route path="/devhub/admob-addon-prompt" element={<DevAdMobAddonPrompt />} />
                       <Route path="/devhub/marketing-auto-post" element={<DevMarketingAutoPost />} />
+                      <Route path="/devhub/android-agent-prompts" element={<DevAndroidAgentPrompts />} />
 
 
 

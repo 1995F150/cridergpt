@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList
 } from "lucide-react";
 
 const modules = [
@@ -31,6 +31,7 @@ const modules = [
   { to: "/devhub/native-rebuild-prompt", icon: Rocket, title: "CriderGPT Full-Native Rebuild Prompt", desc: "One giant master prompt: Android (Kotlin) + iOS (Swift) + Desktop (Tauri). All 60+ features, same Supabase. Copy/paste into Cursor or Claude Code.", tag: "Builder" },
   { to: "/devhub/admob-addon-prompt", icon: Megaphone, title: "AdMob Add-On Prompt", desc: "Scope-limited prompt: wire AdMob rewarded, interstitial, and banner into an existing native app. Subscription-gated. Copy/paste ready.", tag: "Builder" },
   { to: "/devhub/marketing-auto-post", icon: Music2, title: "TikTok Marketing Auto-Post", desc: "Auto-queues a TikTok post when a new store product, SEO guide, or your livestock is added. Live queue, manual posts, runs every 15 min.", tag: "Shop + Money" },
+  { to: "/devhub/android-agent-prompts", icon: ClipboardList, title: "Android Agent Prompts", desc: "Section-by-section prompts (Part 1, 2, 3...) for the Android Studio AI agent. Copy one block at a time so it doesn't get overwhelmed and leave placeholders. Add your own.", tag: "Builder" },
 ];
 
 export default function DevHub() {
