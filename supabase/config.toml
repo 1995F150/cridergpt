@@ -87,3 +87,6 @@ verify_jwt = false
 
 [functions.play-rtdn]
 verify_jwt = false
+
+[functions.marketing-auto-post]
+verify_jwt = false

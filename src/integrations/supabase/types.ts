@@ -2777,6 +2777,63 @@ export type Database = {
           },
         ]
       }
+      marketing_auto_post_queue: {
+        Row: {
+          attempts: number
+          caption: string
+          created_at: string
+          error: string | null
+          id: string
+          media_url: string | null
+          posted_at: string | null
+          privacy_level: string
+          scheduled_for: string
+          source: string
+          source_id: string | null
+          status: string
+          tiktok_post_url: string | null
+          tiktok_publish_id: string | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          attempts?: number
+          caption: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          media_url?: string | null
+          posted_at?: string | null
+          privacy_level?: string
+          scheduled_for?: string
+          source: string
+          source_id?: string | null
+          status?: string
+          tiktok_post_url?: string | null
+          tiktok_publish_id?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          attempts?: number
+          caption?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          media_url?: string | null
+          posted_at?: string | null
+          privacy_level?: string
+          scheduled_for?: string
+          source?: string
+          source_id?: string | null
+          status?: string
+          tiktok_post_url?: string | null
+          tiktok_publish_id?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       media_generations: {
         Row: {
           character_ids: string[] | null
