@@ -687,8 +687,70 @@ async function executeTool(
       }
     }
 
+    case "tiktok_get_profile": {
+      const token = await getTikTokAccessToken(supabaseAdmin, userId);
+      if (!token) return { result: "TikTok is not connected. Connect it in DevHub → Integrations.", status_emoji: "🔌", status_text: "TikTok not connected" };
+      const r = await fetch("https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const d = await r.json();
+      if (!r.ok || d.error?.code !== "ok") return { result: `TikTok error: ${d.error?.message || r.status}`, status_emoji: "❌", status_text: "TikTok profile failed" };
+      const u = d.data?.user || {};
+      return {
+        result: `@${u.display_name}\nFollowers: ${u.follower_count ?? "?"} · Following: ${u.following_count ?? "?"}\nVideos: ${u.video_count ?? "?"} · Total likes: ${u.likes_count ?? "?"}`,
+        status_emoji: "🎵", status_text: `TikTok: ${u.display_name || "profile"}`
+      };
+    }
+
+    case "tiktok_list_videos": {
+      const token = await getTikTokAccessToken(supabaseAdmin, userId);
+      if (!token) return { result: "TikTok is not connected. Connect it in DevHub → Integrations.", status_emoji: "🔌", status_text: "TikTok not connected" };
+      const max_count = Math.min(args.limit || 10, 20);
+      const r = await fetch("https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,create_time,cover_image_url,share_url,view_count,like_count,comment_count,share_count,duration", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ max_count })
+      });
+      const d = await r.json();
+      if (!r.ok || d.error?.code !== "ok") return { result: `TikTok error: ${d.error?.message || r.status}`, status_emoji: "❌", status_text: "TikTok list failed" };
+      const videos = d.data?.videos || [];
+      if (!videos.length) return { result: "No videos found on the connected TikTok account.", status_emoji: "🎵", status_text: "No TikTok videos" };
+      const formatted = videos.map((v: any, i: number) => {
+        const when = v.create_time ? new Date(v.create_time * 1000).toLocaleDateString() : "?";
+        const title = v.title || v.video_description || "(no caption)";
+        return `${i + 1}. "${title.slice(0, 80)}" — ${when}\n   👀 ${v.view_count ?? 0} · ❤️ ${v.like_count ?? 0} · 💬 ${v.comment_count ?? 0} · 🔁 ${v.share_count ?? 0}\n   ${v.share_url || ""}`;
+      }).join("\n\n");
+      return { result: `Last ${videos.length} TikTok posts:\n\n${formatted}`, status_emoji: "🎵", status_text: `${videos.length} TikTok videos` };
+    }
+
+    case "tiktok_post_video": {
+      if (!args.video_url || !args.caption) return { result: "Need both video_url and caption.", status_emoji: "❌", status_text: "Missing fields" };
+      const token = await getTikTokAccessToken(supabaseAdmin, userId);
+      if (!token) return { result: "TikTok is not connected. Connect it in DevHub → Integrations.", status_emoji: "🔌", status_text: "TikTok not connected" };
+      const r = await fetch("https://open.tiktokapis.com/v2/post/publish/video/init/", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          post_info: {
+            title: args.caption.slice(0, 2200),
+            privacy_level: "SELF_ONLY",
+            disable_duet: false, disable_comment: false, disable_stitch: false,
+          },
+          source_info: { source: "PULL_FROM_URL", video_url: args.video_url }
+        })
+      });
+      const d = await r.json();
+      if (!r.ok || d.error?.code !== "ok") return { result: `TikTok post failed: ${d.error?.message || r.status}`, status_emoji: "❌", status_text: "TikTok post failed" };
+      const publishId = d.data?.publish_id;
+      return {
+        result: `Queued to TikTok as PRIVATE (SELF_ONLY).\nPublish ID: ${publishId}\nOpen the TikTok app → Inbox to review and flip to Public.`,
+        status_emoji: "🎵", status_text: "Posted to TikTok (private)"
+      };
+    }
+
     default:
       return { result: `Unknown tool: ${toolName}`, status_emoji: "❓", status_text: "Unknown tool" };
+
   }
 }
 
