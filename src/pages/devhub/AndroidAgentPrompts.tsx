@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Plus, Trash2, ClipboardList, Check } from "lucide-react";
+import { Copy, Plus, Trash2, ClipboardList, Check, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { APP_VERSION, VERSION_NAME, RELEASE_DATE, VERSION_FEATURES } from "@/config/appVersion";
+
 
 interface PromptBlock {
   id: string;
