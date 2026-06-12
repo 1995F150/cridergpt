@@ -20,6 +20,18 @@ interface PromptBlock {
 }
 
 const KEY = "cridergpt-android-agent-prompts-v1";
+const NOTES_KEY = "cridergpt-android-agent-sync-notes-v1";
+
+function loadNotes(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(NOTES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {};
+}
+function saveNotes(n: Record<string, string>) {
+  localStorage.setItem(NOTES_KEY, JSON.stringify(n));
+}
 
 const SEED: PromptBlock[] = [
   {
