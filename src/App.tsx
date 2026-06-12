@@ -72,6 +72,7 @@ import DevSwiftCodeGenerator from "./pages/devhub/SwiftCodeGenerator";
 import DevCapacitorIOSPorter from "./pages/devhub/CapacitorIOSPorter";
 import DevNativeRebuildPrompt from "./pages/devhub/NativeRebuildPrompt";
 import DevAdMobAddonPrompt from "./pages/devhub/AdMobAddonPrompt";
+import DevAndroidAgentPrompts from "./pages/devhub/AndroidAgentPrompts";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
