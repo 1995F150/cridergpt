@@ -237,6 +237,7 @@ export default function AndroidAgentPrompts() {
   const [newTitle, setNewTitle] = useState("");
   const [newPart, setNewPart] = useState("");
   const [newBody, setNewBody] = useState("");
+  const [releaseNotes, setReleaseNotes] = useState("");
 
   useEffect(() => {
     let initial: PromptBlock[] = SEED;
@@ -244,7 +245,12 @@ export default function AndroidAgentPrompts() {
       const raw = localStorage.getItem(KEY);
       if (raw) initial = JSON.parse(raw);
     } catch {}
-    const synced = ensureSyncBlock(initial);
+    const notes = loadNotes();
+    const current = notes[APP_VERSION] ?? "";
+    setReleaseNotes(current);
+    // Always refresh the sync block for the current version using saved notes
+    const filtered = initial.filter(b => b.id !== `sync-${APP_VERSION}`);
+    const synced = ensureSyncBlock(filtered, true, current);
     setBlocks(synced);
     localStorage.setItem(KEY, JSON.stringify(synced));
   }, []);
@@ -254,11 +260,29 @@ export default function AndroidAgentPrompts() {
     localStorage.setItem(KEY, JSON.stringify(next));
   };
 
-  const regenerateSync = () => {
+  const regenerateSync = (notesOverride?: string) => {
+    const notes = notesOverride ?? releaseNotes;
     const filtered = blocks.filter(b => !b.id.startsWith("sync-"));
-    persist(ensureSyncBlock(filtered, true));
+    persist(ensureSyncBlock(filtered, true, notes));
     toast.success(`Sync prompt regenerated for v${APP_VERSION}`);
   };
+
+  const saveReleaseNotes = () => {
+    const all = loadNotes();
+    all[APP_VERSION] = releaseNotes;
+    saveNotes(all);
+    regenerateSync(releaseNotes);
+  };
+
+  const resetReleaseNotes = () => {
+    const all = loadNotes();
+    delete all[APP_VERSION];
+    saveNotes(all);
+    setReleaseNotes("");
+    regenerateSync("");
+    toast.success("Release notes reset to defaults from appVersion.ts");
+  };
+
 
 
   const copy = async (b: PromptBlock) => {
