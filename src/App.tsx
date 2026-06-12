@@ -65,6 +65,7 @@ import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
 import DevBuilderResources from "./pages/devhub/BuilderResources";
 import DevAdNetworks from "./pages/devhub/AdNetworks";
 import DevBackendBlueprints from "./pages/devhub/BackendBlueprints";
+import DevMarketingAutoPost from "./pages/devhub/MarketingAutoPost";
 import DevIOSBuilder from "./pages/devhub/IOSBuilder";
 import DevIOSAssetStudio from "./pages/devhub/IOSAssetStudio";
 import DevSwiftCodeGenerator from "./pages/devhub/SwiftCodeGenerator";
@@ -213,6 +214,7 @@ const App = () => {
                       <Route path="/devhub/capacitor-ios-porter" element={<DevCapacitorIOSPorter />} />
                       <Route path="/devhub/native-rebuild-prompt" element={<DevNativeRebuildPrompt />} />
                       <Route path="/devhub/admob-addon-prompt" element={<DevAdMobAddonPrompt />} />
+                      <Route path="/devhub/marketing-auto-post" element={<DevMarketingAutoPost />} />
 
 
 
