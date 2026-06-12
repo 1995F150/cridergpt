@@ -24,7 +24,7 @@ interface DebugNote {
   createdAt: string;
 }
 
-const STORAGE_KEY = "cridergpt_native_debug_notes_v1";
+const STORAGE_KEY = "cridergpt_native_debug_notes_v2";
 
 const SEED: DebugNote[] = [
   {
