@@ -46,9 +46,9 @@ type DBIdea = {
   icon_url: string | null;
 };
 
-type Idea = { name: string; pkg: string; desc: string; price: number };
+export type Idea = { name: string; pkg: string; desc: string; price: number };
 
-const IDEAS: Idea[] = [
+export const IDEAS: Idea[] = [
   // Premium Flagship Suites ($199+)
   { name: "CriderOps Ranch Command Center", pkg: "com.crider.ranchcommand", desc: "Enterprise-grade ranch operations platform: multi-property livestock, employee payroll/timecards, equipment fleet, GPS pasture mapping, AI yield forecasting, integrated accounting, USDA-compliant traceability exports, custom dashboards for owners + foremen. Lifetime license.", price: 399.00 },
   { name: "WeldShop Enterprise Suite", pkg: "com.crider.weldshopent", desc: "Complete fabrication shop manager: job estimating, AWS-compliant WPS/PQR documentation, welder certification tracking, material inventory, customer CRM, invoicing, photo job logs, multi-user shop floor terminals. Lifetime license.", price: 299.00 },
