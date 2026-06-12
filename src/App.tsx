@@ -216,6 +216,7 @@ const App = () => {
                       <Route path="/devhub/native-rebuild-prompt" element={<DevNativeRebuildPrompt />} />
                       <Route path="/devhub/admob-addon-prompt" element={<DevAdMobAddonPrompt />} />
                       <Route path="/devhub/marketing-auto-post" element={<DevMarketingAutoPost />} />
+                      <Route path="/devhub/android-agent-prompts" element={<DevAndroidAgentPrompts />} />
 
 
 
