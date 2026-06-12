@@ -24,7 +24,7 @@ interface DebugNote {
   createdAt: string;
 }
 
-const STORAGE_KEY = "cridergpt_native_debug_notes_v4";
+const STORAGE_KEY = "cridergpt_native_debug_notes_v5";
 
 const SEED: DebugNote[] = [
   {
@@ -140,11 +140,11 @@ const SEED: DebugNote[] = [
   {
     id: "seed-12",
     platform: "android",
-    screen: "Auth → Google Sign-In (GoogleSignInClient + Web Client ID)",
+    screen: "Auth → Google Sign-In (Android OAuth client + Web Client ID wiring)",
     severity: "blocker",
     status: "open",
-    issue: "Google sign-in keeps failing on the native Android app. Using the Web OAuth Client ID (117996162498-3k9k9kdpt6elh5mdtd4sjqb2v22h4b89...) in AuthFragment.kt's `requestIdToken(...)`. Common failure causes: (1) SHA-1 of the signing key isn't registered on an Android-type OAuth client in Google Cloud Console, (2) using Web client ID alone without a matching Android client ID + SHA-1, (3) package name `app.cridergpt.android` vs `com.cridergpt.android` mismatch — AndroidManifest uses `com.cridergpt.android` but the memory says deep link scheme is `app.cridergpt.android`.",
-    fix: "Two valid paths: (A) Keep native GoogleSignIn — create an **Android** OAuth Client ID in Google Cloud with the exact package name from AndroidManifest (`com.cridergpt.android`) and the SHA-1 of your release + debug keystores (`keytool -list -v -keystore ...`). Keep `requestIdToken(WEB_CLIENT_ID)` — the Web ID is correct for the token audience, but the Android client must also exist so Google Play Services trusts the app. (B) Drop GoogleSignIn SDK entirely and use the SHA-1-free Chrome Custom Tabs + Supabase OAuth flow already implemented in `src/components/GoogleSignInButton.tsx` — redirect to `com.cridergpt.android://oauth` (match your manifest scheme), no SHA-1 ever required. Recommended: option B for parity with web and zero Firebase/SHA maintenance.",
+    issue: "Google sign-in keeps failing on the native Android app even though the owner says the Google Cloud side was set up correctly: an Android OAuth client labeled ‘Project GPT Native’ was created with the package name, release SHA-1 for Google Play production signing, and bundle/app setup completed. A Web Client ID was also baked into the native app and added on the backend/Supabase provider side. This points less to ‘owner forgot Android OAuth setup’ and more to a wiring/config mismatch between the native app, Google Cloud, Play App Signing certificate, Supabase provider, and package/deep-link values.",
+    fix: "Do not assume the user used the wrong client type. Audit the actual native config: find where the Web Client ID is stored (`requestIdToken(...)`, strings.xml, BuildConfig, google-services.json, or auth config), confirm it exactly matches the Web OAuth client configured in Supabase Google provider, and confirm Google Cloud has a matching Android OAuth client for the exact applicationId/package used by the release build. In Play Console, compare both Upload certificate SHA-1 and App signing certificate SHA-1; Google Sign-In release builds usually need the Play App Signing SHA-1, not just the local upload key. Also verify the release build package (`app.cridergpt.android` vs any old `com.cridergpt.android`) and redirect/deep-link scheme match everywhere. Add native logcat around the sign-in failure to capture the exact status code (ex: DEVELOPER_ERROR 10).",
     createdAt: new Date().toISOString(),
   },
 ];
@@ -182,7 +182,7 @@ export default function NativeAppDebugNotes() {
   const addNote = () => {
     setNotes(n => [{
       id: crypto.randomUUID(),
-      platform: "ios",
+      platform: "android",
       screen: "",
       severity: "med",
       status: "open",
