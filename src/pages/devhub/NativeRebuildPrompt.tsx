@@ -133,7 +133,7 @@ const PLATFORM_BLOCKS = {
 **Supabase wiring:**
 - Add gradle: \`io.github.jan-tennert.supabase:postgrest-kt\`, \`gotrue-kt\`, \`realtime-kt\`, \`storage-kt\`, \`functions-kt\` (latest).
 - \`SupabaseClient\` singleton injected via Hilt with URL + anon key (below).
-- Google Sign-In: \`@capacitor/browser\`-style Custom Tabs flow — NO Firebase, NO SHA-1 required. Deep link \`app.cridergpt.android://oauth-callback\`.
+- Google Sign-In: Chrome Custom Tabs (Android) / ASWebAuthenticationSession (iOS) — NO Firebase, NO SHA-1 required. Deep link \`app.cridergpt.android://oauth-callback\`.
 
 **NFC:** \`NfcAdapter\` foreground dispatch, write plain-text \`CriderGPT-XXXXXX\` via NDEF text record. NEVER lock the tag.
 

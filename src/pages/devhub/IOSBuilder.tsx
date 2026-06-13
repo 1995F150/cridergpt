@@ -114,7 +114,7 @@ eas submit --platform ios --latest`;
           </Card>
           <Card>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm">app.json (Expo + Capacitor compatible)</CardTitle>
+              <CardTitle className="text-sm">app.json (Expo compatible)</CardTitle>
               <Button size="sm" variant="ghost" onClick={() => copy("app.json", appJson)}><Copy className="w-3 h-3 mr-1" />Copy</Button>
             </CardHeader>
             <CardContent><Textarea readOnly value={appJson} className="font-mono text-xs h-64" /></CardContent>

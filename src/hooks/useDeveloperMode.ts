@@ -113,7 +113,7 @@ function getDefaultCommands(): DeveloperCommands {
   return {
     android_build: [
       { step: 1, name: 'Clone & Install', command: 'git clone https://github.com/1995F150/cridergpt.git && cd cridergpt && npm install' },
-      { step: 2, name: 'Install Capacitor', command: 'npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen @capacitor/status-bar @capacitor/keyboard @capacitor/app @codetrix-studio/capacitor-google-auth' },
+      { step: 2, name: 'Native Android (Kotlin)', command: 'cd android_app && ./gradlew assembleRelease' },
       { step: 3, name: 'Build Project', command: 'npm run build' },
       { step: 4, name: 'Add Android Platform', command: 'npx cap add android' },
       { step: 5, name: 'Sync to Android', command: 'npx cap sync android' },
@@ -125,7 +125,7 @@ function getDefaultCommands(): DeveloperCommands {
       { name: 'Full Setup (Build + Sync + Open)', command: 'npm run build && npx cap sync android && npx cap open android' },
       { name: 'Check Issues', command: 'npm run lint' },
       { name: 'Update Dependencies', command: 'npm update' },
-      { name: 'Capacitor Doctor', command: 'npx cap doctor' },
+      { name: 'Gradle Doctor', command: 'cd android_app && ./gradlew --status' },
       { name: 'Clear Cache & Rebuild', command: 'rm -rf node_modules dist && npm install && npm run build' },
       { name: 'View Android Logs', command: 'adb logcat' },
       { name: 'List Connected Devices', command: 'adb devices' },

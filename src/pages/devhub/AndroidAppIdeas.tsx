@@ -594,7 +594,7 @@ function builderIntro(tool: string): string {
     case "bolt":
       return "You are an expert Expo React Native engineer in Bolt.new. Scaffold a production-ready mobile app ready to publish via EAS Build.";
     case "lovable":
-      return "You are an expert React + Vite + Tailwind engineer in Lovable. Scaffold a production-ready installable PWA, optionally wrappable with Capacitor for native stores.";
+      return "You are an expert React + Vite + Tailwind engineer in Lovable. Scaffold a production-ready installable PWA. For native stores, use the dedicated native Android (Kotlin) and iOS (Swift) prompts in the Dev Hub.";
     case "a0dev":
       return "You are an expert Expo engineer in a0.dev. Scaffold a production-ready mobile app with live QR preview support.";
     case "replit":
