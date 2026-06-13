@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat
 } from "lucide-react";
 
 const modules = [
@@ -36,6 +36,9 @@ const modules = [
   { to: "/devhub/website-ideas", icon: Globe, title: "Website Ideas (Lovable)", desc: "Same 150 concepts rewritten as Lovable web prompts. Forces Supabase (not Lovable Cloud) per your preference. Copy and paste straight into a new Lovable project.", tag: "Builder" },
   { to: "/devhub/cross-platform-release-notes", icon: ArrowRightLeft, title: "Cross-Platform Release Notes", desc: "Web vs iOS vs Android side-by-side for the current version, plus an editable feature parity matrix. One click copies a full report.", tag: "Builder" },
   { to: "/devhub/native-debug-notes", icon: Bug, title: "Native App Debug Notes", desc: "Log iOS/Android bugs you see in the live app (drawer overlay, Google sign-in error, NFC button on iPhone, etc.). Severity + status + copy-as-markdown report.", tag: "iOS" },
+  { to: "/devhub/subscription-ideas-android", icon: Repeat, title: "1,000 Android Subscription Ideas", desc: "Recurring-revenue companion concepts to the 150 one-time Android apps. Filter by category + tier, copy a Kotlin/Compose + Play Billing prompt per idea.", tag: "Builder" },
+  { to: "/devhub/subscription-ideas-ios", icon: Repeat, title: "1,000 iOS Subscription Ideas", desc: "Same 1,000 ideas rewritten for native Swift/SwiftUI + StoreKit 2 auto-renewing subscriptions.", tag: "iOS" },
+  { to: "/devhub/subscription-ideas-web", icon: Repeat, title: "1,000 Web Subscription Ideas", desc: "Same 1,000 ideas as Lovable web prompts with Stripe Subscriptions (monthly + yearly) and Supabase RLS.", tag: "Builder" },
 ];
 
 export default function DevHub() {

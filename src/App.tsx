@@ -74,6 +74,9 @@ import DevIOSAppIdeas from "./pages/devhub/IOSAppIdeas";
 import DevWebsiteIdeas from "./pages/devhub/WebsiteIdeas";
 import DevCrossPlatformReleaseNotes from "./pages/devhub/CrossPlatformReleaseNotes";
 import DevNativeAppDebugNotes from "./pages/devhub/NativeAppDebugNotes";
+import DevSubscriptionIdeasAndroid from "./pages/devhub/SubscriptionIdeasAndroid";
+import DevSubscriptionIdeasIOS from "./pages/devhub/SubscriptionIdeasIOS";
+import DevSubscriptionIdeasWeb from "./pages/devhub/SubscriptionIdeasWeb";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -182,7 +185,10 @@ const App = () => {
                       <Route path="/devhub/ios-app-ideas" element={<DevIOSAppIdeas />} />
                       <Route path="/devhub/website-ideas" element={<DevWebsiteIdeas />} />
                      <Route path="/devhub/cross-platform-release-notes" element={<DevCrossPlatformReleaseNotes />} />
-                     <Route path="/devhub/native-debug-notes" element={<DevNativeAppDebugNotes />} />
+                    <Route path="/devhub/native-debug-notes" element={<DevNativeAppDebugNotes />} />
+                    <Route path="/devhub/subscription-ideas-android" element={<DevSubscriptionIdeasAndroid />} />
+                    <Route path="/devhub/subscription-ideas-ios" element={<DevSubscriptionIdeasIOS />} />
+                    <Route path="/devhub/subscription-ideas-web" element={<DevSubscriptionIdeasWeb />} />
 
 
 
