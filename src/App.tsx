@@ -190,6 +190,7 @@ const App = () => {
                     <Route path="/devhub/subscription-ideas-android" element={<DevSubscriptionIdeasAndroid />} />
                     <Route path="/devhub/subscription-ideas-ios" element={<DevSubscriptionIdeasIOS />} />
                     <Route path="/devhub/subscription-ideas-web" element={<DevSubscriptionIdeasWeb />} />
+                    <Route path="/devhub/ios-resume-prompt" element={<DevIOSResumePrompt />} />
 
 
 
