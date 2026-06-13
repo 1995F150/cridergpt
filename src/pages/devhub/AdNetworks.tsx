@@ -93,7 +93,7 @@ const SETUP_STEPS = [
   {
     step: "3",
     title: "Add the AdMob plugin",
-    body: "For Capacitor: npm i @capacitor-community/admob then npx cap sync. For FlutterFlow: enable AdMob in Settings → Integrations. For Rork: paste your App ID in the project settings.",
+    body: "For native Android (Kotlin): add the Google Mobile Ads SDK to app/build.gradle and your App ID to AndroidManifest.xml. For FlutterFlow: enable AdMob in Settings → Integrations. For Rork: paste your App ID in the project settings.",
   },
   {
     step: "4",

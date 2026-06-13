@@ -54,7 +54,7 @@ const SEED: DebugNote[] = [
     severity: "blocker",
     status: "open",
     issue: "Payment screen shows ‘…ule coming soon…’ — Stripe Checkout is not wired on iOS. Apple will reject if digital subs use Stripe anyway.",
-    fix: "Wire StoreKit 2 with products cridergpt_plus_monthly and cridergpt_pro_monthly. Call verify-iap edge function on purchase. Hide Stripe entirely on iOS build (Capacitor.getPlatform() === 'ios').",
+    fix: "Wire StoreKit 2 with products cridergpt_plus_monthly and cridergpt_pro_monthly. Call verify-iap edge function on purchase. Hide Stripe entirely on the native iOS build (detect via native platform flag injected onto window).",
     createdAt: new Date().toISOString(),
   },
   {
@@ -64,7 +64,7 @@ const SEED: DebugNote[] = [
     severity: "med",
     status: "open",
     issue: "‘TAP NFC’ button is shown on iPhone, but Web NFC isn’t supported in iOS WebView — tapping it does nothing. Confuses the user.",
-    fix: "On iOS, hide the ‘TAP NFC’ button and show the iPhone fallback card (already exists in TagScanner.tsx). Or wire a native Core NFC bridge via a Capacitor plugin and only show the button when the plugin is available.",
+    fix: "On iOS, hide the ‘TAP NFC’ button and show the iPhone fallback card (already exists in TagScanner.tsx). Or wire a native Core NFC bridge in Swift and only show the button when the bridge is available.",
     createdAt: new Date().toISOString(),
   },
   {
@@ -104,7 +104,7 @@ const SEED: DebugNote[] = [
     severity: "high",
     status: "open",
     issue: "Dark Mode and Notifications toggles flip visually but don’t actually do anything — they’re placeholders. Notifications never registers a push token, and turning Dark Mode OFF does not switch the app to a light theme (whole app stays dark).",
-    fix: "Wire Dark Mode toggle to ThemeContext (setTheme('light'|'dark')) and persist to localStorage + profiles.theme. For Notifications: on enable, call Capacitor PushNotifications.register(), capture token, upsert into push_tokens table; on disable, delete the row. Until both are real, hide the toggles or mark them ‘Coming soon’ so it doesn’t look broken.",
+    fix: "Wire Dark Mode toggle to ThemeContext (setTheme('light'|'dark')) and persist to localStorage + profiles.theme. For Notifications: on enable, call the native PushNotifications.register() bridge (FCM on Android, APNs on iOS), capture token, upsert into push_tokens table; on disable, delete the row. Until both are real, hide the toggles or mark them ‘Coming soon’ so it doesn’t look broken.",
     createdAt: new Date().toISOString(),
   },
   {

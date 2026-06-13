@@ -346,7 +346,7 @@ export function SensorDashboard() {
       <Card className="border-border bg-muted/30">
         <CardContent className="p-4">
           <p className="text-xs text-muted-foreground">
-            <strong>Native-only sensors</strong> (available in the Android APK via Capacitor plugins):
+            <strong>Native-only sensors</strong> (available in the native Android Kotlin app):
             NFC Tag Scanner, Bluetooth LE, Biometric Auth, Barcode/QR Scanner, Haptic Feedback,
             Barometric Pressure, and Step Counter/Pedometer. Build the APK to access these.
           </p>

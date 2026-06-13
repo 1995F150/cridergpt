@@ -125,26 +125,20 @@ export function useInAppPurchase() {
           title: "Apple In-App Purchase",
           description: `Purchase ${product.title} through the App Store. Tap to continue.`,
         });
-        // Native Capacitor/StoreKit layer will handle the actual purchase flow
-        // After native purchase completes, call verifyPurchase() with the receipt
-        return;
-      }
+        // Native StoreKit 2 / Play Billing layer (lives in the native iOS
+        // Swift and native Android Kotlin shells) handles the real purchase.
+        // If a native bridge has been injected onto `window`, call it;
+        // otherwise surface a clear message. No Capacitor — the native apps
+        // are not Capacitor wrappers anymore.
+        const bridge = (window as any).CriderGPTIAP
+                   ?? (window as any).webkit?.messageHandlers?.iap;
 
-      if (platform === 'android') {
-        // Android digital goods MUST go through Google Play Billing.
-        // We call a Capacitor plugin if installed (cordova-plugin-purchase /
-        // @capacitor-community/in-app-purchases), otherwise we surface a clear message.
-        const store = (window as any).CdvPurchase?.store
-                   ?? (window as any).Capacitor?.Plugins?.InAppPurchases;
-
-        if (store?.order) {
-          // cordova-plugin-purchase API
+        if (bridge?.purchase) {
           try {
-            await store.order(productId);
-            toast({ title: 'Google Play', description: `Opening Play Billing for ${product.title}…` });
-            // The plugin fires an 'approved' event -> call verifyPurchase() with token there.
+            await bridge.purchase(productId);
+            toast({ title: 'Store', description: `Opening native billing for ${product.title}…` });
           } catch (e: any) {
-            toast({ title: 'Play Billing error', description: e?.message || 'Purchase failed', variant: 'destructive' });
+            toast({ title: 'Billing error', description: e?.message || 'Purchase failed', variant: 'destructive' });
           }
           return;
         }

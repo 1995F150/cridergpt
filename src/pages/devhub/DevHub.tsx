@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat
 } from "lucide-react";
 
 const modules = [
@@ -27,7 +27,7 @@ const modules = [
   { to: "/devhub/ios-builder", icon: Apple, title: "iOS Builder", desc: "No-Mac signed .ipa via EAS Cloud Build. Generates eas.json, app.json, submit commands.", tag: "iOS" },
   { to: "/devhub/ios-asset-studio", icon: ImageIcon, title: "iOS Asset Studio", desc: "One source image → all 17 iOS icon sizes, Android mipmaps, App Store screenshot template. ZIP download.", tag: "iOS" },
   { to: "/devhub/swift-code-generator", icon: Code2, title: "Swift Code Generator", desc: "Unified cross-platform: type a feature, get Kotlin + Compose and Swift + SwiftUI side-by-side.", tag: "iOS" },
-  { to: "/devhub/capacitor-ios-porter", icon: ArrowRightLeft, title: "Capacitor → iOS Porter", desc: "Paste AndroidManifest + package.json → Info.plist keys, Xcode capabilities, Swift bridge notes.", tag: "iOS" },
+  
   { to: "/devhub/native-rebuild-prompt", icon: Rocket, title: "CriderGPT Full-Native Rebuild Prompt", desc: "One giant master prompt: Android (Kotlin) + iOS (Swift) + Desktop (Tauri). All 60+ features, same Supabase. Copy/paste into Cursor or Claude Code.", tag: "Builder" },
   { to: "/devhub/admob-addon-prompt", icon: Megaphone, title: "AdMob Add-On Prompt", desc: "Scope-limited prompt: wire AdMob rewarded, interstitial, and banner into an existing native app. Subscription-gated. Copy/paste ready.", tag: "Builder" },
   { to: "/devhub/marketing-auto-post", icon: Music2, title: "TikTok Marketing Auto-Post", desc: "Auto-queues a TikTok post when a new store product, SEO guide, or your livestock is added. Live queue, manual posts, runs every 15 min.", tag: "Shop + Money" },
@@ -36,6 +36,9 @@ const modules = [
   { to: "/devhub/website-ideas", icon: Globe, title: "Website Ideas (Lovable)", desc: "Same 150 concepts rewritten as Lovable web prompts. Forces Supabase (not Lovable Cloud) per your preference. Copy and paste straight into a new Lovable project.", tag: "Builder" },
   { to: "/devhub/cross-platform-release-notes", icon: ArrowRightLeft, title: "Cross-Platform Release Notes", desc: "Web vs iOS vs Android side-by-side for the current version, plus an editable feature parity matrix. One click copies a full report.", tag: "Builder" },
   { to: "/devhub/native-debug-notes", icon: Bug, title: "Native App Debug Notes", desc: "Log iOS/Android bugs you see in the live app (drawer overlay, Google sign-in error, NFC button on iPhone, etc.). Severity + status + copy-as-markdown report.", tag: "iOS" },
+  { to: "/devhub/subscription-ideas-android", icon: Repeat, title: "1,000 Android Subscription Ideas", desc: "Recurring-revenue companion concepts to the 150 one-time Android apps. Filter by category + tier, copy a Kotlin/Compose + Play Billing prompt per idea.", tag: "Builder" },
+  { to: "/devhub/subscription-ideas-ios", icon: Repeat, title: "1,000 iOS Subscription Ideas", desc: "Same 1,000 ideas rewritten for native Swift/SwiftUI + StoreKit 2 auto-renewing subscriptions.", tag: "iOS" },
+  { to: "/devhub/subscription-ideas-web", icon: Repeat, title: "1,000 Web Subscription Ideas", desc: "Same 1,000 ideas as Lovable web prompts with Stripe Subscriptions (monthly + yearly) and Supabase RLS.", tag: "Builder" },
 ];
 
 export default function DevHub() {

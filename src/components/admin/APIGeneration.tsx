@@ -201,9 +201,9 @@ export function APIGeneration() {
       const rows = [
         {
           user_email: email,
-          title: 'Android Build Playbook (Capacitor/Vite React)',
-          content: `Goal: Produce an Android APK/AAB from the CriderGPT web app using Capacitor.\n\n1) git clone https://github.com/1995F150/cridergpt.git && cd cridergpt\n2) npm install\n3) npm run build\n4) npx cap add android (first time only)\n5) npx cap sync android\n6) npx cap open android\n7) Android Studio: Build > Build APK(s) → android/app/build/outputs/apk/debug/app-debug.apk\n\nQuick update: npm run build && npx cap sync android\nTools: npx cap doctor, npm run lint, adb logcat`,
-          tags: ['android','build','capacitor','mobile'],
+          title: 'Android Build Playbook (Native Kotlin)',
+          content: `Goal: Produce an Android APK/AAB from the native Kotlin app in android_app/.\n\n1) git clone https://github.com/1995F150/cridergpt.git && cd cridergpt/android_app\n2) Open in Android Studio (Giraffe+) and let Gradle sync\n3) Build > Generate Signed Bundle / APK → choose your release keystore\n4) Output: android_app/app/build/outputs/bundle/release/app-release.aab (Play Store) or apk/release/app-release.apk (sideload)\n\nQuick update from CLI: cd android_app && ./gradlew bundleRelease\nTools: ./gradlew --status, adb logcat, scrcpy`,
+          tags: ['android','build','kotlin','native','mobile'],
           source: 'admin-ui'
         },
         {
