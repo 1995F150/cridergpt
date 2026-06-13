@@ -27,7 +27,7 @@ const modules = [
   { to: "/devhub/ios-builder", icon: Apple, title: "iOS Builder", desc: "No-Mac signed .ipa via EAS Cloud Build. Generates eas.json, app.json, submit commands.", tag: "iOS" },
   { to: "/devhub/ios-asset-studio", icon: ImageIcon, title: "iOS Asset Studio", desc: "One source image → all 17 iOS icon sizes, Android mipmaps, App Store screenshot template. ZIP download.", tag: "iOS" },
   { to: "/devhub/swift-code-generator", icon: Code2, title: "Swift Code Generator", desc: "Unified cross-platform: type a feature, get Kotlin + Compose and Swift + SwiftUI side-by-side.", tag: "iOS" },
-  { to: "/devhub/capacitor-ios-porter", icon: ArrowRightLeft, title: "Capacitor → iOS Porter", desc: "Paste AndroidManifest + package.json → Info.plist keys, Xcode capabilities, Swift bridge notes.", tag: "iOS" },
+  
   { to: "/devhub/native-rebuild-prompt", icon: Rocket, title: "CriderGPT Full-Native Rebuild Prompt", desc: "One giant master prompt: Android (Kotlin) + iOS (Swift) + Desktop (Tauri). All 60+ features, same Supabase. Copy/paste into Cursor or Claude Code.", tag: "Builder" },
   { to: "/devhub/admob-addon-prompt", icon: Megaphone, title: "AdMob Add-On Prompt", desc: "Scope-limited prompt: wire AdMob rewarded, interstitial, and banner into an existing native app. Subscription-gated. Copy/paste ready.", tag: "Builder" },
   { to: "/devhub/marketing-auto-post", icon: Music2, title: "TikTok Marketing Auto-Post", desc: "Auto-queues a TikTok post when a new store product, SEO guide, or your livestock is added. Live queue, manual posts, runs every 15 min.", tag: "Shop + Money" },

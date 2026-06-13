@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { usePlanConfigurations } from "@/hooks/usePlanConfigurations";
 import { useInAppPurchase } from "@/hooks/useInAppPurchase";
-import { Capacitor } from "@capacitor/core";
+
 
 const Pricing = () => {
   const { toast } = useToast();
@@ -46,7 +46,7 @@ useEffect(() => {
     setLoading(planName);
 
     // On native iOS/Android, route to IAP instead of Stripe (Play/App Store policy).
-    if (Capacitor.isNativePlatform() || platform === "ios" || platform === "android") {
+    if (platform === "ios" || platform === "android") {
       try {
         const productId = iapProductMap[planName];
         if (!productId) throw new Error("No IAP product mapped for this plan");

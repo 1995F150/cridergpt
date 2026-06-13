@@ -1,29 +1,11 @@
 /**
- * Native-first storage adapter for Supabase auth.
+ * Storage adapter for Supabase auth on the web/PWA bundle.
  *
- * On native Android/iOS, Capacitor WebView localStorage gets wiped on memory
- * eviction → users have to sign in again after closing the app. Persisting
- * the session in Capacitor Preferences (backed by SharedPreferences on
- * Android, UserDefaults on iOS) survives cold starts.
- *
- * On web/PWA, we keep using localStorage (synchronous, no extra plugin work).
+ * The shipping native apps (Kotlin Android + Swift iOS) talk to Supabase
+ * through their own SDKs and persist sessions in SharedPreferences /
+ * Keychain. This web bundle uses plain localStorage — Capacitor is no
+ * longer used anywhere in the codebase.
  */
-import { Capacitor } from "@capacitor/core";
-import { Preferences } from "@capacitor/preferences";
-
-const isNative = Capacitor.isNativePlatform();
-
-export const supabaseAuthStorage = isNative
-  ? {
-      async getItem(key: string): Promise<string | null> {
-        const { value } = await Preferences.get({ key });
-        return value ?? null;
-      },
-      async setItem(key: string, value: string): Promise<void> {
-        await Preferences.set({ key, value });
-      },
-      async removeItem(key: string): Promise<void> {
-        await Preferences.remove({ key });
-      },
-    }
-  : localStorage;
+export const supabaseAuthStorage = typeof window !== "undefined"
+  ? window.localStorage
+  : undefined;
