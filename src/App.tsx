@@ -77,6 +77,7 @@ import DevNativeAppDebugNotes from "./pages/devhub/NativeAppDebugNotes";
 import DevSubscriptionIdeasAndroid from "./pages/devhub/SubscriptionIdeasAndroid";
 import DevSubscriptionIdeasIOS from "./pages/devhub/SubscriptionIdeasIOS";
 import DevSubscriptionIdeasWeb from "./pages/devhub/SubscriptionIdeasWeb";
+import DevIOSResumePrompt from "./pages/devhub/IOSResumePrompt";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
