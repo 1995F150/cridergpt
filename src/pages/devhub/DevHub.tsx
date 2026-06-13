@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat, Cloud
 } from "lucide-react";
 
 const modules = [
@@ -40,6 +40,7 @@ const modules = [
   { to: "/devhub/subscription-ideas-android", icon: Repeat, title: "1,000 Android Subscription Ideas", desc: "Recurring-revenue companion concepts to the 150 one-time Android apps. Filter by category + tier, copy a Kotlin/Compose + Play Billing prompt per idea.", tag: "Builder" },
   { to: "/devhub/subscription-ideas-ios", icon: Repeat, title: "1,000 iOS Subscription Ideas", desc: "Same 1,000 ideas rewritten for native Swift/SwiftUI + StoreKit 2 auto-renewing subscriptions.", tag: "iOS" },
   { to: "/devhub/subscription-ideas-web", icon: Repeat, title: "1,000 Web Subscription Ideas", desc: "Same 1,000 ideas as Lovable web prompts with Stripe Subscriptions (monthly + yearly) and Supabase RLS.", tag: "Builder" },
+  { to: "/devhub/backend-wiring", icon: Cloud, title: "Backend Wiring Reference", desc: "Full list of every Supabase edge function + table grouped by purpose, with credentials block and a ready-to-paste native wiring prompt so Gemini/Cursor doesn't recreate what already exists.", tag: "Server + AI Ops" },
 ];
 
 export default function DevHub() {
