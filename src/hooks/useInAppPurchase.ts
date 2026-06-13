@@ -133,14 +133,12 @@ export function useInAppPurchase() {
         const bridge = (window as any).CriderGPTIAP
                    ?? (window as any).webkit?.messageHandlers?.iap;
 
-        if (store?.order) {
-          // cordova-plugin-purchase API
+        if (bridge?.purchase) {
           try {
-            await store.order(productId);
-            toast({ title: 'Google Play', description: `Opening Play Billing for ${product.title}…` });
-            // The plugin fires an 'approved' event -> call verifyPurchase() with token there.
+            await bridge.purchase(productId);
+            toast({ title: 'Store', description: `Opening native billing for ${product.title}…` });
           } catch (e: any) {
-            toast({ title: 'Play Billing error', description: e?.message || 'Purchase failed', variant: 'destructive' });
+            toast({ title: 'Billing error', description: e?.message || 'Purchase failed', variant: 'destructive' });
           }
           return;
         }
