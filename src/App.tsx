@@ -79,6 +79,8 @@ import DevSubscriptionIdeasIOS from "./pages/devhub/SubscriptionIdeasIOS";
 import DevSubscriptionIdeasWeb from "./pages/devhub/SubscriptionIdeasWeb";
 import DevIOSResumePrompt from "./pages/devhub/IOSResumePrompt";
 import DevBackendWiringReference from "./pages/devhub/BackendWiringReference";
+import DevAlcoholRecipes from "./pages/devhub/AlcoholRecipes";
+import DevUIBlueprints from "./pages/devhub/UIBlueprints";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -193,6 +195,8 @@ const App = () => {
                     <Route path="/devhub/subscription-ideas-web" element={<DevSubscriptionIdeasWeb />} />
                     <Route path="/devhub/ios-resume-prompt" element={<DevIOSResumePrompt />} />
                     <Route path="/devhub/backend-wiring" element={<DevBackendWiringReference />} />
+                    <Route path="/devhub/alcohol-recipes" element={<DevAlcoholRecipes />} />
+                    <Route path="/devhub/ui-blueprints" element={<DevUIBlueprints />} />
 
 
 
