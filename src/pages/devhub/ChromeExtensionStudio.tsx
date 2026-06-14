@@ -373,6 +373,56 @@ async function generateIconBlobs(
   return out;
 }
 
+// Per-extension icon themes — each Suite extension gets its own look
+// so the Chrome Web Store listings don't all look identical.
+type IconTheme = { emoji: string; from: string; to: string };
+const SUITE_ICON_THEMES: Record<string, IconTheme> = {
+  "cgpt-browser-assistant": { emoji: "", from: "#1f8b4c", to: "#0b3d1f" }, // uses logo
+  "cgpt-livestock-tags":    { emoji: "🐄", from: "#3a7d2b", to: "#1a3d12" },
+  "cgpt-spending-helper":   { emoji: "💵", from: "#caa84a", to: "#5b4310" },
+  "cgpt-ffa-toolkit":       { emoji: "🌽", from: "#0a2d6e", to: "#f5c518" },
+  "cgpt-prompt-vault":      { emoji: "🧠", from: "#5b2a8a", to: "#1f0f3a" },
+};
+
+async function generateEmojiIconBlobs(
+  theme: IconTheme,
+  sizes: number[]
+): Promise<{ size: number; blob: Blob }[]> {
+  const out: { size: number; blob: Blob }[] = [];
+  for (const size of sizes) {
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+    // Gradient background
+    const grad = ctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, theme.from);
+    grad.addColorStop(1, theme.to);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+    // Emoji centered
+    ctx.font = `${Math.floor(size * 0.68)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(theme.emoji, size / 2, size / 2 + size * 0.04);
+    const blob: Blob = await new Promise((res, rej) =>
+      canvas.toBlob((b) => (b ? res(b) : rej(new Error("toBlob failed"))), "image/png")
+    );
+    out.push({ size, blob });
+  }
+  return out;
+}
+
+async function buildSuiteIconBlobs(extId: string): Promise<{ size: number; blob: Blob }[]> {
+  const theme = SUITE_ICON_THEMES[extId];
+  // AI assistant keeps the real CriderGPT logo
+  if (!theme || !theme.emoji) {
+    return generateIconBlobs("/cridergpt-logo-app-icon.png", [16, 48, 128]);
+  }
+  return generateEmojiIconBlobs(theme, [16, 48, 128]);
+}
+
+
 function downloadZipFallback(template: Template, name: string, description: string) {
   // No JSZip dependency: download each file individually as a fallback.
   template.files.forEach((f) => {
@@ -694,7 +744,7 @@ function SuiteExtCard({ ext }: { ext: SuiteExt }) {
     // Bake the CriderGPT logo into real icon16/48/128 PNGs so the
     // Chrome Web Store upload doesn't reject the package.
     try {
-      const icons = await generateIconBlobs("/cridergpt-logo-app-icon.png", [16, 48, 128]);
+      const icons = await buildSuiteIconBlobs(ext.id);
       for (const { size, blob } of icons) {
         folder.file(`icon${size}.png`, blob);
       }
