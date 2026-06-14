@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import {
   ChevronLeft, ExternalLink, Tv, DollarSign, BookOpen, Wrench, Rocket, Code2, Copy,
+  Filter,
 } from "lucide-react";
 
 const RESOURCES = [
@@ -22,17 +24,69 @@ const RESOURCES = [
 ];
 
 const IDEAS = [
-  { name: "FFA Show Watch", pitch: "Stream livestock auctions, fair coverage, and FFA event replays.", monetization: "Free + Roku Pay $2.99/mo for archives" },
-  { name: "Farm Sim Highlights", pitch: "Curated FS25/FS22 mod showcases and tutorials, pulled from YouTube.", monetization: "Ad-supported via RAF" },
-  { name: "Tractor Pull TV", pitch: "Niche channel for tractor pull events. License clips from local fairs.", monetization: "$3.99 one-time channel unlock" },
-  { name: "Country Gospel Radio", pitch: "Audio-only channel streaming gospel + bluegrass radio stations.", monetization: "Free + tip jar" },
-  { name: "Recipe Reader", pitch: "Big-screen recipe display synced with your CriderGPT recipe vault.", monetization: "Free (drives CriderGPT signups)" },
-  { name: "Workshop Cam Viewer", pitch: "Stream a local IP camera (welding shop, barn) to your TV.", monetization: "$1.99 one-time" },
-  { name: "Snow Day Cam", pitch: "Aggregates public weather + traffic cams by region.", monetization: "Ad-supported" },
-  { name: "RDR2 Lore Channel", pitch: "Loop your RDR2 gamer-guide content as a video channel.", monetization: "Free + tip jar" },
-  { name: "Auction Calendar", pitch: "TV-friendly list of upcoming livestock + equipment auctions in your area.", monetization: "Free (affiliate links to listings)" },
-  { name: "Local High School Sports", pitch: "Embed YouTube live streams from local schools. Niche but loyal audience.", monetization: "Ad-supported" },
+  { name: "FFA Show Watch", pitch: "Stream livestock auctions, fair coverage, and FFA event replays.", monetization: "Free + Roku Pay $2.99/mo for archives", category: "FFA" },
+  { name: "Farm Sim Highlights", pitch: "Curated FS25/FS22 mod showcases and tutorials, pulled from YouTube.", monetization: "Ad-supported via RAF", category: "Gaming" },
+  { name: "Tractor Pull TV", pitch: "Niche channel for tractor pull events. License clips from local fairs.", monetization: "$3.99 one-time channel unlock", category: "FFA" },
+  { name: "Country Gospel Radio", pitch: "Audio-only channel streaming gospel + bluegrass radio stations.", monetization: "Free + tip jar", category: "Music" },
+  { name: "Recipe Reader", pitch: "Big-screen recipe display synced with your CriderGPT recipe vault.", monetization: "Free (drives CriderGPT signups)", category: "Utility" },
+  { name: "Workshop Cam Viewer", pitch: "Stream a local IP camera (welding shop, barn) to your TV.", monetization: "$1.99 one-time", category: "Utility" },
+  { name: "Snow Day Cam", pitch: "Aggregates public weather + traffic cams by region.", monetization: "Ad-supported", category: "Weather" },
+  { name: "RDR2 Lore Channel", pitch: "Loop your RDR2 gamer-guide content as a video channel.", monetization: "Free + tip jar", category: "Gaming" },
+  { name: "Auction Calendar", pitch: "TV-friendly list of upcoming livestock + equipment auctions in your area.", monetization: "Free (affiliate links to listings)", category: "FFA" },
+  { name: "Local High School Sports", pitch: "Embed YouTube live streams from local schools. Niche but loyal audience.", monetization: "Ad-supported", category: "Sports" },
+  // ---- 50 MORE IDEAS ----
+  { name: "CriderGPT Dashboard", pitch: "Big-screen overview of your farm data, livestock tags, and tasks.", monetization: "Free (companion to web app)", category: "Utility" },
+  { name: "Barn Radio FM", pitch: "Curated country, southern rock, and farm-work playlists. Audio-only.", monetization: "Free + Roku Ads", category: "Music" },
+  { name: "Cattle Market Prices", pitch: "Daily commodity prices, charts, and news for beef, pork, grain.", monetization: "$1.99/mo", category: "FFA" },
+  { name: "Hay Calculator", pitch: "Input bale count and weight. TV displays total tons and cost per ton.", monetization: "$0.99 one-time", category: "Utility" },
+  { name: "FS25 Mod Browser", pitch: "Browse, preview, and queue Farming Simulator mods for later download.", monetization: "Free (affiliate mod-host links)", category: "Gaming" },
+  { name: "Trophy Wall", pitch: "Display your hunting, fishing, and show ribbons in a digital gallery.", monetization: "$2.99 one-time", category: "FFA" },
+  { name: "Small Engine Repair", pitch: "Video tutorials for chainsaws, mowers, tillers. Filter by brand.", monetization: "Ad-supported", category: "Utility" },
+  { name: "Weather Watcher", pitch: "Hyperlocal weather with radar, 7-day forecast, and frost alerts.", monetization: "Free + Roku Ads", category: "Weather" },
+  { name: "Dirt Track Racing", pitch: "Local dirt track race schedules, results, and highlight reels.", monetization: "$2.99/mo", category: "Sports" },
+  { name: "Homestead How-To", pitch: "Gardening, canning, solar, and off-grid living video guides.", monetization: "Ad-supported", category: "Utility" },
+  { name: "Sermon Stream", pitch: "Live and archived church services. Filter by denomination and zip.", monetization: "Free (donation button)", category: "Music" },
+  { name: "Hunting Season Countdown", pitch: "Days until opener for deer, turkey, duck by state.", monetization: "$0.99 one-time", category: "FFA" },
+  { name: "Tractor Specs", pitch: "Compare horsepower, lift capacity, and price across John Deere, Kubota, etc.", monetization: "Free (dealer lead gen)", category: "Utility" },
+  { name: "4x4 Trail Maps", pitch: "Off-road trail videos with difficulty ratings and GPS coordinates.", monetization: "$1.99 one-time", category: "Gaming" },
+  { name: "Gunsmithing 101", pitch: "Cleaning, customization, and safety videos for firearms.", monetization: "Ad-supported", category: "Utility" },
+  { name: "Kids Farm Friends", pitch: "Educational animal videos for toddlers. No ads. Parental timer.", monetization: "$1.99/mo", category: "Kids" },
+  { name: "Cow-Calf Calendar", pitch: "Breeding, calving, and weaning schedule tracker for herds.", monetization: "$2.99 one-time", category: "FFA" },
+  { name: "Mud Bog Madness", pitch: "Truck and tractor mud bog event replays and schedules.", monetization: "Ad-supported", category: "Sports" },
+  { name: "Southern Cooking", pitch: "Step-by-step recipes for biscuits, gravy, BBQ, and cornbread.", monetization: "Free + affiliate cookware", category: "Utility" },
+  { name: "Livestock Health", pitch: "Symptom checker and treatment videos for cattle, sheep, goats.", monetization: "$4.99/mo", category: "FFA" },
+  { name: "Farm Safety", pitch: "OSHA-aligned safety training videos for machinery and chemicals.", monetization: "Free (grant-funded)", category: "Utility" },
+  { name: "Antique Tractor", pitch: "Restoration timelines, parts sourcing, and show schedules.", monetization: "Ad-supported", category: "FFA" },
+  { name: "Rodeo Replay", pitch: "PRCA and local rodeo event archives, scores, and rider bios.", monetization: "$3.99/mo", category: "Sports" },
+  { name: "Beekeeper's Log", pitch: "Hive inspection reminders, honey yield tracking, and swarm alerts.", monetization: "$1.99 one-time", category: "FFA" },
+  { name: "Firepit Stories", pitch: "Audio ghost stories and southern folklore. Perfect background noise.", monetization: "Free + tip jar", category: "Music" },
+  { name: "Pond Management", pitch: "Stocking rates, water quality tips, and fishing forecasts for farm ponds.", monetization: "$1.99 one-time", category: "FFA" },
+  { name: "Skid Steer Simulator", pitch: "Video walkthroughs of skid steer operations and attachments.", monetization: "Ad-supported", category: "Utility" },
+  { name: "FFA Degree Tracker", pitch: "Greenhand to American FFA Degree progress dashboard.", monetization: "Free (drives app signups)", category: "FFA" },
+  { name: "Combine Cam", pitch: "In-cab live streams during harvest season from popular operators.", monetization: "Ad-supported", category: "FFA" },
+  { name: "Backroad Atlas", pitch: "Scenic drive videos with local history voiceovers. One state per playlist.", monetization: "Free + tourism ads", category: "Utility" },
+  { name: "Coon Hunting", pitch: "Night hunt footage with hounds, treeing highlights, and competition scores.", monetization: "Ad-supported", category: "FFA" },
+  { name: "Equine Health", pitch: "Hoof care, dental floats, and colic prevention videos for horse owners.", monetization: "$2.99/mo", category: "FFA" },
+  { name: "Ag News Network", pitch: "Daily 5-min ag news briefs: markets, policy, weather, tech.", monetization: "Ad-supported", category: "Weather" },
+  { name: "Bass Fishing HQ", pitch: "Lake reports, lure reviews, and tournament brackets.", monetization: "$1.99/mo", category: "Sports" },
+  { name: "Greenhouse Guru", pitch: "Hydroponic, aquaponic, and greenhouse build tutorials.", monetization: "Ad-supported", category: "Utility" },
+  { name: "Farm Auction TV", pitch: "Live and upcoming equipment auctions with lot previews.", monetization: "Free (affiliate to auction sites)", category: "FFA" },
+  { name: "Mechanic's Bench", pitch: "Diagnostics, torque specs, and wiring diagrams for common farm vehicles.", monetization: "$3.99/mo", category: "Utility" },
+  { name: "Dairy Dashboard", pitch: "Milk production, somatic cell counts, and feed rations on TV.", monetization: "$2.99/mo", category: "FFA" },
+  { name: "Rural Real Estate", pitch: "Browse farms, ranches, and hunting land for sale with acreage filters.", monetization: "Free (realtor lead gen)", category: "Utility" },
+  { name: "Wild Game Recipes", pitch: "Venison, duck, squirrel, and frog-leg recipes by season.", monetization: "Free + affiliate gear", category: "Utility" },
+  { name: "Soil Test Reader", pitch: "Input soil sample results. TV explains N-P-K needs and lime.", monetization: "$1.99 one-time", category: "FFA" },
+  { name: "Stock Dog Trials", pitch: "Border collie and Australian shepherd herding competition replays.", monetization: "Ad-supported", category: "Sports" },
+  { name: "Solar Farm Planner", pitch: "ROI calculator, panel layout tips, and federal tax credit info.", monetization: "$2.99 one-time", category: "Utility" },
+  { name: "Horse Auction", pitch: "Gaited horse, quarter horse, and draft auction previews.", monetization: "Free (affiliate links)", category: "FFA" },
+  { name: "Night Sky Rural", pitch: "Live dark-sky camera feeds + astronomy guides for country stargazers.", monetization: "Free + tip jar", category: "Weather" },
+  { name: "Chicken Coop TV", pitch: "Live coop cams, breed spotlights, and egg-count trackers.", monetization: "$0.99 one-time", category: "FFA" },
+  { name: "Barrel Racing", pitch: "Runs, patterns, and training drills for barrel racers.", monetization: "$2.99/mo", category: "Sports" },
+  { name: "Country Meme Wall", pitch: "Curated farm, redneck, and FFA memes. Slideshow format.", monetization: "Ad-supported", category: "Gaming" },
+  { name: "Fence Builder", pitch: "Materials calculator, post spacing guide, and how-to videos.", monetization: "$1.99 one-time", category: "Utility" },
 ];
+
+const CATEGORIES = Array.from(new Set(IDEAS.map((i) => i.category))).sort();
 
 const STARTER_FILES = [
   { path: "manifest", content: `title=CriderGPT Sample Channel
@@ -98,10 +152,12 @@ const SIDELOAD_STEPS = [
 
 export default function RokuStudio() {
   const { toast } = useToast();
+  const [activeCategory, setActiveCategory] = useState<string>("All");
   const copy = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
     toast({ title: `${label} copied` });
   };
+  const filteredIdeas = activeCategory === "All" ? IDEAS : IDEAS.filter((i) => i.category === activeCategory);
 
   return (
     <DevHubGuard>
@@ -169,12 +225,39 @@ export default function RokuStudio() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-3">Channel ideas you could ship</h2>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {IDEAS.map((i) => (
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <h2 className="text-lg font-semibold">Channel ideas you could ship</h2>
+              <span className="text-xs text-muted-foreground">{IDEAS.length} ideas</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-3">
+              <Button
+                size="sm"
+                variant={activeCategory === "All" ? "default" : "outline"}
+                onClick={() => setActiveCategory("All")}
+                className="shrink-0"
+              >
+                <Filter className="w-3 h-3 mr-1" /> All
+              </Button>
+              {CATEGORIES.map((c) => (
+                <Button
+                  key={c}
+                  size="sm"
+                  variant={activeCategory === c ? "default" : "outline"}
+                  onClick={() => setActiveCategory(c)}
+                  className="shrink-0"
+                >
+                  {c}
+                </Button>
+              ))}
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredIdeas.map((i) => (
                 <Card key={i.name} className="hover:border-primary/40">
                   <CardHeader>
-                    <CardTitle className="text-base">{i.name}</CardTitle>
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-base">{i.name}</CardTitle>
+                      <Badge variant="secondary" className="text-[10px] shrink-0">{i.category}</Badge>
+                    </div>
                     <CardDescription className="text-xs">{i.pitch}</CardDescription>
                     <div className="text-xs text-primary font-medium pt-1 flex items-center gap-1">
                       <DollarSign className="w-3 h-3" /> {i.monetization}
