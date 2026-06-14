@@ -203,6 +203,7 @@ const App = () => {
                     <Route path="/devhub/ui-blueprints" element={<DevUIBlueprints />} />
                     <Route path="/devhub/tech-library" element={<DevTechKnowledgeLibrary />} />
                     <Route path="/devhub/auto-promo" element={<DevAutoPromoSystem />} />
+                    <Route path="/devhub/email-test" element={<DevEmailTest />} />
 
 
 
