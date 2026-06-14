@@ -630,6 +630,71 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_promo_history: {
+        Row: {
+          caption_hash: string
+          created_at: string
+          id: string
+          topic: string | null
+          video_id: string | null
+        }
+        Insert: {
+          caption_hash: string
+          created_at?: string
+          id?: string
+          topic?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          caption_hash?: string
+          created_at?: string
+          id?: string
+          topic?: string | null
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_promo_history_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "promo_video_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_promo_settings: {
+        Row: {
+          enabled: boolean
+          hourly_cap: number
+          id: number
+          last_posted_at: string | null
+          last_run_at: string | null
+          min_gap_minutes: number
+          topics: string[]
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hourly_cap?: number
+          id?: number
+          last_posted_at?: string | null
+          last_run_at?: string | null
+          min_gap_minutes?: number
+          topics?: string[]
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hourly_cap?: number
+          id?: number
+          last_posted_at?: string | null
+          last_run_at?: string | null
+          min_gap_minutes?: number
+          topics?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       broadcast_history: {
         Row: {
           body: string
@@ -3632,6 +3697,42 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      promo_video_library: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          last_used_at: string | null
+          times_used: number
+          topic_tag: string
+          video_url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          last_used_at?: string | null
+          times_used?: number
+          topic_tag?: string
+          video_url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          last_used_at?: string | null
+          times_used?: number
+          topic_tag?: string
+          video_url?: string
         }
         Relationships: []
       }

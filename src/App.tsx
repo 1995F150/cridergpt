@@ -82,6 +82,7 @@ import DevBackendWiringReference from "./pages/devhub/BackendWiringReference";
 import DevAlcoholRecipes from "./pages/devhub/AlcoholRecipes";
 import DevUIBlueprints from "./pages/devhub/UIBlueprints";
 import DevTechKnowledgeLibrary from "./pages/devhub/TechKnowledgeLibrary";
+import DevAutoPromoSystem from "./pages/devhub/AutoPromoSystem";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -199,6 +200,7 @@ const App = () => {
                     <Route path="/devhub/alcohol-recipes" element={<DevAlcoholRecipes />} />
                     <Route path="/devhub/ui-blueprints" element={<DevUIBlueprints />} />
                     <Route path="/devhub/tech-library" element={<DevTechKnowledgeLibrary />} />
+                    <Route path="/devhub/auto-promo" element={<DevAutoPromoSystem />} />
 
 
 
