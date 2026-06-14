@@ -200,6 +200,7 @@ const App = () => {
                     <Route path="/devhub/alcohol-recipes" element={<DevAlcoholRecipes />} />
                     <Route path="/devhub/ui-blueprints" element={<DevUIBlueprints />} />
                     <Route path="/devhub/tech-library" element={<DevTechKnowledgeLibrary />} />
+                    <Route path="/devhub/auto-promo" element={<DevAutoPromoSystem />} />
 
 
 
