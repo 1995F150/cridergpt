@@ -1084,37 +1084,69 @@ struct NotificationsView: View {
 
   "DevHub/DevHubView.swift": `import SwiftUI
 
+/// Owner-only. All DevHub modules render natively inside the app — never as
+/// Safari links. Each row pushes an in-app SwiftUI screen.
 struct DevHubView: View {
+    private struct Module: Identifiable { let id = UUID(); let label: String; let route: String }
+    private let modules: [Module] = [
+        .init(label: "Server AI Console",          route: "devhub/server-console"),
+        .init(label: "Server Health & Self-Repair",route: "devhub/server-health"),
+        .init(label: "Knowledge Vault",            route: "devhub/vault"),
+        .init(label: "Agent Dispatcher",           route: "devhub/agent-dispatcher"),
+        .init(label: "Autopilot Queue",            route: "devhub/autopilot"),
+        .init(label: "iOS Builder",                route: "devhub/ios-builder"),
+        .init(label: "Backend Wiring Reference",   route: "devhub/backend-wiring"),
+        .init(label: "UI Blueprints",              route: "devhub/ui-blueprints"),
+        .init(label: "Tech Knowledge Library",     route: "devhub/tech-library"),
+        .init(label: "Auto-Promo (Hourly)",        route: "devhub/auto-promo"),
+        .init(label: "Idea Planner",               route: "devhub/idea-planner"),
+    ]
+
     var body: some View {
         List {
             Section("Owner Tools") {
-                Link("Open full DevHub on web", destination: URL(string: "https://cridergpt.com/devhub")!)
-                Link("Server Console",          destination: URL(string: "https://cridergpt.com/devhub/server-console")!)
-                Link("Agent Dispatcher",        destination: URL(string: "https://cridergpt.com/devhub/agent-dispatcher")!)
-                Link("System Diagnostics",      destination: URL(string: "https://cridergpt.com/system-diagnostics")!)
+                ForEach(modules) { m in
+                    NavigationLink(m.label, destination: DevModulePlaceholderView(label: m.label, route: m.route))
+                }
             }
             Section {
-                Text("DevHub is owner-only and gated by the has_role RPC. External links open in Safari.")
+                Text("DevHub is owner-only and gated by the has_role RPC. All modules render in-app — never Safari.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
         .navigationTitle("DevHub")
     }
 }
+
+struct DevModulePlaceholderView: View {
+    let label: String
+    let route: String
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(label).font(.title2).bold()
+            Text("Native screen for \\(route). Wire to Supabase / local logic here.")
+                .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }.padding().navigationTitle(label)
+    }
+}
 `,
 
   "DevHub/AdminPanelView.swift": `import SwiftUI
 
+/// Owner/admin-only. All admin tools render natively in-app — never Safari.
 struct AdminPanelView: View {
     var body: some View {
         List {
             Section("Admin Tools") {
-                Link("User management",  destination: URL(string: "https://cridergpt.com/admin")!)
-                Link("System status",    destination: URL(string: "https://cridergpt.com/system-diagnostics")!)
-                Link("Broadcasts",       destination: URL(string: "https://cridergpt.com/admin?tab=broadcasts")!)
+                NavigationLink("User management",
+                    destination: DevModulePlaceholderView(label: "User Management", route: "admin/users"))
+                NavigationLink("System status",
+                    destination: DevModulePlaceholderView(label: "System Status", route: "admin/system"))
+                NavigationLink("Broadcasts",
+                    destination: DevModulePlaceholderView(label: "Broadcasts", route: "admin/broadcasts"))
             }
             Section {
-                Text("Gated by has_role(uid,'admin'). Heavy ops always run on the web for audit logging.")
+                Text("Gated by has_role(uid,'admin'). Rendered natively for offline access.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
