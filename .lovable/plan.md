@@ -1,65 +1,100 @@
 ## Goal
-Replace dependency on OpenAI Realtime API in Call Mode with our own self-built voice pipeline using existing TTS + chat infrastructure, so Call Mode is fully under our control (cheaper, more reliable, and themable with your own voice).
 
-## Approach: DIY Call Mode Pipeline
+Upgrade `/devhub/android-starter` from a 2-screen demo into a **full website-parity scaffold** so when you open it in Android Studio and press Run, you already have every nav tab, persistent login, and every screen wired to the correct Supabase table or edge function. No payment code (per your earlier note).
 
-Instead of one expensive WebRTC connection to OpenAI Realtime, chain three pieces we already partly own:
+Source of truth = the website. Every screen reads/writes the **same tables and edge functions** the website uses, so they stay in sync automatically.
+
+## What the generated app will contain
+
+### Shell
+- `MainActivity` hosts a Compose `NavHost` with a **bottom nav bar** matching the website:
+  Chat · Livestock · Idea Planner · Calendar · Profile
+- Top app bar with overflow menu → DevHub, Admin Panel, Account, Sign Out
+- `DrawerSheet` exposes secondary links (Smart ID Store, Tag Lookup, Snapchat Lens, FarmBureau, TikTok Studio, etc.) — these tagged `external = true` launch `Intent.ACTION_VIEW` to **leave the app into Chrome** (your preference).
+
+### Persistent session (never sign out on app close)
+- Use **EncryptedSharedPreferences** (AndroidX Security) to store `access_token` + `refresh_token`.
+- On launch: if refresh token exists, call `POST /auth/v1/token?grant_type=refresh_token` to get a fresh access token. Schedule background refresh 5 min before expiry via `WorkManager`.
+- Only `SupabaseClient.signOut()` (tap Sign Out in menu) wipes the prefs. Force-close, reboot, low-memory kill → still signed in.
+
+### Auth screen
+- Email/password + “Continue with Google” (deep link `app.cridergpt.android://auth-callback` via Chrome Custom Tabs, no SHA-1 needed — matches your existing OAuth setup).
+
+### Pre-wired feature screens (all read/write the live tables)
+
+| Screen | Backend wiring |
+|---|---|
+| ChatScreen | `chat-with-ai` edge fn · saves to `chat_conversations` / `chat_messages` |
+| LivestockListScreen | `livestock_animals` SELECT + `livestock_scan_logs` |
+| ScanTagScreen | NFC reader → parses `CriderGPT-XXXXXX` → looks up `livestock_animals` |
+| IdeaPlannerScreen | `idea_planner_ideas` CRUD with RLS-respecting filters |
+| CalendarScreen | `events` SELECT/INSERT, two-tier visibility |
+| ProfileScreen | `profiles` row for `auth.uid()`, edit display name/avatar |
+| AccountManagementScreen | subscription tier from `user_subscriptions`, delete-account flow |
+| DevHubScreen | Gated by `has_role(uid, 'owner')` RPC. Lists every DevHub module as links (opens website ones in Chrome, native-implemented ones in-app). |
+| AdminPanelScreen | Gated by `has_role(uid, 'admin')`. Reads `admin_audit_logs`, `system_status`, `user_violations`. |
+| NotificationsScreen | `user_notifications` realtime channel |
+
+External-only items (Store, Snapchat Lens, FarmBureau lead form, TikTok Studio, Custom Filters, Recipes, Guides, Public Profile, Invite, Leaderboard) appear in the drawer and **launch the system browser** — that way they always look exactly like the website.
+
+### Backend client (single file)
+`SupabaseClient.kt` exposes:
+- `signIn / signUp / signInWithGoogle / signOut`
+- `refreshIfNeeded()` (called on launch + every resume)
+- `from(table).select/insert/update/delete` mini-builder
+- `invoke(fnName, payload)` for edge functions
+- `realtime(table, filter, onChange)` via WebSocket
+
+### Role gating
+- `useHasRole(role)` Compose helper calls the existing `has_role(uid, role)` RPC.
+- DevHub + Admin tabs render only if role check passes — same rule the website uses.
+
+## File layout in the ZIP
 
 ```text
-Mic → STT (Whisper) → chat-with-ai (LLM) → TTS (OpenAI or self-hosted XTTS) → Speaker
-                                          ↑
-                                    streamed playback
+cridergpt-android-starter/
+├── README.md
+├── settings.gradle.kts · build.gradle.kts · gradle.properties · wrapper
+├── app/build.gradle.kts            (+ AndroidX Security, WorkManager, Coil, Navigation-Compose)
+└── app/src/main/
+    ├── AndroidManifest.xml         (NFC, INTERNET, POST_NOTIFICATIONS, deep link)
+    ├── res/                        (themes, strings, launcher icon stub)
+    └── java/app/cridergpt/android/
+        ├── MainActivity.kt
+        ├── data/
+        │   ├── SupabaseClient.kt           (REST + realtime + secure prefs)
+        │   ├── SessionManager.kt           (EncryptedSharedPreferences + refresh)
+        │   └── repositories/                (Livestock, Ideas, Events, Chat, Profile, Notifications)
+        ├── ui/
+        │   ├── theme/Theme.kt
+        │   ├── nav/AppNav.kt                (NavHost + bottom bar + drawer)
+        │   ├── nav/ExternalLinks.kt         (table of external URLs → Intent)
+        │   ├── auth/{SignInScreen,GoogleSignInButton}.kt
+        │   ├── chat/ChatScreen.kt
+        │   ├── livestock/{LivestockListScreen,ScanTagScreen,AnimalDetailScreen}.kt
+        │   ├── ideas/IdeaPlannerScreen.kt
+        │   ├── calendar/CalendarScreen.kt
+        │   ├── profile/{ProfileScreen,AccountManagementScreen}.kt
+        │   ├── notifications/NotificationsScreen.kt
+        │   ├── devhub/DevHubScreen.kt
+        │   └── admin/AdminPanelScreen.kt
+        └── util/{NfcReader.kt, ExternalBrowser.kt, RoleGate.kt}
 ```
 
-Loop continuously while call is active, with VAD (voice activity detection) to know when user stops talking.
+## Web side (the only thing I change in the actual project)
 
-## What we already have
-- `supabase/functions/text-to-speech` — OpenAI TTS, working, usage-tracked
-- `supabase/functions/chat-with-ai` — LLM responses
-- `public/voice-engine/server.py` — self-hosted XTTS-v2 + Whisper on your AMD box (CPU)
-- `useCallMode.ts` / `useRealtimeCall.ts` — existing call UI we can repoint
+1. Bump `src/pages/devhub/androidStarterFiles.ts` with the new file set above.
+2. Tweak `AndroidStarterExport.tsx` so the “What’s inside” card lists the new screens, marks the source-of-truth rule, and notes “Persistent session — never signs out until you tap Sign Out.”
+3. No changes to any other website file. No changes under `android_app/` (protected per project memory).
 
-## New pieces to build
+## What you still do manually
 
-1. **`supabase/functions/speech-to-text`** (new)
-   - Accepts base64 audio chunk
-   - Calls OpenAI Whisper API (`whisper-1`) — fallback to self-hosted Whisper on home server if reachable
-   - Returns transcript
+- Unzip → File → Open in Android Studio → Sync → Run ▶.
+- Generate a release keystore once when you’re ready to ship.
+- Add Google Play Billing later (intentionally left out).
 
-2. **`src/hooks/useDIYCallMode.ts`** (new, replaces realtime hook)
-   - `getUserMedia` → MediaRecorder
-   - Client-side VAD (simple RMS threshold, or `@ricky0123/vad-web` if approved later — start with RMS)
-   - On silence detected → send chunk to `speech-to-text`
-   - Send transcript to `chat-with-ai`
-   - Stream response text to `text-to-speech` (sentence-by-sentence for low latency)
-   - Play returned MP3 chunks sequentially via `Audio` queue
-   - While AI speaks → mute mic input (already a pattern in current UI)
+## Out of scope (by your request)
 
-3. **`CallModeInterface.tsx`** — swap `useRealtimeCall` → `useDIYCallMode`. Keep all existing UI (rings, captions, mute, volume).
-
-4. **Voice selection** — add a dropdown for OpenAI TTS voices (alloy/onyx/nova/…) or "My Cloned Voice" (XTTS from Voice Studio) so you can pick the call voice.
-
-## Latency strategy
-- Stream LLM tokens; flush to TTS at sentence boundaries (`. ! ?`)
-- Start playing first audio chunk while next sentence is still generating
-- Target: ~1.5–2.5s first-word latency (vs Realtime's ~600ms, but at ~10× lower cost)
-
-## Out of scope for this round
-- Interruption mid-AI-speech (barge-in) — can add later with VAD that keeps listening
-- Self-hosted Whisper wiring — stub the home-server fallback, default to OpenAI Whisper
-
-## Technical details
-- Edge function: `speech-to-text` uses `multipart/form-data` POST to `https://api.openai.com/v1/audio/transcriptions`, model `whisper-1`
-- VAD: rolling RMS over 30ms frames, end-of-utterance after 800ms of silence below threshold
-- Audio queue: simple `HTMLAudioElement[]` with `onended` → play next
-- Reuse existing `ai_usage` row for tracking STT requests (add `stt_requests` column via migration)
-
-## Files touched
-- NEW `supabase/functions/speech-to-text/index.ts`
-- NEW `src/hooks/useDIYCallMode.ts`
-- EDIT `src/components/CallModeInterface.tsx` (swap hook + add voice picker)
-- MIGRATION add `stt_requests int default 0` to `ai_usage`
-
-## Questions before I build
-1. Default TTS voice for calls — `onyx` (current default), or do you want **your cloned voice** from Voice Studio as default when one exists?
-2. Keep OpenAI Realtime as a fallback toggle ("Premium call mode"), or rip it out entirely?
+- Payment, paywall, Play Billing
+- APK signing / build automation (your Ubuntu builder already handles that)
+- Touching `android_app/` (the externally managed folder)
