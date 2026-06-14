@@ -345,6 +345,34 @@ const IDEAS = [
 ];
 
 
+async function generateIconBlobs(
+  srcUrl: string,
+  sizes: number[]
+): Promise<{ size: number; blob: Blob }[]> {
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = srcUrl;
+  });
+  const out: { size: number; blob: Blob }[] = [];
+  for (const size of sizes) {
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, size, size);
+    const blob: Blob = await new Promise((res, rej) =>
+      canvas.toBlob((b) => (b ? res(b) : rej(new Error("toBlob failed"))), "image/png")
+    );
+    out.push({ size, blob });
+  }
+  return out;
+}
+
 function downloadZipFallback(template: Template, name: string, description: string) {
   // No JSZip dependency: download each file individually as a fallback.
   template.files.forEach((f) => {
