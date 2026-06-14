@@ -262,7 +262,7 @@ const IDEAS = [
 function downloadZipFallback(template: Template, name: string, description: string) {
   // No JSZip dependency: download each file individually as a fallback.
   template.files.forEach((f) => {
-    const content = f.content.replaceAll("{{NAME}}", name).replaceAll("{{DESCRIPTION}}", description);
+    const content = f.content.split("{{NAME}}").join(name).split("{{DESCRIPTION}}").join(description);
     const blob = new Blob([content], { type: "text/plain" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -279,7 +279,7 @@ export default function ChromeExtensionStudio() {
   const [selected, setSelected] = useState<Template>(TEMPLATES[0]);
 
   const renderedFile = (content: string) =>
-    content.replaceAll("{{NAME}}", name).replaceAll("{{DESCRIPTION}}", description);
+    content.split("{{NAME}}").join(name).split("{{DESCRIPTION}}").join(description);
 
   const copy = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
