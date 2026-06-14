@@ -6090,6 +6090,20 @@ export type Database = {
           milestone_status: string
         }[]
       }
+      get_inactive_users_for_reminder: {
+        Args: {
+          _inactive_since: string
+          _last_reminder_before: string
+          _limit?: number
+        }
+        Returns: {
+          days_away: number
+          display_name: string
+          email: string
+          tier: string
+          user_id: string
+        }[]
+      }
       get_owner_details:
         | {
             Args: never
