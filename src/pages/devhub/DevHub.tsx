@@ -48,6 +48,7 @@ const modules = [
   { to: "/devhub/email-test", icon: Mail, title: "Email Test", desc: "Owner-only. Send a real no-reply email via notify.cridergpt.com to verify templates + queue end-to-end.", tag: "Server + AI Ops" },
   { to: "/devhub/chrome-extensions", icon: Chrome, title: "Chrome Extension Studio", desc: "No-code templates, monetization tips, and every link you need to publish + sell Chrome/Edge/Firefox extensions.", tag: "Shop + Money" },
   { to: "/devhub/roku-studio", icon: Tv, title: "Roku Channel Studio", desc: "Free dev account, BrightScript starter, Roku Pay + Ads links, niche channel ideas, sideload guide. No annual fee.", tag: "Shop + Money" },
+  { to: "/devhub/android-starter", icon: Smartphone, title: "CriderGPT Android Starter (ZIP)", desc: "Pre-written Kotlin + Compose project for app.cridergpt.android, pre-wired to Supabase auth + chat-with-ai. Download → File → Open in Android Studio. No payment code.", tag: "Builder" },
 ];
 
 export default function DevHub() {
