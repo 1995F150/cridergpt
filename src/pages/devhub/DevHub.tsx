@@ -47,6 +47,7 @@ const modules = [
   { to: "/devhub/auto-promo", icon: Zap, title: "Auto-Promo System (Hourly)", desc: "Owner-only hourly TikTok auto-poster. Rotates your promo video library, AI-generates fresh caption + hashtags every hour, 7-day dedup, hourly cap + min-gap guardrails, kill switch.", tag: "Shop + Money" },
   { to: "/devhub/email-test", icon: Mail, title: "Email Test", desc: "Owner-only. Send a real no-reply email via notify.cridergpt.com to verify templates + queue end-to-end.", tag: "Server + AI Ops" },
   { to: "/devhub/chrome-extensions", icon: Chrome, title: "Chrome Extension Studio", desc: "No-code templates, monetization tips, and every link you need to publish + sell Chrome/Edge/Firefox extensions.", tag: "Shop + Money" },
+  { to: "/devhub/roku-studio", icon: Tv, title: "Roku Channel Studio", desc: "Free dev account, BrightScript starter, Roku Pay + Ads links, niche channel ideas, sideload guide. No annual fee.", tag: "Shop + Money" },
 ];
 
 export default function DevHub() {
