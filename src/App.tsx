@@ -63,6 +63,7 @@ import DevAetherControl from "./pages/devhub/AetherControl";
 import DevAndroidAppIdeas from "./pages/devhub/AndroidAppIdeas";
 import DevBuilderResources from "./pages/devhub/BuilderResources";
 import DevAdNetworks from "./pages/devhub/AdNetworks";
+import DevEmailTest from "./pages/devhub/EmailTest";
 import DevBackendBlueprints from "./pages/devhub/BackendBlueprints";
 import DevMarketingAutoPost from "./pages/devhub/MarketingAutoPost";
 import DevIOSBuilder from "./pages/devhub/IOSBuilder";
