@@ -43,6 +43,7 @@ import PCFeed from "./pages/PCFeed";
 import AccountManagement from "./pages/AccountManagement";
 import DeleteAccountInfo from "./pages/DeleteAccountInfo";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Unsubscribe from "./pages/Unsubscribe";
 import DevHub from "./pages/devhub/DevHub";
 import DevServerConsole from "./pages/devhub/ServerConsole";
 import DevMachineDesigner from "./pages/devhub/MachineDesigner";
@@ -133,6 +134,7 @@ const App = () => {
                       <Route path="/snapchat-lens" element={<SnapchatLensPage />} />
                       <Route path="/custom-filters" element={<CustomFilters />} />
                       <Route path="/user-agreement" element={<UserAgreement />} />
+                      <Route path="/unsubscribe" element={<Unsubscribe />} />
                       <Route path="/store" element={<SmartIDStore />} />
                       <Route path="/farmbureau" element={<FarmBureau />} />
                       <Route path="/farm-bureau" element={<FarmBureau />} />
