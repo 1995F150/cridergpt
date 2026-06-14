@@ -266,15 +266,84 @@ const RESOURCES = [
 ];
 
 const IDEAS = [
-  { name: "FFA Show Day Timer", pitch: "Floating timer + class checklist for show ring days. $2.99.", tag: "Niche" },
-  { name: "Livestock Auction Bid Tracker", pitch: "Auto-logs bids on DVAuction / LMA pages into a CSV.", tag: "Niche" },
-  { name: "Recipe Saver to CriderGPT", pitch: "One-click save any web recipe into your CriderGPT recipe vault. Free, drives signups.", tag: "Lead magnet" },
-  { name: "Tab Group Auto-Saver", pitch: "Save + restore tab sessions by project. Freemium ($3.99 pro).", tag: "Utility" },
-  { name: "YouTube Distraction Killer", pitch: "Hide shorts, recommended, comments. $1.99 one-time.", tag: "Utility" },
-  { name: "AI Page Summarizer", pitch: "Side panel summary of any article. $4.99/mo.", tag: "AI" },
-  { name: "Price History Lookup", pitch: "Show Amazon/Walmart price history on product pages.", tag: "Shopping" },
-  { name: "Dark Mode Anywhere", pitch: "Force dark mode on any site. Free with optional $1.99 tip jar.", tag: "Utility" },
+  { name: "Audio Booster Pro", pitch: "Boost any tab's volume up to 600% with per-tab memory + bass boost slider.", tag: "Utility", price: "$2.99 one-time" },
+  { name: "FFA Show Day Timer", pitch: "Floating timer + class checklist for show ring days.", tag: "Niche", price: "$2.99 one-time" },
+  { name: "Livestock Auction Bid Tracker", pitch: "Auto-logs bids on DVAuction / LMA pages into a CSV.", tag: "Niche", price: "$4.99 one-time" },
+  { name: "Recipe Saver to CriderGPT", pitch: "One-click save any web recipe into your CriderGPT recipe vault.", tag: "Lead magnet", price: "Free" },
+  { name: "Tab Group Auto-Saver", pitch: "Save + restore tab sessions by project. Freemium pro tier.", tag: "Utility", price: "$3.99 one-time" },
+  { name: "YouTube Distraction Killer", pitch: "Hide shorts, recommended, comments, end cards.", tag: "Utility", price: "$1.99 one-time" },
+  { name: "AI Page Summarizer", pitch: "Side panel summary of any article in 5 bullets.", tag: "AI", price: "$4.99/mo" },
+  { name: "Price History Lookup", pitch: "Show Amazon/Walmart price history on product pages.", tag: "Shopping", price: "Free / $2.99 pro" },
+  { name: "Dark Mode Anywhere", pitch: "Force dark mode on any site with per-site overrides.", tag: "Utility", price: "Free + tip jar" },
+  { name: "Sleep Timer for Web Video", pitch: "Auto-pause YouTube/Netflix/Twitch after X minutes.", tag: "Utility", price: "$1.99 one-time" },
+  { name: "Reading Mode Plus", pitch: "Strip ads + popups, pick font/spacing, save to read-later.", tag: "Utility", price: "$3.99 one-time" },
+  { name: "Auto-Skip Ads & Sponsors", pitch: "Skip YouTube intros, sponsor segments, mid-rolls.", tag: "Utility", price: "$2.99 one-time" },
+  { name: "Speed Reader Highlighter", pitch: "Bionic-style bold leading letters for faster reading.", tag: "Productivity", price: "Free + $1.99 pro" },
+  { name: "Mute Tab on Switch", pitch: "Auto-mute any background tab the moment you leave it.", tag: "Utility", price: "$0.99 one-time" },
+  { name: "Auto-Close Duplicate Tabs", pitch: "Merge duplicate tabs instantly. Saves RAM.", tag: "Utility", price: "Free" },
+  { name: "Screenshot Full Page", pitch: "Capture entire scrollable page → PNG/PDF.", tag: "Utility", price: "$1.99 one-time" },
+  { name: "GIF Maker from Video", pitch: "Select a video region, set start/end, export GIF.", tag: "Creator", price: "$3.99 one-time" },
+  { name: "Color Picker + Eyedropper", pitch: "Pick any color on any page, save palettes.", tag: "Designer", price: "Free + $1.99 pro" },
+  { name: "Font Identifier", pitch: "Hover any text, see the font family + weight + size.", tag: "Designer", price: "$2.99 one-time" },
+  { name: "Page Word Counter", pitch: "Live word/character/reading-time counter for any page.", tag: "Writer", price: "Free" },
+  { name: "Grammar Quick-Fix", pitch: "Highlight text, get AI-rewritten clean version.", tag: "AI Writer", price: "$4.99/mo" },
+  { name: "Email Template Vault", pitch: "Save and one-click paste email replies into Gmail/Outlook.", tag: "Productivity", price: "$3.99 one-time" },
+  { name: "Meeting Note Catcher", pitch: "Auto-transcribe browser meetings → notes + action items.", tag: "AI", price: "$6.99/mo" },
+  { name: "Pomodoro Floating Timer", pitch: "25/5 timer pinned over any tab, with daily stats.", tag: "Productivity", price: "$1.99 one-time" },
+  { name: "Site Blocker for Focus", pitch: "Block distracting sites during set hours.", tag: "Productivity", price: "Free + $2.99 pro" },
+  { name: "Password Strength Audit", pitch: "Scan saved passwords for weak/reused ones (local only).", tag: "Security", price: "$3.99 one-time" },
+  { name: "Tracker Blocker Lite", pitch: "Block trackers, show count per site, no account needed.", tag: "Privacy", price: "Free + tip jar" },
+  { name: "Cookie Banner Killer", pitch: "Auto-decline cookie popups on every site.", tag: "Privacy", price: "$1.99 one-time" },
+  { name: "VPN Status Indicator", pitch: "Pinned country/IP indicator + leak test button.", tag: "Privacy", price: "Free" },
+  { name: "Web3 Wallet Checker", pitch: "Hover any wallet address → see balance + ENS.", tag: "Crypto", price: "$4.99 one-time" },
+  { name: "Etsy Listing Helper", pitch: "Auto-fill tags, scan competitor pricing, optimize titles.", tag: "Seller", price: "$6.99/mo" },
+  { name: "Amazon Review Honesty Score", pitch: "Fakespot-style fake-review detector for product pages.", tag: "Shopping", price: "Free + $2.99 pro" },
+  { name: "Coupon Auto-Apply", pitch: "Tries every known coupon at checkout, keeps the best.", tag: "Shopping", price: "Free (affiliate)" },
+  { name: "eBay Bid Sniper", pitch: "Auto-bid in the final 5 seconds of an auction.", tag: "Shopping", price: "$4.99 one-time" },
+  { name: "Zillow Hidden Data", pitch: "Show price drops, days on market, school ratings inline.", tag: "Real Estate", price: "$3.99/mo" },
+  { name: "LinkedIn Hide Promoted", pitch: "Strip 'Promoted' posts + suggested feed clutter.", tag: "Utility", price: "$1.99 one-time" },
+  { name: "Twitter/X Cleanser", pitch: "Hide For You tab, ads, trending, blue checks (toggle).", tag: "Utility", price: "$1.99 one-time" },
+  { name: "Reddit Old UI Forever", pitch: "Force old.reddit.com on every link.", tag: "Utility", price: "Free" },
+  { name: "Instagram Web Downloader", pitch: "Save IG photos/reels from the browser legally for your own posts.", tag: "Creator", price: "$3.99 one-time" },
+  { name: "TikTok Bulk Saver", pitch: "Save TikTok videos you posted with original quality.", tag: "Creator", price: "$3.99 one-time" },
+  { name: "YouTube Thumbnail Downloader", pitch: "Grab any video's HD thumbnail with one click.", tag: "Creator", price: "Free" },
+  { name: "YouTube to MP3 Note-Taker", pitch: "Save timestamped notes against a YouTube video.", tag: "Student", price: "$2.99 one-time" },
+  { name: "Twitch Auto-Claim Points", pitch: "Auto-claim channel points + drops in background tabs.", tag: "Gaming", price: "$2.99 one-time" },
+  { name: "Steam Wishlist Price Drop", pitch: "Pings you when a wishlisted game drops below target.", tag: "Gaming", price: "Free + $1.99 pro" },
+  { name: "Discord Quick Notes", pitch: "Pin notes per channel, syncs across browsers.", tag: "Gaming", price: "$1.99 one-time" },
+  { name: "Spotify Lyrics Anywhere", pitch: "Show synced lyrics over web player + sidebar.", tag: "Music", price: "$2.99 one-time" },
+  { name: "Bandcamp Auto-Buy Tracker", pitch: "Watch artists, alert on new releases.", tag: "Music", price: "Free" },
+  { name: "Pinterest Image Saver Plus", pitch: "Bulk-save board images at original resolution.", tag: "Designer", price: "$3.99 one-time" },
+  { name: "Calendar Quick-Add", pitch: "Highlight any date/time on any page → add to Google Cal.", tag: "Productivity", price: "Free" },
+  { name: "Currency Converter Inline", pitch: "Hover any price, see your local currency conversion.", tag: "Travel", price: "Free" },
+  { name: "Translator Side Panel", pitch: "Real-time translate the page or selection with glossary memory.", tag: "AI", price: "$3.99/mo" },
+  { name: "Flight Price Watcher", pitch: "Track Google Flights / Skyscanner trips, alert on drops.", tag: "Travel", price: "$4.99 one-time" },
+  { name: "Hotel Hidden Fees Exposer", pitch: "Add resort/cleaning fees into displayed prices.", tag: "Travel", price: "$2.99 one-time" },
+  { name: "Job Board Aggregator", pitch: "Pull LinkedIn + Indeed + Wellfound into one feed.", tag: "Career", price: "Free + $3.99 pro" },
+  { name: "Resume Auto-Filler", pitch: "Fill job applications from a saved profile, one click.", tag: "Career", price: "$4.99 one-time" },
+  { name: "Stack Overflow Auto-Copy", pitch: "Copy code blocks cleanly without the prompt prefix.", tag: "Developer", price: "Free" },
+  { name: "JSON Pretty-Print", pitch: "Auto-format API responses + collapsible tree.", tag: "Developer", price: "Free" },
+  { name: "Regex Tester Side Panel", pitch: "Build + test regex without leaving your tab.", tag: "Developer", price: "$1.99 one-time" },
+  { name: "Lighthouse Quick-Audit", pitch: "Run perf/SEO audit on the current page, save reports.", tag: "Developer", price: "$3.99 one-time" },
+  { name: "Bookmark Auto-Tagger", pitch: "AI tags + summaries for every bookmark you save.", tag: "AI", price: "$2.99/mo" },
+  { name: "Highlight & Save (Notion)", pitch: "Highlight any text, push to Notion with source link.", tag: "Productivity", price: "$3.99 one-time" },
+  { name: "ChatGPT Folder Sidebar", pitch: "Group ChatGPT chats into folders with search.", tag: "AI", price: "$4.99 one-time" },
+  { name: "Gemini Auto-Continue", pitch: "Auto-clicks 'continue' on long Gemini outputs.", tag: "AI", price: "$1.99 one-time" },
+  { name: "Local AI Chat (Ollama)", pitch: "Side panel that calls your local Ollama server, no cloud.", tag: "AI", price: "Free" },
+  { name: "Page Diff Watcher", pitch: "Get notified when a specific page changes (price, stock).", tag: "Productivity", price: "$3.99 one-time" },
+  { name: "RSS Inbox Sidebar", pitch: "Lightweight feed reader, no account needed.", tag: "Productivity", price: "Free + $1.99 pro" },
+  { name: "Weather on New Tab", pitch: "Clean new-tab weather + 7-day forecast.", tag: "Utility", price: "Free" },
+  { name: "Crypto Portfolio Tracker", pitch: "Sidebar portfolio with live prices, no wallet connect.", tag: "Crypto", price: "$3.99 one-time" },
+  { name: "Stock Earnings Calendar", pitch: "Hover any ticker, see earnings date + history.", tag: "Finance", price: "$2.99 one-time" },
+  { name: "Hashtag Generator", pitch: "AI suggests trending hashtags for any caption.", tag: "Creator", price: "$2.99/mo" },
+  { name: "Background Noise Generator", pitch: "Rain / cafe / brown noise pinned to your browser.", tag: "Productivity", price: "$1.99 one-time" },
+  { name: "Picture-in-Picture Plus", pitch: "Forces PiP on any HTML5 video, drag corners.", tag: "Utility", price: "$2.99 one-time" },
+  { name: "Auto-Refresh on Schedule", pitch: "Refresh tabs every N seconds (with stop conditions).", tag: "Utility", price: "$1.99 one-time" },
+  { name: "Print to Clean PDF", pitch: "Strip ads/nav before printing or saving as PDF.", tag: "Utility", price: "$2.99 one-time" },
+  { name: "Right-Click Restored", pitch: "Re-enable right-click on sites that block it.", tag: "Utility", price: "$0.99 one-time" },
+  { name: "Auto-Login Vault", pitch: "Local-only password autofill with biometric unlock.", tag: "Security", price: "$4.99 one-time" },
 ];
+
 
 function downloadZipFallback(template: Template, name: string, description: string) {
   // No JSZip dependency: download each file individually as a fallback.
@@ -484,19 +553,22 @@ export default function ChromeExtensionStudio() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><Sparkles className="w-4 h-4" /> Extension ideas you could ship</CardTitle>
-                  <CardDescription>Niche + utility ideas with monetization hints. Tap to copy as a starter prompt.</CardDescription>
+                  <CardDescription>{IDEAS.length} ideas with suggested prices. Tap to copy as a starter prompt.</CardDescription>
                 </CardHeader>
               </Card>
               <div className="grid sm:grid-cols-2 gap-3">
                 {IDEAS.map((i) => (
                   <Card key={i.name} className="hover:border-primary/40 cursor-pointer"
-                    onClick={() => copy(`Build a Chrome MV3 extension called "${i.name}". ${i.pitch}`, i.name)}>
+                    onClick={() => copy(`Build a Chrome MV3 extension called "${i.name}". ${i.pitch} Suggested price: ${i.price}.`, i.name)}>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <CardTitle className="text-base">{i.name}</CardTitle>
-                        <Badge variant="outline" className="text-xs">{i.tag}</Badge>
+                        <Badge variant="outline" className="text-xs shrink-0">{i.tag}</Badge>
                       </div>
                       <CardDescription className="text-xs">{i.pitch}</CardDescription>
+                      <div className="flex items-center gap-1 text-xs text-primary font-medium pt-1">
+                        <DollarSign className="w-3 h-3" /> {i.price}
+                      </div>
                     </CardHeader>
                   </Card>
                 ))}

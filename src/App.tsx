@@ -66,6 +66,7 @@ import DevBuilderResources from "./pages/devhub/BuilderResources";
 import DevAdNetworks from "./pages/devhub/AdNetworks";
 import DevEmailTest from "./pages/devhub/EmailTest";
 import DevChromeExtensionStudio from "./pages/devhub/ChromeExtensionStudio";
+import DevRokuStudio from "./pages/devhub/RokuStudio";
 import DevBackendBlueprints from "./pages/devhub/BackendBlueprints";
 import DevMarketingAutoPost from "./pages/devhub/MarketingAutoPost";
 import DevIOSBuilder from "./pages/devhub/IOSBuilder";
@@ -208,6 +209,7 @@ const App = () => {
                     <Route path="/devhub/auto-promo" element={<DevAutoPromoSystem />} />
                     <Route path="/devhub/email-test" element={<DevEmailTest />} />
                     <Route path="/devhub/chrome-extensions" element={<DevChromeExtensionStudio />} />
+                    <Route path="/devhub/roku-studio" element={<DevRokuStudio />} />
 
 
 
