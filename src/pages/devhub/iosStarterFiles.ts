@@ -1170,13 +1170,8 @@ struct SideMenuView: View {
     private let items: [Item] = [
         .init(title: "Smart ID Store",  symbol: "tag",              url: Config.ExternalLink.store),
         .init(title: "Snapchat Lens",   symbol: "camera.viewfinder",url: Config.ExternalLink.snapchatLens),
-        .init(title: "FarmBureau",      symbol: "shield",           url: Config.ExternalLink.farmBureau),
-        .init(title: "TikTok Studio",   symbol: "music.note",       url: Config.ExternalLink.tiktokStudio),
         .init(title: "Custom Filters",  symbol: "wand.and.stars",   url: Config.ExternalLink.customFilters),
-        .init(title: "Recipes",         symbol: "fork.knife",       url: Config.ExternalLink.recipes),
-        .init(title: "Guides",          symbol: "book",             url: Config.ExternalLink.guides),
-        .init(title: "Leaderboard",     symbol: "trophy",           url: Config.ExternalLink.leaderboard),
-        .init(title: "Invite Friends",  symbol: "person.2",         url: Config.ExternalLink.invite),
+        .init(title: "Terms & Privacy", symbol: "doc.text",         url: Config.ExternalLink.terms),
     ]
 
     var body: some View {
