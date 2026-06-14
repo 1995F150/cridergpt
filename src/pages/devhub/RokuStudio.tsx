@@ -225,12 +225,39 @@ export default function RokuStudio() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-3">Channel ideas you could ship</h2>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {IDEAS.map((i) => (
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <h2 className="text-lg font-semibold">Channel ideas you could ship</h2>
+              <span className="text-xs text-muted-foreground">{IDEAS.length} ideas</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-3">
+              <Button
+                size="sm"
+                variant={activeCategory === "All" ? "default" : "outline"}
+                onClick={() => setActiveCategory("All")}
+                className="shrink-0"
+              >
+                <Filter className="w-3 h-3 mr-1" /> All
+              </Button>
+              {CATEGORIES.map((c) => (
+                <Button
+                  key={c}
+                  size="sm"
+                  variant={activeCategory === c ? "default" : "outline"}
+                  onClick={() => setActiveCategory(c)}
+                  className="shrink-0"
+                >
+                  {c}
+                </Button>
+              ))}
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredIdeas.map((i) => (
                 <Card key={i.name} className="hover:border-primary/40">
                   <CardHeader>
-                    <CardTitle className="text-base">{i.name}</CardTitle>
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-base">{i.name}</CardTitle>
+                      <Badge variant="secondary" className="text-[10px] shrink-0">{i.category}</Badge>
+                    </div>
                     <CardDescription className="text-xs">{i.pitch}</CardDescription>
                     <div className="text-xs text-primary font-medium pt-1 flex items-center gap-1">
                       <DollarSign className="w-3 h-3" /> {i.monetization}
