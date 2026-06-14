@@ -152,10 +152,12 @@ const SIDELOAD_STEPS = [
 
 export default function RokuStudio() {
   const { toast } = useToast();
+  const [activeCategory, setActiveCategory] = useState<string>("All");
   const copy = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
     toast({ title: `${label} copied` });
   };
+  const filteredIdeas = activeCategory === "All" ? IDEAS : IDEAS.filter((i) => i.category === activeCategory);
 
   return (
     <DevHubGuard>
