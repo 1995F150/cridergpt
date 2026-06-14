@@ -14,6 +14,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MaintenanceGuard } from "@/components/MaintenanceGuard";
 import { OfflineBanner } from "@/components/OfflineIndicator";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { initGA } from './utils/analytics';
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -216,6 +217,7 @@ const App = () => {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
+                  <OnboardingTour />
                 </MaintenanceGuard>
               </AuthProvider>
             </BrowserRouter>
