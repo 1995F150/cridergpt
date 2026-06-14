@@ -82,6 +82,7 @@ import DevBackendWiringReference from "./pages/devhub/BackendWiringReference";
 import DevAlcoholRecipes from "./pages/devhub/AlcoholRecipes";
 import DevUIBlueprints from "./pages/devhub/UIBlueprints";
 import DevTechKnowledgeLibrary from "./pages/devhub/TechKnowledgeLibrary";
+import DevAutoPromoSystem from "./pages/devhub/AutoPromoSystem";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
