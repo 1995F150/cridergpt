@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import {
   ChevronLeft, ExternalLink, Tv, DollarSign, BookOpen, Wrench, Rocket, Code2, Copy,
+  Filter,
 } from "lucide-react";
 
 const RESOURCES = [
