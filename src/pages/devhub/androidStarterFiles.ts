@@ -1312,30 +1312,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ${PKG}.util.rememberHasRole
 
-private data class DevModule(val label: String, val url: String)
+private data class DevModule(val label: String, val route: String)
 
+/**
+ * Owner-only. All DevHub modules render natively inside the app — never as
+ * external Chrome links. The `route` is the in-app navigation destination.
+ */
 private val DEV_MODULES = listOf(
-    DevModule("Server AI Console", "https://cridergpt.com/devhub/server-console"),
-    DevModule("Server Health & Self-Repair", "https://cridergpt.com/devhub/server-health"),
-    DevModule("Knowledge Vault", "https://cridergpt.com/devhub/vault"),
-    DevModule("Machine Designer", "https://cridergpt.com/devhub/machine-designer"),
-    DevModule("Code Generator", "https://cridergpt.com/devhub/code-generator"),
-    DevModule("Agent Dispatcher", "https://cridergpt.com/devhub/agent-dispatcher"),
-    DevModule("Autopilot Queue", "https://cridergpt.com/devhub/autopilot"),
-    DevModule("Android Auto-Builder", "https://cridergpt.com/devhub/android-builder"),
-    DevModule("Android Starter (ZIP)", "https://cridergpt.com/devhub/android-starter"),
-    DevModule("iOS Builder", "https://cridergpt.com/devhub/ios-builder"),
-    DevModule("Chrome Extension Studio", "https://cridergpt.com/devhub/chrome-extensions"),
-    DevModule("Roku Channel Studio", "https://cridergpt.com/devhub/roku-studio"),
-    DevModule("Backend Wiring Reference", "https://cridergpt.com/devhub/backend-wiring"),
-    DevModule("UI Blueprints", "https://cridergpt.com/devhub/ui-blueprints"),
-    DevModule("Tech Knowledge Library", "https://cridergpt.com/devhub/tech-library"),
-    DevModule("Auto-Promo (Hourly)", "https://cridergpt.com/devhub/auto-promo"),
+    DevModule("Server AI Console", "devhub/server-console"),
+    DevModule("Server Health & Self-Repair", "devhub/server-health"),
+    DevModule("Knowledge Vault", "devhub/vault"),
+    DevModule("Machine Designer", "devhub/machine-designer"),
+    DevModule("Code Generator", "devhub/code-generator"),
+    DevModule("Agent Dispatcher", "devhub/agent-dispatcher"),
+    DevModule("Autopilot Queue", "devhub/autopilot"),
+    DevModule("Android Auto-Builder", "devhub/android-builder"),
+    DevModule("iOS Builder", "devhub/ios-builder"),
+    DevModule("Chrome Extension Studio", "devhub/chrome-extensions"),
+    DevModule("Roku Channel Studio", "devhub/roku-studio"),
+    DevModule("Backend Wiring Reference", "devhub/backend-wiring"),
+    DevModule("UI Blueprints", "devhub/ui-blueprints"),
+    DevModule("Tech Knowledge Library", "devhub/tech-library"),
+    DevModule("Auto-Promo (Hourly)", "devhub/auto-promo"),
+    DevModule("Idea Planner", "devhub/idea-planner"),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DevHubScreen(openExternal: (String) -> Unit) {
+fun DevHubScreen(onOpenModule: (String) -> Unit) {
     val isOwner = rememberHasRole("owner")
     Column(Modifier.fillMaxSize().padding(12.dp)) {
         Text("Dev Hub", style = MaterialTheme.typography.titleLarge)
@@ -1346,12 +1350,12 @@ fun DevHubScreen(openExternal: (String) -> Unit) {
             }
             false -> Text("Owner access required.", color = MaterialTheme.colorScheme.error)
             true -> {
-                Text("Owner-only command center. Opens website modules in Chrome.",
+                Text("Owner-only command center. All modules render natively in-app.",
                     style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(DEV_MODULES) { m ->
-                        ElevatedCard(onClick = { openExternal(m.url) }, modifier = Modifier.fillMaxWidth()) {
+                        ElevatedCard(onClick = { onOpenModule(m.route) }, modifier = Modifier.fillMaxWidth()) {
                             Text(m.label, modifier = Modifier.padding(12.dp))
                         }
                     }
