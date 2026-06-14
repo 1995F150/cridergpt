@@ -67,6 +67,7 @@ import DevAdNetworks from "./pages/devhub/AdNetworks";
 import DevEmailTest from "./pages/devhub/EmailTest";
 import DevChromeExtensionStudio from "./pages/devhub/ChromeExtensionStudio";
 import DevRokuStudio from "./pages/devhub/RokuStudio";
+import DevAndroidStarterExport from "./pages/devhub/AndroidStarterExport";
 import DevBackendBlueprints from "./pages/devhub/BackendBlueprints";
 import DevMarketingAutoPost from "./pages/devhub/MarketingAutoPost";
 import DevIOSBuilder from "./pages/devhub/IOSBuilder";
