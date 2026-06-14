@@ -211,6 +211,7 @@ const App = () => {
                     <Route path="/devhub/email-test" element={<DevEmailTest />} />
                     <Route path="/devhub/chrome-extensions" element={<DevChromeExtensionStudio />} />
                     <Route path="/devhub/roku-studio" element={<DevRokuStudio />} />
+                    <Route path="/devhub/android-starter" element={<DevAndroidStarterExport />} />
 
 
 
