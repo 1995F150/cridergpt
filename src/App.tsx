@@ -209,6 +209,7 @@ const App = () => {
                     <Route path="/devhub/auto-promo" element={<DevAutoPromoSystem />} />
                     <Route path="/devhub/email-test" element={<DevEmailTest />} />
                     <Route path="/devhub/chrome-extensions" element={<DevChromeExtensionStudio />} />
+                    <Route path="/devhub/roku-studio" element={<DevRokuStudio />} />
 
 
 
