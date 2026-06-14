@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat, Cloud, Wine, Layout, GraduationCap, Zap, Mail, Chrome, Tv
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat, Cloud, Wine, Layout, GraduationCap, Zap, Mail, Chrome, Tv, Github
 } from "lucide-react";
 
 const modules = [
@@ -50,6 +50,7 @@ const modules = [
   { to: "/devhub/roku-studio", icon: Tv, title: "Roku Channel Studio", desc: "Free dev account, BrightScript starter, Roku Pay + Ads links, niche channel ideas, sideload guide. No annual fee.", tag: "Shop + Money" },
   { to: "/devhub/android-starter", icon: Smartphone, title: "CriderGPT Android Starter (ZIP)", desc: "Pre-written Kotlin + Compose project for app.cridergpt.android, pre-wired to Supabase auth + chat-with-ai. Download → File → Open in Android Studio. No payment code.", tag: "Builder" },
   { to: "/devhub/ios-starter", icon: Apple, title: "CriderGPT iOS Starter (ZIP)", desc: "Pre-written Swift + SwiftUI project for app.cridergpt.ios, pre-wired to Supabase + StoreKit 2. Same parity as the Android starter. Only placeholder: IAP product IDs in Config.swift.", tag: "iOS" },
+  { to: "/devhub/repo-sync", icon: Github, title: "Repo Sync (Android + iOS)", desc: "Push the latest starters into github.com/1995F150/CriderGPT-android-native + CriderGPT-IOS with one script. Includes GitHub Actions to auto-build signed APK/AAB and iOS .xcarchive on every push.", tag: "Builder" },
 ];
 
 export default function DevHub() {
