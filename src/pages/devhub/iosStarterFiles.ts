@@ -102,17 +102,15 @@ enum Config {
         static let allProductIDs: [String] = [plusMonthly, proMonthly]
     }
 
-    // External links that always leave the app into Safari.
+    // The ONLY screens allowed to leave the native app into Safari.
+    // Everything else (Tag Lookup, Livestock, Calendar, Payment, Plan, Profile,
+    // Guardian, Frequency Tools, Signer, USB Hub, RDR2 Guide, Cloud Gaming,
+    // Admin Panel, DevHub, Idea Planner, etc.) must be rendered natively.
     enum ExternalLink {
-        static let store        = URL(string: "https://cridergpt.com/smart-id-store")!
-        static let snapchatLens = URL(string: "https://cridergpt.com/snapchat-lens")!
-        static let farmBureau   = URL(string: "https://cridergpt.com/farm-bureau")!
-        static let tiktokStudio = URL(string: "https://cridergpt.com/devhub/tiktok-studio")!
+        static let store         = URL(string: "https://cridergpt.com/smart-id-store")!
+        static let snapchatLens  = URL(string: "https://cridergpt.com/snapchat-lens")!
         static let customFilters = URL(string: "https://cridergpt.com/custom-filters")!
-        static let recipes      = URL(string: "https://cridergpt.com/recipes")!
-        static let guides       = URL(string: "https://cridergpt.com/guides")!
-        static let leaderboard  = URL(string: "https://cridergpt.com/leaderboard")!
-        static let invite       = URL(string: "https://cridergpt.com/invite")!
+        static let terms         = URL(string: "https://cridergpt.com/user-agreement")!
     }
 }
 `,
