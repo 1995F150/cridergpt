@@ -68,6 +68,7 @@ import DevEmailTest from "./pages/devhub/EmailTest";
 import DevChromeExtensionStudio from "./pages/devhub/ChromeExtensionStudio";
 import DevRokuStudio from "./pages/devhub/RokuStudio";
 import DevAndroidStarterExport from "./pages/devhub/AndroidStarterExport";
+import DevIOSStarterExport from "./pages/devhub/IOSStarterExport";
 import DevBackendBlueprints from "./pages/devhub/BackendBlueprints";
 import DevMarketingAutoPost from "./pages/devhub/MarketingAutoPost";
 import DevIOSBuilder from "./pages/devhub/IOSBuilder";
@@ -212,6 +213,7 @@ const App = () => {
                     <Route path="/devhub/chrome-extensions" element={<DevChromeExtensionStudio />} />
                     <Route path="/devhub/roku-studio" element={<DevRokuStudio />} />
                     <Route path="/devhub/android-starter" element={<DevAndroidStarterExport />} />
+                    <Route path="/devhub/ios-starter" element={<DevIOSStarterExport />} />
 
 
 

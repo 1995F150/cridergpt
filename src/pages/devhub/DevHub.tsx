@@ -49,6 +49,7 @@ const modules = [
   { to: "/devhub/chrome-extensions", icon: Chrome, title: "Chrome Extension Studio", desc: "No-code templates, monetization tips, and every link you need to publish + sell Chrome/Edge/Firefox extensions.", tag: "Shop + Money" },
   { to: "/devhub/roku-studio", icon: Tv, title: "Roku Channel Studio", desc: "Free dev account, BrightScript starter, Roku Pay + Ads links, niche channel ideas, sideload guide. No annual fee.", tag: "Shop + Money" },
   { to: "/devhub/android-starter", icon: Smartphone, title: "CriderGPT Android Starter (ZIP)", desc: "Pre-written Kotlin + Compose project for app.cridergpt.android, pre-wired to Supabase auth + chat-with-ai. Download → File → Open in Android Studio. No payment code.", tag: "Builder" },
+  { to: "/devhub/ios-starter", icon: Apple, title: "CriderGPT iOS Starter (ZIP)", desc: "Pre-written Swift + SwiftUI project for app.cridergpt.ios, pre-wired to Supabase + StoreKit 2. Same parity as the Android starter. Only placeholder: IAP product IDs in Config.swift.", tag: "iOS" },
 ];
 
 export default function DevHub() {
