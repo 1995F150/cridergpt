@@ -62,7 +62,8 @@ export default function AndroidStarterExport() {
             <CardHeader>
               <CardTitle className="text-lg">What's inside</CardTitle>
               <CardDescription>
-                Open in Android Studio → File → Open → unzipped folder. Gradle will sync, then press Run.
+                Full website-parity scaffold. Open in Android Studio → File → Open → unzipped folder → Run ▶.
+                The <strong>website is the source of truth</strong> — every screen hits the same Supabase tables/functions.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-3 text-sm">
@@ -74,25 +75,36 @@ export default function AndroidStarterExport() {
                 <div className="text-muted-foreground">Supabase project</div>
                 <code className="text-foreground">{ANDROID_STARTER_META.supabaseProjectRef}</code>
               </div>
-              <div className="space-y-1">
-                <div className="text-muted-foreground">Wired edge function</div>
-                <code className="text-foreground">{ANDROID_STARTER_META.edgeFunctionWired}</code>
+              <div className="space-y-1 sm:col-span-2">
+                <div className="text-muted-foreground">Tables / edge functions wired</div>
+                <div className="flex gap-1 flex-wrap">
+                  <Badge variant="secondary">{ANDROID_STARTER_META.edgeFunctionWired}</Badge>
+                  {ANDROID_STARTER_META.tablesWired.map((t) => (
+                    <Badge key={t} variant="outline">{t}</Badge>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-1">
-                <div className="text-muted-foreground">Auth</div>
-                <span>Email + password (Supabase REST), session in SharedPreferences</span>
+              <div className="space-y-1 sm:col-span-2">
+                <div className="text-muted-foreground">Session</div>
+                <span>
+                  Tokens stored in <code>EncryptedSharedPreferences</code> with auto-refresh.
+                  <strong> Never signs out on app close</strong> — only the Sign Out menu clears the session.
+                </span>
               </div>
               <div className="flex gap-2 flex-wrap sm:col-span-2">
                 <Badge variant="secondary">Kotlin 1.9</Badge>
                 <Badge variant="secondary">Compose BOM 2024.06</Badge>
-                <Badge variant="secondary">Material 3</Badge>
-                <Badge variant="secondary">OkHttp REST</Badge>
-                <Badge variant="secondary">NFC permission</Badge>
-                <Badge variant="secondary">Deep link auth-callback</Badge>
+                <Badge variant="secondary">Material 3 + Navigation</Badge>
+                <Badge variant="secondary">Bottom nav: Chat · Livestock · Ideas · Calendar · Profile</Badge>
+                <Badge variant="secondary">Drawer with external website links</Badge>
+                <Badge variant="secondary">DevHub + Admin (role-gated via has_role RPC)</Badge>
+                <Badge variant="secondary">Google OAuth (Chrome Custom Tab, no SHA-1)</Badge>
+                <Badge variant="secondary">NFC tag reader (CriderGPT-XXXXXX)</Badge>
                 <Badge variant="outline">No payment / paywall (by request)</Badge>
               </div>
             </CardContent>
           </Card>
+
 
           <Card>
             <CardHeader>
