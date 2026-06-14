@@ -11,8 +11,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   ChevronLeft, ExternalLink, Copy, Download, Chrome, DollarSign,
-  Globe, Shield, Sparkles, Package, Wrench, Rocket,
+  Globe, Shield, Sparkles, Package, Wrench, Rocket, FolderTree, User,
 } from "lucide-react";
+
+const FOLDER_TREE = `my-extension/           ← this whole folder gets zipped
+├── manifest.json       ← REQUIRED. Must be at the root, not inside a subfolder.
+├── popup.html          ← UI shown when toolbar icon is clicked
+├── popup.js
+├── popup.css           (optional)
+├── background.js       (optional — service worker)
+├── content.js          (optional — runs on web pages)
+├── icon16.png          ← 16x16
+├── icon48.png          ← 48x48
+└── icon128.png         ← 128x128 (REQUIRED for the store)
+
+# Then: right-click "my-extension" folder → Compress → my-extension.zip
+# Upload my-extension.zip (NOT a zip containing the folder-of-the-folder).`;
 
 type Template = {
   id: string;
@@ -322,7 +336,27 @@ export default function ChromeExtensionStudio() {
 
             {/* TEMPLATES */}
             <TabsContent value="templates" className="space-y-4 mt-4">
+              <Card className="border-primary/30 bg-primary/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary" /> Publisher profile
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    This is the name buyers will see on the Chrome Web Store listing.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-sm space-y-1">
+                  <div><b>Developer:</b> Jessie Crider</div>
+                  <div><b>Publisher:</b> CriderGPT</div>
+                  <div><b>Support email:</b> support@cridergpt.com</div>
+                  <div className="text-xs text-muted-foreground pt-1">
+                    Status: ID submitted — pending Google verification. Once verified, this name appears on every listing automatically.
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
+
                 <CardHeader>
                   <CardTitle>Customize your extension</CardTitle>
                   <CardDescription>
@@ -447,6 +481,23 @@ export default function ChromeExtensionStudio() {
 
             {/* SHIP IT */}
             <TabsContent value="ship" className="space-y-3 mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><FolderTree className="w-4 h-4" /> What the folder should look like</CardTitle>
+                  <CardDescription>
+                    Make a regular folder on your desktop, drop these files in, then zip THAT folder. No special structure — flat is fine.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <pre className="text-xs bg-muted/40 border rounded-md p-3 overflow-x-auto whitespace-pre font-mono">{FOLDER_TREE}</pre>
+                  <div className="text-xs text-muted-foreground mt-3 space-y-1">
+                    <p><b>Most common mistake:</b> zipping a folder that <i>contains</i> your extension folder. The ZIP must open straight to <code>manifest.json</code>, not to another folder.</p>
+                    <p><b>Check it:</b> double-click your ZIP — if you see <code>manifest.json</code> right away, you're good. If you see a folder first, re-zip from inside.</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+
               <Card>
                 <CardHeader>
                   <CardTitle>Step-by-step: from folder to paid listing</CardTitle>
