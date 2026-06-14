@@ -553,19 +553,22 @@ export default function ChromeExtensionStudio() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><Sparkles className="w-4 h-4" /> Extension ideas you could ship</CardTitle>
-                  <CardDescription>Niche + utility ideas with monetization hints. Tap to copy as a starter prompt.</CardDescription>
+                  <CardDescription>{IDEAS.length} ideas with suggested prices. Tap to copy as a starter prompt.</CardDescription>
                 </CardHeader>
               </Card>
               <div className="grid sm:grid-cols-2 gap-3">
                 {IDEAS.map((i) => (
                   <Card key={i.name} className="hover:border-primary/40 cursor-pointer"
-                    onClick={() => copy(`Build a Chrome MV3 extension called "${i.name}". ${i.pitch}`, i.name)}>
+                    onClick={() => copy(`Build a Chrome MV3 extension called "${i.name}". ${i.pitch} Suggested price: ${i.price}.`, i.name)}>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <CardTitle className="text-base">{i.name}</CardTitle>
-                        <Badge variant="outline" className="text-xs">{i.tag}</Badge>
+                        <Badge variant="outline" className="text-xs shrink-0">{i.tag}</Badge>
                       </div>
                       <CardDescription className="text-xs">{i.pitch}</CardDescription>
+                      <div className="flex items-center gap-1 text-xs text-primary font-medium pt-1">
+                        <DollarSign className="w-3 h-3" /> {i.price}
+                      </div>
                     </CardHeader>
                   </Card>
                 ))}
