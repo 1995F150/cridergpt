@@ -161,6 +161,30 @@ export function AccountSettings() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Welcome Tour</CardTitle>
+          <CardDescription>
+            Replay the quick walkthrough of CriderGPT's main features.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              if (!user) return;
+              await supabase
+                .from('profiles')
+                .update({ onboarding_completed_at: null, onboarding_step: 0 })
+                .eq('user_id', user.id);
+              toast({ title: "Tour reset", description: "Reload the page to start the welcome tour again." });
+            }}
+          >
+            Replay welcome tour
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
