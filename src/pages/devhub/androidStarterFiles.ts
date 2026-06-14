@@ -155,6 +155,11 @@ dependencies {
     // Image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Biometric authentication
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.1")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 `,
@@ -172,6 +177,8 @@ dependencies {
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.NFC" />
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <application
         android:allowBackup="true"
@@ -231,7 +238,7 @@ dependencies {
   [`app/src/main/java/${PKG_PATH}/MainActivity.kt`]: `package ${PKG}
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -246,7 +253,7 @@ import ${PKG}.ui.nav.AppNav
 import ${PKG}.ui.theme.CriderGPTTheme
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SessionManager.init(applicationContext)
@@ -639,6 +646,20 @@ import ${PKG}.ui.admin.AdminPanelScreen
 import ${PKG}.ui.calendar.CalendarScreen
 import ${PKG}.ui.chat.ChatScreen
 import ${PKG}.ui.devhub.DevHubScreen
+import ${PKG}.ui.devhub.modules.AgentDispatcherScreen
+import ${PKG}.ui.devhub.modules.AndroidBuilderScreen
+import ${PKG}.ui.devhub.modules.AutoPromoScreen
+import ${PKG}.ui.devhub.modules.AutopilotScreen
+import ${PKG}.ui.devhub.modules.BackendWiringScreen
+import ${PKG}.ui.devhub.modules.ChromeExtensionsScreen
+import ${PKG}.ui.devhub.modules.ComingSoonScreen
+import ${PKG}.ui.devhub.modules.DevIdeaPlannerScreen
+import ${PKG}.ui.devhub.modules.IosBuilderScreen
+import ${PKG}.ui.devhub.modules.RokuStudioScreen
+import ${PKG}.ui.devhub.modules.ServerConsoleScreen
+import ${PKG}.ui.devhub.modules.TechLibraryScreen
+import ${PKG}.ui.devhub.modules.UiBlueprintsScreen
+import ${PKG}.ui.devhub.modules.VaultScreen
 import ${PKG}.ui.ideas.IdeaPlannerScreen
 import ${PKG}.ui.livestock.LivestockListScreen
 import ${PKG}.ui.notifications.NotificationsScreen
@@ -762,24 +783,23 @@ fun AppNav(onSignOut: () -> Unit) {
                 composable("account") { AccountManagementScreen() }
                 composable("devhub") { DevHubScreen(onOpenModule = { route -> nav.navigate(route) }) }
                 composable("admin") { AdminPanelScreen() }
-                // Native placeholder screens for every owner-only DevHub module.
-                listOf(
-                    "devhub/server-console", "devhub/server-health", "devhub/vault",
-                    "devhub/machine-designer", "devhub/code-generator", "devhub/agent-dispatcher",
-                    "devhub/autopilot", "devhub/android-builder", "devhub/ios-builder",
-                    "devhub/chrome-extensions", "devhub/roku-studio", "devhub/backend-wiring",
-                    "devhub/ui-blueprints", "devhub/tech-library", "devhub/auto-promo",
-                    "devhub/idea-planner"
-                ).forEach { r ->
-                    composable(r) {
-                        Column(Modifier.fillMaxSize().padding(16.dp)) {
-                            Text(r, style = MaterialTheme.typography.titleLarge)
-                            Spacer(Modifier.height(8.dp))
-                            Text("Native owner-only module. Wire to Supabase here.",
-                                style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
+                // Real native DevHub module screens (owner-gated + biometric)
+                composable("devhub/server-console") { ServerConsoleScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/server-health")  { ServerConsoleScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/vault")           { VaultScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/machine-designer"){ ComingSoonScreen("Machine Designer", onBack = { nav.popBackStack() }) }
+                composable("devhub/code-generator")  { ComingSoonScreen("Code Generator", onBack = { nav.popBackStack() }) }
+                composable("devhub/agent-dispatcher"){ AgentDispatcherScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/autopilot")       { AutopilotScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/android-builder") { AndroidBuilderScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/ios-builder")     { IosBuilderScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/chrome-extensions"){ ChromeExtensionsScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/roku-studio")     { RokuStudioScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/backend-wiring")  { BackendWiringScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/ui-blueprints")   { UiBlueprintsScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/tech-library")    { TechLibraryScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/auto-promo")      { AutoPromoScreen(onBack = { nav.popBackStack() }) }
+                composable("devhub/idea-planner")    { DevIdeaPlannerScreen(onBack = { nav.popBackStack() }) }
             }
         }
     }
@@ -1451,6 +1471,1104 @@ fun AdminPanelScreen() {
     }
 }
 `,
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/Common.kt`]: `package ${PKG}.ui.devhub
+
+import android.widget.Toast
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import ${PKG}.data.SessionManager
+import ${PKG}.data.SupabaseClient
+import org.json.JSONObject
+
+/** Wraps content behind a biometric / device-credential prompt. */
+@Composable
+fun BiometricGate(content: @Composable () -> Unit) {
+    val ctx = LocalContext.current
+    var authed by remember { mutableStateOf(false) }
+    var authError by remember { mutableStateOf<String?>(null) }
+
+    val bm = BiometricManager.from(ctx)
+    val canAuth = bm.canAuthenticate(
+        BiometricManager.Authenticators.BIOMETRIC_WEAK or
+        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+    )
+
+    LaunchedEffect(Unit) {
+        if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) { authed = true; return@LaunchedEffect }
+        val activity = ctx as? FragmentActivity ?: run { authed = true; return@LaunchedEffect }
+        val executor = ContextCompat.getMainExecutor(ctx)
+        val prompt = BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(r: BiometricPrompt.AuthenticationResult) { authed = true }
+            override fun onAuthenticationError(code: Int, msg: CharSequence) { authError = msg.toString() }
+            override fun onAuthenticationFailed() { authError = "Authentication failed." }
+        })
+        prompt.authenticate(
+            BiometricPrompt.PromptInfo.Builder()
+                .setTitle("DevHub — Owner Access")
+                .setSubtitle("Confirm your identity to continue")
+                .setAllowedAuthenticators(
+                    BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                ).build()
+        )
+    }
+
+    when {
+        authError != null -> Column(Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Auth Error", style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.error)
+            Spacer(Modifier.height(8.dp))
+            Text(authError!!)
+        }
+        !authed -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(); Spacer(Modifier.height(8.dp)); Text("Verifying identity...")
+        }
+        else -> content()
+    }
+}
+
+/** Wraps content behind an owner-role check via has_role RPC. */
+@Composable
+fun OwnerGate(content: @Composable () -> Unit) {
+    val uid = SessionManager.userId()
+    var isOwner by remember { mutableStateOf<Boolean?>(null) }
+
+    LaunchedEffect(uid) {
+        if (uid == null) { isOwner = false; return@LaunchedEffect }
+        isOwner = runCatching {
+            SupabaseClient.rpc("has_role",
+                JSONObject().put("_user_id", uid).put("_role", "owner")).trim() == "true"
+        }.getOrDefault(false)
+    }
+
+    when (isOwner) {
+        null -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(); Spacer(Modifier.height(8.dp)); Text("Checking access...")
+        }
+        false -> Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Access Denied", style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.error)
+            Spacer(Modifier.height(8.dp))
+            Text("Owner role required.")
+        }
+        true -> content()
+    }
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/ServerConsoleScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+data class ContainerStatus(val name: String, val status: String)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ServerConsoleScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var containers by remember { mutableStateOf<List<ContainerStatus>>(emptyList()) }
+        var lastBackup by remember { mutableStateOf("—") }
+        var error by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(true) }
+        val scope = rememberCoroutineScope()
+
+        fun load() {
+            scope.launch {
+                loading = true; error = null
+                runCatching {
+                    val raw = SupabaseClient.invoke("server-status", JSONObject())
+                    val j = org.json.JSONObject(raw)
+                    lastBackup = j.optString("last_backup", "unknown")
+                    val arr = j.optJSONArray("containers")
+                    containers = if (arr != null) buildList {
+                        for (i in 0 until arr.length()) {
+                            val o = arr.getJSONObject(i)
+                            add(ContainerStatus(o.optString("name"), o.optString("status")))
+                        }
+                    } else listOf(ContainerStatus("server-status edge fn", "Backend not wired yet — create edge fn server-status"))
+                }.onFailure { error = "Backend not wired yet — create edge fn server-status (\${it.message})" }
+                loading = false
+            }
+        }
+
+        LaunchedEffect(Unit) { load() }
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Server Console") },
+                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+                    actions = { IconButton(onClick = ::load) { Icon(Icons.Default.Refresh, "Refresh") } }
+                )
+            }
+        ) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                Text("Last backup: \$lastBackup", style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                if (loading) CircularProgressIndicator()
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(containers) { c ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(c.name, style = MaterialTheme.typography.titleMedium)
+                                Text(c.status, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/VaultScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SessionManager
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun VaultScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var secrets by remember { mutableStateOf<List<String>>(emptyList()) }
+        var newName by remember { mutableStateOf("") }
+        var newValue by remember { mutableStateOf("") }
+        var error by remember { mutableStateOf<String?>(null) }
+        val scope = rememberCoroutineScope()
+        val uid = SessionManager.userId()
+
+        suspend fun reload() {
+            if (uid == null) return
+            runCatching {
+                val arr = SupabaseClient.select("secrets_vault", select = "name",
+                    filters = mapOf("user_id" to "eq.\$uid"), order = "name.asc")
+                secrets = buildList { for (i in 0 until arr.length()) add(arr.getJSONObject(i).optString("name")) }
+            }.onFailure { error = "Backend not wired yet — create secrets_vault table (\${it.message})" }
+        }
+
+        LaunchedEffect(Unit) { reload() }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Knowledge Vault") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                Text("Secret names only — values never sent to this screen.",
+                    style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(newName, { newName = it }, modifier = Modifier.weight(1f),
+                        placeholder = { Text("Secret name") }, singleLine = true)
+                    Spacer(Modifier.width(4.dp))
+                    OutlinedTextField(newValue, { newValue = it }, modifier = Modifier.weight(1f),
+                        placeholder = { Text("Value") }, singleLine = true)
+                    Spacer(Modifier.width(4.dp))
+                    Button(enabled = newName.isNotBlank() && newValue.isNotBlank() && uid != null,
+                        onClick = {
+                            val u = uid ?: return@Button
+                            val nm = newName.trim(); val vl = newValue.trim()
+                            newName = ""; newValue = ""
+                            scope.launch {
+                                runCatching {
+                                    SupabaseClient.insert("secrets_vault",
+                                        JSONObject().put("name", nm).put("value", vl).put("user_id", u))
+                                    reload()
+                                }.onFailure { error = it.message }
+                            }
+                        }) { Text("Add") }
+                }
+                Spacer(Modifier.height(12.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    items(secrets) { name ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(name, modifier = Modifier.weight(1f))
+                                IconButton(onClick = {
+                                    val u = uid ?: return@IconButton
+                                    scope.launch {
+                                        runCatching {
+                                            SupabaseClient.delete("secrets_vault",
+                                                mapOf("name" to "eq.\$name", "user_id" to "eq.\$u"))
+                                            reload()
+                                        }.onFailure { error = it.message }
+                                    }
+                                }) { Icon(Icons.Default.Delete, "Delete") }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/AgentDispatcherScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AgentDispatcherScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var task by remember { mutableStateOf("") }
+        var agentCount by remember { mutableStateOf("1") }
+        var result by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(false) }
+        val scope = rememberCoroutineScope()
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Agent Dispatcher") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
+                OutlinedTextField(task, { task = it }, label = { Text("Task description") },
+                    modifier = Modifier.fillMaxWidth(), minLines = 3)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(agentCount, { agentCount = it.filter(Char::isDigit) },
+                    label = { Text("Agent count") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(16.dp))
+                Button(enabled = !loading && task.isNotBlank(),
+                    onClick = {
+                        loading = true; result = null
+                        val payload = JSONObject()
+                            .put("task", task.trim())
+                            .put("agent_count", agentCount.toIntOrNull() ?: 1)
+                        scope.launch {
+                            result = runCatching { SupabaseClient.invoke("agent-dispatch", payload) }
+                                .getOrElse { "Backend not wired yet — create edge fn agent-dispatch (\${it.message})" }
+                            loading = false
+                        }
+                    }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Send, null); Spacer(Modifier.width(8.dp))
+                    Text(if (loading) "Dispatching..." else "Dispatch Agent")
+                }
+                result?.let {
+                    Spacer(Modifier.height(16.dp))
+                    ElevatedCard(Modifier.fillMaxWidth()) {
+                        Text(it, modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/AutopilotScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SessionManager
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AutopilotScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var enabled by remember { mutableStateOf(false) }
+        var loading by remember { mutableStateOf(true) }
+        var saving by remember { mutableStateOf(false) }
+        var error by remember { mutableStateOf<String?>(null) }
+        val scope = rememberCoroutineScope()
+        val uid = SessionManager.userId()
+
+        LaunchedEffect(uid) {
+            if (uid == null) { loading = false; return@LaunchedEffect }
+            runCatching {
+                val arr = SupabaseClient.select("user_settings", select = "autopilot_enabled",
+                    filters = mapOf("user_id" to "eq.\$uid"), limit = 1)
+                if (arr.length() > 0) enabled = arr.getJSONObject(0).optBoolean("autopilot_enabled", false)
+            }.onFailure { error = "Backend not wired yet — create user_settings table (\${it.message})" }
+            loading = false
+        }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Autopilot Queue") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(24.dp).fillMaxSize(),
+                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                if (loading) { CircularProgressIndicator(); return@Column }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(16.dp)) }
+                Text("AGI Autopilot", style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.height(8.dp))
+                Text(if (enabled) "ENABLED — Autopilot is running autonomously."
+                     else "DISABLED — Autopilot is paused.",
+                    style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(24.dp))
+                Switch(checked = enabled, onCheckedChange = { newVal ->
+                    val u = uid ?: return@Switch
+                    saving = true
+                    scope.launch {
+                        runCatching {
+                            // upsert pattern via insert with conflict update
+                            SupabaseClient.rpc("upsert_user_setting",
+                                JSONObject().put("_user_id", u)
+                                    .put("_key", "autopilot_enabled").put("_value", newVal.toString()))
+                        }.onSuccess { enabled = newVal }
+                            .onFailure { error = it.message }
+                        saving = false
+                    }
+                }, enabled = !saving)
+                Spacer(Modifier.height(8.dp))
+                Text(if (saving) "Saving..." else "", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/AndroidBuilderScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+data class BuildRun(val id: String, val status: String, val createdAt: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AndroidBuilderScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var runs by remember { mutableStateOf<List<BuildRun>>(emptyList()) }
+        var triggering by remember { mutableStateOf(false) }
+        var error by remember { mutableStateOf<String?>(null) }
+        val scope = rememberCoroutineScope()
+
+        suspend fun loadRuns() {
+            runCatching {
+                val arr = SupabaseClient.select("build_runs", select = "id,status,created_at",
+                    filters = mapOf("platform" to "eq.android"), order = "created_at.desc", limit = 20)
+                runs = buildList { for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(BuildRun(o.optString("id"), o.optString("status"), o.optString("created_at", null)))
+                }}
+            }.onFailure { error = "Backend not wired yet — create build_runs table (\${it.message})" }
+        }
+
+        LaunchedEffect(Unit) { loadRuns() }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Android Auto-Builder") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                Button(enabled = !triggering, onClick = {
+                    triggering = true; error = null
+                    scope.launch {
+                        runCatching { SupabaseClient.invoke("trigger-android-build", JSONObject()) }
+                            .onFailure { error = "Backend not wired yet — create edge fn trigger-android-build (\${it.message})" }
+                        loadRuns(); triggering = false
+                    }
+                }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Build, null); Spacer(Modifier.width(8.dp))
+                    Text(if (triggering) "Triggering…" else "Trigger New Build")
+                }
+                Spacer(Modifier.height(12.dp))
+                Text("Recent builds:", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(runs) { r ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(12.dp)) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(r.id.take(8), style = MaterialTheme.typography.titleSmall)
+                                    r.createdAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                                }
+                                AssistChip(onClick = {}, label = { Text(r.status) })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/IosBuilderScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun IosBuilderScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var runs by remember { mutableStateOf<List<BuildRun>>(emptyList()) }
+        var triggering by remember { mutableStateOf(false) }
+        var error by remember { mutableStateOf<String?>(null) }
+        val scope = rememberCoroutineScope()
+
+        suspend fun loadRuns() {
+            runCatching {
+                val arr = SupabaseClient.select("build_runs", select = "id,status,created_at",
+                    filters = mapOf("platform" to "eq.ios"), order = "created_at.desc", limit = 20)
+                runs = buildList { for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(BuildRun(o.optString("id"), o.optString("status"), o.optString("created_at", null)))
+                }}
+            }.onFailure { error = "Backend not wired yet — create build_runs table (\${it.message})" }
+        }
+
+        LaunchedEffect(Unit) { loadRuns() }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("iOS Builder") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                Button(enabled = !triggering, onClick = {
+                    triggering = true; error = null
+                    scope.launch {
+                        runCatching { SupabaseClient.invoke("trigger-ios-build", JSONObject()) }
+                            .onFailure { error = "Backend not wired yet — create edge fn trigger-ios-build (\${it.message})" }
+                        loadRuns(); triggering = false
+                    }
+                }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Build, null); Spacer(Modifier.width(8.dp))
+                    Text(if (triggering) "Triggering…" else "Trigger iOS Build")
+                }
+                Spacer(Modifier.height(12.dp))
+                Text("Recent builds:", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(runs) { r ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(12.dp)) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(r.id.take(8), style = MaterialTheme.typography.titleSmall)
+                                    r.createdAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                                }
+                                AssistChip(onClick = {}, label = { Text(r.status) })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/ChromeExtensionsScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+
+data class ChromeExt(val id: String, val name: String, val description: String?, val version: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChromeExtensionsScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var exts by remember { mutableStateOf<List<ChromeExt>>(emptyList()) }
+        var error by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(true) }
+
+        LaunchedEffect(Unit) {
+            runCatching {
+                val arr = SupabaseClient.select("chrome_extensions",
+                    select = "id,name,description,version", order = "name.asc")
+                exts = buildList { for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(ChromeExt(o.optString("id"), o.optString("name"),
+                        o.optString("description", null), o.optString("version", null)))
+                }}
+            }.onFailure { error = "Backend not wired yet — create chrome_extensions table (\${it.message})" }
+            loading = false
+        }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Chrome Extension Studio") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                if (loading) CircularProgressIndicator()
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(exts) { e ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(e.name, style = MaterialTheme.typography.titleMedium)
+                                e.version?.let { Text("v\$it", style = MaterialTheme.typography.labelSmall) }
+                                e.description?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/RokuStudioScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+
+data class RokuChannel(val id: String, val name: String, val status: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RokuStudioScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var channels by remember { mutableStateOf<List<RokuChannel>>(emptyList()) }
+        var error by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(true) }
+
+        LaunchedEffect(Unit) {
+            runCatching {
+                val arr = SupabaseClient.select("roku_channels",
+                    select = "id,name,status", order = "name.asc")
+                channels = buildList { for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(RokuChannel(o.optString("id"), o.optString("name"), o.optString("status", null)))
+                }}
+            }.onFailure { error = "Backend not wired yet — create roku_channels table (\${it.message})" }
+            loading = false
+        }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Roku Channel Studio") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                if (loading) CircularProgressIndicator()
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(channels) { c ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(12.dp)) {
+                                Text(c.name, modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.titleMedium)
+                                c.status?.let { AssistChip(onClick = {}, label = { Text(it) }) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/BackendWiringScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+data class TableInfo(val name: String, val count: String)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BackendWiringScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var tables by remember { mutableStateOf<List<TableInfo>>(emptyList()) }
+        var error by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(true) }
+        val scope = rememberCoroutineScope()
+
+        fun load() {
+            scope.launch {
+                loading = true; error = null
+                runCatching {
+                    val raw = SupabaseClient.invoke("db-diagnostic", JSONObject())
+                    val j = org.json.JSONObject(raw)
+                    val arr = j.optJSONArray("tables")
+                    tables = if (arr != null) buildList { for (i in 0 until arr.length()) {
+                        val o = arr.getJSONObject(i)
+                        add(TableInfo(o.optString("name"), o.optString("count", "?")))
+                    }} else listOf(TableInfo("db-diagnostic edge fn", "Not wired yet"))
+                }.onFailure { error = "Backend not wired yet — create edge fn db-diagnostic (\${it.message})" }
+                loading = false
+            }
+        }
+
+        LaunchedEffect(Unit) { load() }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Backend Wiring") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+                actions = { IconButton(onClick = ::load) { Icon(Icons.Default.Refresh, "Refresh") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                if (loading) CircularProgressIndicator()
+                Text("Table row counts (read-only diagnostic):",
+                    style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    items(tables) { t ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Text(t.name, modifier = Modifier.weight(1f))
+                                Text(t.count, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/UiBlueprintsScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+
+data class UiBlueprint(val id: String, val name: String, val description: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UiBlueprintsScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var items_ by remember { mutableStateOf<List<UiBlueprint>>(emptyList()) }
+        var error by remember { mutableStateOf<String?>(null) }
+        var expanded by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(true) }
+
+        LaunchedEffect(Unit) {
+            runCatching {
+                val arr = SupabaseClient.select("ui_blueprints",
+                    select = "id,name,description", order = "name.asc")
+                items_ = buildList { for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(UiBlueprint(o.optString("id"), o.optString("name"),
+                        o.optString("description", null)))
+                }}
+            }.onFailure { error = "Backend not wired yet — create ui_blueprints table (\${it.message})" }
+            loading = false
+        }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("UI Blueprints") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                if (loading) CircularProgressIndicator()
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(items_) { bp ->
+                        ElevatedCard(onClick = { expanded = if (expanded == bp.id) null else bp.id },
+                            modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(bp.name, style = MaterialTheme.typography.titleMedium)
+                                if (expanded == bp.id && bp.description != null) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(bp.description, style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/TechLibraryScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+
+data class TechEntry(val id: String, val title: String, val category: String?, val summary: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TechLibraryScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var entries by remember { mutableStateOf<List<TechEntry>>(emptyList()) }
+        var error by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(true) }
+
+        LaunchedEffect(Unit) {
+            runCatching {
+                val arr = SupabaseClient.select("tech_library",
+                    select = "id,title,category,summary", order = "title.asc")
+                entries = buildList { for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(TechEntry(o.optString("id"), o.optString("title"),
+                        o.optString("category", null), o.optString("summary", null)))
+                }}
+            }.onFailure { error = "Backend not wired yet — create tech_library table (\${it.message})" }
+            loading = false
+        }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Tech Knowledge Library") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                if (loading) CircularProgressIndicator()
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(entries) { e ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(e.title, style = MaterialTheme.typography.titleMedium)
+                                e.category?.let { AssistChip(onClick = {}, label = { Text(it) }) }
+                                e.summary?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/AutoPromoScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SessionManager
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AutoPromoScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var enabled by remember { mutableStateOf(false) }
+        var loading by remember { mutableStateOf(true) }
+        var saving by remember { mutableStateOf(false) }
+        var error by remember { mutableStateOf<String?>(null) }
+        val scope = rememberCoroutineScope()
+        val uid = SessionManager.userId()
+
+        LaunchedEffect(uid) {
+            if (uid == null) { loading = false; return@LaunchedEffect }
+            runCatching {
+                val arr = SupabaseClient.select("user_settings", select = "auto_promo_enabled",
+                    filters = mapOf("user_id" to "eq.\$uid"), limit = 1)
+                if (arr.length() > 0) enabled = arr.getJSONObject(0).optBoolean("auto_promo_enabled", false)
+            }.onFailure { error = "Backend not wired yet — create user_settings table (\${it.message})" }
+            loading = false
+        }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Auto-Promo (Hourly)") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(24.dp).fillMaxSize(),
+                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                if (loading) { CircularProgressIndicator(); return@Column }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(16.dp)) }
+                Text("Auto-Promotion Cron", style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.height(8.dp))
+                Text(if (enabled) "ACTIVE — Hourly promotion cron is running."
+                     else "INACTIVE — Promotion cron is disabled.",
+                    style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(24.dp))
+                Switch(checked = enabled, onCheckedChange = { newVal ->
+                    val u = uid ?: return@Switch; saving = true
+                    scope.launch {
+                        runCatching {
+                            SupabaseClient.rpc("upsert_user_setting",
+                                JSONObject().put("_user_id", u)
+                                    .put("_key", "auto_promo_enabled").put("_value", newVal.toString()))
+                        }.onSuccess { enabled = newVal }.onFailure { error = it.message }
+                        saving = false
+                    }
+                }, enabled = !saving)
+                Spacer(Modifier.height(8.dp))
+                if (saving) CircularProgressIndicator(modifier = Modifier.then(Modifier))
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/DevIdeaPlannerScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SessionManager
+import ${PKG}.data.SupabaseClient
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+data class DevIdea(val id: String, val title: String, val body: String?, val status: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DevIdeaPlannerScreen(onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        var ideas by remember { mutableStateOf<List<DevIdea>>(emptyList()) }
+        var newTitle by remember { mutableStateOf("") }
+        var newBody by remember { mutableStateOf("") }
+        var error by remember { mutableStateOf<String?>(null) }
+        val scope = rememberCoroutineScope()
+        val uid = SessionManager.userId()
+
+        suspend fun reload() {
+            if (uid == null) return
+            runCatching {
+                val arr = SupabaseClient.select("ideas", select = "id,title,body,status",
+                    filters = mapOf("user_id" to "eq.\$uid"), order = "created_at.desc", limit = 100)
+                ideas = buildList { for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(DevIdea(o.optString("id"), o.optString("title"),
+                        o.optString("body", null), o.optString("status", null)))
+                }}
+            }.onFailure { error = "Backend not wired yet — create ideas table (\${it.message})" }
+        }
+
+        LaunchedEffect(Unit) { reload() }
+
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Dev Idea Planner") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).padding(12.dp).fillMaxSize()) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(8.dp)) }
+                OutlinedTextField(newTitle, { newTitle = it }, label = { Text("Title") },
+                    singleLine = true, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(4.dp))
+                OutlinedTextField(newBody, { newBody = it }, label = { Text("Description (optional)") },
+                    minLines = 2, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(8.dp))
+                Button(enabled = newTitle.isNotBlank() && uid != null,
+                    onClick = {
+                        val u = uid ?: return@Button
+                        val t = newTitle.trim(); val b = newBody.trim()
+                        newTitle = ""; newBody = ""
+                        scope.launch {
+                            runCatching {
+                                SupabaseClient.insert("ideas",
+                                    JSONObject().put("title", t).put("body", b.ifBlank { null })
+                                        .put("status", "new").put("user_id", u))
+                                reload()
+                            }.onFailure { newTitle = t; error = it.message }
+                        }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Add Idea") }
+                Spacer(Modifier.height(12.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(ideas) { idea ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(idea.title, style = MaterialTheme.typography.titleMedium)
+                                idea.body?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                                idea.status?.let { AssistChip(onClick = {}, label = { Text(it) }) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/devhub/modules/ComingSoonScreen.kt`]: `package ${PKG}.ui.devhub.modules
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.ui.devhub.BiometricGate
+import ${PKG}.ui.devhub.OwnerGate
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ComingSoonScreen(moduleName: String, onBack: () -> Unit) {
+    BiometricGate { OwnerGate {
+        Scaffold(topBar = {
+            TopAppBar(title = { Text(moduleName) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        }) { padding ->
+            Column(Modifier.padding(padding).fillMaxSize(),
+                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("🚧", style = MaterialTheme.typography.displayMedium)
+                Spacer(Modifier.height(12.dp))
+                Text(moduleName, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                Text("Native implementation coming soon.", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }}
+}
+`,
+
 };
 
 export const ANDROID_STARTER_META = {
@@ -1470,5 +2588,13 @@ export const ANDROID_STARTER_META = {
     "user_subscriptions",
     "user_roles (via has_role RPC)",
     "admin_audit_logs",
+    "secrets_vault",
+    "build_runs",
+    "chrome_extensions",
+    "roku_channels",
+    "ui_blueprints",
+    "tech_library",
+    "ideas",
+    "user_settings",
   ],
 };
