@@ -1316,7 +1316,7 @@ private data class DevModule(val label: String, val route: String)
 
 /**
  * Owner-only. All DevHub modules render natively inside the app — never as
- * external Chrome links. The `route` is the in-app navigation destination.
+ * external Chrome links. The route is the in-app navigation destination.
  */
 private val DEV_MODULES = listOf(
     DevModule("Server AI Console", "devhub/server-console"),
