@@ -44,6 +44,7 @@ const modules = [
   { to: "/devhub/ui-blueprints", icon: Layout, title: "UI Blueprints", desc: "Per-screen Compose / SwiftUI / React blueprints with ADD-ONLY file paths and anti-delete guards so Gemini stops trying to wipe app/src/main. Includes an SVG wireframe.", tag: "Builder" },
   { to: "/devhub/alcohol-recipes", icon: Wine, title: "Alcohol Recipe Lab", desc: "Owner-only wine, cocktail, homebrew, and food-pairing generator. 21+. Drink responsibly.", tag: "Shop + Money" },
   { to: "/devhub/tech-library", icon: GraduationCap, title: "Tech Knowledge Library", desc: "Long-form, plain-English deep dives: Google Sign-In Web vs Android client IDs + SHA-1, button-click-to-DB pipeline, edge functions, Play Billing, keystores, RLS, deep links, Realtime, RAG. Searchable, filterable by track.", tag: "Server + AI Ops" },
+  { to: "/devhub/auto-promo", icon: Zap, title: "Auto-Promo System (Hourly)", desc: "Owner-only hourly TikTok auto-poster. Rotates your promo video library, AI-generates fresh caption + hashtags every hour, 7-day dedup, hourly cap + min-gap guardrails, kill switch.", tag: "Shop + Money" },
 ];
 
 export default function DevHub() {
