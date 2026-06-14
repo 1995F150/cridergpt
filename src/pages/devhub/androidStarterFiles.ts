@@ -760,7 +760,7 @@ fun AppNav(onSignOut: () -> Unit) {
                 composable("profile") { ProfileScreen() }
                 composable("notifications") { NotificationsScreen() }
                 composable("account") { AccountManagementScreen() }
-                composable("devhub") { DevHubScreen(openExternal = { openExternal(ctx, it) }) }
+                composable("devhub") { DevHubScreen(onOpenModule = { route -> nav.navigate(route) }) }
                 composable("admin") { AdminPanelScreen() }
             }
         }
