@@ -102,17 +102,15 @@ enum Config {
         static let allProductIDs: [String] = [plusMonthly, proMonthly]
     }
 
-    // External links that always leave the app into Safari.
+    // The ONLY screens allowed to leave the native app into Safari.
+    // Everything else (Tag Lookup, Livestock, Calendar, Payment, Plan, Profile,
+    // Guardian, Frequency Tools, Signer, USB Hub, RDR2 Guide, Cloud Gaming,
+    // Admin Panel, DevHub, Idea Planner, etc.) must be rendered natively.
     enum ExternalLink {
-        static let store        = URL(string: "https://cridergpt.com/smart-id-store")!
-        static let snapchatLens = URL(string: "https://cridergpt.com/snapchat-lens")!
-        static let farmBureau   = URL(string: "https://cridergpt.com/farm-bureau")!
-        static let tiktokStudio = URL(string: "https://cridergpt.com/devhub/tiktok-studio")!
+        static let store         = URL(string: "https://cridergpt.com/smart-id-store")!
+        static let snapchatLens  = URL(string: "https://cridergpt.com/snapchat-lens")!
         static let customFilters = URL(string: "https://cridergpt.com/custom-filters")!
-        static let recipes      = URL(string: "https://cridergpt.com/recipes")!
-        static let guides       = URL(string: "https://cridergpt.com/guides")!
-        static let leaderboard  = URL(string: "https://cridergpt.com/leaderboard")!
-        static let invite       = URL(string: "https://cridergpt.com/invite")!
+        static let terms         = URL(string: "https://cridergpt.com/user-agreement")!
     }
 }
 `,
@@ -1086,37 +1084,69 @@ struct NotificationsView: View {
 
   "DevHub/DevHubView.swift": `import SwiftUI
 
+/// Owner-only. All DevHub modules render natively inside the app — never as
+/// Safari links. Each row pushes an in-app SwiftUI screen.
 struct DevHubView: View {
+    private struct Module: Identifiable { let id = UUID(); let label: String; let route: String }
+    private let modules: [Module] = [
+        .init(label: "Server AI Console",          route: "devhub/server-console"),
+        .init(label: "Server Health & Self-Repair",route: "devhub/server-health"),
+        .init(label: "Knowledge Vault",            route: "devhub/vault"),
+        .init(label: "Agent Dispatcher",           route: "devhub/agent-dispatcher"),
+        .init(label: "Autopilot Queue",            route: "devhub/autopilot"),
+        .init(label: "iOS Builder",                route: "devhub/ios-builder"),
+        .init(label: "Backend Wiring Reference",   route: "devhub/backend-wiring"),
+        .init(label: "UI Blueprints",              route: "devhub/ui-blueprints"),
+        .init(label: "Tech Knowledge Library",     route: "devhub/tech-library"),
+        .init(label: "Auto-Promo (Hourly)",        route: "devhub/auto-promo"),
+        .init(label: "Idea Planner",               route: "devhub/idea-planner"),
+    ]
+
     var body: some View {
         List {
             Section("Owner Tools") {
-                Link("Open full DevHub on web", destination: URL(string: "https://cridergpt.com/devhub")!)
-                Link("Server Console",          destination: URL(string: "https://cridergpt.com/devhub/server-console")!)
-                Link("Agent Dispatcher",        destination: URL(string: "https://cridergpt.com/devhub/agent-dispatcher")!)
-                Link("System Diagnostics",      destination: URL(string: "https://cridergpt.com/system-diagnostics")!)
+                ForEach(modules) { m in
+                    NavigationLink(m.label, destination: DevModulePlaceholderView(label: m.label, route: m.route))
+                }
             }
             Section {
-                Text("DevHub is owner-only and gated by the has_role RPC. External links open in Safari.")
+                Text("DevHub is owner-only and gated by the has_role RPC. All modules render in-app — never Safari.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
         .navigationTitle("DevHub")
     }
 }
+
+struct DevModulePlaceholderView: View {
+    let label: String
+    let route: String
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(label).font(.title2).bold()
+            Text("Native screen for \\(route). Wire to Supabase / local logic here.")
+                .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }.padding().navigationTitle(label)
+    }
+}
 `,
 
   "DevHub/AdminPanelView.swift": `import SwiftUI
 
+/// Owner/admin-only. All admin tools render natively in-app — never Safari.
 struct AdminPanelView: View {
     var body: some View {
         List {
             Section("Admin Tools") {
-                Link("User management",  destination: URL(string: "https://cridergpt.com/admin")!)
-                Link("System status",    destination: URL(string: "https://cridergpt.com/system-diagnostics")!)
-                Link("Broadcasts",       destination: URL(string: "https://cridergpt.com/admin?tab=broadcasts")!)
+                NavigationLink("User management",
+                    destination: DevModulePlaceholderView(label: "User Management", route: "admin/users"))
+                NavigationLink("System status",
+                    destination: DevModulePlaceholderView(label: "System Status", route: "admin/system"))
+                NavigationLink("Broadcasts",
+                    destination: DevModulePlaceholderView(label: "Broadcasts", route: "admin/broadcasts"))
             }
             Section {
-                Text("Gated by has_role(uid,'admin'). Heavy ops always run on the web for audit logging.")
+                Text("Gated by has_role(uid,'admin'). Rendered natively for offline access.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
@@ -1140,13 +1170,8 @@ struct SideMenuView: View {
     private let items: [Item] = [
         .init(title: "Smart ID Store",  symbol: "tag",              url: Config.ExternalLink.store),
         .init(title: "Snapchat Lens",   symbol: "camera.viewfinder",url: Config.ExternalLink.snapchatLens),
-        .init(title: "FarmBureau",      symbol: "shield",           url: Config.ExternalLink.farmBureau),
-        .init(title: "TikTok Studio",   symbol: "music.note",       url: Config.ExternalLink.tiktokStudio),
         .init(title: "Custom Filters",  symbol: "wand.and.stars",   url: Config.ExternalLink.customFilters),
-        .init(title: "Recipes",         symbol: "fork.knife",       url: Config.ExternalLink.recipes),
-        .init(title: "Guides",          symbol: "book",             url: Config.ExternalLink.guides),
-        .init(title: "Leaderboard",     symbol: "trophy",           url: Config.ExternalLink.leaderboard),
-        .init(title: "Invite Friends",  symbol: "person.2",         url: Config.ExternalLink.invite),
+        .init(title: "Terms & Privacy", symbol: "doc.text",         url: Config.ExternalLink.terms),
     ]
 
     var body: some View {
