@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
         status: 'pending',
         scheduled_for: new Date().toISOString(),
         privacy_level: 'PUBLIC_TO_EVERYONE',
-        source_type: 'auto_promo',
+        source: 'auto_promo',
         source_id: video.id,
       })
       .select().single()
