@@ -582,3 +582,76 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
     </div>
   );
 }
+
+function SuiteExtCard({ ext }: { ext: SuiteExt }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
+  const downloadZip = async () => {
+    const zip = new JSZip();
+    const folder = zip.folder(ext.id)!;
+    ext.files.forEach((f) => folder.file(f.path, f.content));
+    folder.file("ICONS_README.txt",
+      "Add icon16.png, icon48.png, and icon128.png to this folder before publishing.\n" +
+      "Use your CriderGPT logo. The Chrome Web Store requires a 128x128 icon.");
+    const blob = await zip.generateAsync({ type: "blob" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${ext.id}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast({ title: `${ext.name} downloaded`, description: "Unzip → chrome://extensions → Load unpacked" });
+  };
+
+  const copyFile = async (content: string, path: string) => {
+    await navigator.clipboard.writeText(content);
+    toast({ title: `${path} copied` });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileCode className="w-4 h-4 text-primary" /> {ext.name}
+            </CardTitle>
+            <CardDescription className="text-xs mt-1">{ext.tagline}</CardDescription>
+          </div>
+          <Button onClick={downloadZip} size="sm">
+            <Download className="w-4 h-4 mr-2" /> Download ZIP
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {ext.features.map((f) => (
+            <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">{ext.pitch}</p>
+        <div className="text-xs text-muted-foreground">
+          <b>{ext.files.length} files</b> · pre-wired to <code className="text-[10px]">udpldrrpebdyuiqdtqnq.supabase.co</code>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setOpen(!open)}>
+          {open ? "Hide source" : "View source"}
+        </Button>
+        {open && (
+          <div className="space-y-2">
+            {ext.files.map((f) => (
+              <div key={f.path} className="border rounded-md">
+                <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+                  <code className="text-xs font-mono">{f.path}</code>
+                  <Button size="sm" variant="ghost" onClick={() => copyFile(f.content, f.path)}>
+                    <Copy className="w-3 h-3 mr-1" /> Copy
+                  </Button>
+                </div>
+                <pre className="text-xs p-3 overflow-x-auto max-h-72"><code>{f.content}</code></pre>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
