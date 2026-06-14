@@ -11,8 +11,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   ChevronLeft, ExternalLink, Copy, Download, Chrome, DollarSign,
-  Globe, Shield, Sparkles, Package, Wrench, Rocket,
+  Globe, Shield, Sparkles, Package, Wrench, Rocket, FolderTree, User,
 } from "lucide-react";
+
+const FOLDER_TREE = `my-extension/           ← this whole folder gets zipped
+├── manifest.json       ← REQUIRED. Must be at the root, not inside a subfolder.
+├── popup.html          ← UI shown when toolbar icon is clicked
+├── popup.js
+├── popup.css           (optional)
+├── background.js       (optional — service worker)
+├── content.js          (optional — runs on web pages)
+├── icon16.png          ← 16x16
+├── icon48.png          ← 48x48
+└── icon128.png         ← 128x128 (REQUIRED for the store)
+
+# Then: right-click "my-extension" folder → Compress → my-extension.zip
+# Upload my-extension.zip (NOT a zip containing the folder-of-the-folder).`;
 
 type Template = {
   id: string;
