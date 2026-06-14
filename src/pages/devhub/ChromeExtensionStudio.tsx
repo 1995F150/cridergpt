@@ -329,13 +329,34 @@ export default function ChromeExtensionStudio() {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-          <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid grid-cols-4 max-w-2xl">
-              <TabsTrigger value="templates">Templates</TabsTrigger>
-              <TabsTrigger value="resources">Resources</TabsTrigger>
-              <TabsTrigger value="ideas">Ideas</TabsTrigger>
-              <TabsTrigger value="ship">Ship It</TabsTrigger>
+          <Tabs defaultValue="suite" className="w-full">
+            <TabsList className="grid grid-cols-5 max-w-3xl">
+              <TabsTrigger value="suite" className="text-xs sm:text-sm">CriderGPT Suite</TabsTrigger>
+              <TabsTrigger value="templates" className="text-xs sm:text-sm">Templates</TabsTrigger>
+              <TabsTrigger value="resources" className="text-xs sm:text-sm">Resources</TabsTrigger>
+              <TabsTrigger value="ideas" className="text-xs sm:text-sm">Ideas</TabsTrigger>
+              <TabsTrigger value="ship" className="text-xs sm:text-sm">Ship It</TabsTrigger>
             </TabsList>
+
+            {/* CRIDERGPT SUITE — full source extensions wired to the live backend */}
+            <TabsContent value="suite" className="space-y-4 mt-4">
+              <Card className="border-primary/30 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Boxes className="w-4 h-4 text-primary" /> CriderGPT Suite — full source extensions
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Every extension below ships as a complete, working folder pre-wired to your live CriderGPT Supabase backend
+                    (auth + database + edge functions). Download the ZIP, load unpacked in Chrome to test, then drop in payments
+                    later or publish straight to the Chrome Web Store. Add your own icons (16/48/128px) before publishing.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              {CRIDERGPT_EXTENSIONS.map((ext) => (
+                <SuiteExtCard key={ext.id} ext={ext} />
+              ))}
+            </TabsContent>
 
             {/* TEMPLATES */}
             <TabsContent value="templates" className="space-y-4 mt-4">
