@@ -604,23 +604,19 @@ fun CriderGPTTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
 
   [`app/src/main/java/${PKG_PATH}/ui/nav/ExternalLinks.kt`]: `package ${PKG}.ui.nav
 
-/** Items that always live on the website. The drawer launches these in Chrome. */
+/**
+ * The ONLY screens allowed to leave the native app into Chrome.
+ * Everything else (Tag Lookup, Livestock, Calendar, Payment, Plan, Profile,
+ * Guardian, Frequency Tools, Signer, USB Hub, RDR2 Guide, Cloud Gaming,
+ * Admin Panel, DevHub, Idea Planner, etc.) must be rendered natively.
+ */
 data class ExternalLink(val label: String, val url: String)
 
 val EXTERNAL_LINKS = listOf(
     ExternalLink("Smart ID Store", "https://cridergpt.com/store"),
-    ExternalLink("Tag Lookup", "https://cridergpt.com/tag-lookup"),
     ExternalLink("Snapchat Lens", "https://cridergpt.com/snapchat-lens"),
     ExternalLink("Custom Filters", "https://cridergpt.com/custom-filters"),
-    ExternalLink("FarmBureau", "https://cridergpt.com/farmbureau"),
-    ExternalLink("Recipes", "https://cridergpt.com/recipes"),
-    ExternalLink("Breed Index", "https://cridergpt.com/breeds"),
-    ExternalLink("Guides", "https://cridergpt.com/guides"),
-    ExternalLink("Public Profile", "https://cridergpt.com/u"),
-    ExternalLink("Invite", "https://cridergpt.com/invite"),
-    ExternalLink("Leaderboard", "https://cridergpt.com/leaderboard"),
-    ExternalLink("Privacy Policy", "https://cridergpt.com/privacy-policy"),
-    ExternalLink("User Agreement", "https://cridergpt.com/user-agreement"),
+    ExternalLink("Terms & Privacy", "https://cridergpt.com/user-agreement"),
 )
 `,
 
