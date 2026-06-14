@@ -1082,230 +1082,769 @@ struct NotificationsView: View {
 }
 `,
 
+
   "DevHub/DevHubView.swift": `import SwiftUI
 
-/// Owner-only. All DevHub modules render natively inside the app — never as
-/// Safari links. Each row pushes an in-app SwiftUI screen.
 struct DevHubView: View {
-    private struct Module: Identifiable { let id = UUID(); let label: String; let route: String }
-    private let modules: [Module] = [
-        .init(label: "Server AI Console",          route: "devhub/server-console"),
-        .init(label: "Server Health & Self-Repair",route: "devhub/server-health"),
-        .init(label: "Knowledge Vault",            route: "devhub/vault"),
-        .init(label: "Agent Dispatcher",           route: "devhub/agent-dispatcher"),
-        .init(label: "Autopilot Queue",            route: "devhub/autopilot"),
-        .init(label: "iOS Builder",                route: "devhub/ios-builder"),
-        .init(label: "Backend Wiring Reference",   route: "devhub/backend-wiring"),
-        .init(label: "UI Blueprints",              route: "devhub/ui-blueprints"),
-        .init(label: "Tech Knowledge Library",     route: "devhub/tech-library"),
-        .init(label: "Auto-Promo (Hourly)",        route: "devhub/auto-promo"),
-        .init(label: "Idea Planner",               route: "devhub/idea-planner"),
-    ]
+    var body: some View {
+        OwnerGate {
+            DevHubMenuView()
+        }
+        .navigationTitle("DevHub")
+    }
+}
 
+private struct DevHubMenuView: View {
     var body: some View {
         List {
-            Section("Owner Tools") {
-                ForEach(modules) { m in
-                    NavigationLink(m.label, destination: DevModulePlaceholderView(label: m.label, route: m.route))
-                }
+            Section("Server & Infrastructure") {
+                NavigationLink("Server AI Console")        { ServerConsoleView() }
+                NavigationLink("Backend Wiring Reference") { BackendWiringView() }
+            }
+            Section("Secrets & Automation") {
+                NavigationLink("Knowledge Vault")   { VaultView() }
+                NavigationLink("Agent Dispatcher")  { AgentDispatcherView() }
+                NavigationLink("Autopilot Queue")   { AutopilotView() }
+                NavigationLink("Auto-Promo (Hourly)") { AutoPromoView() }
+            }
+            Section("Builders") {
+                NavigationLink("Android Builder") { AndroidBuilderView() }
+                NavigationLink("iOS Builder")     { IOSBuilderView() }
+            }
+            Section("Products") {
+                NavigationLink("Chrome Extensions") { ChromeExtensionsView() }
+                NavigationLink("Roku Studio")       { RokuStudioView() }
+            }
+            Section("Design & Knowledge") {
+                NavigationLink("UI Blueprints")          { UIBlueprintsView() }
+                NavigationLink("Tech Knowledge Library") { TechLibraryView() }
+            }
+            Section("Planning") {
+                NavigationLink("Idea Planner") { IdeaPlannerDevView() }
             }
             Section {
-                Text("DevHub is owner-only and gated by the has_role RPC. All modules render in-app — never Safari.")
+                Text("All modules gated by has_role(uid,'owner') + Face ID.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
         .navigationTitle("DevHub")
     }
 }
-
-struct DevModulePlaceholderView: View {
-    let label: String
-    let route: String
-    var body: some View {
-        VStack(spacing: 12) {
-            Text(label).font(.title2).bold()
-            Text("Native screen for \\(route). Wire to Supabase / local logic here.")
-                .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-        }.padding().navigationTitle(label)
-    }
-}
 `,
 
   "DevHub/AdminPanelView.swift": `import SwiftUI
 
-/// Owner/admin-only. All admin tools render natively in-app — never Safari.
 struct AdminPanelView: View {
+    @State private var checked = false
+    @State private var isAdmin = false
+
     var body: some View {
-        List {
-            Section("Admin Tools") {
-                NavigationLink("User management",
-                    destination: DevModulePlaceholderView(label: "User Management", route: "admin/users"))
-                NavigationLink("System status",
-                    destination: DevModulePlaceholderView(label: "System Status", route: "admin/system"))
-                NavigationLink("Broadcasts",
-                    destination: DevModulePlaceholderView(label: "Broadcasts", route: "admin/broadcasts"))
-            }
-            Section {
-                Text("Gated by has_role(uid,'admin'). Rendered natively for offline access.")
-                    .font(.footnote).foregroundStyle(.secondary)
+        Group {
+            if !checked {
+                ProgressView("Verifying access\u2026")
+            } else if isAdmin {
+                BiometricGate {
+                    List {
+                        Section("Admin Tools") {
+                            NavigationLink("User Management") { AdminUsersView() }
+                            NavigationLink("System Status")   { AdminSystemView() }
+                            NavigationLink("Broadcasts")      { AdminBroadcastsView() }
+                        }
+                        Section {
+                            Text("Gated by has_role(uid,'admin') + Face ID.")
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
+                    }
+                    .navigationTitle("Admin Panel")
+                }
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "lock.shield").font(.system(size: 64)).foregroundStyle(.red)
+                    Text("Access Denied").font(.title2.bold())
+                    Text("Admin role required.").foregroundStyle(.secondary)
+                }.padding()
             }
         }
         .navigationTitle("Admin Panel")
+        .task { await checkAdmin() }
+    }
+
+    private func checkAdmin() async {
+        guard let uid = await SessionManager.shared.userId else { checked = true; return }
+        isAdmin = (try? await SupabaseClient.shared.rpc(
+            "has_role",
+            params: ["_user_id": uid, "_role": "admin"],
+            as: Bool.self
+        )) ?? false
+        checked = true
+    }
+}
+
+private struct AdminUsersView: View {
+    @State private var errorMsg: String?
+    @State private var rows: [(id: String, email: String)] = []
+    var body: some View {
+        List {
+            if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote) }
+            ForEach(rows, id: \\.id) { r in LabeledContent(r.email, value: r.id.prefix(8) + "\u2026") }
+        }
+        .navigationTitle("User Management")
+        .task {
+            do {
+                struct P: Decodable { let id: String; let email: String? }
+                let ps: [P] = try await SupabaseClient.shared.select(
+                    "profiles", query: [URLQueryItem(name: "limit", value: "50")], as: [P].self)
+                rows = ps.map { ($0.id, $0.email ?? "\u2014") }
+            } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+        }
+    }
+}
+private struct AdminSystemView: View {
+    var body: some View { Text("Wire to your monitoring edge function.").padding().navigationTitle("System Status") }
+}
+private struct AdminBroadcastsView: View {
+    var body: some View { Text("Wire to broadcasts table or edge function.").padding().navigationTitle("Broadcasts") }
+}
+`,
+
+  "DevHub/Common.swift": `import SwiftUI
+import LocalAuthentication
+
+// MARK: - BiometricGate
+struct BiometricGate<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    @State private var unlocked = false
+    @State private var errorMsg: String?
+
+    var body: some View {
+        if unlocked {
+            content()
+        } else {
+            VStack(spacing: 20) {
+                Image(systemName: "faceid").font(.system(size: 72)).foregroundStyle(.secondary)
+                Text("Authentication Required").font(.title2.bold())
+                if let e = errorMsg {
+                    Text(e).foregroundStyle(.red).font(.footnote)
+                        .multilineTextAlignment(.center).padding(.horizontal)
+                }
+                Button("Authenticate") { authenticate() }.buttonStyle(.borderedProminent)
+            }
+            .padding()
+            .onAppear { authenticate() }
+        }
+    }
+
+    private func authenticate() {
+        errorMsg = nil
+        let ctx = LAContext()
+        var nsErr: NSError?
+        let policy: LAPolicy = ctx.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &nsErr)
+            ? .deviceOwnerAuthenticationWithBiometrics : .deviceOwnerAuthentication
+        ctx.evaluatePolicy(policy, localizedReason: "Access CriderGPT owner tools") { ok, err in
+            DispatchQueue.main.async {
+                if ok { unlocked = true } else { errorMsg = err?.localizedDescription ?? "Authentication failed" }
+            }
+        }
+    }
+}
+
+// MARK: - OwnerGate
+struct OwnerGate<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    @State private var checked = false
+    @State private var isOwner = false
+
+    var body: some View {
+        Group {
+            if !checked {
+                ProgressView("Verifying access\u2026")
+            } else if isOwner {
+                BiometricGate(content: content)
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "lock.shield").font(.system(size: 64)).foregroundStyle(.red)
+                    Text("Access Denied").font(.title2.bold())
+                    Text("Owner role required.").foregroundStyle(.secondary)
+                }.padding()
+            }
+        }
+        .task { await checkOwner() }
+    }
+
+    private func checkOwner() async {
+        guard let uid = await SessionManager.shared.userId else { checked = true; return }
+        isOwner = (try? await SupabaseClient.shared.rpc(
+            "has_role", params: ["_user_id": uid, "_role": "owner"], as: Bool.self)) ?? false
+        checked = true
     }
 }
 `,
 
-  "Menu/SideMenuView.swift": `import SwiftUI
+  "DevHub/Modules/ServerConsoleView.swift": `import SwiftUI
 
-/// Left drawer of "external" website features that always open in Safari.
-struct SideMenuView: View {
-    @Binding var isOpen: Bool
-
-    private struct Item: Identifiable {
-        let id = UUID()
-        let title: String
-        let symbol: String
-        let url: URL
-    }
-    private let items: [Item] = [
-        .init(title: "Smart ID Store",  symbol: "tag",              url: Config.ExternalLink.store),
-        .init(title: "Snapchat Lens",   symbol: "camera.viewfinder",url: Config.ExternalLink.snapchatLens),
-        .init(title: "Custom Filters",  symbol: "wand.and.stars",   url: Config.ExternalLink.customFilters),
-        .init(title: "Terms & Privacy", symbol: "doc.text",         url: Config.ExternalLink.terms),
-    ]
+struct ServerConsoleView: View {
+    @State private var status = ""
+    @State private var loading = false
+    @State private var errorMsg: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("More on CriderGPT.com")
-                .font(.headline)
-                .padding()
-            Divider()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(items) { item in
-                        Button {
-                            UIApplication.shared.open(item.url)
-                            isOpen = false
-                        } label: {
-                            HStack {
-                                Image(systemName: item.symbol).frame(width: 24)
-                                Text(item.title)
-                                Spacer()
-                                Image(systemName: "arrow.up.right.square").foregroundStyle(.secondary)
+        OwnerGate {
+            VStack(alignment: .leading, spacing: 16) {
+                if loading { ProgressView("Fetching\u2026") }
+                if let e = errorMsg { Label(e, systemImage: "exclamationmark.triangle").foregroundStyle(.orange).font(.footnote) }
+                if !status.isEmpty {
+                    ScrollView {
+                        Text(status).font(.system(.footnote, design: .monospaced))
+                            .frame(maxWidth: .infinity, alignment: .leading).padding()
+                            .background(Color(.systemGray6)).clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                Button("Refresh") { Task { await fetch() } }.buttonStyle(.borderedProminent)
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Server Console")
+            .task { await fetch() }
+        }
+    }
+
+    private func fetch() async {
+        loading = true; errorMsg = nil
+        do {
+            struct R: Decodable { let status: String; let details: String? }
+            let r: R = try await SupabaseClient.shared.invokeFunction("server-status", body: _Empty(), as: R.self)
+            status = r.details ?? r.status
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)"; status = "" }
+        loading = false
+    }
+}
+private struct _Empty: Encodable {}
+`,
+
+  "DevHub/Modules/VaultView.swift": `import SwiftUI
+
+struct VaultView: View {
+    @State private var secrets: [VaultSecret] = []
+    @State private var newName = ""
+    @State private var errorMsg: String?
+
+    struct VaultSecret: Identifiable, Decodable { let id: String; let name: String }
+
+    var body: some View {
+        OwnerGate {
+            VStack {
+                HStack {
+                    TextField("Secret name\u2026", text: $newName).textFieldStyle(.roundedBorder).autocapitalization(.none)
+                    Button("Add") { Task { await add() } }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }.padding([.horizontal, .top])
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote).padding(.horizontal) }
+                List {
+                    if secrets.isEmpty { Text("No secrets.").foregroundStyle(.secondary) }
+                    ForEach(secrets) { s in Label(s.name, systemImage: "key.fill") }
+                        .onDelete { idx in Task { await delete(at: idx) } }
+                }
+            }
+            .navigationTitle("Knowledge Vault")
+            .task { await load() }
+        }
+    }
+
+    private func load() async {
+        do {
+            secrets = try await SupabaseClient.shared.select(
+                "secrets_vault",
+                query: [URLQueryItem(name: "select", value: "id,name"), URLQueryItem(name: "order", value: "name.asc")],
+                as: [VaultSecret].self)
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+    }
+    private func add() async {
+        let n = newName.trimmingCharacters(in: .whitespaces); guard !n.isEmpty else { return }
+        struct New: Encodable { let name: String }
+        do { _ = try await SupabaseClient.shared.insert("secrets_vault", body: New(name: n), as: [VaultSecret].self); newName = ""; await load() }
+        catch { errorMsg = error.localizedDescription }
+    }
+    private func delete(at offsets: IndexSet) async {
+        for i in offsets {
+            try? await SupabaseClient.shared.update("secrets_vault",
+                match: [URLQueryItem(name: "id", value: "eq.\\(secrets[i].id)")], body: ["deleted": true])
+        }
+        await load()
+    }
+}
+`,
+
+  "DevHub/Modules/AgentDispatcherView.swift": `import SwiftUI
+
+struct AgentDispatcherView: View {
+    @State private var agentName = ""
+    @State private var payload = ""
+    @State private var response = ""
+    @State private var loading = false
+    @State private var errorMsg: String?
+
+    var body: some View {
+        OwnerGate {
+            Form {
+                Section("Agent") { TextField("Agent name (e.g. summarize)", text: $agentName).autocapitalization(.none) }
+                Section("Payload (JSON)") {
+                    TextEditor(text: $payload).font(.system(.footnote, design: .monospaced)).frame(minHeight: 80)
+                }
+                if let e = errorMsg { Section { Text(e).foregroundStyle(.orange).font(.footnote) } }
+                if !response.isEmpty { Section("Response") { Text(response).font(.system(.footnote, design: .monospaced)) } }
+                Section {
+                    Button(loading ? "Dispatching\u2026" : "Dispatch Agent") { Task { await dispatch() } }
+                        .disabled(loading || agentName.isEmpty)
+                }
+            }
+            .navigationTitle("Agent Dispatcher")
+        }
+    }
+
+    private func dispatch() async {
+        loading = true; errorMsg = nil; response = ""
+        do {
+            struct B: Encodable { let agent: String; let payload: String }
+            struct R: Decodable { let result: String? }
+            let r: R = try await SupabaseClient.shared.invokeFunction("agent-dispatch", body: B(agent: agentName, payload: payload), as: R.self)
+            response = r.result ?? "Done"
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+        loading = false
+    }
+}
+`,
+
+  "DevHub/Modules/AutopilotView.swift": `import SwiftUI
+
+struct AutopilotView: View {
+    @State private var enabled = false
+    @State private var loading = false
+    @State private var errorMsg: String?
+
+    var body: some View {
+        OwnerGate {
+            Form {
+                Section { Toggle("Autopilot Enabled", isOn: $enabled)
+                    .onChange(of: enabled) { _, v in Task { await set(v) } }.disabled(loading) }
+                if let e = errorMsg { Section { Text(e).foregroundStyle(.orange).font(.footnote) } }
+                Section(footer: Text("Toggles autopilot_enabled in user_settings.")) {}
+            }
+            .navigationTitle("Autopilot Queue")
+            .task { await load() }
+        }
+    }
+
+    private func load() async {
+        guard let uid = await SessionManager.shared.userId else { return }
+        do {
+            struct S: Decodable { let autopilotEnabled: Bool? }
+            let rows: [S] = try await SupabaseClient.shared.select("user_settings",
+                query: [URLQueryItem(name: "user_id", value: "eq.\\(uid)"), URLQueryItem(name: "limit", value: "1")], as: [S].self)
+            enabled = rows.first?.autopilotEnabled ?? false
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+    }
+    private func set(_ val: Bool) async {
+        guard let uid = await SessionManager.shared.userId else { return }
+        struct P: Encodable { let autopilot_enabled: Bool }
+        try? await SupabaseClient.shared.update("user_settings",
+            match: [URLQueryItem(name: "user_id", value: "eq.\\(uid)")], body: P(autopilot_enabled: val))
+    }
+}
+`,
+
+  "DevHub/Modules/AndroidBuilderView.swift": `import SwiftUI
+
+struct AndroidBuilderView: View {
+    @State private var builds: [BuildRun] = []
+    @State private var triggering = false
+    @State private var errorMsg: String?
+
+    struct BuildRun: Identifiable, Decodable { let id: String; let status: String?; let createdAt: Date? }
+
+    var body: some View {
+        OwnerGate {
+            VStack {
+                Button(triggering ? "Triggering\u2026" : "Trigger Android Build") { Task { await trigger() } }
+                    .buttonStyle(.borderedProminent).padding().disabled(triggering)
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote).padding(.horizontal) }
+                List {
+                    if builds.isEmpty { Text("No builds yet.").foregroundStyle(.secondary) }
+                    ForEach(builds) { b in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(b.id.prefix(8)).font(.system(.footnote, design: .monospaced))
+                                if let d = b.createdAt { Text(d.formatted()).font(.caption2).foregroundStyle(.secondary) }
                             }
-                            .padding(.horizontal).padding(.vertical, 10)
-                            .contentShape(Rectangle())
+                            Spacer()
+                            Text(b.status ?? "unknown").font(.caption.bold()).foregroundStyle(statusColor(b.status))
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
-            Spacer()
-            Text("Each opens Safari — the website is the source of truth.")
-                .font(.caption2).foregroundStyle(.secondary).padding()
+            .navigationTitle("Android Builder")
+            .task { await loadBuilds() }
         }
-        .frame(maxHeight: .infinity)
-        .background(.regularMaterial)
+    }
+
+    private func loadBuilds() async {
+        do {
+            builds = try await SupabaseClient.shared.select("build_runs",
+                query: [URLQueryItem(name: "platform", value: "eq.android"),
+                        URLQueryItem(name: "order", value: "created_at.desc"),
+                        URLQueryItem(name: "limit", value: "20")], as: [BuildRun].self)
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+    }
+    private func trigger() async {
+        triggering = true; errorMsg = nil
+        do {
+            struct R: Decodable { let buildId: String? }
+            _ = try await SupabaseClient.shared.invokeFunction("trigger-android-build", body: _AB(), as: R.self)
+            await loadBuilds()
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+        triggering = false
+    }
+    private func statusColor(_ s: String?) -> Color {
+        switch s { case "success": .green; case "failed": .red; case "running": .blue; default: .secondary }
+    }
+}
+private struct _AB: Encodable {}
+`,
+
+  "DevHub/Modules/IOSBuilderView.swift": `import SwiftUI
+
+struct IOSBuilderView: View {
+    @State private var builds: [BuildRun] = []
+    @State private var triggering = false
+    @State private var errorMsg: String?
+
+    struct BuildRun: Identifiable, Decodable { let id: String; let status: String?; let createdAt: Date? }
+
+    var body: some View {
+        OwnerGate {
+            VStack {
+                Button(triggering ? "Triggering\u2026" : "Trigger iOS Build") { Task { await trigger() } }
+                    .buttonStyle(.borderedProminent).padding().disabled(triggering)
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote).padding(.horizontal) }
+                List {
+                    if builds.isEmpty { Text("No builds yet.").foregroundStyle(.secondary) }
+                    ForEach(builds) { b in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(b.id.prefix(8)).font(.system(.footnote, design: .monospaced))
+                                if let d = b.createdAt { Text(d.formatted()).font(.caption2).foregroundStyle(.secondary) }
+                            }
+                            Spacer()
+                            Text(b.status ?? "unknown").font(.caption.bold()).foregroundStyle(statusColor(b.status))
+                        }
+                    }
+                }
+            }
+            .navigationTitle("iOS Builder")
+            .task { await loadBuilds() }
+        }
+    }
+
+    private func loadBuilds() async {
+        do {
+            builds = try await SupabaseClient.shared.select("build_runs",
+                query: [URLQueryItem(name: "platform", value: "eq.ios"),
+                        URLQueryItem(name: "order", value: "created_at.desc"),
+                        URLQueryItem(name: "limit", value: "20")], as: [BuildRun].self)
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+    }
+    private func trigger() async {
+        triggering = true; errorMsg = nil
+        do {
+            struct R: Decodable { let buildId: String? }
+            _ = try await SupabaseClient.shared.invokeFunction("trigger-ios-build", body: _IB(), as: R.self)
+            await loadBuilds()
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+        triggering = false
+    }
+    private func statusColor(_ s: String?) -> Color {
+        switch s { case "success": .green; case "failed": .red; case "running": .blue; default: .secondary }
+    }
+}
+private struct _IB: Encodable {}
+`,
+
+  "DevHub/Modules/ChromeExtensionsView.swift": `import SwiftUI
+
+struct ChromeExtensionsView: View {
+    @State private var exts: [ChromeExt] = []
+    @State private var errorMsg: String?
+
+    struct ChromeExt: Identifiable, Decodable { let id: String; let name: String?; let version: String?; let status: String? }
+
+    var body: some View {
+        OwnerGate {
+            List {
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote) }
+                if exts.isEmpty && errorMsg == nil { Text("No extensions found.").foregroundStyle(.secondary) }
+                ForEach(exts) { x in
+                    VStack(alignment: .leading) {
+                        Text(x.name ?? x.id).font(.headline)
+                        HStack {
+                            Text(x.version.map { "v\\($0)" } ?? "\u2014")
+                            Spacer()
+                            Text(x.status ?? "unknown").foregroundStyle(.secondary)
+                        }.font(.caption)
+                    }
+                }
+            }
+            .navigationTitle("Chrome Extensions")
+            .task {
+                do { exts = try await SupabaseClient.shared.select("chrome_extensions",
+                    query: [URLQueryItem(name: "order", value: "name.asc")], as: [ChromeExt].self) }
+                catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+            }
+        }
     }
 }
 `,
 
-  "Payments/IAPManager.swift": `import Foundation
-import StoreKit
+  "DevHub/Modules/RokuStudioView.swift": `import SwiftUI
 
-/// Wraps StoreKit 2. Verifies receipts via the \`verify-iap\` edge function and
-/// writes to \`iap_purchases\` + \`user_subscriptions\`. Product IDs live in
-/// Config.IAP — the only placeholders in the entire starter.
-@MainActor
-final class IAPManager: ObservableObject {
-    static let shared = IAPManager()
+struct RokuStudioView: View {
+    @State private var channels: [RokuChannel] = []
+    @State private var errorMsg: String?
 
-    @Published var products: [Product] = []
-    @Published var ownedProductIDs: Set<String> = []
+    struct RokuChannel: Identifiable, Decodable { let id: String; let name: String?; let channelId: String?; let status: String? }
 
-    var currentPlanLabel: String {
-        if ownedProductIDs.contains(Config.IAP.proMonthly) { return "Pro" }
-        if ownedProductIDs.contains(Config.IAP.plusMonthly) { return "Plus" }
-        return "Free"
-    }
-
-    private var updatesTask: Task<Void, Never>?
-
-    private init() {
-        updatesTask = Task { await listenForTransactions() }
-    }
-
-    func loadProducts() async {
-        do {
-            products = try await Product.products(for: Config.IAP.allProductIDs)
-                .sorted { $0.price < $1.price }
-        } catch { products = [] }
-    }
-
-    func purchase(_ product: Product) async {
-        do {
-            let result = try await product.purchase()
-            switch result {
-            case .success(let verification):
-                if let transaction = try? checkVerified(verification) {
-                    await postReceipt(transaction: transaction)
-                    await transaction.finish()
-                    await refreshEntitlements()
+    var body: some View {
+        OwnerGate {
+            List {
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote) }
+                if channels.isEmpty && errorMsg == nil { Text("No channels found.").foregroundStyle(.secondary) }
+                ForEach(channels) { c in
+                    VStack(alignment: .leading) {
+                        Text(c.name ?? c.id).font(.headline)
+                        HStack {
+                            Text(c.channelId.map { "ID: \\($0)" } ?? "\u2014")
+                            Spacer()
+                            Text(c.status ?? "unknown")
+                        }.font(.caption).foregroundStyle(.secondary)
+                    }
                 }
-            case .userCancelled, .pending: break
-            @unknown default: break
             }
-        } catch { /* surfaced via UI as needed */ }
-    }
-
-    func restore() async {
-        try? await AppStore.sync()
-        await refreshEntitlements()
-    }
-
-    func refreshEntitlements() async {
-        var owned: Set<String> = []
-        for await result in Transaction.currentEntitlements {
-            if let t = try? checkVerified(result) { owned.insert(t.productID) }
-        }
-        ownedProductIDs = owned
-    }
-
-    private func listenForTransactions() async {
-        for await update in Transaction.updates {
-            if let t = try? checkVerified(update) {
-                await postReceipt(transaction: t)
-                await t.finish()
-                await refreshEntitlements()
+            .navigationTitle("Roku Studio")
+            .task {
+                do { channels = try await SupabaseClient.shared.select("roku_channels",
+                    query: [URLQueryItem(name: "order", value: "name.asc")], as: [RokuChannel].self) }
+                catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
             }
         }
     }
+}
+`,
 
-    private func postReceipt(transaction: Transaction) async {
-        struct Body: Encodable {
-            let platform: String = "ios"
-            let product_id: String
-            let transaction_id: String
-            let original_transaction_id: String
-            let purchase_date: Date
+  "DevHub/Modules/BackendWiringView.swift": `import SwiftUI
+
+struct BackendWiringView: View {
+    @State private var tables: [TableCount] = []
+    @State private var loading = false
+    @State private var errorMsg: String?
+
+    struct TableCount: Identifiable, Decodable { var id: String { table }; let table: String; let count: Int }
+
+    var body: some View {
+        OwnerGate {
+            List {
+                if loading { ProgressView() }
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote) }
+                ForEach(tables) { t in
+                    HStack {
+                        Text(t.table).font(.system(.body, design: .monospaced))
+                        Spacer()
+                        Text("\\(t.count) rows").foregroundStyle(.secondary).font(.caption)
+                    }
+                }
+            }
+            .navigationTitle("Backend Wiring")
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Refresh") { Task { await fetch() } } } }
+            .task { await fetch() }
         }
-        _ = try? await SupabaseClient.shared.invokeFunction(
-            Config.verifyIapFunction,
-            body: Body(
-                product_id: transaction.productID,
-                transaction_id: String(transaction.id),
-                original_transaction_id: String(transaction.originalID),
-                purchase_date: transaction.purchaseDate
-            ),
-            as: EmptyResponse.self
-        )
     }
 
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
-        switch result {
-        case .verified(let safe): return safe
-        case .unverified(_, let err): throw err
+    private func fetch() async {
+        loading = true; errorMsg = nil
+        do {
+            struct R: Decodable { let tables: [TableCount] }
+            let r: R = try await SupabaseClient.shared.invokeFunction("db-diagnostic", body: _DB(), as: R.self)
+            tables = r.tables
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+        loading = false
+    }
+}
+private struct _DB: Encodable {}
+`,
+
+  "DevHub/Modules/UIBlueprintsView.swift": `import SwiftUI
+
+struct UIBlueprintsView: View {
+    @State private var blueprints: [UIBlueprint] = []
+    @State private var errorMsg: String?
+
+    struct UIBlueprint: Identifiable, Decodable { let id: String; let name: String?; let description: String?; let tags: String? }
+
+    var body: some View {
+        OwnerGate {
+            List {
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote) }
+                if blueprints.isEmpty && errorMsg == nil { Text("No blueprints found.").foregroundStyle(.secondary) }
+                ForEach(blueprints) { bp in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(bp.name ?? bp.id).font(.headline)
+                        if let d = bp.description { Text(d).font(.caption).foregroundStyle(.secondary) }
+                        if let t = bp.tags { Text(t).font(.caption2).foregroundStyle(.tertiary) }
+                    }
+                }
+            }
+            .navigationTitle("UI Blueprints")
+            .task {
+                do { blueprints = try await SupabaseClient.shared.select("ui_blueprints",
+                    query: [URLQueryItem(name: "order", value: "name.asc")], as: [UIBlueprint].self) }
+                catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+            }
         }
+    }
+}
+`,
+
+  "DevHub/Modules/TechLibraryView.swift": `import SwiftUI
+
+struct TechLibraryView: View {
+    @State private var entries: [TechEntry] = []
+    @State private var searchText = ""
+    @State private var errorMsg: String?
+
+    struct TechEntry: Identifiable, Decodable { let id: String; let title: String?; let category: String?; let summary: String? }
+
+    var filtered: [TechEntry] {
+        guard !searchText.isEmpty else { return entries }
+        return entries.filter {
+            ($0.title ?? "").localizedCaseInsensitiveContains(searchText) ||
+            ($0.category ?? "").localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    var body: some View {
+        OwnerGate {
+            List {
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote) }
+                if filtered.isEmpty && errorMsg == nil { Text("No entries.").foregroundStyle(.secondary) }
+                ForEach(filtered) { e in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(e.title ?? e.id).font(.headline)
+                        if let c = e.category { Text(c).font(.caption.bold()).foregroundStyle(.blue) }
+                        if let s = e.summary { Text(s).font(.caption).foregroundStyle(.secondary) }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search library\u2026")
+            .navigationTitle("Tech Library")
+            .task {
+                do { entries = try await SupabaseClient.shared.select("tech_library",
+                    query: [URLQueryItem(name: "order", value: "title.asc")], as: [TechEntry].self) }
+                catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+            }
+        }
+    }
+}
+`,
+
+  "DevHub/Modules/AutoPromoView.swift": `import SwiftUI
+
+struct AutoPromoView: View {
+    @State private var enabled = false
+    @State private var loading = false
+    @State private var errorMsg: String?
+
+    var body: some View {
+        OwnerGate {
+            Form {
+                Section { Toggle("Auto-Promo Enabled", isOn: $enabled)
+                    .onChange(of: enabled) { _, v in Task { await set(v) } }.disabled(loading) }
+                if let e = errorMsg { Section { Text(e).foregroundStyle(.orange).font(.footnote) } }
+                Section(footer: Text("Toggles auto_promo_enabled in user_settings. Hourly promo agent reads this flag before posting.")) {}
+            }
+            .navigationTitle("Auto-Promo")
+            .task { await load() }
+        }
+    }
+
+    private func load() async {
+        guard let uid = await SessionManager.shared.userId else { return }
+        do {
+            struct S: Decodable { let autoPromoEnabled: Bool? }
+            let rows: [S] = try await SupabaseClient.shared.select("user_settings",
+                query: [URLQueryItem(name: "user_id", value: "eq.\\(uid)"), URLQueryItem(name: "limit", value: "1")], as: [S].self)
+            enabled = rows.first?.autoPromoEnabled ?? false
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+    }
+    private func set(_ val: Bool) async {
+        guard let uid = await SessionManager.shared.userId else { return }
+        struct P: Encodable { let auto_promo_enabled: Bool }
+        try? await SupabaseClient.shared.update("user_settings",
+            match: [URLQueryItem(name: "user_id", value: "eq.\\(uid)")], body: P(auto_promo_enabled: val))
+    }
+}
+`,
+
+  "DevHub/Modules/IdeaPlannerDevView.swift": `import SwiftUI
+
+struct IdeaPlannerDevView: View {
+    @State private var ideas: [DevIdea] = []
+    @State private var draft = ""
+    @State private var errorMsg: String?
+
+    struct DevIdea: Identifiable, Decodable { let id: String; let title: String; let status: String?; let createdAt: Date? }
+
+    var body: some View {
+        OwnerGate {
+            VStack {
+                HStack {
+                    TextField("New idea\u2026", text: $draft).textFieldStyle(.roundedBorder)
+                    Button("Add") { let t = draft; draft = ""; Task { await add(t) } }
+                        .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
+                }.padding([.horizontal, .top])
+                if let e = errorMsg { Text(e).foregroundStyle(.orange).font(.footnote).padding(.horizontal) }
+                List {
+                    if ideas.isEmpty && errorMsg == nil { Text("No ideas yet.").foregroundStyle(.secondary) }
+                    ForEach(ideas) { i in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(i.title).font(.headline)
+                                if let d = i.createdAt {
+                                    Text(d.formatted(date: .abbreviated, time: .omitted))
+                                        .font(.caption2).foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            Text(i.status ?? "open").font(.caption.bold())
+                                .foregroundStyle(i.status == "done" ? Color.green : Color.blue)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Idea Planner")
+            .task { await load() }
+        }
+    }
+
+    private func load() async {
+        do {
+            ideas = try await SupabaseClient.shared.select("ideas",
+                query: [URLQueryItem(name: "order", value: "created_at.desc"),
+                        URLQueryItem(name: "limit", value: "50")], as: [DevIdea].self)
+        } catch { errorMsg = "Backend not wired yet: \\(error.localizedDescription)" }
+    }
+    private func add(_ title: String) async {
+        guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        struct N: Encodable { let title: String; let status: String }
+        do { _ = try await SupabaseClient.shared.insert("ideas", body: N(title: title, status: "open"), as: [DevIdea].self); await load() }
+        catch { errorMsg = error.localizedDescription }
     }
 }
 `,
@@ -1320,6 +1859,9 @@ final class IAPManager: ObservableObject {
 <key>NSPhotoLibraryUsageDescription</key>
 <string>CriderGPT can attach photos from your library to animal records.</string>
 
+<key>NSFaceIDUsageDescription</key>
+<string>CriderGPT uses Face ID to protect owner-only DevHub tools.</string>
+
 <key>UIBackgroundModes</key>
 <array>
   <string>remote-notification</string>
@@ -1333,7 +1875,6 @@ final class IAPManager: ObservableObject {
 
   "Project.yml": `# Use XcodeGen (brew install xcodegen) to generate the .xcodeproj:
 #   xcodegen generate
-# Or open the folder directly in Cursor / VS Code — every file is plain text.
 name: CriderGPT
 options:
   bundleIdPrefix: app.cridergpt
@@ -1355,7 +1896,7 @@ targets:
           - "Info.plist.txt"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_ID}
+        PRODUCT_BUNDLE_IDENTIFIER: app.cridergpt.ios
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_CFBundleDisplayName: CriderGPT
@@ -1365,6 +1906,7 @@ targets:
         NFCReaderUsageDescription: "CriderGPT scans your livestock NFC tags to identify animals."
         NSCameraUsageDescription: "CriderGPT uses the camera to scan tags and capture animal photos."
         NSPhotoLibraryUsageDescription: "CriderGPT can attach photos from your library to animal records."
+        NSFaceIDUsageDescription: "CriderGPT uses Face ID to protect owner-only DevHub tools."
     capabilities:
       - com.apple.developer.in-app-payments
       - com.apple.developer.nfc.readersession.formats
