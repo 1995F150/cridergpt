@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import JSZip from "jszip";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { CRIDERGPT_EXTENSIONS, type SuiteExt } from "./criderGPTExtensions";
 import {
   ChevronLeft, ExternalLink, Copy, Download, Chrome, DollarSign,
   Globe, Shield, Sparkles, Package, Wrench, Rocket, FolderTree, User,
+  Boxes, FileCode,
 } from "lucide-react";
 
 const FOLDER_TREE = `my-extension/           ← this whole folder gets zipped
@@ -326,13 +329,34 @@ export default function ChromeExtensionStudio() {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-          <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid grid-cols-4 max-w-2xl">
-              <TabsTrigger value="templates">Templates</TabsTrigger>
-              <TabsTrigger value="resources">Resources</TabsTrigger>
-              <TabsTrigger value="ideas">Ideas</TabsTrigger>
-              <TabsTrigger value="ship">Ship It</TabsTrigger>
+          <Tabs defaultValue="suite" className="w-full">
+            <TabsList className="grid grid-cols-5 max-w-3xl">
+              <TabsTrigger value="suite" className="text-xs sm:text-sm">CriderGPT Suite</TabsTrigger>
+              <TabsTrigger value="templates" className="text-xs sm:text-sm">Templates</TabsTrigger>
+              <TabsTrigger value="resources" className="text-xs sm:text-sm">Resources</TabsTrigger>
+              <TabsTrigger value="ideas" className="text-xs sm:text-sm">Ideas</TabsTrigger>
+              <TabsTrigger value="ship" className="text-xs sm:text-sm">Ship It</TabsTrigger>
             </TabsList>
+
+            {/* CRIDERGPT SUITE — full source extensions wired to the live backend */}
+            <TabsContent value="suite" className="space-y-4 mt-4">
+              <Card className="border-primary/30 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Boxes className="w-4 h-4 text-primary" /> CriderGPT Suite — full source extensions
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Every extension below ships as a complete, working folder pre-wired to your live CriderGPT Supabase backend
+                    (auth + database + edge functions). Download the ZIP, load unpacked in Chrome to test, then drop in payments
+                    later or publish straight to the Chrome Web Store. Add your own icons (16/48/128px) before publishing.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              {CRIDERGPT_EXTENSIONS.map((ext) => (
+                <SuiteExtCard key={ext.id} ext={ext} />
+              ))}
+            </TabsContent>
 
             {/* TEMPLATES */}
             <TabsContent value="templates" className="space-y-4 mt-4">
@@ -556,5 +580,78 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
         <div className="text-muted-foreground text-sm mt-0.5">{children}</div>
       </div>
     </div>
+  );
+}
+
+function SuiteExtCard({ ext }: { ext: SuiteExt }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
+  const downloadZip = async () => {
+    const zip = new JSZip();
+    const folder = zip.folder(ext.id)!;
+    ext.files.forEach((f) => folder.file(f.path, f.content));
+    folder.file("ICONS_README.txt",
+      "Add icon16.png, icon48.png, and icon128.png to this folder before publishing.\n" +
+      "Use your CriderGPT logo. The Chrome Web Store requires a 128x128 icon.");
+    const blob = await zip.generateAsync({ type: "blob" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${ext.id}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast({ title: `${ext.name} downloaded`, description: "Unzip → chrome://extensions → Load unpacked" });
+  };
+
+  const copyFile = async (content: string, path: string) => {
+    await navigator.clipboard.writeText(content);
+    toast({ title: `${path} copied` });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileCode className="w-4 h-4 text-primary" /> {ext.name}
+            </CardTitle>
+            <CardDescription className="text-xs mt-1">{ext.tagline}</CardDescription>
+          </div>
+          <Button onClick={downloadZip} size="sm">
+            <Download className="w-4 h-4 mr-2" /> Download ZIP
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {ext.features.map((f) => (
+            <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">{ext.pitch}</p>
+        <div className="text-xs text-muted-foreground">
+          <b>{ext.files.length} files</b> · pre-wired to <code className="text-[10px]">udpldrrpebdyuiqdtqnq.supabase.co</code>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setOpen(!open)}>
+          {open ? "Hide source" : "View source"}
+        </Button>
+        {open && (
+          <div className="space-y-2">
+            {ext.files.map((f) => (
+              <div key={f.path} className="border rounded-md">
+                <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+                  <code className="text-xs font-mono">{f.path}</code>
+                  <Button size="sm" variant="ghost" onClick={() => copyFile(f.content, f.path)}>
+                    <Copy className="w-3 h-3 mr-1" /> Copy
+                  </Button>
+                </div>
+                <pre className="text-xs p-3 overflow-x-auto max-h-72"><code>{f.content}</code></pre>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
