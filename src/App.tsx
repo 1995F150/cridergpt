@@ -81,6 +81,7 @@ import DevIOSResumePrompt from "./pages/devhub/IOSResumePrompt";
 import DevBackendWiringReference from "./pages/devhub/BackendWiringReference";
 import DevAlcoholRecipes from "./pages/devhub/AlcoholRecipes";
 import DevUIBlueprints from "./pages/devhub/UIBlueprints";
+import DevTechKnowledgeLibrary from "./pages/devhub/TechKnowledgeLibrary";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -197,6 +198,7 @@ const App = () => {
                     <Route path="/devhub/backend-wiring" element={<DevBackendWiringReference />} />
                     <Route path="/devhub/alcohol-recipes" element={<DevAlcoholRecipes />} />
                     <Route path="/devhub/ui-blueprints" element={<DevUIBlueprints />} />
+                    <Route path="/devhub/tech-library" element={<DevTechKnowledgeLibrary />} />
 
 
 

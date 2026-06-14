@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat, Cloud, Wine, Layout
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat, Cloud, Wine, Layout, GraduationCap
 } from "lucide-react";
 
 const modules = [
@@ -43,6 +43,7 @@ const modules = [
   { to: "/devhub/backend-wiring", icon: Cloud, title: "Backend Wiring Reference", desc: "Full list of every Supabase edge function + table grouped by purpose, with credentials block and a ready-to-paste native wiring prompt so Gemini/Cursor doesn't recreate what already exists.", tag: "Server + AI Ops" },
   { to: "/devhub/ui-blueprints", icon: Layout, title: "UI Blueprints", desc: "Per-screen Compose / SwiftUI / React blueprints with ADD-ONLY file paths and anti-delete guards so Gemini stops trying to wipe app/src/main. Includes an SVG wireframe.", tag: "Builder" },
   { to: "/devhub/alcohol-recipes", icon: Wine, title: "Alcohol Recipe Lab", desc: "Owner-only wine, cocktail, homebrew, and food-pairing generator. 21+. Drink responsibly.", tag: "Shop + Money" },
+  { to: "/devhub/tech-library", icon: GraduationCap, title: "Tech Knowledge Library", desc: "Long-form, plain-English deep dives: Google Sign-In Web vs Android client IDs + SHA-1, button-click-to-DB pipeline, edge functions, Play Billing, keystores, RLS, deep links, Realtime, RAG. Searchable, filterable by track.", tag: "Server + AI Ops" },
 ];
 
 export default function DevHub() {
