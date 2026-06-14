@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import JSZip from "jszip";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { CRIDERGPT_EXTENSIONS, type SuiteExt } from "./criderGPTExtensions";
 import {
   ChevronLeft, ExternalLink, Copy, Download, Chrome, DollarSign,
   Globe, Shield, Sparkles, Package, Wrench, Rocket, FolderTree, User,
+  Boxes, FileCode,
 } from "lucide-react";
 
 const FOLDER_TREE = `my-extension/           ← this whole folder gets zipped
