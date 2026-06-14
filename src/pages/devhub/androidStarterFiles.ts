@@ -1337,6 +1337,7 @@ private val DEV_MODULES = listOf(
     DevModule("Auto-Promo (Hourly)", "https://cridergpt.com/devhub/auto-promo"),
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DevHubScreen(openExternal: (String) -> Unit) {
     val isOwner = rememberHasRole("owner")
@@ -1354,7 +1355,7 @@ fun DevHubScreen(openExternal: (String) -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(DEV_MODULES) { m ->
-                        ElevatedCard(Modifier.fillMaxWidth(), onClick = { openExternal(m.url) }) {
+                        ElevatedCard(onClick = { openExternal(m.url) }, modifier = Modifier.fillMaxWidth()) {
                             Text(m.label, modifier = Modifier.padding(12.dp))
                         }
                     }
