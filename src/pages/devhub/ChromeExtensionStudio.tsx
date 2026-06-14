@@ -336,7 +336,27 @@ export default function ChromeExtensionStudio() {
 
             {/* TEMPLATES */}
             <TabsContent value="templates" className="space-y-4 mt-4">
+              <Card className="border-primary/30 bg-primary/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary" /> Publisher profile
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    This is the name buyers will see on the Chrome Web Store listing.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-sm space-y-1">
+                  <div><b>Developer:</b> Jessie Crider</div>
+                  <div><b>Publisher:</b> CriderGPT</div>
+                  <div><b>Support email:</b> support@cridergpt.com</div>
+                  <div className="text-xs text-muted-foreground pt-1">
+                    Status: ID submitted — pending Google verification. Once verified, this name appears on every listing automatically.
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
+
                 <CardHeader>
                   <CardTitle>Customize your extension</CardTitle>
                   <CardDescription>
