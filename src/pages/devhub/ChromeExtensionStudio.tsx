@@ -744,7 +744,7 @@ function SuiteExtCard({ ext }: { ext: SuiteExt }) {
     // Bake the CriderGPT logo into real icon16/48/128 PNGs so the
     // Chrome Web Store upload doesn't reject the package.
     try {
-      const icons = await generateIconBlobs("/cridergpt-logo-app-icon.png", [16, 48, 128]);
+      const icons = await buildSuiteIconBlobs(ext.id);
       for (const { size, blob } of icons) {
         folder.file(`icon${size}.png`, blob);
       }
