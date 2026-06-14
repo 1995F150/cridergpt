@@ -483,6 +483,23 @@ export default function ChromeExtensionStudio() {
             <TabsContent value="ship" className="space-y-3 mt-4">
               <Card>
                 <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><FolderTree className="w-4 h-4" /> What the folder should look like</CardTitle>
+                  <CardDescription>
+                    Make a regular folder on your desktop, drop these files in, then zip THAT folder. No special structure — flat is fine.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <pre className="text-xs bg-muted/40 border rounded-md p-3 overflow-x-auto whitespace-pre font-mono">{FOLDER_TREE}</pre>
+                  <div className="text-xs text-muted-foreground mt-3 space-y-1">
+                    <p><b>Most common mistake:</b> zipping a folder that <i>contains</i> your extension folder. The ZIP must open straight to <code>manifest.json</code>, not to another folder.</p>
+                    <p><b>Check it:</b> double-click your ZIP — if you see <code>manifest.json</code> right away, you're good. If you see a folder first, re-zip from inside.</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+
+              <Card>
+                <CardHeader>
                   <CardTitle>Step-by-step: from folder to paid listing</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
