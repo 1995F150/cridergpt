@@ -345,6 +345,34 @@ const IDEAS = [
 ];
 
 
+async function generateIconBlobs(
+  srcUrl: string,
+  sizes: number[]
+): Promise<{ size: number; blob: Blob }[]> {
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = srcUrl;
+  });
+  const out: { size: number; blob: Blob }[] = [];
+  for (const size of sizes) {
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, size, size);
+    const blob: Blob = await new Promise((res, rej) =>
+      canvas.toBlob((b) => (b ? res(b) : rej(new Error("toBlob failed"))), "image/png")
+    );
+    out.push({ size, blob });
+  }
+  return out;
+}
+
 function downloadZipFallback(template: Template, name: string, description: string) {
   // No JSZip dependency: download each file individually as a fallback.
   template.files.forEach((f) => {
@@ -663,16 +691,25 @@ function SuiteExtCard({ ext }: { ext: SuiteExt }) {
     const zip = new JSZip();
     const folder = zip.folder(ext.id)!;
     ext.files.forEach((f) => folder.file(f.path, f.content));
-    folder.file("ICONS_README.txt",
-      "Add icon16.png, icon48.png, and icon128.png to this folder before publishing.\n" +
-      "Use your CriderGPT logo. The Chrome Web Store requires a 128x128 icon.");
+    // Bake the CriderGPT logo into real icon16/48/128 PNGs so the
+    // Chrome Web Store upload doesn't reject the package.
+    try {
+      const icons = await generateIconBlobs("/cridergpt-logo-app-icon.png", [16, 48, 128]);
+      for (const { size, blob } of icons) {
+        folder.file(`icon${size}.png`, blob);
+      }
+    } catch (e) {
+      console.error("Icon generation failed, falling back to README", e);
+      folder.file("ICONS_README.txt",
+        "Auto-icon generation failed. Add icon16.png, icon48.png, and icon128.png manually.");
+    }
     const blob = await zip.generateAsync({ type: "blob" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `${ext.id}.zip`;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast({ title: `${ext.name} downloaded`, description: "Unzip → chrome://extensions → Load unpacked" });
+    toast({ title: `${ext.name} downloaded`, description: "Includes icon16/48/128.png. Unzip → chrome://extensions → Load unpacked, or upload the ZIP to the Web Store." });
   };
 
   const copyFile = async (content: string, path: string) => {
