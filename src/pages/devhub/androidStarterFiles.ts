@@ -762,6 +762,24 @@ fun AppNav(onSignOut: () -> Unit) {
                 composable("account") { AccountManagementScreen() }
                 composable("devhub") { DevHubScreen(onOpenModule = { route -> nav.navigate(route) }) }
                 composable("admin") { AdminPanelScreen() }
+                // Native placeholder screens for every owner-only DevHub module.
+                listOf(
+                    "devhub/server-console", "devhub/server-health", "devhub/vault",
+                    "devhub/machine-designer", "devhub/code-generator", "devhub/agent-dispatcher",
+                    "devhub/autopilot", "devhub/android-builder", "devhub/ios-builder",
+                    "devhub/chrome-extensions", "devhub/roku-studio", "devhub/backend-wiring",
+                    "devhub/ui-blueprints", "devhub/tech-library", "devhub/auto-promo",
+                    "devhub/idea-planner"
+                ).forEach { r ->
+                    composable(r) {
+                        Column(Modifier.fillMaxSize().padding(16.dp)) {
+                            Text(r, style = MaterialTheme.typography.titleLarge)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Native owner-only module. Wire to Supabase here.",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
             }
         }
     }
