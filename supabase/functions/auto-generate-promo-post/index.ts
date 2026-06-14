@@ -71,7 +71,17 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured')
 
-    const prompt = `You are Jessie Crider promoting CriderGPT on TikTok. Write ONE short TikTok caption (max 150 chars, Southern Gen-Z tone, 0% AI feel, no emojis at the start) promoting this topic: "${topic}". ${video.description ? 'Context: ' + video.description : ''} Then on a new line add exactly 5 relevant hashtags space-separated. No quotes, no explanation. Just caption then hashtags.`
+    const prompt = `You are Jessie Crider, an FFA kid from Virginia, posting on TikTok to promote your app CriderGPT. Goal: maximum reach (aiming millions of views/likes).
+
+Topic of this post: "${topic}".
+${video.description ? 'Video context: ' + video.description : ''}
+
+Write a TikTok post in this EXACT format, nothing else:
+LINE 1: A scroll-stopping hook/title (max 60 chars). Curiosity, bold claim, or "POV:" style. NO emojis at the start.
+LINE 2: A short caption (max 150 chars) in Southern Gen-Z tone, 0% AI feel, sounds like a real teenager talking. Can have 1-2 emojis inside (not at start).
+LINE 3: Exactly 8 hashtags, space-separated. Mix viral broad tags (#fyp #foryou #viral) with niche tags (#ffa #farmtok #ai #cridergpt #agtech). No # repeats.
+
+No quotes, no labels like "Title:", no explanation. Just 3 lines.`
 
     const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
