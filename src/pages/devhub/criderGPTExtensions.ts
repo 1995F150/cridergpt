@@ -33,6 +33,14 @@ async function setSession(session) {
 async function clearSession() {
   await chrome.storage.local.remove("cgpt_session");
 }
+async function userId() {
+  const s = await getSession();
+  return s?.user?.id || null;
+}
+async function userEmail() {
+  const s = await getSession();
+  return s?.user?.email || null;
+}
 
 async function authHeaders() {
   const s = await getSession();
@@ -67,6 +75,35 @@ async function signUp(email, password) {
   return data;
 }
 
+// Google Sign-In via Chrome's identity API — popup OAuth, no redirect away.
+// Uses Supabase's implicit flow then stores the tokens like a normal session.
+async function signInWithGoogle() {
+  const redirectUri = chrome.identity.getRedirectURL();
+  const url = SUPABASE_URL + "/auth/v1/authorize?provider=google&redirect_to=" +
+    encodeURIComponent(redirectUri);
+  const responseUrl = await new Promise((resolve, reject) => {
+    chrome.identity.launchWebAuthFlow({ url, interactive: true }, (cb) => {
+      if (chrome.runtime.lastError || !cb) {
+        reject(new Error(chrome.runtime.lastError?.message || "Google sign-in cancelled"));
+      } else resolve(cb);
+    });
+  });
+  // Supabase returns tokens in the URL hash fragment.
+  const hash = new URL(responseUrl).hash.replace(/^#/, "");
+  const params = new URLSearchParams(hash);
+  const access_token = params.get("access_token");
+  const refresh_token = params.get("refresh_token");
+  if (!access_token) throw new Error("No access token returned from Google");
+  // Fetch the user so we have email/id for ai_memory inserts etc.
+  const ur = await fetch(SUPABASE_URL + "/auth/v1/user", {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + access_token },
+  });
+  const user = ur.ok ? await ur.json() : null;
+  const session = { access_token, refresh_token, token_type: "bearer", user };
+  await setSession(session);
+  return session;
+}
+
 async function signOut() { await clearSession(); }
 
 async function dbSelect(table, query = "") {
@@ -78,13 +115,31 @@ async function dbSelect(table, query = "") {
 }
 
 async function dbInsert(table, row) {
+  // Auto-stamp user_id when signed in (most CriderGPT tables require it for RLS).
+  const uid = await userId();
+  const payload = uid && !row.user_id ? { ...row, user_id: uid } : row;
   const r = await fetch(SUPABASE_URL + "/rest/v1/" + table, {
     method: "POST",
     headers: { ...(await authHeaders()), Prefer: "return=representation" },
-    body: JSON.stringify(row),
+    body: JSON.stringify(payload),
   });
   if (!r.ok) throw new Error(await r.text());
   return r.json();
+}
+
+// Saves to ai_memory with all required NOT NULL fields filled in.
+async function saveMemory({ topic, details, category, source, metadata }) {
+  const uid = await userId();
+  if (!uid) throw new Error("Sign in first to save memory");
+  return dbInsert("ai_memory", {
+    user_id: uid,
+    category: category || "browser",
+    topic: (topic || "Untitled").slice(0, 200),
+    details: details || "",
+    content: details || "",
+    source: source || "browser-assistant",
+    metadata: metadata || {},
+  });
 }
 
 async function invokeFn(name, body) {
@@ -99,9 +154,9 @@ async function invokeFn(name, body) {
 
 window.CriderGPT = {
   SUPABASE_URL, SUPABASE_ANON_KEY,
-  getSession, setSession, clearSession,
-  signIn, signUp, signOut,
-  dbSelect, dbInsert, invokeFn,
+  getSession, setSession, clearSession, userId, userEmail,
+  signIn, signUp, signInWithGoogle, signOut,
+  dbSelect, dbInsert, saveMemory, invokeFn,
 };
 `;
 
@@ -147,7 +202,7 @@ const browserAssistant: SuiteExt = {
   "name": "CriderGPT Browser Assistant",
   "version": "1.0.0",
   "description": "AI sidebar — summarize, rewrite, and save memories to your CriderGPT account.",
-  "permissions": ["sidePanel", "activeTab", "storage", "scripting", "contextMenus"],
+  "permissions": ["sidePanel", "activeTab", "tabs", "storage", "scripting", "contextMenus", "identity"],
   "host_permissions": ["<all_urls>", "${SUPABASE_URL}/*"],
   "side_panel": { "default_path": "sidepanel.html" },
   "action": { "default_title": "Open CriderGPT" },
@@ -188,6 +243,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   </header>
 
   <div id="auth" class="hidden card">
+    <button id="google">Continue with Google</button>
+    <div style="text-align:center;font-size:11px;color:#8b94a7">or use email</div>
     <input id="email" placeholder="email" type="email">
     <input id="pw" placeholder="password" type="password">
     <button id="signin">Sign in</button>
@@ -200,7 +257,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       <button id="summarize">Summarize page</button>
       <button id="rewrite" class="ghost">Rewrite selection</button>
     </div>
-    <textarea id="input" placeholder="Paste or type — or use the buttons above"></textarea>
+    <textarea id="input" placeholder="Ask CriderGPT to do something on this page, or paste text…"></textarea>
+    <div class="row">
+      <button id="agent">▶ Run agent (auto-browse)</button>
+    </div>
     <div id="out" class="out"></div>
     <button id="save" class="ghost">Save to memory</button>
   </main>
@@ -284,9 +344,79 @@ $("save").onclick = async () => {
   const content = $("out").textContent || $("input").value;
   if (!content) return;
   try {
-    await CriderGPT.dbInsert("ai_memory", { content, source: "browser-assistant" });
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    await CriderGPT.saveMemory({
+      topic: tab?.title || "Browser page",
+      details: content,
+      category: "browser",
+      source: tab?.url || "browser-assistant",
+    });
     $("out").textContent = "✓ Saved to CriderGPT memory\\n\\n" + content;
   } catch (e) { $("out").textContent = "Save failed: " + e.message; }
+};
+
+$("google").onclick = async () => {
+  try { await CriderGPT.signInWithGoogle(); refreshUser(); }
+  catch (e) { $("auth-err").textContent = e.message; }
+};
+
+// ---- Auto-browse agent: read + act ----
+// CriderGPT can read the current page DOM and perform clicks/typing
+// when the user asks it to "do" something instead of just summarize.
+async function runAgent(instruction) {
+  $("out").textContent = "Agent thinking…";
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [{ result: snapshot }] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: () => {
+      const els = [...document.querySelectorAll("a,button,input,textarea,select,[role=button]")].slice(0, 80);
+      return {
+        title: document.title,
+        url: location.href,
+        text: document.body.innerText.slice(0, 4000),
+        elements: els.map((el, i) => ({
+          i,
+          tag: el.tagName,
+          text: (el.innerText || el.value || el.placeholder || "").slice(0, 80),
+          name: el.name || el.id || "",
+        })),
+      };
+    },
+  });
+  try {
+    const data = await CriderGPT.invokeFn("chat-with-ai", {
+      message: "You are a browser agent. Page: " + snapshot.url + "\\nTitle: " + snapshot.title +
+        "\\nElements: " + JSON.stringify(snapshot.elements) +
+        "\\n\\nUser wants: " + instruction +
+        "\\n\\nReply with a JSON plan: { \\"actions\\": [{\\"type\\":\\"click|type|navigate\\",\\"index\\":N,\\"value\\":\\"...\\",\\"url\\":\\"...\\"}], \\"reply\\": \\"...\\" }",
+      model: "gpt-4o-mini",
+    });
+    let plan;
+    try { plan = JSON.parse((data.response || "{}").replace(/^```json|```$/g, "").trim()); }
+    catch { plan = { actions: [], reply: data.response }; }
+    for (const act of plan.actions || []) {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        args: [act],
+        func: (a) => {
+          const els = [...document.querySelectorAll("a,button,input,textarea,select,[role=button]")];
+          const el = els[a.index];
+          if (a.type === "click" && el) el.click();
+          else if (a.type === "type" && el) {
+            el.focus(); el.value = a.value || "";
+            el.dispatchEvent(new Event("input", { bubbles: true }));
+          } else if (a.type === "navigate" && a.url) location.href = a.url;
+        },
+      });
+      await new Promise((r) => setTimeout(r, 600));
+    }
+    $("out").textContent = (plan.reply || "Done.") + "\\n\\n" + (plan.actions?.length || 0) + " action(s) executed.";
+  } catch (e) { $("out").textContent = "Agent error: " + e.message; }
+}
+$("agent").onclick = () => {
+  const instr = $("input").value.trim();
+  if (instr) runAgent(instr);
+  else $("out").textContent = "Type what you want CriderGPT to do, then click Agent.";
 };
 
 // Honor right-click context menu actions
@@ -295,7 +425,12 @@ chrome.storage.local.get("pending", ({ pending }) => {
   chrome.storage.local.remove("pending");
   if (pending.action === "cgpt-summarize") callAI("Summarize:", pending.text);
   if (pending.action === "cgpt-save") {
-    CriderGPT.dbInsert("ai_memory", { content: pending.text, source: pending.url || "context-menu" })
+    CriderGPT.saveMemory({
+      topic: pending.url || "Context menu save",
+      details: pending.text,
+      category: "browser",
+      source: pending.url || "context-menu",
+    })
       .then(() => $("out").textContent = "✓ Saved")
       .catch((e) => $("out").textContent = "Save failed: " + e.message);
   }
