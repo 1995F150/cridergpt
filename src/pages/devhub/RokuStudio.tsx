@@ -214,6 +214,40 @@ export default function RokuStudio() {
             </CardHeader>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Package className="w-4 h-4 text-primary" /> Pre-made CriderGPT channels
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Each ZIP is a complete BrightScript + SceneGraph project. Replace the four <code>.TODO</code> image files (icons + splash), zip, and sideload.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {ROKU_CHANNELS.map((ch) => (
+                  <Card key={ch.id} className="border-primary/20 hover:border-primary/60 transition-colors">
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-sm">{ch.name}</CardTitle>
+                        <Badge variant="secondary" className="text-[10px] shrink-0">{ch.category}</Badge>
+                      </div>
+                      <CardDescription className="text-xs">{ch.pitch}</CardDescription>
+                      <div className="text-xs text-primary font-medium pt-1 flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" /> {ch.monetization}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Button size="sm" className="w-full" onClick={() => downloadChannel(ch.id)}>
+                        <Download className="w-3 h-3 mr-1" /> Download ZIP
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           <div>
             <h2 className="text-lg font-semibold mb-3">Official resources</h2>
             <div className="grid sm:grid-cols-2 gap-3">
