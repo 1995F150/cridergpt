@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
+import JSZip from "jszip";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { ROKU_CHANNELS } from "./rokuChannels";
 import {
   ChevronLeft, ExternalLink, Tv, DollarSign, BookOpen, Wrench, Rocket, Code2, Copy,
-  Filter,
+  Filter, Download, Package,
 } from "lucide-react";
 
 const RESOURCES = [
@@ -156,6 +158,19 @@ export default function RokuStudio() {
   const copy = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
     toast({ title: `${label} copied` });
+  };
+  const downloadChannel = async (channelId: string) => {
+    const ch = ROKU_CHANNELS.find((c) => c.id === channelId);
+    if (!ch) return;
+    const zip = new JSZip();
+    ch.files.forEach((f) => zip.file(f.path, f.content));
+    const blob = await zip.generateAsync({ type: "blob" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${ch.id}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast({ title: `${ch.name} downloaded`, description: "Replace the .TODO image files, then sideload to your Roku." });
   };
   const filteredIdeas = activeCategory === "All" ? IDEAS : IDEAS.filter((i) => i.category === activeCategory);
 
