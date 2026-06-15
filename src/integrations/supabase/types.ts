@@ -375,6 +375,7 @@ export type Database = {
       ai_memory: {
         Row: {
           category: string
+          content: string | null
           created_at: string | null
           details: string
           id: string
@@ -386,6 +387,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          content?: string | null
           created_at?: string | null
           details: string
           id?: string
@@ -397,6 +399,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          content?: string | null
           created_at?: string | null
           details?: string
           id?: string
