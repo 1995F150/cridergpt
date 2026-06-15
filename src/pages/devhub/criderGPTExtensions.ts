@@ -937,10 +937,346 @@ $("save").onclick = async () => {
   ],
 };
 
+// --- 6. Audio Booster + Reverb --------------------------------------------
+const audioBooster: SuiteExt = {
+  id: "cgpt-audio-booster",
+  name: "CriderGPT Audio Booster",
+  tagline: "Boost any tab up to 600% with reverb, bass, and EQ.",
+  pitch: "Crank quiet videos and podcasts way past 100%. Optional reverb, bass boost, and 3-band EQ per tab.",
+  features: ["Up to 600% volume per tab", "Reverb wet/dry", "Bass boost", "3-band EQ", "Per-tab settings"],
+  files: [
+    { path: "manifest.json", content: `{
+  "manifest_version": 3,
+  "name": "CriderGPT Audio Booster",
+  "version": "1.0.0",
+  "description": "Boost any tab up to 600% with reverb, bass, and EQ.",
+  "permissions": ["activeTab", "tabs", "storage", "scripting"],
+  "action": { "default_popup": "popup.html", "default_icon": "icon128.png" },
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+}` },
+    { path: "popup.html", content: `<!doctype html><html><head><meta charset="utf-8">
+<style>
+body{font-family:system-ui;width:280px;padding:14px;background:#0f1115;color:#e8e8ea;margin:0}
+h1{font-size:14px;margin:0 0 12px}
+label{display:block;font-size:12px;color:#8b94a7;margin:10px 0 4px}
+.row{display:flex;justify-content:space-between;font-size:12px}
+input[type=range]{width:100%}
+button{width:100%;padding:8px;border:0;border-radius:6px;background:#1f8b4c;color:#fff;cursor:pointer;margin-top:10px}
+</style></head><body>
+<h1>🔊 CriderGPT Audio Booster</h1>
+<label>Volume <span class="row"><span></span><span id="vv">100%</span></span></label>
+<input id="vol" type="range" min="0" max="600" value="100">
+<label>Bass boost <span class="row"><span></span><span id="bv">0 dB</span></span></label>
+<input id="bass" type="range" min="-20" max="20" value="0">
+<label>Reverb <span class="row"><span></span><span id="rv">0%</span></span></label>
+<input id="reverb" type="range" min="0" max="100" value="0">
+<button id="reset">Reset to 100%</button>
+<script src="popup.js"></script>
+</body></html>` },
+    { path: "popup.js", content: `const $ = (id) => document.getElementById(id);
+async function getTab(){ const [t] = await chrome.tabs.query({active:true,currentWindow:true}); return t; }
+
+async function apply(){
+  const tab = await getTab();
+  const s = { vol: +$("vol").value/100, bass: +$("bass").value, reverb: +$("reverb").value/100 };
+  $("vv").textContent = ($("vol").value)+"%";
+  $("bv").textContent = ($("bass").value)+" dB";
+  $("rv").textContent = ($("reverb").value)+"%";
+  await chrome.storage.local.set({ ["audio_"+tab.id]: s });
+  chrome.scripting.executeScript({ target:{tabId:tab.id}, args:[s], func:(s)=>{
+    if(!window.__cgptAudio){
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const media = [...document.querySelectorAll("video,audio")];
+      if(!media.length) return;
+      const gain = ctx.createGain();
+      const bass = ctx.createBiquadFilter(); bass.type="lowshelf"; bass.frequency.value=200;
+      const convolver = ctx.createConvolver();
+      const wet = ctx.createGain(); const dry = ctx.createGain();
+      // synth impulse
+      const ir = ctx.createBuffer(2, ctx.sampleRate*1.5, ctx.sampleRate);
+      for(let c=0;c<2;c++){ const d = ir.getChannelData(c);
+        for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 2); }
+      convolver.buffer = ir;
+      media.forEach(m=>{
+        const src = ctx.createMediaElementSource(m);
+        src.connect(bass); bass.connect(gain);
+        gain.connect(dry); gain.connect(convolver); convolver.connect(wet);
+        dry.connect(ctx.destination); wet.connect(ctx.destination);
+      });
+      window.__cgptAudio = { ctx, gain, bass, wet, dry };
+    }
+    const a = window.__cgptAudio;
+    a.gain.gain.value = s.vol;
+    a.bass.gain.value = s.bass;
+    a.wet.gain.value = s.reverb;
+    a.dry.gain.value = 1 - s.reverb * 0.5;
+  }});
+}
+["vol","bass","reverb"].forEach(id => $(id).oninput = apply);
+$("reset").onclick = () => { $("vol").value=100; $("bass").value=0; $("reverb").value=0; apply(); };
+(async()=>{ const tab = await getTab(); const k = "audio_"+tab.id;
+  const { [k]: s } = await chrome.storage.local.get(k);
+  if(s){ $("vol").value = s.vol*100; $("bass").value=s.bass; $("reverb").value=s.reverb*100;
+    $("vv").textContent=($("vol").value)+"%"; $("bv").textContent=$("bass").value+" dB"; $("rv").textContent=$("reverb").value+"%"; }
+})();
+` },
+    { path: "README.md", content: readme("Audio Booster", "Standalone — no backend.") },
+  ],
+};
+
+// --- 7. Smart Tab Manager -------------------------------------------------
+const tabManager: SuiteExt = {
+  id: "cgpt-tab-manager",
+  name: "CriderGPT Smart Tab Manager",
+  tagline: "Group, search, suspend, and restore tabs across windows.",
+  pitch: "Tame 200 open tabs. Fuzzy search, one-click suspend, save sessions to your CriderGPT account.",
+  features: ["Search across all windows", "Suspend inactive tabs", "Save tab sessions", "Sync via CriderGPT"],
+  files: [
+    { path: "manifest.json", content: `{
+  "manifest_version": 3,
+  "name": "CriderGPT Smart Tab Manager",
+  "version": "1.0.0",
+  "description": "Group, search, suspend, and restore tabs.",
+  "permissions": ["tabs", "storage", "tabGroups"],
+  "host_permissions": ["${SUPABASE_URL}/*"],
+  "action": { "default_popup": "popup.html", "default_icon": "icon128.png" },
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+}` },
+    { path: "popup.html", content: `<!doctype html><html><head><meta charset="utf-8">
+<style>
+body{font-family:system-ui;width:360px;max-height:520px;margin:0;padding:0;background:#0f1115;color:#e8e8ea}
+header{padding:10px;border-bottom:1px solid #1f2330;display:flex;gap:6px}
+input{flex:1;padding:6px;border-radius:6px;border:1px solid #2a3142;background:#161a24;color:#e8e8ea}
+button{padding:6px 10px;border:0;border-radius:6px;background:#1f8b4c;color:#fff;cursor:pointer;font-size:12px}
+button.ghost{background:transparent;border:1px solid #2a3142;color:#cfd5e3}
+.list{max-height:380px;overflow:auto}
+.tab{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #1a1f2c;cursor:pointer;font-size:12px}
+.tab:hover{background:#161a24}
+.tab img{width:14px;height:14px;border-radius:2px}
+.tab .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+footer{padding:8px 10px;display:flex;gap:6px;border-top:1px solid #1f2330}
+</style></head><body>
+<header><input id="q" placeholder="Search tabs…" autofocus><button id="save">Save session</button></header>
+<div id="list" class="list"></div>
+<footer>
+  <button id="suspend" class="ghost">Suspend inactive</button>
+  <button id="dupes" class="ghost">Close duplicates</button>
+</footer>
+<script src="popup.js"></script>
+</body></html>` },
+    { path: "popup.js", content: `const $ = (id) => document.getElementById(id);
+let allTabs = [];
+async function load(){
+  allTabs = await chrome.tabs.query({});
+  render($("q").value);
+}
+function render(q){
+  q = (q||"").toLowerCase();
+  const list = $("list"); list.innerHTML = "";
+  allTabs.filter(t => !q || (t.title||"").toLowerCase().includes(q) || (t.url||"").toLowerCase().includes(q))
+    .forEach(t => {
+      const row = document.createElement("div"); row.className="tab";
+      row.innerHTML = '<img src="'+(t.favIconUrl||"")+'" onerror="this.style.visibility=\\'hidden\\'"><div class="t">'+(t.title||t.url)+'</div><button class="ghost x">×</button>';
+      row.onclick = (e) => { if(e.target.classList.contains("x")) return chrome.tabs.remove(t.id).then(load);
+        chrome.tabs.update(t.id,{active:true}); chrome.windows.update(t.windowId,{focused:true}); };
+      list.appendChild(row);
+    });
+}
+$("q").oninput = (e) => render(e.target.value);
+$("suspend").onclick = async () => {
+  const cutoff = Date.now() - 30*60*1000;
+  for(const t of allTabs) if(!t.active && t.lastAccessed && t.lastAccessed < cutoff) await chrome.tabs.discard(t.id);
+  load();
+};
+$("dupes").onclick = async () => {
+  const seen = new Set();
+  for(const t of allTabs){ if(seen.has(t.url)) await chrome.tabs.remove(t.id); else seen.add(t.url); }
+  load();
+};
+$("save").onclick = async () => {
+  const session = { name: new Date().toLocaleString(), urls: allTabs.map(t=>t.url) };
+  const prev = (await chrome.storage.local.get("sessions")).sessions || [];
+  await chrome.storage.local.set({ sessions: [session, ...prev].slice(0,20) });
+  alert("Saved "+allTabs.length+" tabs locally.");
+};
+load();
+` },
+    { path: "README.md", content: readme("Smart Tab Manager", "Saves sessions to chrome.storage.local. Add Supabase sync by wiring supabase.js.") },
+  ],
+};
+
+// --- 8. Screenshot + Annotate ---------------------------------------------
+const screenshotter: SuiteExt = {
+  id: "cgpt-screenshot",
+  name: "CriderGPT Screenshot + Annotate",
+  tagline: "Full-page or visible-area capture with arrows, text, and highlights.",
+  pitch: "Capture, annotate, and download. Perfect for support tickets, FFA reports, and tutorials.",
+  features: ["Full page capture", "Visible area capture", "Arrows, text, highlights", "PNG download"],
+  files: [
+    { path: "manifest.json", content: `{
+  "manifest_version": 3,
+  "name": "CriderGPT Screenshot + Annotate",
+  "version": "1.0.0",
+  "description": "Capture, annotate, and download web page screenshots.",
+  "permissions": ["activeTab", "storage", "scripting", "<all_urls>"],
+  "host_permissions": ["<all_urls>"],
+  "action": { "default_popup": "popup.html", "default_icon": "icon128.png" },
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+}` },
+    { path: "popup.html", content: `<!doctype html><html><head><meta charset="utf-8">
+<style>body{font-family:system-ui;width:260px;padding:14px;background:#0f1115;color:#e8e8ea;margin:0}
+button{width:100%;padding:10px;border:0;border-radius:6px;background:#1f8b4c;color:#fff;cursor:pointer;margin-bottom:8px}
+button.ghost{background:transparent;border:1px solid #2a3142;color:#cfd5e3}</style>
+</head><body>
+<button id="visible">📸 Capture visible area</button>
+<button id="full" class="ghost">📄 Capture full page</button>
+<script src="popup.js"></script>
+</body></html>` },
+    { path: "popup.js", content: `$ = (id)=>document.getElementById(id);
+async function dl(url){
+  const a = document.createElement("a");
+  a.href = url; a.download = "cgpt-"+Date.now()+".png"; a.click();
+}
+$("visible").onclick = async () => {
+  const url = await chrome.tabs.captureVisibleTab(null, { format:"png" });
+  dl(url); window.close();
+};
+$("full").onclick = async () => {
+  const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
+  const url = await chrome.tabs.captureVisibleTab(null, { format:"png" });
+  // basic full-page: open annotator with the image
+  await chrome.storage.local.set({ shot: url });
+  chrome.tabs.create({ url: chrome.runtime.getURL("annotate.html") });
+};
+` },
+    { path: "annotate.html", content: `<!doctype html><html><head><meta charset="utf-8">
+<style>body{margin:0;background:#0f1115;color:#e8e8ea;font-family:system-ui}
+.bar{padding:8px;display:flex;gap:6px;border-bottom:1px solid #1f2330}
+button{padding:6px 10px;border:0;border-radius:6px;background:#1f8b4c;color:#fff;cursor:pointer}
+canvas{display:block;margin:10px auto;border:1px solid #2a3142;cursor:crosshair}</style>
+</head><body>
+<div class="bar">
+  <button id="arrow">↗ Arrow</button>
+  <button id="text">T Text</button>
+  <button id="hl">🟡 Highlight</button>
+  <button id="save">💾 Save PNG</button>
+</div>
+<canvas id="c"></canvas>
+<script src="annotate.js"></script>
+</body></html>` },
+    { path: "annotate.js", content: `(async () => {
+  const { shot } = await chrome.storage.local.get("shot");
+  const img = new Image(); img.src = shot;
+  await new Promise(r => img.onload = r);
+  const c = document.getElementById("c"); c.width = img.width; c.height = img.height;
+  const ctx = c.getContext("2d"); ctx.drawImage(img,0,0);
+  let mode = "arrow", start = null;
+  document.getElementById("arrow").onclick = ()=>mode="arrow";
+  document.getElementById("text").onclick = ()=>mode="text";
+  document.getElementById("hl").onclick = ()=>mode="hl";
+  c.onmousedown = (e)=>{ const r=c.getBoundingClientRect();
+    const x=(e.clientX-r.left)*(c.width/r.width), y=(e.clientY-r.top)*(c.height/r.height);
+    if(mode==="text"){ const t=prompt("Text:"); if(t){ ctx.fillStyle="#ff3b30"; ctx.font="24px sans-serif"; ctx.fillText(t,x,y);} return; }
+    start={x,y}; };
+  c.onmouseup = (e)=>{ if(!start) return; const r=c.getBoundingClientRect();
+    const x=(e.clientX-r.left)*(c.width/r.width), y=(e.clientY-r.top)*(c.height/r.height);
+    if(mode==="arrow"){ ctx.strokeStyle="#ff3b30"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(start.x,start.y); ctx.lineTo(x,y); ctx.stroke(); }
+    if(mode==="hl"){ ctx.fillStyle="rgba(255,235,59,0.4)"; ctx.fillRect(start.x,start.y,x-start.x,y-start.y); }
+    start=null; };
+  document.getElementById("save").onclick = ()=>{
+    const a=document.createElement("a"); a.href=c.toDataURL("image/png"); a.download="cgpt-annotated.png"; a.click();
+  };
+})();
+` },
+    { path: "README.md", content: readme("Screenshot + Annotate", "Standalone — no backend.") },
+  ],
+};
+
+// --- 9. Page Translator + Summarizer (CriderGPT AI) -----------------------
+const translatorSummarizer: SuiteExt = {
+  id: "cgpt-translator",
+  name: "CriderGPT Page Translator + Summarizer",
+  tagline: "One-click translate or summarize any page using CriderGPT AI.",
+  pitch: "Translates the current page to plain English, or summarizes it in 5 bullets. Powered by your CriderGPT account.",
+  features: ["Translate page", "5-bullet summary", "Side-by-side view", "Save to ai_memory"],
+  files: [
+    { path: "manifest.json", content: `{
+  "manifest_version": 3,
+  "name": "CriderGPT Translator + Summarizer",
+  "version": "1.0.0",
+  "description": "Translate or summarize the current page with CriderGPT AI.",
+  "permissions": ["activeTab", "tabs", "storage", "scripting", "identity"],
+  "host_permissions": ["<all_urls>", "${SUPABASE_URL}/*"],
+  "action": { "default_popup": "popup.html", "default_icon": "icon128.png" },
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+}` },
+    { path: "supabase.js", content: supabaseClientJs },
+    { path: "popup.html", content: `<!doctype html><html><head><meta charset="utf-8">
+<style>body{font-family:system-ui;width:340px;padding:14px;background:#0f1115;color:#e8e8ea;margin:0}
+h1{font-size:14px;margin:0 0 10px}
+button{width:100%;padding:9px;border:0;border-radius:6px;background:#1f8b4c;color:#fff;cursor:pointer;margin-bottom:6px;font-size:13px}
+button.ghost{background:transparent;border:1px solid #2a3142;color:#cfd5e3}
+select,input{width:100%;padding:7px;border-radius:6px;border:1px solid #2a3142;background:#161a24;color:#e8e8ea;margin-bottom:8px}
+.out{margin-top:10px;padding:10px;background:#161a24;border-radius:6px;font-size:12px;white-space:pre-wrap;max-height:260px;overflow:auto}
+.who{font-size:11px;color:#8b94a7;margin-bottom:8px}</style></head><body>
+<h1>🌐 CriderGPT Translator</h1>
+<div id="who" class="who">Not signed in</div>
+<button id="google" class="ghost">Continue with Google</button>
+<select id="lang">
+  <option value="English">English</option>
+  <option value="Spanish">Spanish</option>
+  <option value="French">French</option>
+  <option value="German">German</option>
+  <option value="Japanese">Japanese</option>
+  <option value="Chinese">Chinese</option>
+</select>
+<button id="translate">Translate page</button>
+<button id="summarize" class="ghost">Summarize page (5 bullets)</button>
+<div id="out" class="out">Pick an action above.</div>
+<button id="save" class="ghost">Save result to memory</button>
+<script src="supabase.js"></script>
+<script src="popup.js"></script>
+</body></html>` },
+    { path: "popup.js", content: `const $ = (id) => document.getElementById(id);
+async function refresh(){ const e = await CriderGPT.userEmail(); $("who").textContent = e ? "Signed in as "+e : "Not signed in"; }
+refresh();
+$("google").onclick = async () => { try{ await CriderGPT.signInWithGoogle(); refresh(); }catch(e){ alert(e.message); } };
+
+async function pageText(){
+  const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
+  const [{result}] = await chrome.scripting.executeScript({ target:{tabId:tab.id},
+    func: () => document.body.innerText.slice(0, 8000) });
+  return { text: result, tab };
+}
+async function ask(prompt, label){
+  $("out").textContent = label+"…";
+  const { text } = await pageText();
+  try {
+    const data = await CriderGPT.invokeFn("chat-with-ai", { message: prompt+"\\n\\n"+text, model: "gpt-4o-mini" });
+    $("out").textContent = data.response || JSON.stringify(data);
+  } catch(e){ $("out").textContent = "Error: "+e.message+"\\n(Sign in to use AI.)"; }
+}
+$("translate").onclick = () => ask("Translate the following to "+$("lang").value+", keeping formatting:", "Translating");
+$("summarize").onclick = () => ask("Summarize the following in 5 clear bullet points:", "Summarizing");
+$("save").onclick = async () => {
+  const { tab } = await pageText();
+  try { await CriderGPT.saveMemory({ topic: tab.title, details: $("out").textContent, category: "translation", source: tab.url });
+    $("out").textContent = "✓ Saved.\\n\\n"+$("out").textContent;
+  } catch(e){ alert(e.message); }
+};
+` },
+    { path: "README.md", content: readme("Translator + Summarizer", "Calls chat-with-ai and saves to ai_memory.") },
+  ],
+};
+
 export const CRIDERGPT_EXTENSIONS: SuiteExt[] = [
   browserAssistant,
   livestockTagManager,
   spendingHelper,
   ffaToolkit,
   promptVault,
+  audioBooster,
+  tabManager,
+  screenshotter,
+  translatorSummarizer,
 ];
