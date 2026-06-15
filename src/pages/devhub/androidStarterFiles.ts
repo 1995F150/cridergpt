@@ -107,8 +107,8 @@ android {
         applicationId = "${PKG}"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 270
+        versionName = "2.7.0"
     }
     buildTypes {
         release {
