@@ -7,57 +7,57 @@ export const useSubscriptionStatus = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<{
     plan: string;
     isActive: boolean;
+    source?: string;
+    expiresAt?: string | null;
     loading: boolean;
   }>({
     plan: 'free',
     isActive: false,
-    loading: true
+    loading: true,
   });
 
   useEffect(() => {
-    const checkSubscriptionStatus = async () => {
+    const check = async () => {
       if (!user) {
         setSubscriptionStatus({ plan: 'free', isActive: false, loading: false });
         return;
       }
 
       try {
-        // Check both ai_usage and profiles for subscription status
-        const [usageResult, profileResult] = await Promise.all([
-          supabase
-            .from('ai_usage')
-            .select('user_plan')
-            .eq('user_id', user.id)
-            .maybeSingle(),
-          supabase
-            .from('profiles')
-            .select('tier')
-            .eq('user_id', user.id)
-            .maybeSingle()
-        ]);
+        // Unified cross-platform entitlement (Stripe web + Google Play + Apple IAP + lifetime)
+        const { data, error } = await supabase.functions.invoke('get-entitlement');
 
-        if (usageResult.error && profileResult.error) {
-          console.error('Error fetching subscription status:', usageResult.error);
-          setSubscriptionStatus({ plan: 'free', isActive: false, loading: false });
+        if (!error && data && typeof data.plan === 'string') {
+          setSubscriptionStatus({
+            plan: data.plan,
+            isActive: !!data.isActive,
+            source: data.source,
+            expiresAt: data.expiresAt,
+            loading: false,
+          });
           return;
         }
 
-        // Prioritize profiles.tier over ai_usage.user_plan for lifetime plans
-        const plan = profileResult.data?.tier || usageResult.data?.user_plan || 'free';
-        const isActive = plan !== 'free';
+        // Fallback to legacy direct table read
+        const [usageResult, profileResult] = await Promise.all([
+          supabase.from('ai_usage').select('user_plan').eq('user_id', user.id).maybeSingle(),
+          supabase.from('profiles').select('tier').eq('user_id', user.id).maybeSingle(),
+        ]);
 
+        const plan = profileResult.data?.tier || usageResult.data?.user_plan || 'free';
         setSubscriptionStatus({
           plan,
-          isActive,
-          loading: false
+          isActive: plan !== 'free',
+          source: 'fallback',
+          loading: false,
         });
-      } catch (error) {
-        console.error('Subscription check error:', error);
+      } catch (err) {
+        console.error('Subscription check error:', err);
         setSubscriptionStatus({ plan: 'free', isActive: false, loading: false });
       }
     };
 
-    checkSubscriptionStatus();
+    check();
   }, [user]);
 
   return subscriptionStatus;
@@ -69,12 +69,9 @@ export const hasFeature = (userPlan: string, feature: string): boolean => {
     free: ['basic_chat', 'basic_tts', 'system_updates'],
     plus: ['basic_chat', 'basic_tts', 'system_updates', 'backend_generator', 'project_management', 'email_support'],
     pro: ['basic_chat', 'basic_tts', 'system_updates', 'backend_generator', 'project_management', 'email_support', 'unlimited_projects', 'premium_upload', 'analytics', 'mod_deployment', 'priority_support', 'automation'],
-    lifetime: ['basic_chat', 'basic_tts', 'system_updates', 'backend_generator', 'project_management', 'email_support', 'unlimited_projects', 'premium_upload', 'analytics', 'mod_deployment', 'priority_support', 'automation', 'unlimited_tokens', 'unlimited_tts', 'harvest_helper', 'tech_tillage', 'innovator']
+    lifetime: ['basic_chat', 'basic_tts', 'system_updates', 'backend_generator', 'project_management', 'email_support', 'unlimited_projects', 'premium_upload', 'analytics', 'mod_deployment', 'priority_support', 'automation', 'unlimited_tokens', 'unlimited_tts', 'harvest_helper', 'tech_tillage', 'innovator'],
   };
-
   return planFeatures[userPlan as keyof typeof planFeatures]?.includes(feature) || false;
 };
 
-export const isPlanActive = (userPlan: string): boolean => {
-  return userPlan !== 'free';
-};
+export const isPlanActive = (userPlan: string): boolean => userPlan !== 'free';
