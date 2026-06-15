@@ -6199,6 +6199,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_entitlement: {
+        Args: { _user_id: string }
+        Returns: {
+          expires_at: string
+          is_active: boolean
+          plan: string
+          source: string
+        }[]
+      }
       get_user_sync_data: {
         Args: never
         Returns: {
