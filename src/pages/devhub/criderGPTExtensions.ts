@@ -392,7 +392,7 @@ async function runAgent(instruction) {
       model: "gpt-4o-mini",
     });
     let plan;
-    try { plan = JSON.parse((data.response || "{}").replace(/^```json|```$/g, "").trim()); }
+    try { plan = JSON.parse((data.response || "{}").replace(/^\\\`\\\`\\\`json|\\\`\\\`\\\`$/g, "").trim()); }
     catch { plan = { actions: [], reply: data.response }; }
     for (const act of plan.actions || []) {
       await chrome.scripting.executeScript({
