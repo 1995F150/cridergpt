@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
+import JSZip from "jszip";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { ROKU_CHANNELS } from "./rokuChannels";
 import {
   ChevronLeft, ExternalLink, Tv, DollarSign, BookOpen, Wrench, Rocket, Code2, Copy,
-  Filter,
+  Filter, Download, Package,
 } from "lucide-react";
 
 const RESOURCES = [
@@ -157,6 +159,19 @@ export default function RokuStudio() {
     await navigator.clipboard.writeText(text);
     toast({ title: `${label} copied` });
   };
+  const downloadChannel = async (channelId: string) => {
+    const ch = ROKU_CHANNELS.find((c) => c.id === channelId);
+    if (!ch) return;
+    const zip = new JSZip();
+    ch.files.forEach((f) => zip.file(f.path, f.content));
+    const blob = await zip.generateAsync({ type: "blob" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${ch.id}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast({ title: `${ch.name} downloaded`, description: "Replace the .TODO image files, then sideload to your Roku." });
+  };
   const filteredIdeas = activeCategory === "All" ? IDEAS : IDEAS.filter((i) => i.category === activeCategory);
 
   return (
@@ -197,6 +212,40 @@ export default function RokuStudio() {
                 <p><b>Verdict:</b> Worth a weekend experiment. Ship one tiny niche channel, see if it sticks, then scale.</p>
               </CardDescription>
             </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Package className="w-4 h-4 text-primary" /> Pre-made CriderGPT channels
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Each ZIP is a complete BrightScript + SceneGraph project. Replace the four <code>.TODO</code> image files (icons + splash), zip, and sideload.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {ROKU_CHANNELS.map((ch) => (
+                  <Card key={ch.id} className="border-primary/20 hover:border-primary/60 transition-colors">
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-sm">{ch.name}</CardTitle>
+                        <Badge variant="secondary" className="text-[10px] shrink-0">{ch.category}</Badge>
+                      </div>
+                      <CardDescription className="text-xs">{ch.pitch}</CardDescription>
+                      <div className="text-xs text-primary font-medium pt-1 flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" /> {ch.monetization}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Button size="sm" className="w-full" onClick={() => downloadChannel(ch.id)}>
+                        <Download className="w-3 h-3 mr-1" /> Download ZIP
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
           </Card>
 
           <div>
