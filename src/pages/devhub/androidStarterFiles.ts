@@ -616,20 +616,95 @@ fun CriderGPTTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
   [`app/src/main/java/${PKG_PATH}/ui/nav/ExternalLinks.kt`]: `package ${PKG}.ui.nav
 
 /**
- * The ONLY screens allowed to leave the native app into Chrome.
- * Everything else (Tag Lookup, Livestock, Calendar, Payment, Plan, Profile,
- * Guardian, Frequency Tools, Signer, USB Hub, RDR2 Guide, Cloud Gaming,
- * Admin Panel, DevHub, Idea Planner, etc.) must be rendered natively.
+ * Mirrors the website's left-rail / drawer structure. Anything with [route]
+ * resolves to a native Compose destination. Anything with [externalUrl] hands
+ * off to the system browser (used sparingly — only for off-app destinations
+ * like the public store or the Snapchat lens).
+ *
+ * Admin-only sections must NEVER appear unless [rememberHasRole("admin")]
+ * resolves to true. Owner-only DevHub items use the "owner" role.
  */
-data class ExternalLink(val label: String, val url: String)
-
-val EXTERNAL_LINKS = listOf(
-    ExternalLink("Smart ID Store", "https://cridergpt.com/store"),
-    ExternalLink("Snapchat Lens", "https://cridergpt.com/snapchat-lens"),
-    ExternalLink("Custom Filters", "https://cridergpt.com/custom-filters"),
-    ExternalLink("Terms & Privacy", "https://cridergpt.com/user-agreement"),
+data class NavItem(
+    val label: String,
+    val route: String? = null,
+    val externalUrl: String? = null,
+    val requiresAdmin: Boolean = false,
+    val requiresOwner: Boolean = false,
 )
+
+data class NavSection(val title: String, val items: List<NavItem>)
+
+val WEBSITE_NAV: List<NavSection> = listOf(
+    NavSection("Main", listOf(
+        NavItem("Chat", route = "chat"),
+        NavItem("Vision Memory", route = "vision-memory"),
+    )),
+    NavSection("Productivity", listOf(
+        NavItem("Livestock ID", route = "livestock"),
+        NavItem("Receipts", route = "receipts"),
+        NavItem("Agent Swarm", route = "agent-swarm"),
+        NavItem("Voice Studio", route = "voice-studio"),
+        NavItem("Shared Spending", route = "shared-spending"),
+        NavItem("FFA Center", route = "ffa-center"),
+        NavItem("Calendar", route = "calendar"),
+        NavItem("Calculators", route = "calculators"),
+        NavItem("Files", route = "files"),
+        NavItem("Gallery", route = "gallery"),
+        NavItem("Projects", route = "projects"),
+    )),
+    NavSection("Creative", listOf(
+        NavItem("Media", route = "media"),
+        NavItem("Music", route = "music"),
+        NavItem("AI Images", route = "ai-images"),
+        NavItem("3D Studio", route = "studio-3d"),
+    )),
+    NavSection("Account", listOf(
+        NavItem("Guardian", route = "guardian"),
+        NavItem("Profile", route = "profile"),
+        NavItem("Plan", route = "plan"),
+        NavItem("Payment", route = "payment"),
+    )),
+    NavSection("Tools", listOf(
+        NavItem("Code Editor", route = "code-editor", requiresOwner = true),
+        NavItem("ZIP-to-EXE Builder", route = "zip-to-exe"),
+        NavItem("Texture Generator", route = "texture-generator"),
+        NavItem("Cloud Gaming", route = "cloud-gaming"),
+        NavItem("RDR2 Guide", route = "rdr2-guide"),
+        NavItem("USB Hub", route = "usb-hub"),
+        NavItem("Sensors", route = "sensors"),
+        NavItem("Frequency Tools", route = "frequency-tools"),
+        NavItem("Metadata Editor", route = "metadata-editor"),
+        NavItem("3D Converter", route = "converter-3d"),
+    )),
+    NavSection("Store", listOf(
+        NavItem("Smart ID Store", externalUrl = "https://cridergpt.com/store"),
+    )),
+    NavSection("Info", listOf(
+        NavItem("Updates", route = "updates"),
+        NavItem("Timeline", route = "timeline"),
+        NavItem("Memorial", route = "memorial"),
+        NavItem("Contact", route = "contact"),
+    )),
+    NavSection("External", listOf(
+        NavItem("Snapchat Lens", externalUrl = "https://cridergpt.com/snapchat-lens"),
+        NavItem("Custom Filters", externalUrl = "https://cridergpt.com/custom-filters"),
+        NavItem("Farming Simulator", externalUrl = "https://cridergpt.com/farm-bureau"),
+        NavItem("Terms & Privacy", externalUrl = "https://cridergpt.com/user-agreement"),
+    )),
+    NavSection("Admin", listOf(
+        NavItem("Admin Panel",  route = "admin",              requiresAdmin = true),
+        NavItem("Idea Planner", route = "devhub/idea-planner", requiresAdmin = true),
+        NavItem("Dev Hub",      route = "devhub",              requiresOwner = true),
+    )),
+)
+
+/** Back-compat alias for the previous EXTERNAL_LINKS list. */
+data class ExternalLink(val label: String, val url: String)
+val EXTERNAL_LINKS: List<ExternalLink> =
+    WEBSITE_NAV.flatMap { it.items }
+        .mapNotNull { it.externalUrl?.let { url -> ExternalLink(it.label, url) } }
 `,
+
 
   [`app/src/main/java/${PKG_PATH}/ui/nav/AppNav.kt`]: `package ${PKG}.ui.nav
 
