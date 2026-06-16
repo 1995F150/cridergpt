@@ -1,100 +1,55 @@
-## Goal
+# CriderGPT Mobile Rebuild — Phased Plan
 
-Upgrade `/devhub/android-starter` from a 2-screen demo into a **full website-parity scaffold** so when you open it in Android Studio and press Run, you already have every nav tab, persistent login, and every screen wired to the correct Supabase table or edge function. No payment code (per your earlier note).
+**Scope rules locked in from your answers:**
+- Only edit `src/pages/devhub/androidStarterFiles.ts` and `src/pages/devhub/iosStarterFiles.ts`. Do **not** touch `android_app/` (builder owns it).
+- Android `versionCode = 274` (you said 273 was highest uploaded), `versionName = "2.7.4"`.
+- Audit-first: I read the website source before rewriting any starter module. Existing working systems are preserved, not replaced with placeholders.
+- Web client ID `248754417531-pe960srs7ve7eu9f4ttm4k73tu33t1mi…` and Android client ID `248754417531-gnnhko80mrsohcfigs67lgmus81g4o57…` are wired in Phase 1.
 
-Source of truth = the website. Every screen reads/writes the **same tables and edge functions** the website uses, so they stay in sync automatically.
+## Phase 1 — Foundation (auth + nav + version)
+**Goal:** App launches, signs in, lands on a drawer that matches the website. No regressions to existing modules.
 
-## What the generated app will contain
+1. **Audit pass (read-only)**
+   - `src/App.tsx` route table → canonical module list
+   - `src/components/` sidebar/drawer → canonical nav order
+   - `src/contexts/AuthContext.tsx`, `useAdmin`, `user_roles` → admin gate rules
+   - `useSubscriptionStatus` + `get-entitlement` → plan source of truth
+2. **Android starter (`androidStarterFiles.ts`)**
+   - `build.gradle`: `versionCode 274`, `versionName "2.7.4"`, `compileSdk 35`, `targetSdk 35`.
+   - `AndroidManifest.xml`: confirm no stray AD_ID permission (not used → stays removed); deep-link intent filter for `app.cridergpt.android://oauth/callback`.
+   - `SupabaseClient.kt`: unchanged URL/anon key (matches web).
+   - `AuthViewModel.kt`: Google Sign-In via Credential Manager using **Android client ID** above; fall back to Chrome Custom Tab OAuth (no SHA-1/Firebase) per existing memory.
+   - `MainActivity.kt`: handle OAuth deep-link → `supabase.auth.exchangeCodeForSession`.
+   - `NavigationDrawer` + `mobile_navigation.xml`: full website section order (MAIN → PRODUCTIVITY → CREATIVE → ACCOUNT → TOOLS → STORE → INFO → EXTERNAL → ADMIN), admin section hidden unless `has_role(uid,'admin')`.
+3. **iOS starter (`iosStarterFiles.ts`)**
+   - Mirror nav and auth. Google Sign-In uses **Web client ID** as `serverClientID`; deep-link via `ASWebAuthenticationSession`.
+   - IAP via StoreKit2, Stripe disabled for digital goods (per policy memory).
 
-### Shell
-- `MainActivity` hosts a Compose `NavHost` with a **bottom nav bar** matching the website:
-  Chat · Livestock · Idea Planner · Calendar · Profile
-- Top app bar with overflow menu → DevHub, Admin Panel, Account, Sign Out
-- `DrawerSheet` exposes secondary links (Smart ID Store, Tag Lookup, Snapchat Lens, FarmBureau, TikTok Studio, etc.) — these tagged `external = true` launch `Intent.ACTION_VIEW` to **leave the app into Chrome** (your preference).
+**Deliverable:** updated two starter files + a short changelog. You rebuild via the Ubuntu builder.
 
-### Persistent session (never sign out on app close)
-- Use **EncryptedSharedPreferences** (AndroidX Security) to store `access_token` + `refresh_token`.
-- On launch: if refresh token exists, call `POST /auth/v1/token?grant_type=refresh_token` to get a fresh access token. Schedule background refresh 5 min before expiry via `WorkManager`.
-- Only `SupabaseClient.signOut()` (tap Sign Out in menu) wipes the prefs. Force-close, reboot, low-memory kill → still signed in.
+## Phase 2 — Core modules parity
+After Phase 1 is verified building, I wire the high-traffic modules to match the web behavior exactly:
+- Chat (fix ANR, image upload, send, generation, attachments)
+- Pattern system (button, save, sync, %, reset, delete, yellow suggestion chips driven by `user_patterns`)
+- AGI toggle + model selector (persisted in `user_preferences`)
+- Gallery (Supabase Storage `media_generations` bucket, refresh)
+- Files (upload/download/delete against same bucket the web uses)
+- Vision Memory read path
 
-### Auth screen
-- Email/password + “Continue with Google” (deep link `app.cridergpt.android://auth-callback` via Chrome Custom Tabs, no SHA-1 needed — matches your existing OAuth setup).
+## Phase 3 — Account, payments, admin, polish
+- Plan/Payment screens call `get-entitlement` (single source); Google Play Billing for `cridergpt_plus_monthly` / `cridergpt_pro_monthly` → `verify-iap`; Stripe link only for physical store.
+- Admin Panel / Idea Planner / Dev Hub gated by `has_role` RPC; hidden in drawer otherwise.
+- Play Console compliance: targetSdk 35 confirmed, data-safety AD_ID = false, versionCode auto-increment helper script note in starter README.
+- Remaining bug sweep (sign-out clears session, state persistence, crash handlers).
 
-### Pre-wired feature screens (all read/write the live tables)
+## Technical notes
+- No Capacitor, no WebView wrapper anywhere. Each screen is Compose (Android) / SwiftUI (iOS) calling the same Supabase tables/edge functions the web uses.
+- All new tables? **None** — web schema is the source of truth.
+- Edge functions touched? **None new** in Phase 1; Phase 3 may add a `bump-android-version` helper only if you want it.
 
-| Screen | Backend wiring |
-|---|---|
-| ChatScreen | `chat-with-ai` edge fn · saves to `chat_conversations` / `chat_messages` |
-| LivestockListScreen | `livestock_animals` SELECT + `livestock_scan_logs` |
-| ScanTagScreen | NFC reader → parses `CriderGPT-XXXXXX` → looks up `livestock_animals` |
-| IdeaPlannerScreen | `idea_planner_ideas` CRUD with RLS-respecting filters |
-| CalendarScreen | `events` SELECT/INSERT, two-tier visibility |
-| ProfileScreen | `profiles` row for `auth.uid()`, edit display name/avatar |
-| AccountManagementScreen | subscription tier from `user_subscriptions`, delete-account flow |
-| DevHubScreen | Gated by `has_role(uid, 'owner')` RPC. Lists every DevHub module as links (opens website ones in Chrome, native-implemented ones in-app). |
-| AdminPanelScreen | Gated by `has_role(uid, 'admin')`. Reads `admin_audit_logs`, `system_status`, `user_violations`. |
-| NotificationsScreen | `user_notifications` realtime channel |
+## Approval checkpoints
+- ✅ after Phase 1 → you build APK, confirm sign-in + drawer.
+- ✅ after Phase 2 → you confirm chat/gallery/pattern parity.
+- ✅ after Phase 3 → ship to internal track.
 
-External-only items (Store, Snapchat Lens, FarmBureau lead form, TikTok Studio, Custom Filters, Recipes, Guides, Public Profile, Invite, Leaderboard) appear in the drawer and **launch the system browser** — that way they always look exactly like the website.
-
-### Backend client (single file)
-`SupabaseClient.kt` exposes:
-- `signIn / signUp / signInWithGoogle / signOut`
-- `refreshIfNeeded()` (called on launch + every resume)
-- `from(table).select/insert/update/delete` mini-builder
-- `invoke(fnName, payload)` for edge functions
-- `realtime(table, filter, onChange)` via WebSocket
-
-### Role gating
-- `useHasRole(role)` Compose helper calls the existing `has_role(uid, role)` RPC.
-- DevHub + Admin tabs render only if role check passes — same rule the website uses.
-
-## File layout in the ZIP
-
-```text
-cridergpt-android-starter/
-├── README.md
-├── settings.gradle.kts · build.gradle.kts · gradle.properties · wrapper
-├── app/build.gradle.kts            (+ AndroidX Security, WorkManager, Coil, Navigation-Compose)
-└── app/src/main/
-    ├── AndroidManifest.xml         (NFC, INTERNET, POST_NOTIFICATIONS, deep link)
-    ├── res/                        (themes, strings, launcher icon stub)
-    └── java/app/cridergpt/android/
-        ├── MainActivity.kt
-        ├── data/
-        │   ├── SupabaseClient.kt           (REST + realtime + secure prefs)
-        │   ├── SessionManager.kt           (EncryptedSharedPreferences + refresh)
-        │   └── repositories/                (Livestock, Ideas, Events, Chat, Profile, Notifications)
-        ├── ui/
-        │   ├── theme/Theme.kt
-        │   ├── nav/AppNav.kt                (NavHost + bottom bar + drawer)
-        │   ├── nav/ExternalLinks.kt         (table of external URLs → Intent)
-        │   ├── auth/{SignInScreen,GoogleSignInButton}.kt
-        │   ├── chat/ChatScreen.kt
-        │   ├── livestock/{LivestockListScreen,ScanTagScreen,AnimalDetailScreen}.kt
-        │   ├── ideas/IdeaPlannerScreen.kt
-        │   ├── calendar/CalendarScreen.kt
-        │   ├── profile/{ProfileScreen,AccountManagementScreen}.kt
-        │   ├── notifications/NotificationsScreen.kt
-        │   ├── devhub/DevHubScreen.kt
-        │   └── admin/AdminPanelScreen.kt
-        └── util/{NfcReader.kt, ExternalBrowser.kt, RoleGate.kt}
-```
-
-## Web side (the only thing I change in the actual project)
-
-1. Bump `src/pages/devhub/androidStarterFiles.ts` with the new file set above.
-2. Tweak `AndroidStarterExport.tsx` so the “What’s inside” card lists the new screens, marks the source-of-truth rule, and notes “Persistent session — never signs out until you tap Sign Out.”
-3. No changes to any other website file. No changes under `android_app/` (protected per project memory).
-
-## What you still do manually
-
-- Unzip → File → Open in Android Studio → Sync → Run ▶.
-- Generate a release keystore once when you’re ready to ship.
-- Add Google Play Billing later (intentionally left out).
-
-## Out of scope (by your request)
-
-- Payment, paywall, Play Billing
-- APK signing / build automation (your Ubuntu builder already handles that)
-- Touching `android_app/` (the externally managed folder)
+Reply "go phase 1" to start.
