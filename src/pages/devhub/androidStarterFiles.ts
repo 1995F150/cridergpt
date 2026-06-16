@@ -101,14 +101,14 @@ captures/
 
 android {
     namespace = "${PKG}"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "${PKG}"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 270
-        versionName = "2.7.0"
+        targetSdk = 35
+        versionCode = 274
+        versionName = "2.7.4"
     }
     buildTypes {
         release {
