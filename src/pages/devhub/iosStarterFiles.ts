@@ -1911,4 +1911,212 @@ targets:
       - com.apple.developer.in-app-payments
       - com.apple.developer.nfc.readersession.formats
 `,
+
+  "Navigation/WebsiteNav.swift": `import Foundation
+
+/// Mirrors the website's left-rail / drawer structure. Anything with
+/// \`route\` resolves to a native SwiftUI destination via [SideMenuView].
+/// Anything with \`externalURL\` opens Safari. Admin-only sections must
+/// NEVER appear unless the signed-in account holds the matching role.
+struct NavItem: Identifiable, Hashable {
+    let id = UUID()
+    let label: String
+    var route: String? = nil
+    var externalURL: URL? = nil
+    var requiresAdmin: Bool = false
+    var requiresOwner: Bool = false
+}
+
+struct NavSection: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let items: [NavItem]
+}
+
+enum WebsiteNav {
+    static let sections: [NavSection] = [
+        NavSection(title: "Main", items: [
+            NavItem(label: "Chat", route: "chat"),
+            NavItem(label: "Vision Memory", route: "vision-memory"),
+        ]),
+        NavSection(title: "Productivity", items: [
+            NavItem(label: "Livestock ID", route: "livestock"),
+            NavItem(label: "Receipts", route: "receipts"),
+            NavItem(label: "Agent Swarm", route: "agent-swarm"),
+            NavItem(label: "Voice Studio", route: "voice-studio"),
+            NavItem(label: "Shared Spending", route: "shared-spending"),
+            NavItem(label: "FFA Center", route: "ffa-center"),
+            NavItem(label: "Calendar", route: "calendar"),
+            NavItem(label: "Calculators", route: "calculators"),
+            NavItem(label: "Files", route: "files"),
+            NavItem(label: "Gallery", route: "gallery"),
+            NavItem(label: "Projects", route: "projects"),
+        ]),
+        NavSection(title: "Creative", items: [
+            NavItem(label: "Media", route: "media"),
+            NavItem(label: "Music", route: "music"),
+            NavItem(label: "AI Images", route: "ai-images"),
+            NavItem(label: "3D Studio", route: "studio-3d"),
+        ]),
+        NavSection(title: "Account", items: [
+            NavItem(label: "Guardian", route: "guardian"),
+            NavItem(label: "Profile", route: "profile"),
+            NavItem(label: "Plan", route: "plan"),
+            NavItem(label: "Payment", route: "payment"),
+        ]),
+        NavSection(title: "Tools", items: [
+            NavItem(label: "Code Editor", route: "code-editor", requiresOwner: true),
+            NavItem(label: "ZIP-to-EXE Builder", route: "zip-to-exe"),
+            NavItem(label: "Texture Generator", route: "texture-generator"),
+            NavItem(label: "Cloud Gaming", route: "cloud-gaming"),
+            NavItem(label: "RDR2 Guide", route: "rdr2-guide"),
+            NavItem(label: "USB Hub", route: "usb-hub"),
+            NavItem(label: "Sensors", route: "sensors"),
+            NavItem(label: "Frequency Tools", route: "frequency-tools"),
+            NavItem(label: "Metadata Editor", route: "metadata-editor"),
+            NavItem(label: "3D Converter", route: "converter-3d"),
+        ]),
+        NavSection(title: "Store", items: [
+            NavItem(label: "Smart ID Store", externalURL: URL(string: "https://cridergpt.com/store")!),
+        ]),
+        NavSection(title: "Info", items: [
+            NavItem(label: "Updates", route: "updates"),
+            NavItem(label: "Timeline", route: "timeline"),
+            NavItem(label: "Memorial", route: "memorial"),
+            NavItem(label: "Contact", route: "contact"),
+        ]),
+        NavSection(title: "External", items: [
+            NavItem(label: "Snapchat Lens",      externalURL: URL(string: "https://cridergpt.com/snapchat-lens")!),
+            NavItem(label: "Custom Filters",     externalURL: URL(string: "https://cridergpt.com/custom-filters")!),
+            NavItem(label: "Farming Simulator",  externalURL: URL(string: "https://cridergpt.com/farm-bureau")!),
+            NavItem(label: "Terms & Privacy",    externalURL: URL(string: "https://cridergpt.com/user-agreement")!),
+        ]),
+        NavSection(title: "Admin", items: [
+            NavItem(label: "Admin Panel",  route: "admin",              requiresAdmin: true),
+            NavItem(label: "Idea Planner", route: "devhub/idea-planner", requiresAdmin: true),
+            NavItem(label: "Dev Hub",      route: "devhub",              requiresOwner: true),
+        ]),
+    ]
+}
+`,
+
+  "Navigation/RoleGate.swift": `import SwiftUI
+
+/// Resolves \`has_role(uid, role)\` via the same RPC the website uses.
+/// \`nil\` while loading, \`true\`/\`false\` once resolved.
+@MainActor
+final class RoleGate: ObservableObject {
+    @Published var isAdmin: Bool? = nil
+    @Published var isOwner: Bool? = nil
+
+    func refresh() {
+        Task {
+            isAdmin = await check("admin")
+            isOwner = await check("owner")
+        }
+    }
+
+    private func check(_ role: String) async -> Bool {
+        guard let uid = SessionManager.shared.userId else { return false }
+        do {
+            return try await SupabaseClient.shared.rpc(
+                "has_role",
+                params: ["_user_id": uid, "_role": role],
+                as: Bool.self
+            )
+        } catch {
+            return false
+        }
+    }
+}
+`,
+
+  "Navigation/SideMenuView.swift": `import SwiftUI
+
+/// Website-mirrored drawer. Admin/owner sections are hidden unless the
+/// signed-in account holds the matching role (verified against the same
+/// \`has_role\` RPC the web app uses).
+struct SideMenuView: View {
+    @Binding var isOpen: Bool
+    @StateObject private var roles = RoleGate()
+    @Environment(\\.openURL) private var openURL
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(WebsiteNav.sections) { section in
+                    let visible = section.items.filter { item in
+                        (!item.requiresAdmin || roles.isAdmin == true) &&
+                        (!item.requiresOwner || roles.isOwner == true)
+                    }
+                    if !visible.isEmpty {
+                        Section(section.title.uppercased()) {
+                            ForEach(visible) { item in
+                                Button {
+                                    isOpen = false
+                                    if let url = item.externalURL { openURL(url) }
+                                    else if let route = item.route {
+                                        NotificationCenter.default.post(
+                                            name: .navigateToRoute,
+                                            object: route
+                                        )
+                                    }
+                                } label: {
+                                    HStack {
+                                        Image(systemName: item.externalURL != nil
+                                              ? "arrow.up.right.square"
+                                              : "chevron.right")
+                                            .foregroundStyle(.secondary)
+                                        Text(item.label)
+                                        Spacer()
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("CriderGPT")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") { isOpen = false }
+                }
+            }
+        }
+        .background(.regularMaterial)
+        .task { roles.refresh() }
+    }
+}
+
+extension Notification.Name {
+    static let navigateToRoute = Notification.Name("cridergpt.navigateToRoute")
+}
+`,
+
+  "Navigation/NativeModulePlaceholder.swift": `import SwiftUI
+
+/// Native (NOT WebView) placeholder used while individual module screens
+/// finish being wired up. Renders real SwiftUI and uses the same Supabase
+/// backend as every other screen — it just doesn't yet render that data.
+struct NativeModulePlaceholder: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text(title).font(.title2).bold()
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .navigationTitle(title)
+    }
+}
+`,
 };
+
