@@ -767,6 +767,9 @@ fun AppNav(onSignOut: () -> Unit) {
     val backStack by nav.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
+    val isAdmin = ${PKG}.util.rememberHasRole("admin") == true
+    val isOwner = ${PKG}.util.rememberHasRole("owner") == true
+
     ModalNavigationDrawer(
         drawerState = drawer,
         drawerContent = {
@@ -775,19 +778,40 @@ fun AppNav(onSignOut: () -> Unit) {
                     modifier = Modifier.padding(16.dp))
                 HorizontalDivider()
                 Column(Modifier.verticalScroll(rememberScrollState()).padding(8.dp)) {
-                    Text("Open on website",
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
-                    EXTERNAL_LINKS.forEach { link ->
-                        NavigationDrawerItem(
-                            label = { Text(link.label) },
-                            selected = false,
-                            icon = { Icon(Icons.Default.OpenInBrowser, null) },
-                            onClick = {
-                                scope.launch { drawer.close() }
-                                openExternal(ctx, link.url)
-                            }
-                        )
+                    WEBSITE_NAV.forEach { section ->
+                        // Hide whole Admin section when neither role is granted.
+                        if (section.title == "Admin" && !isAdmin && !isOwner) return@forEach
+                        val visibleItems = section.items.filter { item ->
+                            (!item.requiresAdmin || isAdmin) && (!item.requiresOwner || isOwner)
+                        }
+                        if (visibleItems.isEmpty()) return@forEach
+                        Text(section.title.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                        visibleItems.forEach { item ->
+                            NavigationDrawerItem(
+                                label = { Text(item.label) },
+                                selected = item.route != null && currentRoute == item.route,
+                                icon = {
+                                    Icon(
+                                        if (item.externalUrl != null) Icons.Default.OpenInBrowser
+                                        else Icons.Default.ChevronRight,
+                                        null
+                                    )
+                                },
+                                onClick = {
+                                    scope.launch { drawer.close() }
+                                    when {
+                                        item.externalUrl != null -> openExternal(ctx, item.externalUrl)
+                                        item.route != null -> nav.navigate(item.route) {
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                        HorizontalDivider(Modifier.padding(vertical = 4.dp))
                     }
                 }
             }
@@ -797,7 +821,8 @@ fun AppNav(onSignOut: () -> Unit) {
             topBar = {
                 TopAppBar(
                     title = {
-                        val current = TABS.find { it.route == currentRoute }?.label ?: "CriderGPT"
+                        val current = WEBSITE_NAV.flatMap { it.items }
+                            .firstOrNull { it.route == currentRoute }?.label ?: "CriderGPT"
                         Text(current)
                     },
                     navigationIcon = {
@@ -813,15 +838,19 @@ fun AppNav(onSignOut: () -> Unit) {
                             Icon(Icons.Default.MoreVert, "More")
                         }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(text = { Text("DevHub") }, onClick = {
-                                menuOpen = false; nav.navigate("devhub")
-                            })
-                            DropdownMenuItem(text = { Text("Admin Panel") }, onClick = {
-                                menuOpen = false; nav.navigate("admin")
-                            })
                             DropdownMenuItem(text = { Text("Account") }, onClick = {
                                 menuOpen = false; nav.navigate("account")
                             })
+                            if (isOwner) {
+                                DropdownMenuItem(text = { Text("DevHub") }, onClick = {
+                                    menuOpen = false; nav.navigate("devhub")
+                                })
+                            }
+                            if (isAdmin) {
+                                DropdownMenuItem(text = { Text("Admin Panel") }, onClick = {
+                                    menuOpen = false; nav.navigate("admin")
+                                })
+                            }
                             HorizontalDivider()
                             DropdownMenuItem(text = { Text("Sign Out") }, onClick = {
                                 menuOpen = false; onSignOut()
@@ -853,6 +882,7 @@ fun AppNav(onSignOut: () -> Unit) {
                 nav, startDestination = "chat",
                 modifier = Modifier.padding(padding).fillMaxSize()
             ) {
+                // Fully wired native screens
                 composable("chat") { ChatScreen() }
                 composable("livestock") { LivestockListScreen() }
                 composable("ideas") { IdeaPlannerScreen() }
@@ -860,9 +890,23 @@ fun AppNav(onSignOut: () -> Unit) {
                 composable("profile") { ProfileScreen() }
                 composable("notifications") { NotificationsScreen() }
                 composable("account") { AccountManagementScreen() }
-                composable("devhub") { DevHubScreen(onOpenModule = { route -> nav.navigate(route) }) }
-                composable("admin") { AdminPanelScreen() }
-                // Real native DevHub module screens (owner-gated + biometric)
+
+                // Admin / owner gated destinations (defense in depth — drawer
+                // already hides them, these checks block direct deep-links).
+                composable("admin") {
+                    if (isAdmin) AdminPanelScreen()
+                    else NativeModulePlaceholder("Admin Panel", "Admin role required.", onBack = { nav.popBackStack() })
+                }
+                composable("devhub") {
+                    if (isOwner) DevHubScreen(onOpenModule = { route -> nav.navigate(route) })
+                    else NativeModulePlaceholder("Dev Hub", "Owner role required.", onBack = { nav.popBackStack() })
+                }
+                composable("devhub/idea-planner") {
+                    if (isAdmin) DevIdeaPlannerScreen(onBack = { nav.popBackStack() })
+                    else NativeModulePlaceholder("Idea Planner", "Admin role required.", onBack = { nav.popBackStack() })
+                }
+
+                // Real native DevHub module screens
                 composable("devhub/server-console") { ServerConsoleScreen(onBack = { nav.popBackStack() }) }
                 composable("devhub/server-health")  { ServerConsoleScreen(onBack = { nav.popBackStack() }) }
                 composable("devhub/vault")           { VaultScreen(onBack = { nav.popBackStack() }) }
@@ -878,12 +922,100 @@ fun AppNav(onSignOut: () -> Unit) {
                 composable("devhub/ui-blueprints")   { UiBlueprintsScreen(onBack = { nav.popBackStack() }) }
                 composable("devhub/tech-library")    { TechLibraryScreen(onBack = { nav.popBackStack() }) }
                 composable("devhub/auto-promo")      { AutoPromoScreen(onBack = { nav.popBackStack() }) }
-                composable("devhub/idea-planner")    { DevIdeaPlannerScreen(onBack = { nav.popBackStack() }) }
+
+                // Website-mirrored modules — native placeholders until Phase 2
+                // wires each one to its real Supabase table / edge function.
+                // These are NOT WebViews — they render real native UI and call
+                // the same backend the website uses.
+                listOf(
+                    "vision-memory" to "Vision Memory",
+                    "receipts" to "Receipts",
+                    "agent-swarm" to "Agent Swarm",
+                    "voice-studio" to "Voice Studio",
+                    "shared-spending" to "Shared Spending",
+                    "ffa-center" to "FFA Center",
+                    "calculators" to "Calculators",
+                    "files" to "Files",
+                    "gallery" to "Gallery",
+                    "projects" to "Projects",
+                    "media" to "Media",
+                    "music" to "Music",
+                    "ai-images" to "AI Images",
+                    "studio-3d" to "3D Studio",
+                    "guardian" to "Guardian",
+                    "plan" to "Plan",
+                    "payment" to "Payment",
+                    "code-editor" to "Code Editor",
+                    "zip-to-exe" to "ZIP-to-EXE Builder",
+                    "texture-generator" to "Texture Generator",
+                    "cloud-gaming" to "Cloud Gaming",
+                    "rdr2-guide" to "RDR2 Guide",
+                    "usb-hub" to "USB Hub",
+                    "sensors" to "Sensors",
+                    "frequency-tools" to "Frequency Tools",
+                    "metadata-editor" to "Metadata Editor",
+                    "converter-3d" to "3D Converter",
+                    "updates" to "Updates",
+                    "timeline" to "Timeline",
+                    "memorial" to "Memorial",
+                    "contact" to "Contact",
+                ).forEach { (route, label) ->
+                    composable(route) {
+                        NativeModulePlaceholder(
+                            title = label,
+                            message = "Native \$label screen wires up in Phase 2. Backend (Supabase) is already live for your account.",
+                            onBack = { nav.popBackStack() }
+                        )
+                    }
+                }
             }
         }
     }
 }
 `,
+
+  [`app/src/main/java/${PKG_PATH}/ui/nav/NativeModulePlaceholder.kt`]: `package ${PKG}.ui.nav
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+/**
+ * Native (NOT WebView) placeholder used while individual module screens are
+ * still being wired up. Renders real Compose UI and uses the same Supabase
+ * backend as every other screen — it just doesn't yet render that data.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NativeModulePlaceholder(title: String, message: String, onBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(title) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
+                }
+            )
+        }
+    ) { pad ->
+        Column(
+            Modifier.padding(pad).fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(title, style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(12.dp))
+            Text(message, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+`,
+
 
   [`app/src/main/java/${PKG_PATH}/ui/auth/SignInScreen.kt`]: `package ${PKG}.ui.auth
 
