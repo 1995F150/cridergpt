@@ -390,6 +390,8 @@ object SupabaseClient {
     const val ANON_KEY = "${SUPABASE_ANON}"
     // Google OAuth Web Client ID (used by Supabase to issue Google sign-in)
     const val GOOGLE_WEB_CLIENT_ID = "248754417531-pe960srs7ve7eu9f4ttm4k73tu33t1mi.apps.googleusercontent.com"
+    // Google OAuth Android Client ID (matches SHA + package app.cridergpt.android)
+    const val GOOGLE_ANDROID_CLIENT_ID = "248754417531-gnnhko80mrsohcfigs67lgmus81g4o57.apps.googleusercontent.com"
 
     private lateinit var http: OkHttpClient
     private val JSON = "application/json".toMediaType()
