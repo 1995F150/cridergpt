@@ -53,3 +53,11 @@ After Phase 1 is verified building, I wire the high-traffic modules to match the
 - ✅ after Phase 3 → ship to internal track.
 
 Reply "go phase 1" to start.
+Phase 2 additions to plan
+
+## Phase 2 — Shipped
+- Android: ChatScreen now has AGI toggle, model selector (cridergpt-fast/pro, gpt-4o-mini/4o), and yellow pattern suggestion chips from `user_patterns`. Prefs persist to `user_preferences`. Payload to `chat-with-ai` now includes `model` and `agi_mode`.
+- Android: GalleryScreen reads `media_generations` (grid + refresh). VisionMemoryScreen reads `vision_memory`. Both wired into AppNav, removed from placeholder list.
+- iOS: ChatView mirrors AGI toggle, model menu, pattern chips, prefs persistence. ChatViewModel sends `model` + `agi_mode` to `chat-with-ai`.
+- iOS: GalleryView (`media_generations`) and VisionMemoryView (`vision_memory`) added.
+- Remaining for Phase 3: Files/Projects native screens, Plan/Payment via `get-entitlement`, Play Billing `verify-iap` wiring, Admin Panel polish, Play Console compliance check.

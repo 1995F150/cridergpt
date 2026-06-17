@@ -739,11 +739,13 @@ import ${PKG}.ui.devhub.modules.ServerConsoleScreen
 import ${PKG}.ui.devhub.modules.TechLibraryScreen
 import ${PKG}.ui.devhub.modules.UiBlueprintsScreen
 import ${PKG}.ui.devhub.modules.VaultScreen
+import ${PKG}.ui.gallery.GalleryScreen
 import ${PKG}.ui.ideas.IdeaPlannerScreen
 import ${PKG}.ui.livestock.LivestockListScreen
 import ${PKG}.ui.notifications.NotificationsScreen
 import ${PKG}.ui.profile.AccountManagementScreen
 import ${PKG}.ui.profile.ProfileScreen
+import ${PKG}.ui.vision.VisionMemoryScreen
 import ${PKG}.util.openExternal
 
 private data class Tab(val route: String, val label: String, val icon: @Composable () -> Unit)
@@ -923,12 +925,14 @@ fun AppNav(onSignOut: () -> Unit) {
                 composable("devhub/tech-library")    { TechLibraryScreen(onBack = { nav.popBackStack() }) }
                 composable("devhub/auto-promo")      { AutoPromoScreen(onBack = { nav.popBackStack() }) }
 
-                // Website-mirrored modules — native placeholders until Phase 2
-                // wires each one to its real Supabase table / edge function.
-                // These are NOT WebViews — they render real native UI and call
+                // Real native screens (Phase 2 — chat-with-ai / media_generations / vision_memory)
+                composable("gallery") { GalleryScreen(onBack = { nav.popBackStack() }) }
+                composable("vision-memory") { VisionMemoryScreen(onBack = { nav.popBackStack() }) }
+
+                // Website-mirrored modules — native placeholders until they are fully
+                // wired. These are NOT WebViews — they render real native UI and call
                 // the same backend the website uses.
                 listOf(
-                    "vision-memory" to "Vision Memory",
                     "receipts" to "Receipts",
                     "agent-swarm" to "Agent Swarm",
                     "voice-studio" to "Voice Studio",
@@ -936,7 +940,6 @@ fun AppNav(onSignOut: () -> Unit) {
                     "ffa-center" to "FFA Center",
                     "calculators" to "Calculators",
                     "files" to "Files",
-                    "gallery" to "Gallery",
                     "projects" to "Projects",
                     "media" to "Media",
                     "music" to "Music",
@@ -1101,11 +1104,15 @@ fun SignInScreen(onSignedIn: () -> Unit) {
 
   [`app/src/main/java/${PKG_PATH}/ui/chat/ChatScreen.kt`]: `package ${PKG}.ui.chat
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -1118,16 +1125,120 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 private data class Msg(val role: String, val content: String)
+private data class PatternChip(val id: String, val label: String)
 
+/** Mirrors the website's model picker. Keep in sync with src/config/criderGPTModels.ts. */
+private val MODELS = listOf(
+    "cridergpt-fast" to "CriderGPT Fast",
+    "cridergpt-pro"  to "CriderGPT Pro",
+    "gpt-4o-mini"    to "GPT-4o mini",
+    "gpt-4o"         to "GPT-4o",
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen() {
     val messages = remember { mutableStateListOf<Msg>() }
     var input by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var agi by remember { mutableStateOf(false) }
+    var model by remember { mutableStateOf(MODELS.first().first) }
+    var modelMenuOpen by remember { mutableStateOf(false) }
+    val chips = remember { mutableStateListOf<PatternChip>() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
+    // Load AGI toggle + model from user_preferences (same row the website writes).
+    LaunchedEffect(Unit) {
+        runCatching {
+            val arr = SupabaseClient.select(
+                "user_preferences",
+                select = "preferences",
+                limit = 1
+            )
+            if (arr.length() > 0) {
+                val prefs = arr.getJSONObject(0).optJSONObject("preferences")
+                prefs?.optBoolean("agi_mode", false)?.let { agi = it }
+                prefs?.optString("preferred_model", model)?.let { if (it.isNotBlank()) model = it }
+            }
+        }
+        // Pull yellow suggestion chips from user_patterns (top frequency).
+        runCatching {
+            val arr = SupabaseClient.select(
+                "user_patterns",
+                select = "id,pattern_text",
+                order = "frequency.desc",
+                limit = 6
+            )
+            chips.clear()
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                chips += PatternChip(o.optString("id"), o.optString("pattern_text"))
+            }
+        }
+    }
+
+    fun persistPrefs() {
+        scope.launch {
+            runCatching {
+                SupabaseClient.upsert(
+                    "user_preferences",
+                    JSONObject().put("preferences", JSONObject()
+                        .put("agi_mode", agi)
+                        .put("preferred_model", model))
+                )
+            }
+        }
+    }
+
     Column(Modifier.fillMaxSize()) {
+        // Header row: AGI + model selector (mirrors website chat header).
+        Surface(tonalElevation = 2.dp) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Bolt, null, tint = if (agi) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(4.dp))
+                Text("AGI", style = MaterialTheme.typography.labelLarge)
+                Switch(checked = agi, onCheckedChange = { agi = it; persistPrefs() })
+                Spacer(Modifier.weight(1f))
+                ExposedDropdownMenuBox(expanded = modelMenuOpen, onExpandedChange = { modelMenuOpen = it }) {
+                    AssistChip(
+                        onClick = { modelMenuOpen = true },
+                        label = { Text(MODELS.firstOrNull { it.first == model }?.second ?: model) },
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(expanded = modelMenuOpen, onDismissRequest = { modelMenuOpen = false }) {
+                        MODELS.forEach { (id, label) ->
+                            DropdownMenuItem(text = { Text(label) }, onClick = {
+                                model = id; modelMenuOpen = false; persistPrefs()
+                            })
+                        }
+                    }
+                }
+            }
+        }
+
+        // Yellow pattern suggestion chips — tap to prefill the composer.
+        if (chips.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                chips.forEach { chip ->
+                    SuggestionChip(
+                        onClick = { input = chip.label },
+                        label = { Text(chip.label) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    )
+                }
+            }
+        }
+
         LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp),
@@ -1139,7 +1250,7 @@ fun ChatScreen() {
         Surface(tonalElevation = 3.dp) {
             Row(Modifier.padding(8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(input, { input = it }, modifier = Modifier.weight(1f),
-                    placeholder = { Text("Ask CriderGPT...") })
+                    placeholder = { Text(if (agi) "Tell CriderGPT what to do..." else "Ask CriderGPT...") })
                 Spacer(Modifier.width(8.dp))
                 Button(
                     enabled = !busy && input.isNotBlank(),
@@ -1147,9 +1258,12 @@ fun ChatScreen() {
                         val text = input.trim(); input = ""
                         messages += Msg("user", text); busy = true
                         scope.launch {
-                            val payload = JSONObject().put("messages", JSONArray().apply {
-                                messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) }
-                            })
+                            val payload = JSONObject()
+                                .put("model", model)
+                                .put("agi_mode", agi)
+                                .put("messages", JSONArray().apply {
+                                    messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) }
+                                })
                             val raw = runCatching { SupabaseClient.invoke("chat-with-ai", payload) }
                                 .getOrElse { "Error: \${it.message}" }
                             val reply = runCatching {
@@ -1174,6 +1288,155 @@ private fun Bubble(m: Msg) {
             contentColor = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.clip(RoundedCornerShape(16.dp)).widthIn(max = 300.dp)
         ) { Text(m.content, modifier = Modifier.padding(12.dp)) }
+    }
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/gallery/GalleryScreen.kt`]: `package ${PKG}.ui.gallery
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import ${PKG}.data.SupabaseClient
+
+data class GalleryItem(val id: String, val url: String?, val prompt: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GalleryScreen(onBack: () -> Unit) {
+    var items by remember { mutableStateOf<List<GalleryItem>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var reload by remember { mutableStateOf(0) }
+
+    LaunchedEffect(reload) {
+        loading = true; error = null
+        runCatching {
+            val arr = SupabaseClient.select(
+                "media_generations",
+                select = "id,output_url,prompt,created_at",
+                order = "created_at.desc",
+                limit = 60
+            )
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(GalleryItem(o.optString("id"), o.optString("output_url", null), o.optString("prompt", null)))
+                }
+            }
+        }.onSuccess { items = it }.onFailure { error = it.message }
+        loading = false
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Gallery") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+                actions = { IconButton(onClick = { reload++ }) { Icon(Icons.Default.Refresh, "Refresh") } }
+            )
+        }
+    ) { pad ->
+        Box(Modifier.padding(pad).fillMaxSize()) {
+            when {
+                loading -> CircularProgressIndicator(Modifier.padding(24.dp))
+                error != null -> Text("Error: \$error", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
+                items.isEmpty() -> Text("No generated media yet.", modifier = Modifier.padding(16.dp))
+                else -> LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(items) { g ->
+                        ElevatedCard {
+                            Column {
+                                g.url?.let { AsyncImage(model = it, contentDescription = g.prompt, modifier = Modifier.fillMaxWidth().height(160.dp)) }
+                                g.prompt?.let { Text(it, modifier = Modifier.padding(8.dp), maxLines = 2, style = MaterialTheme.typography.bodySmall) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/vision/VisionMemoryScreen.kt`]: `package ${PKG}.ui.vision
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+
+data class VisionEntry(val id: String, val summary: String?, val createdAt: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun VisionMemoryScreen(onBack: () -> Unit) {
+    var entries by remember { mutableStateOf<List<VisionEntry>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        runCatching {
+            val arr = SupabaseClient.select(
+                "vision_memory",
+                select = "id,summary,created_at",
+                order = "created_at.desc",
+                limit = 100
+            )
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(VisionEntry(o.optString("id"), o.optString("summary", null), o.optString("created_at", null)))
+                }
+            }
+        }.onSuccess { entries = it }.onFailure { error = it.message }
+        loading = false
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Vision Memory") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }
+            )
+        }
+    ) { pad ->
+        Box(Modifier.padding(pad).fillMaxSize().padding(12.dp)) {
+            when {
+                loading -> CircularProgressIndicator()
+                error != null -> Text("Error: \$error", color = MaterialTheme.colorScheme.error)
+                entries.isEmpty() -> Text("No vision memory recorded yet.")
+                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(entries) { e ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(e.summary ?: "(no summary)", style = MaterialTheme.typography.bodyMedium)
+                                e.createdAt?.let { Text(it, style = MaterialTheme.typography.labelSmall) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 `,
