@@ -925,12 +925,14 @@ fun AppNav(onSignOut: () -> Unit) {
                 composable("devhub/tech-library")    { TechLibraryScreen(onBack = { nav.popBackStack() }) }
                 composable("devhub/auto-promo")      { AutoPromoScreen(onBack = { nav.popBackStack() }) }
 
-                // Website-mirrored modules — native placeholders until Phase 2
-                // wires each one to its real Supabase table / edge function.
-                // These are NOT WebViews — they render real native UI and call
+                // Real native screens (Phase 2 — chat-with-ai / media_generations / vision_memory)
+                composable("gallery") { GalleryScreen(onBack = { nav.popBackStack() }) }
+                composable("vision-memory") { VisionMemoryScreen(onBack = { nav.popBackStack() }) }
+
+                // Website-mirrored modules — native placeholders until they are fully
+                // wired. These are NOT WebViews — they render real native UI and call
                 // the same backend the website uses.
                 listOf(
-                    "vision-memory" to "Vision Memory",
                     "receipts" to "Receipts",
                     "agent-swarm" to "Agent Swarm",
                     "voice-studio" to "Voice Studio",
@@ -938,7 +940,6 @@ fun AppNav(onSignOut: () -> Unit) {
                     "ffa-center" to "FFA Center",
                     "calculators" to "Calculators",
                     "files" to "Files",
-                    "gallery" to "Gallery",
                     "projects" to "Projects",
                     "media" to "Media",
                     "music" to "Music",
