@@ -739,11 +739,13 @@ import ${PKG}.ui.devhub.modules.ServerConsoleScreen
 import ${PKG}.ui.devhub.modules.TechLibraryScreen
 import ${PKG}.ui.devhub.modules.UiBlueprintsScreen
 import ${PKG}.ui.devhub.modules.VaultScreen
+import ${PKG}.ui.gallery.GalleryScreen
 import ${PKG}.ui.ideas.IdeaPlannerScreen
 import ${PKG}.ui.livestock.LivestockListScreen
 import ${PKG}.ui.notifications.NotificationsScreen
 import ${PKG}.ui.profile.AccountManagementScreen
 import ${PKG}.ui.profile.ProfileScreen
+import ${PKG}.ui.vision.VisionMemoryScreen
 import ${PKG}.util.openExternal
 
 private data class Tab(val route: String, val label: String, val icon: @Composable () -> Unit)
