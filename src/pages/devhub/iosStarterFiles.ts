@@ -567,12 +567,57 @@ struct SignInView: View {
 
   "Chat/ChatView.swift": `import SwiftUI
 
+/// Mirrors the website chat header: AGI toggle, model picker, yellow pattern chips.
 struct ChatView: View {
     @StateObject private var vm = ChatViewModel()
     @State private var draft = ""
 
+    private let models: [(id: String, label: String)] = [
+        ("cridergpt-fast", "CriderGPT Fast"),
+        ("cridergpt-pro",  "CriderGPT Pro"),
+        ("gpt-4o-mini",    "GPT-4o mini"),
+        ("gpt-4o",         "GPT-4o"),
+    ]
+
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                Toggle(isOn: $vm.agi) {
+                    Label("AGI", systemImage: "bolt.fill")
+                        .labelStyle(.titleAndIcon)
+                }
+                .toggleStyle(.switch)
+                .onChange(of: vm.agi) { _, _ in Task { await vm.persistPrefs() } }
+                Spacer()
+                Menu {
+                    ForEach(models, id: \\.id) { m in
+                        Button(m.label) {
+                            vm.model = m.id
+                            Task { await vm.persistPrefs() }
+                        }
+                    }
+                } label: {
+                    let label = models.first(where: { $0.id == vm.model })?.label ?? vm.model
+                    Label(label, systemImage: "chevron.down")
+                        .font(.callout)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .background(.thinMaterial)
+
+            if !vm.patternChips.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(vm.patternChips, id: \\.self) { chip in
+                            Button(chip) { draft = chip }
+                                .buttonStyle(.bordered)
+                                .tint(.yellow)
+                        }
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                }
+            }
+
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
@@ -589,7 +634,7 @@ struct ChatView: View {
 
             Divider()
             HStack(spacing: 8) {
-                TextField("Message CriderGPT…", text: $draft, axis: .vertical)
+                TextField(vm.agi ? "Tell CriderGPT what to do…" : "Message CriderGPT…", text: $draft, axis: .vertical)
                     .lineLimit(1...5)
                     .textFieldStyle(.roundedBorder)
                 Button {
@@ -605,7 +650,11 @@ struct ChatView: View {
         }
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await vm.loadHistory() }
+        .task {
+            await vm.loadPrefs()
+            await vm.loadPatterns()
+            await vm.loadHistory()
+        }
     }
 }
 
@@ -637,8 +686,47 @@ struct ChatMessage: Identifiable, Codable, Equatable {
 final class ChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var sending = false
+    @Published var agi = false
+    @Published var model = "cridergpt-fast"
+    @Published var patternChips: [String] = []
 
     struct ChatResponse: Decodable { let response: String }
+    private struct PrefsRow: Decodable { let preferences: Prefs? }
+    private struct Prefs: Decodable { let agi_mode: Bool?; let preferred_model: String? }
+    private struct PatternRow: Decodable { let pattern_text: String }
+
+    func loadPrefs() async {
+        guard SessionManager.shared.userId != nil else { return }
+        if let rows = try? await SupabaseClient.shared.select(
+            "user_preferences",
+            query: [URLQueryItem(name: "select", value: "preferences"),
+                    URLQueryItem(name: "limit", value: "1")],
+            as: [PrefsRow].self
+        ), let p = rows.first?.preferences {
+            if let a = p.agi_mode { agi = a }
+            if let m = p.preferred_model, !m.isEmpty { model = m }
+        }
+    }
+
+    func loadPatterns() async {
+        guard SessionManager.shared.userId != nil else { return }
+        if let rows = try? await SupabaseClient.shared.select(
+            "user_patterns",
+            query: [URLQueryItem(name: "select", value: "pattern_text"),
+                    URLQueryItem(name: "order", value: "frequency.desc"),
+                    URLQueryItem(name: "limit", value: "6")],
+            as: [PatternRow].self
+        ) {
+            patternChips = rows.map { $0.pattern_text }
+        }
+    }
+
+    func persistPrefs() async {
+        _ = try? await SupabaseClient.shared.upsert(
+            "user_preferences",
+            body: ["preferences": ["agi_mode": agi, "preferred_model": model]] as [String: Any]
+        )
+    }
 
     func loadHistory() async {
         guard let uid = SessionManager.shared.userId else { return }
@@ -663,9 +751,14 @@ final class ChatViewModel: ObservableObject {
         let user = ChatMessage(role: "user", content: trimmed)
         messages.append(user)
         do {
+            let history = messages.map { ["role": $0.role, "content": $0.content] }
             let res: ChatResponse = try await SupabaseClient.shared.invokeFunction(
                 Config.chatFunction,
-                body: ["message": trimmed, "model": "gpt-4o-mini"],
+                body: [
+                    "messages": history,
+                    "model": model,
+                    "agi_mode": agi,
+                ] as [String: Any],
                 as: ChatResponse.self
             )
             messages.append(ChatMessage(role: "assistant", content: res.response))
@@ -680,6 +773,146 @@ final class ChatViewModel: ObservableObject {
         let role: String
         let content: String
         let createdAt: Date
+    }
+}
+`,
+
+  "Gallery/GalleryView.swift": `import SwiftUI
+
+/// Native gallery backed by the same \`media_generations\` table the website reads.
+struct GalleryView: View {
+    @StateObject private var vm = GalleryViewModel()
+    private let columns = [GridItem(.adaptive(minimum: 140), spacing: 8)]
+
+    var body: some View {
+        ScrollView {
+            if vm.loading {
+                ProgressView().padding()
+            } else if let err = vm.error {
+                Text("Error: \\(err)").foregroundStyle(.red).padding()
+            } else if vm.items.isEmpty {
+                ContentUnavailableView("No generated media yet",
+                    systemImage: "photo.on.rectangle.angled")
+                    .padding(.top, 60)
+            } else {
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(vm.items) { item in
+                        VStack(alignment: .leading, spacing: 4) {
+                            if let url = item.outputURL {
+                                AsyncImage(url: url) { img in
+                                    img.resizable().scaledToFill()
+                                } placeholder: { Color.gray.opacity(0.2) }
+                                .frame(height: 140)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                            if let p = item.prompt {
+                                Text(p).font(.caption).lineLimit(2)
+                            }
+                        }
+                    }
+                }
+                .padding(8)
+            }
+        }
+        .navigationTitle("Gallery")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await vm.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+            }
+        }
+        .task { await vm.refresh() }
+    }
+}
+
+struct GalleryItem: Identifiable, Decodable {
+    let id: String
+    let output_url: String?
+    let prompt: String?
+    var outputURL: URL? { output_url.flatMap(URL.init(string:)) }
+}
+
+@MainActor
+final class GalleryViewModel: ObservableObject {
+    @Published var items: [GalleryItem] = []
+    @Published var loading = false
+    @Published var error: String?
+
+    func refresh() async {
+        loading = true; error = nil
+        do {
+            items = try await SupabaseClient.shared.select(
+                "media_generations",
+                query: [
+                    URLQueryItem(name: "select", value: "id,output_url,prompt,created_at"),
+                    URLQueryItem(name: "order", value: "created_at.desc"),
+                    URLQueryItem(name: "limit", value: "60"),
+                ],
+                as: [GalleryItem].self
+            )
+        } catch { self.error = (error as NSError).localizedDescription }
+        loading = false
+    }
+}
+`,
+
+  "VisionMemory/VisionMemoryView.swift": `import SwiftUI
+
+/// Read-only view over the same \`vision_memory\` table the website uses.
+struct VisionMemoryView: View {
+    @StateObject private var vm = VisionMemoryViewModel()
+
+    var body: some View {
+        List {
+            if vm.loading {
+                ProgressView()
+            } else if let err = vm.error {
+                Text("Error: \\(err)").foregroundStyle(.red)
+            } else if vm.entries.isEmpty {
+                ContentUnavailableView("No vision memory yet",
+                    systemImage: "eye",
+                    description: Text("Vision-tagged moments will appear here."))
+            } else {
+                ForEach(vm.entries) { e in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(e.summary ?? "(no summary)")
+                        if let c = e.created_at {
+                            Text(c).font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Vision Memory")
+        .task { await vm.refresh() }
+    }
+}
+
+struct VisionEntry: Identifiable, Decodable {
+    let id: String
+    let summary: String?
+    let created_at: String?
+}
+
+@MainActor
+final class VisionMemoryViewModel: ObservableObject {
+    @Published var entries: [VisionEntry] = []
+    @Published var loading = false
+    @Published var error: String?
+
+    func refresh() async {
+        loading = true; error = nil
+        do {
+            entries = try await SupabaseClient.shared.select(
+                "vision_memory",
+                query: [
+                    URLQueryItem(name: "select", value: "id,summary,created_at"),
+                    URLQueryItem(name: "order", value: "created_at.desc"),
+                    URLQueryItem(name: "limit", value: "100"),
+                ],
+                as: [VisionEntry].self
+            )
+        } catch { self.error = (error as NSError).localizedDescription }
+        loading = false
     }
 }
 `,
