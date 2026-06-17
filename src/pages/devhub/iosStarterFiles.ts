@@ -949,15 +949,19 @@ struct ProfileView: View {
                 NavigationLink("Manage Subscription") { SubscriptionView() }
             }
 
-            Section("Owner / Admin") {
-                if vm.isOwner {
-                    NavigationLink("DevHub") { DevHubView() }
-                }
-                if vm.isAdmin {
-                    NavigationLink("Admin Panel") { AdminPanelView() }
-                }
-                if !vm.isOwner && !vm.isAdmin {
-                    Text("Standard user").foregroundStyle(.secondary)
+            // Admin / Owner section is fully omitted for standard users —
+            // no empty category, no disabled placeholder, no hidden route.
+            // Backend RPC \`has_role\` is the source of truth; the matching
+            // destination views re-check the role on appear (defense in depth).
+            if vm.isOwner || vm.isAdmin {
+                Section("Admin") {
+                    if vm.isAdmin {
+                        NavigationLink("Admin Panel") { AdminPanelView() }
+                        NavigationLink("Idea Planner") { IdeaPlannerView() }
+                    }
+                    if vm.isOwner {
+                        NavigationLink("Dev Hub") { DevHubView() }
+                    }
                 }
             }
 
