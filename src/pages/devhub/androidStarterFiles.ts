@@ -160,6 +160,9 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.fragment:fragment-ktx:1.8.1")
 
+    // Google Play Billing (Phase 3 — digital subscriptions)
+    implementation("com.android.billingclient:billing-ktx:7.0.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 `,
