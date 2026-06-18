@@ -938,6 +938,12 @@ fun AppNav(onSignOut: () -> Unit) {
                 composable("gallery") { GalleryScreen(onBack = { nav.popBackStack() }) }
                 composable("vision-memory") { VisionMemoryScreen(onBack = { nav.popBackStack() }) }
 
+                // Phase 3 — native Files / Projects / Plan / Payment (Google Play Billing)
+                composable("files") { FilesScreen(onBack = { nav.popBackStack() }) }
+                composable("projects") { ProjectsScreen(onBack = { nav.popBackStack() }) }
+                composable("plan") { PlanScreen(onBack = { nav.popBackStack() }) }
+                composable("payment") { PaymentScreen(onBack = { nav.popBackStack() }) }
+
                 // Website-mirrored modules — native placeholders until they are fully
                 // wired. These are NOT WebViews — they render real native UI and call
                 // the same backend the website uses.
