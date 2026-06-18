@@ -3054,6 +3054,349 @@ fun ComingSoonScreen(moduleName: String, onBack: () -> Unit) {
 }
 `,
 
+  // ============================================================
+  // Phase 3 — Files / Projects / Plan / Payment (Google Play Billing)
+  // ============================================================
+
+  [`app/src/main/java/${PKG_PATH}/ui/files/FilesScreen.kt`]: `package ${PKG}.ui.files
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+
+data class UserFile(val id: String, val title: String?, val url: String?, val mime: String?, val createdAt: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FilesScreen(onBack: () -> Unit) {
+    var items by remember { mutableStateOf<List<UserFile>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val uri = LocalUriHandler.current
+
+    LaunchedEffect(Unit) {
+        runCatching {
+            val arr = SupabaseClient.select(
+                "user_reference_library",
+                select = "id,title,file_url,mime_type,created_at",
+                order = "created_at.desc",
+                limit = 100
+            )
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(UserFile(
+                        o.optString("id"),
+                        o.optString("title", null),
+                        o.optString("file_url", null),
+                        o.optString("mime_type", null),
+                        o.optString("created_at", null)
+                    ))
+                }
+            }
+        }.onSuccess { items = it }.onFailure { error = it.message }
+        loading = false
+    }
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Files") },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+    }) { pad ->
+        Box(Modifier.padding(pad).fillMaxSize().padding(12.dp)) {
+            when {
+                loading -> CircularProgressIndicator()
+                error != null -> Text("Error: \$error", color = MaterialTheme.colorScheme.error)
+                items.isEmpty() -> Text("No files yet. Upload from the website to see them here.")
+                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(items) { f ->
+                        ElevatedCard(Modifier.fillMaxWidth(), onClick = { f.url?.let { uri.openUri(it) } }) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Description, null)
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text(f.title ?: "(untitled)", style = MaterialTheme.typography.bodyMedium)
+                                    Text(f.mime ?: "", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/projects/ProjectsScreen.kt`]: `package ${PKG}.ui.projects
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+
+data class Project(val id: String, val name: String?, val createdAt: String?)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProjectsScreen(onBack: () -> Unit) {
+    var items by remember { mutableStateOf<List<Project>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        runCatching {
+            val arr = SupabaseClient.select("projects",
+                select = "id,name,created_at", order = "created_at.desc", limit = 100)
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    add(Project(o.optString("id"), o.optString("name", null), o.optString("created_at", null)))
+                }
+            }
+        }.onSuccess { items = it }.onFailure { error = it.message }
+        loading = false
+    }
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Projects") },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+    }) { pad ->
+        Box(Modifier.padding(pad).fillMaxSize().padding(12.dp)) {
+            when {
+                loading -> CircularProgressIndicator()
+                error != null -> Text("Error: \$error", color = MaterialTheme.colorScheme.error)
+                items.isEmpty() -> Text("No projects yet.")
+                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(items) { p ->
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(p.name ?: "(unnamed)", style = MaterialTheme.typography.bodyMedium)
+                                p.createdAt?.let { Text(it, style = MaterialTheme.typography.labelSmall) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/plan/PlanScreen.kt`]: `package ${PKG}.ui.plan
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ${PKG}.data.SupabaseClient
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlanScreen(onBack: () -> Unit) {
+    var plan by remember { mutableStateOf<String?>(null) }
+    var status by remember { mutableStateOf<String?>(null) }
+    var renewsAt by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        runCatching {
+            val arr = SupabaseClient.select(
+                "user_subscriptions",
+                select = "plan,status,current_period_end",
+                order = "created_at.desc",
+                limit = 1
+            )
+            if (arr.length() > 0) {
+                val o = arr.getJSONObject(0)
+                plan = o.optString("plan", "free")
+                status = o.optString("status", null)
+                renewsAt = o.optString("current_period_end", null)
+            } else {
+                plan = "free"
+            }
+        }.onFailure { error = it.message }
+        loading = false
+    }
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Plan") },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+    }) { pad ->
+        Column(Modifier.padding(pad).fillMaxSize().padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            when {
+                loading -> CircularProgressIndicator()
+                error != null -> Text("Error: \$error", color = MaterialTheme.colorScheme.error)
+                else -> {
+                    Text("Current plan", style = MaterialTheme.typography.labelMedium)
+                    Text((plan ?: "free").replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.headlineMedium)
+                    status?.let { Text("Status: \$it") }
+                    renewsAt?.let { Text("Renews: \$it") }
+                    Spacer(Modifier.height(8.dp))
+                    Text("Manage your subscription from the Payment screen. Mobile digital purchases go through Google Play.",
+                        style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/billing/PlayBilling.kt`]: `package ${PKG}.billing
+
+import android.app.Activity
+import android.content.Context
+import com.android.billingclient.api.*
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+
+object PlayBilling {
+    const val PLUS = "cridergpt_plus_monthly"
+    const val PRO  = "cridergpt_pro_monthly"
+
+    private var client: BillingClient? = null
+    private var lastListener: ((List<Purchase>) -> Unit)? = null
+
+    suspend fun connect(ctx: Context): BillingClient {
+        client?.let { if (it.isReady) return it }
+        val c = BillingClient.newBuilder(ctx)
+            .enablePendingPurchases()
+            .setListener { _, purchases ->
+                lastListener?.invoke(purchases ?: emptyList())
+            }
+            .build()
+        client = c
+        suspendCancellableCoroutine<Unit> { cont ->
+            c.startConnection(object : BillingClientStateListener {
+                override fun onBillingSetupFinished(r: BillingResult) { if (cont.isActive) cont.resume(Unit) }
+                override fun onBillingServiceDisconnected() {}
+            })
+        }
+        return c
+    }
+
+    suspend fun querySubs(ctx: Context): List<ProductDetails> {
+        val c = connect(ctx)
+        val params = QueryProductDetailsParams.newBuilder().setProductList(listOf(
+            QueryProductDetailsParams.Product.newBuilder()
+                .setProductId(PLUS).setProductType(BillingClient.ProductType.SUBS).build(),
+            QueryProductDetailsParams.Product.newBuilder()
+                .setProductId(PRO).setProductType(BillingClient.ProductType.SUBS).build(),
+        )).build()
+        return suspendCancellableCoroutine { cont ->
+            c.queryProductDetailsAsync(params) { _, list -> if (cont.isActive) cont.resume(list) }
+        }
+    }
+
+    fun launch(activity: Activity, product: ProductDetails, onResult: (List<Purchase>) -> Unit) {
+        lastListener = onResult
+        val offerToken = product.subscriptionOfferDetails?.firstOrNull()?.offerToken ?: return
+        val flow = BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(
+            BillingFlowParams.ProductDetailsParams.newBuilder()
+                .setProductDetails(product).setOfferToken(offerToken).build()
+        )).build()
+        client?.launchBillingFlow(activity, flow)
+    }
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/ui/payment/PaymentScreen.kt`]: `package ${PKG}.ui.payment
+
+import android.app.Activity
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.android.billingclient.api.ProductDetails
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+import ${PKG}.billing.PlayBilling
+import ${PKG}.data.SupabaseClient
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PaymentScreen(onBack: () -> Unit) {
+    val ctx = LocalContext.current
+    val activity = ctx as? Activity
+    val scope = rememberCoroutineScope()
+    var products by remember { mutableStateOf<List<ProductDetails>>(emptyList()) }
+    var status by remember { mutableStateOf("Loading Google Play products…") }
+
+    LaunchedEffect(Unit) {
+        runCatching { PlayBilling.querySubs(ctx) }
+            .onSuccess { products = it; status = if (it.isEmpty()) "No products available — check Play Console setup." else "" }
+            .onFailure { status = "Play Billing error: \${it.message}" }
+    }
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Payment") },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+    }) { pad ->
+        Column(Modifier.padding(pad).fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.bodyMedium)
+            products.forEach { p ->
+                ElevatedCard(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(p.name, style = MaterialTheme.typography.titleMedium)
+                        Text(p.description, style = MaterialTheme.typography.bodySmall)
+                        val price = p.subscriptionOfferDetails?.firstOrNull()
+                            ?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice ?: ""
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = {
+                            val act = activity ?: return@Button
+                            PlayBilling.launch(act, p) { purchases ->
+                                scope.launch {
+                                    purchases.forEach { pur ->
+                                        runCatching {
+                                            val body = JSONObject().apply {
+                                                put("platform", "android")
+                                                put("packageName", ctx.packageName)
+                                                put("productId", pur.products.firstOrNull() ?: "")
+                                                put("purchaseToken", pur.purchaseToken)
+                                            }
+                                            SupabaseClient.invokeFunction("verify-iap", body)
+                                            status = "Purchase verified — plan active."
+                                        }.onFailure { status = "Verify failed: \${it.message}" }
+                                    }
+                                }
+                            }
+                        }) { Text("Subscribe \$price") }
+                    }
+                }
+            }
+            Text("Mobile digital subscriptions are billed by Google Play. " +
+                "Physical Smart Tag orders use Stripe on the website.",
+                style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+`,
+
 };
 
 export const ANDROID_STARTER_META = {
