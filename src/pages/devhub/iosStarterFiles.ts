@@ -1179,7 +1179,15 @@ struct ProfileView: View {
             }
 
             Section("Subscription") {
+                NavigationLink("Plan") { PlanView() }
                 NavigationLink("Manage Subscription") { SubscriptionView() }
+            }
+
+            Section("Modules") {
+                NavigationLink("Files") { FilesView() }
+                NavigationLink("Projects") { ProjectsView() }
+                NavigationLink("Gallery") { GalleryView() }
+                NavigationLink("Vision Memory") { VisionMemoryView() }
             }
 
             // Admin / Owner section is fully omitted for standard users —
