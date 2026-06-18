@@ -1179,7 +1179,15 @@ struct ProfileView: View {
             }
 
             Section("Subscription") {
+                NavigationLink("Plan") { PlanView() }
                 NavigationLink("Manage Subscription") { SubscriptionView() }
+            }
+
+            Section("Modules") {
+                NavigationLink("Files") { FilesView() }
+                NavigationLink("Projects") { ProjectsView() }
+                NavigationLink("Gallery") { GalleryView() }
+                NavigationLink("Vision Memory") { VisionMemoryView() }
             }
 
             // Admin / Owner section is fully omitted for standard users —
@@ -2352,6 +2360,166 @@ struct NativeModulePlaceholder: View {
         }
         .padding()
         .navigationTitle(title)
+    }
+}
+`,
+
+  // ============================================================
+  // Phase 3 — Files / Projects / Plan
+  // (Payment uses existing SubscriptionView + IAPManager / verify-iap)
+  // ============================================================
+
+  "Files/FilesView.swift": `import SwiftUI
+
+struct UserFile: Decodable, Identifiable {
+    let id: String
+    let title: String?
+    let fileUrl: String?
+    let mimeType: String?
+}
+
+struct FilesView: View {
+    @StateObject private var vm = FilesViewModel()
+
+    var body: some View {
+        Group {
+            if vm.loading { ProgressView() }
+            else if let e = vm.error { Text("Error: \\(e)").foregroundStyle(.red) }
+            else if vm.items.isEmpty { Text("No files yet.").foregroundStyle(.secondary) }
+            else {
+                List(vm.items) { f in
+                    if let u = f.fileUrl, let url = URL(string: u) {
+                        Link(destination: url) {
+                            VStack(alignment: .leading) {
+                                Text(f.title ?? "(untitled)")
+                                Text(f.mimeType ?? "").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        Text(f.title ?? "(untitled)")
+                    }
+                }
+            }
+        }
+        .navigationTitle("Files")
+        .task { await vm.load() }
+    }
+}
+
+@MainActor
+final class FilesViewModel: ObservableObject {
+    @Published var items: [UserFile] = []
+    @Published var loading = true
+    @Published var error: String?
+    func load() async {
+        do {
+            items = try await SupabaseClient.shared.select(
+                "user_reference_library",
+                query: [
+                    URLQueryItem(name: "select", value: "id,title,file_url,mime_type,created_at"),
+                    URLQueryItem(name: "order", value: "created_at.desc"),
+                    URLQueryItem(name: "limit", value: "100")
+                ],
+                as: [UserFile].self
+            )
+        } catch { self.error = error.localizedDescription }
+        loading = false
+    }
+}
+`,
+
+  "Projects/ProjectsView.swift": `import SwiftUI
+
+struct Project: Decodable, Identifiable {
+    let id: String
+    let name: String?
+}
+
+struct ProjectsView: View {
+    @StateObject private var vm = ProjectsViewModel()
+
+    var body: some View {
+        Group {
+            if vm.loading { ProgressView() }
+            else if let e = vm.error { Text("Error: \\(e)").foregroundStyle(.red) }
+            else if vm.items.isEmpty { Text("No projects yet.").foregroundStyle(.secondary) }
+            else { List(vm.items) { p in Text(p.name ?? "(unnamed)") } }
+        }
+        .navigationTitle("Projects")
+        .task { await vm.load() }
+    }
+}
+
+@MainActor
+final class ProjectsViewModel: ObservableObject {
+    @Published var items: [Project] = []
+    @Published var loading = true
+    @Published var error: String?
+    func load() async {
+        do {
+            items = try await SupabaseClient.shared.select(
+                "projects",
+                query: [
+                    URLQueryItem(name: "select", value: "id,name,created_at"),
+                    URLQueryItem(name: "order", value: "created_at.desc"),
+                    URLQueryItem(name: "limit", value: "100")
+                ],
+                as: [Project].self
+            )
+        } catch { self.error = error.localizedDescription }
+        loading = false
+    }
+}
+`,
+
+  "Plan/PlanView.swift": `import SwiftUI
+
+struct PlanRow: Decodable {
+    let plan: String?
+    let status: String?
+    let currentPeriodEnd: String?
+}
+
+struct PlanView: View {
+    @StateObject private var vm = PlanViewModel()
+
+    var body: some View {
+        List {
+            Section("Current plan") {
+                Text((vm.plan ?? "free").capitalized).font(.title2)
+                if let s = vm.status { Text("Status: \\(s)") }
+                if let r = vm.renews { Text("Renews: \\(r)") }
+            }
+            Section {
+                NavigationLink("Manage / Subscribe") { SubscriptionView() }
+            } footer: {
+                Text("Mobile digital subscriptions are billed by Apple via StoreKit. Physical Smart Tag orders use Stripe on the website.")
+            }
+        }
+        .navigationTitle("Plan")
+        .task { await vm.load() }
+    }
+}
+
+@MainActor
+final class PlanViewModel: ObservableObject {
+    @Published var plan: String?
+    @Published var status: String?
+    @Published var renews: String?
+    func load() async {
+        do {
+            let rows = try await SupabaseClient.shared.select(
+                "user_subscriptions",
+                query: [
+                    URLQueryItem(name: "select", value: "plan,status,current_period_end"),
+                    URLQueryItem(name: "order", value: "created_at.desc"),
+                    URLQueryItem(name: "limit", value: "1")
+                ],
+                as: [PlanRow].self
+            )
+            if let r = rows.first { plan = r.plan; status = r.status; renews = r.currentPeriodEnd }
+            else { plan = "free" }
+        } catch { plan = "free" }
     }
 }
 `,
