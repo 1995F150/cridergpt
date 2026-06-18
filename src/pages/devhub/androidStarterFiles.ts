@@ -751,6 +751,10 @@ import ${PKG}.ui.notifications.NotificationsScreen
 import ${PKG}.ui.profile.AccountManagementScreen
 import ${PKG}.ui.profile.ProfileScreen
 import ${PKG}.ui.vision.VisionMemoryScreen
+import ${PKG}.ui.files.FilesScreen
+import ${PKG}.ui.projects.ProjectsScreen
+import ${PKG}.ui.plan.PlanScreen
+import ${PKG}.ui.payment.PaymentScreen
 import ${PKG}.util.openExternal
 
 private data class Tab(val route: String, val label: String, val icon: @Composable () -> Unit)
