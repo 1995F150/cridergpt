@@ -513,6 +513,19 @@ object SupabaseClient {
                 .post(args.toString().toRequestBody(JSON)).build()
             http.newCall(req).execute().use { r -> r.body?.string().orEmpty() }
         }
+
+    // ---------- Edge Functions ----------
+
+    suspend fun invokeFunction(name: String, body: JSONObject): String =
+        withContext(Dispatchers.IO) {
+            val req = baseHeaders(Request.Builder().url("\$URL/functions/v1/\$name"))
+                .post(body.toString().toRequestBody(JSON)).build()
+            http.newCall(req).execute().use { r ->
+                val txt = r.body?.string().orEmpty()
+                if (!r.isSuccessful) throw RuntimeException("\$name failed: \${r.code} \$txt")
+                txt
+            }
+        }
 }
 `,
 
