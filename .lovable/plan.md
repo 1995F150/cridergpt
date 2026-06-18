@@ -61,3 +61,8 @@ Phase 2 additions to plan
 - iOS: ChatView mirrors AGI toggle, model menu, pattern chips, prefs persistence. ChatViewModel sends `model` + `agi_mode` to `chat-with-ai`.
 - iOS: GalleryView (`media_generations`) and VisionMemoryView (`vision_memory`) added.
 - Remaining for Phase 3: Files/Projects native screens, Plan/Payment via `get-entitlement`, Play Billing `verify-iap` wiring, Admin Panel polish, Play Console compliance check.
+
+## Phase 3 — Shipped
+- Android: added `FilesScreen` (`user_reference_library`), `ProjectsScreen` (`projects`), `PlanScreen` (`user_subscriptions`), and `PaymentScreen` with Google Play Billing 7.0 wired to `cridergpt_plus_monthly` / `cridergpt_pro_monthly`. Purchases POST to the `verify-iap` edge function via new `SupabaseClient.invokeFunction` helper. Added `com.android.vending.BILLING` permission and `billing-ktx` dep. Routes wired in `AppNav`; entries removed from the placeholder list.
+- iOS: added `FilesView`, `ProjectsView`, `PlanView`. `PlanView` reads `user_subscriptions` and links into existing `SubscriptionView` (StoreKit 2 → `verify-iap`). New views surface in `ProfileView` under Subscription and Modules sections.
+- Play Console compliance: `targetSdk 35`, `versionCode 274`, no AD_ID permission, billing permission added; admin destinations remain hidden from non-admins (drawer + composable gates).
