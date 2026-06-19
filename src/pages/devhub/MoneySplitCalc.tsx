@@ -16,6 +16,10 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { addPDFHeader, addPDFFooter, addCornerWatermark } from "@/utils/pdfWatermark";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { MealPlannerCard } from "@/components/devhub/MealPlannerCard";
+
+
 
 
 type Period = "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
@@ -206,6 +210,7 @@ const buildCashPlan = (pct: Record<string, number>, cashBills: CashBills): CashP
 };
 
 export default function MoneySplitCalc() {
+  const { user } = useAuth();
   const [income, setIncome] = useState(1000);
   const [period, setPeriod] = useState<Period>("weekly");
   const [pct, setPct] = useState<Record<string, number>>({ ...DEFAULTS });
@@ -223,6 +228,32 @@ export default function MoneySplitCalc() {
     direction?: { placement?: string; priorities?: string; ffa?: string; longterm?: string };
     summary?: string;
   } | null>(null);
+
+  // Push current state to backend (debounced via caller). No-op if signed out.
+  const syncStateToBackend = async (patch: Partial<{
+    envelopes: Record<string, number>;
+    pct: Record<string, number>;
+    cashBills: CashBills;
+    roundMode: RoundMode;
+    income: number;
+    period: Period;
+  }>) => {
+    if (!user) return;
+    try {
+      await supabase.from("money_split_state").upsert({
+        user_id: user.id,
+        envelopes: patch.envelopes ?? envelopes,
+        pct: patch.pct ?? pct,
+        cash_bills: patch.cashBills ?? cashBills,
+        round_mode: patch.roundMode ?? roundMode,
+        income: patch.income ?? income,
+        period: patch.period ?? period,
+      }, { onConflict: "user_id" });
+    } catch (e) {
+      console.warn("split state sync failed", e);
+    }
+  };
+
 
 
   useEffect(() => {
@@ -242,6 +273,40 @@ export default function MoneySplitCalc() {
     }
   }, []);
 
+  // When user signs in, hydrate from backend (overrides localStorage cache).
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [stateRes, txRes, histRes] = await Promise.all([
+          supabase.from("money_split_state").select("*").eq("user_id", user.id).maybeSingle(),
+          supabase.from("money_split_txns").select("*").eq("user_id", user.id).order("ts", { ascending: false }).limit(200),
+          supabase.from("money_split_history").select("*").eq("user_id", user.id).order("ts", { ascending: false }).limit(50),
+        ]);
+        if (cancelled) return;
+        const s: any = stateRes.data;
+        if (s) {
+          if (s.envelopes && typeof s.envelopes === "object") setEnvelopes(s.envelopes);
+          if (s.pct && typeof s.pct === "object" && Object.keys(s.pct).length) setPct({ ...DEFAULTS, ...s.pct });
+          if (s.cash_bills) setCashBills(sanitizeCashBills(s.cash_bills));
+          if (["off","1","5","10","20"].includes(s.round_mode)) setRoundMode(s.round_mode);
+          if (typeof s.income === "number" || typeof s.income === "string") setIncome(Number(s.income) || 0);
+          if (s.period) setPeriod(s.period);
+        }
+        if (Array.isArray(txRes.data)) {
+          setTxns(txRes.data.map((t: any) => ({ id: t.id, ts: new Date(t.ts).getTime(), bucket: t.bucket, amount: Number(t.amount), note: t.note || "" })));
+        }
+        if (Array.isArray(histRes.data)) {
+          setHistory(histRes.data.map((h: any) => ({ id: h.id, ts: new Date(h.ts).getTime(), income: Number(h.income), period: h.period, pct: h.pct || {}, cashBills: h.cash_bills || undefined })));
+        }
+      } catch (e) {
+        console.warn("split state hydrate failed", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const persistHistory = (next: HistoryEntry[]) => {
     setHistory(next);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
@@ -250,6 +315,7 @@ export default function MoneySplitCalc() {
   const persistEnvelopes = (next: Record<string, number>) => {
     setEnvelopes(next);
     localStorage.setItem(ENVELOPE_KEY, JSON.stringify(next));
+    void syncStateToBackend({ envelopes: next });
   };
 
   const persistTxns = (next: Txn[]) => {
@@ -261,14 +327,23 @@ export default function MoneySplitCalc() {
     setCashBills(prev => {
       const next = { ...prev, [value]: Math.max(0, Math.floor(count || 0)) };
       localStorage.setItem(CASH_BILLS_KEY, JSON.stringify(next));
+      void syncStateToBackend({ cashBills: next });
       return next;
     });
   };
 
   const logTxn = (bucket: string, amount: number, note: string, currentTxns: Txn[]) => {
     const entry: Txn = { id: crypto.randomUUID(), ts: Date.now(), bucket, amount, note };
+    if (user) {
+      // fire-and-forget insert; ignore errors
+      supabase.from("money_split_txns").insert({
+        id: entry.id, user_id: user.id, ts: new Date(entry.ts).toISOString(),
+        bucket: entry.bucket, amount: entry.amount, note: entry.note,
+      }).then(({ error }) => { if (error) console.warn("txn insert failed", error); });
+    }
     return [entry, ...currentTxns].slice(0, 200);
   };
+
 
   const depositPaycheck = () => {
     const nextEnv = { ...envelopes };
@@ -317,8 +392,12 @@ export default function MoneySplitCalc() {
     if (!confirm("Empty every envelope and clear all transactions? This can't be undone.")) return;
     persistEnvelopes({});
     persistTxns([]);
+    if (user) {
+      supabase.from("money_split_txns").delete().eq("user_id", user.id).then(({ error }) => { if (error) console.warn("txn wipe failed", error); });
+    }
     toast.success("Lockbox reset");
   };
+
 
   const totalLockbox = useMemo(
     () => Object.values(envelopes).reduce((a, b) => a + b, 0),
@@ -352,7 +431,16 @@ export default function MoneySplitCalc() {
   const updateRoundMode = (mode: RoundMode) => {
     setRoundMode(mode);
     localStorage.setItem(ROUND_KEY, mode);
+    void syncStateToBackend({ roundMode: mode });
   };
+
+  // Debounced sync of income/period/pct to backend whenever they change
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => { void syncStateToBackend({ income, period, pct }); }, 600);
+    return () => clearTimeout(t);
+  }, [user?.id, income, period, pct]);
+
 
   const periodMultiplier = useMemo(() => {
     switch (period) {
@@ -506,8 +594,15 @@ export default function MoneySplitCalc() {
     };
     const next = [entry, ...history].slice(0, 50);
     persistHistory(next);
+    if (user) {
+      supabase.from("money_split_history").insert({
+        id: entry.id, user_id: user.id, ts: new Date(entry.ts).toISOString(),
+        income: entry.income, period: entry.period, pct: entry.pct, cash_bills: entry.cashBills,
+      }).then(({ error }) => { if (error) console.warn("history insert failed", error); });
+    }
     toast.success("Saved to history");
   };
+
 
   const loadEntry = (e: HistoryEntry) => {
     setIncome(e.income);
@@ -519,12 +614,15 @@ export default function MoneySplitCalc() {
 
   const removeEntry = (id: string) => {
     persistHistory(history.filter(h => h.id !== id));
+    if (user) supabase.from("money_split_history").delete().eq("id", id).eq("user_id", user.id).then(() => {});
   };
 
   const clearHistory = () => {
     persistHistory([]);
+    if (user) supabase.from("money_split_history").delete().eq("user_id", user.id).then(() => {});
     toast.success("History cleared");
   };
+
 
   const slug = (s: string) =>
     s.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
@@ -1263,7 +1361,13 @@ export default function MoneySplitCalc() {
           )}
         </CardContent>
       </Card>
+
+      <MealPlannerCard
+        foodBudget={Math.round((envelopes.food ?? income * ((pct.food ?? 0) / 100)) || 0)}
+        period={period}
+      />
     </DevHubPage>
+
   );
 }
 

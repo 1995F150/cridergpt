@@ -1,19 +1,21 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Wine, GlassWater, Beer, Flame, Loader2, Copy } from "lucide-react";
+import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X } from "lucide-react";
 
-type Mode = "wine" | "cocktail" | "beer" | "pairing";
+type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade";
 
-const PROMPTS: Record<Mode, (req: string, extra: Record<string, string>) => string> = {
+
+const PROMPTS: Partial<Record<Mode, (req: string, extra: Record<string, string>) => string>> = {
   wine: (req, x) => `
 You are a home winemaker. Write a clear, practical wine recipe a hobbyist could follow safely.
 Style: ${x.style || "fruit wine"}
@@ -117,9 +119,19 @@ export default function AlcoholRecipes() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
 
+  // Grade-tab state
+  const [gradeImage, setGradeImage] = useState<string>("");
+  const [gradeLoading, setGradeLoading] = useState(false);
+  const [gradeReport, setGradeReport] = useState<any>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
+
   const set = (k: string, v: string) => setExtra((p) => ({ ...p, [k]: v }));
 
   const generate = async () => {
+    if (mode === "grade") return; // handled separately
+    const fn = PROMPTS[mode];
+    if (!fn) return;
     if (!request.trim()) {
       toast({ title: "Tell me what to make", description: "Describe the drink, batch, or dish.", variant: "destructive" });
       return;
@@ -127,7 +139,7 @@ export default function AlcoholRecipes() {
     setLoading(true);
     setResult("");
     try {
-      const prompt = PROMPTS[mode](request, extra);
+      const prompt = fn(request, extra);
       const { data, error } = await supabase.functions.invoke("chat-with-ai", {
         body: { message: prompt, model: "cridergpt-5.0" },
       });
@@ -142,6 +154,45 @@ export default function AlcoholRecipes() {
       setLoading(false);
     }
   };
+
+  const onImagePicked = (f: File | null | undefined) => {
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setGradeImage(String(reader.result || ""));
+      setGradeReport(null);
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const runGrade = async () => {
+    if (!gradeImage) {
+      toast({ title: "Add a photo first", description: "Take or upload a photo of the must/foam.", variant: "destructive" });
+      return;
+    }
+    setGradeLoading(true);
+    setGradeReport(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("fermentation-grader", {
+        body: {
+          imageData: gradeImage,
+          productType: extra.productType || "wine must",
+          stage: extra.stage || "primary fermentation",
+          ingredients: extra.ingredients,
+          notes: extra.gradeNotes,
+        },
+      });
+      if (error) throw new Error(error.message || "Grader failed");
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const report = (data as any)?.report || data;
+      setGradeReport(report);
+    } catch (e: any) {
+      toast({ title: "Grading failed", description: (e?.message || "Unknown error").slice(0, 220), variant: "destructive" });
+    } finally {
+      setGradeLoading(false);
+    }
+  };
+
 
   const copy = async () => {
     if (!result) return;
@@ -170,12 +221,14 @@ export default function AlcoholRecipes() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Tabs value={mode} onValueChange={(v) => { setMode(v as Mode); setExtra({}); }}>
-                <TabsList className="grid grid-cols-4 w-full">
+                <TabsList className="grid grid-cols-5 w-full">
                   <TabsTrigger value="wine" className="gap-2"><Wine className="h-4 w-4" /> Wine</TabsTrigger>
                   <TabsTrigger value="cocktail" className="gap-2"><GlassWater className="h-4 w-4" /> Cocktail</TabsTrigger>
                   <TabsTrigger value="beer" className="gap-2"><Beer className="h-4 w-4" /> Beer</TabsTrigger>
                   <TabsTrigger value="pairing" className="gap-2"><Flame className="h-4 w-4" /> Pairing</TabsTrigger>
+                  <TabsTrigger value="grade" className="gap-2"><Camera className="h-4 w-4" /> Grade</TabsTrigger>
                 </TabsList>
+
 
                 <TabsContent value="wine" className="space-y-3 mt-4">
                   <div className="grid grid-cols-3 gap-3">
@@ -243,28 +296,153 @@ export default function AlcoholRecipes() {
                       <Input placeholder="under $25" onChange={(e) => set("budget", e.target.value)} /></div>
                   </div>
                 </TabsContent>
+
+                <TabsContent value="grade" className="space-y-3 mt-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Product</label>
+                      <Select onValueChange={(v) => set("productType", v)}>
+                        <SelectTrigger><SelectValue placeholder="wine must" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="wine must">Wine must</SelectItem>
+                          <SelectItem value="cider must">Cider must</SelectItem>
+                          <SelectItem value="mead must">Mead must</SelectItem>
+                          <SelectItem value="beer wort">Beer wort</SelectItem>
+                          <SelectItem value="sugar wash">Sugar wash</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Stage</label>
+                      <Select onValueChange={(v) => set("stage", v)}>
+                        <SelectTrigger><SelectValue placeholder="primary fermentation" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="just pitched">Just pitched (day 0)</SelectItem>
+                          <SelectItem value="primary day 1-3">Primary day 1-3 (foaming)</SelectItem>
+                          <SelectItem value="primary fermentation">Primary fermentation</SelectItem>
+                          <SelectItem value="secondary fermentation">Secondary fermentation</SelectItem>
+                          <SelectItem value="conditioning">Conditioning / clearing</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Ingredients (optional)</label>
+                    <Input placeholder="grape juice + 2 cups brown sugar + bread yeast" onChange={(e) => set("ingredients", e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Notes (optional)</label>
+                    <Textarea
+                      rows={2}
+                      placeholder="Bubbled hard the first 6 hours, foam is dropping now…"
+                      onChange={(e) => set("gradeNotes", e.target.value)}
+                    />
+                  </div>
+
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => { onImagePicked(e.target.files?.[0]); e.target.value = ""; }}
+                  />
+                  <input
+                    ref={camRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => { onImagePicked(e.target.files?.[0]); e.target.value = ""; }}
+                  />
+
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => camRef.current?.click()} className="flex-1">
+                      <Camera className="h-4 w-4 mr-2" /> Take Photo
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => fileRef.current?.click()} className="flex-1">
+                      <ImageIcon className="h-4 w-4 mr-2" /> Upload
+                    </Button>
+                  </div>
+
+                  {gradeImage && (
+                    <div className="relative">
+                      <img src={gradeImage} alt="Fermentation sample" className="w-full max-h-64 object-contain rounded border border-border" />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={() => { setGradeImage(""); setGradeReport(null); }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button onClick={runGrade} disabled={gradeLoading || !gradeImage} className="w-full">
+                    {gradeLoading ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Grading…</>) : (<><Sparkles className="h-4 w-4 mr-2" /> Grade Fermentation</>)}
+                  </Button>
+
+                  {gradeReport && (
+                    <Card className="bg-muted/30">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          Grade: <Badge className="text-base px-3">{gradeReport.grade ?? "?"}</Badge>
+                          {typeof gradeReport.score === "number" && <span className="text-sm text-muted-foreground">{gradeReport.score}/100</span>}
+                          {gradeReport.confidence && <Badge variant="outline" className="ml-auto text-xs">conf: {gradeReport.confidence}</Badge>}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                        {gradeReport.stage_observed && <div><span className="text-muted-foreground">Stage observed:</span> {gradeReport.stage_observed}</div>}
+                        {gradeReport.predicted_outcome && <div><span className="text-muted-foreground">Outcome:</span> {gradeReport.predicted_outcome}</div>}
+                        {gradeReport.fermentation_health && <div><span className="text-muted-foreground">Health:</span> {gradeReport.fermentation_health}</div>}
+                        {typeof gradeReport.abv_estimate_pct === "number" && <div><span className="text-muted-foreground">ABV estimate:</span> ~{gradeReport.abv_estimate_pct}%</div>}
+                        {Array.isArray(gradeReport.concerns) && gradeReport.concerns.length > 0 && (
+                          <div>
+                            <div className="text-muted-foreground">Concerns:</div>
+                            <ul className="list-disc list-inside text-xs">
+                              {gradeReport.concerns.map((c: string, i: number) => <li key={i}>{c}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {Array.isArray(gradeReport.recommendations) && gradeReport.recommendations.length > 0 && (
+                          <div>
+                            <div className="text-muted-foreground">Next steps:</div>
+                            <ul className="list-disc list-inside text-xs">
+                              {gradeReport.recommendations.map((c: string, i: number) => <li key={i}>{c}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
               </Tabs>
 
-              <div>
-                <label className="text-xs text-muted-foreground">
-                  {mode === "pairing" ? "What dish are you pairing?" : "What do you want to make?"}
-                </label>
-                <Textarea
-                  value={request}
-                  onChange={(e) => setRequest(e.target.value)}
-                  placeholder={
-                    mode === "wine" ? "Blackberry wine, semi-dry, around 12% ABV…" :
-                    mode === "cocktail" ? "Bourbon-oak old fashioned with a smoked orange peel…" :
-                    mode === "beer" ? "Easy stovetop oatmeal stout…" :
-                    "Thick New York strip, Worcestershire + heavy seasoning, grilled medium…"
-                  }
-                  rows={3}
-                />
-              </div>
+              {mode !== "grade" && (
+                <>
+                  <div>
+                    <label className="text-xs text-muted-foreground">
+                      {mode === "pairing" ? "What dish are you pairing?" : "What do you want to make?"}
+                    </label>
+                    <Textarea
+                      value={request}
+                      onChange={(e) => setRequest(e.target.value)}
+                      placeholder={
+                        mode === "wine" ? "Blackberry wine, semi-dry, around 12% ABV…" :
+                        mode === "cocktail" ? "Bourbon-oak old fashioned with a smoked orange peel…" :
+                        mode === "beer" ? "Easy stovetop oatmeal stout…" :
+                        "Thick New York strip, Worcestershire + heavy seasoning, grilled medium…"
+                      }
+                      rows={3}
+                    />
+                  </div>
 
-              <Button onClick={generate} disabled={loading} className="w-full">
-                {loading ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>) : "Generate"}
-              </Button>
+                  <Button onClick={generate} disabled={loading} className="w-full">
+                    {loading ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>) : "Generate"}
+                  </Button>
+                </>
+              )}
+
             </CardContent>
           </Card>
 
