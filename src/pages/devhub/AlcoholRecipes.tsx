@@ -119,9 +119,19 @@ export default function AlcoholRecipes() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
 
+  // Grade-tab state
+  const [gradeImage, setGradeImage] = useState<string>("");
+  const [gradeLoading, setGradeLoading] = useState(false);
+  const [gradeReport, setGradeReport] = useState<any>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
+
   const set = (k: string, v: string) => setExtra((p) => ({ ...p, [k]: v }));
 
   const generate = async () => {
+    if (mode === "grade") return; // handled separately
+    const fn = PROMPTS[mode];
+    if (!fn) return;
     if (!request.trim()) {
       toast({ title: "Tell me what to make", description: "Describe the drink, batch, or dish.", variant: "destructive" });
       return;
@@ -129,7 +139,7 @@ export default function AlcoholRecipes() {
     setLoading(true);
     setResult("");
     try {
-      const prompt = PROMPTS[mode](request, extra);
+      const prompt = fn(request, extra);
       const { data, error } = await supabase.functions.invoke("chat-with-ai", {
         body: { message: prompt, model: "cridergpt-5.0" },
       });
@@ -144,6 +154,45 @@ export default function AlcoholRecipes() {
       setLoading(false);
     }
   };
+
+  const onImagePicked = (f: File | null | undefined) => {
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setGradeImage(String(reader.result || ""));
+      setGradeReport(null);
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const runGrade = async () => {
+    if (!gradeImage) {
+      toast({ title: "Add a photo first", description: "Take or upload a photo of the must/foam.", variant: "destructive" });
+      return;
+    }
+    setGradeLoading(true);
+    setGradeReport(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("fermentation-grader", {
+        body: {
+          imageData: gradeImage,
+          productType: extra.productType || "wine must",
+          stage: extra.stage || "primary fermentation",
+          ingredients: extra.ingredients,
+          notes: extra.gradeNotes,
+        },
+      });
+      if (error) throw new Error(error.message || "Grader failed");
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const report = (data as any)?.report || data;
+      setGradeReport(report);
+    } catch (e: any) {
+      toast({ title: "Grading failed", description: (e?.message || "Unknown error").slice(0, 220), variant: "destructive" });
+    } finally {
+      setGradeLoading(false);
+    }
+  };
+
 
   const copy = async () => {
     if (!result) return;
