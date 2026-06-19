@@ -10,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X } from "lucide-react";
+import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X, Bot, Cpu, Cloud } from "lucide-react";
 
-type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade";
+type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade" | "ai";
 
 
 const PROMPTS: Partial<Record<Mode, (req: string, extra: Record<string, string>) => string>> = {
@@ -126,6 +126,42 @@ export default function AlcoholRecipes() {
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
 
+  // AI-tab state (local-first via hybrid router)
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState("");
+  const [aiSource, setAiSource] = useState<"local" | "cloud" | null>(null);
+
+  const generateAI = async () => {
+    if (!aiPrompt.trim()) {
+      toast({ title: "Tell me what to make", description: "Give it a prompt — wine, cocktail, food, whatever.", variant: "destructive" });
+      return;
+    }
+    setAiLoading(true);
+    setAiResult("");
+    setAiSource(null);
+    try {
+      const sys = `You are Jessie Crider's home recipe AI. Generate a clean, practical recipe from the user's prompt. Detect category (wine, cocktail, beer, mead, cider, food, sauce, marinade) on your own. Output markdown: # Name, **meta line**, ## Ingredients (bullets w/ amounts), ## Equipment (if relevant), ## Steps (numbered), ## Notes. Keep it short, safe, and doable at home. 21+ for alcohol.`;
+      const { data, error } = await supabase.functions.invoke("chat-with-ai", {
+        body: {
+          message: `${sys}\n\nUser request: ${aiPrompt}`,
+          model: "cridergpt-5.0",
+          preferLocal: true,
+        },
+      });
+      if (error) throw new Error(error.message || "Edge function failed");
+      if (data?.error && !data?.response) throw new Error(data.error);
+      const text = data?.response;
+      if (!text) throw new Error("Empty response from AI");
+      setAiResult(text);
+      setAiSource(data?._local || data?.source === "local" ? "local" : "cloud");
+    } catch (e: any) {
+      toast({ title: "AI generator failed", description: (e?.message || "Unknown error").slice(0, 220), variant: "destructive" });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const set = (k: string, v: string) => setExtra((p) => ({ ...p, [k]: v }));
 
   const generate = async () => {
@@ -221,12 +257,13 @@ export default function AlcoholRecipes() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Tabs value={mode} onValueChange={(v) => { setMode(v as Mode); setExtra({}); }}>
-                <TabsList className="grid grid-cols-5 w-full">
-                  <TabsTrigger value="wine" className="gap-2"><Wine className="h-4 w-4" /> Wine</TabsTrigger>
-                  <TabsTrigger value="cocktail" className="gap-2"><GlassWater className="h-4 w-4" /> Cocktail</TabsTrigger>
-                  <TabsTrigger value="beer" className="gap-2"><Beer className="h-4 w-4" /> Beer</TabsTrigger>
-                  <TabsTrigger value="pairing" className="gap-2"><Flame className="h-4 w-4" /> Pairing</TabsTrigger>
-                  <TabsTrigger value="grade" className="gap-2"><Camera className="h-4 w-4" /> Grade</TabsTrigger>
+                <TabsList className="grid grid-cols-6 w-full">
+                  <TabsTrigger value="wine" className="gap-1 px-2"><Wine className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="cocktail" className="gap-1 px-2"><GlassWater className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="beer" className="gap-1 px-2"><Beer className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="pairing" className="gap-1 px-2"><Flame className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="grade" className="gap-1 px-2"><Camera className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="ai" className="gap-1 px-2"><Bot className="h-4 w-4" /></TabsTrigger>
                 </TabsList>
 
 
@@ -416,9 +453,51 @@ export default function AlcoholRecipes() {
                     </Card>
                   )}
                 </TabsContent>
+                <TabsContent value="ai" className="space-y-3 mt-4">
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Cpu className="h-3 w-3" /> Local-first — runs on your home AI when reachable, falls back to cloud.
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">What do you want to make?</label>
+                    <Textarea
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder="A spicy bourbon sour with peach… or a quick weeknight venison chili…"
+                      rows={3}
+                    />
+                  </div>
+                  <Button onClick={generateAI} disabled={aiLoading} className="w-full">
+                    {aiLoading ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>) : (<><Sparkles className="h-4 w-4 mr-2" /> Generate Recipe</>)}
+                  </Button>
+
+                  {aiResult && (
+                    <Card className="bg-muted/30">
+                      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          AI Recipe
+                          {aiSource && (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              {aiSource === "local" ? <><Cpu className="h-3 w-3" /> local</> : <><Cloud className="h-3 w-3" /> cloud</>}
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => { await navigator.clipboard.writeText(aiResult); toast({ title: "Copied" }); }}
+                        >
+                          <Copy className="h-4 w-4 mr-2" /> Copy
+                        </Button>
+                      </CardHeader>
+                      <CardContent>
+                        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{aiResult}</pre>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
               </Tabs>
 
-              {mode !== "grade" && (
+              {mode !== "grade" && mode !== "ai" && (
                 <>
                   <div>
                     <label className="text-xs text-muted-foreground">
