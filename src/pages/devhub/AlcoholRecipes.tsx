@@ -15,7 +15,7 @@ import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image a
 type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade";
 
 
-const PROMPTS: Record<Mode, (req: string, extra: Record<string, string>) => string> = {
+const PROMPTS: Partial<Record<Mode, (req: string, extra: Record<string, string>) => string>> = {
   wine: (req, x) => `
 You are a home winemaker. Write a clear, practical wine recipe a hobbyist could follow safely.
 Style: ${x.style || "fruit wine"}
