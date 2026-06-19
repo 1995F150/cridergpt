@@ -126,6 +126,42 @@ export default function AlcoholRecipes() {
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
 
+  // AI-tab state (local-first via hybrid router)
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState("");
+  const [aiSource, setAiSource] = useState<"local" | "cloud" | null>(null);
+
+  const generateAI = async () => {
+    if (!aiPrompt.trim()) {
+      toast({ title: "Tell me what to make", description: "Give it a prompt — wine, cocktail, food, whatever.", variant: "destructive" });
+      return;
+    }
+    setAiLoading(true);
+    setAiResult("");
+    setAiSource(null);
+    try {
+      const sys = `You are Jessie Crider's home recipe AI. Generate a clean, practical recipe from the user's prompt. Detect category (wine, cocktail, beer, mead, cider, food, sauce, marinade) on your own. Output markdown: # Name, **meta line**, ## Ingredients (bullets w/ amounts), ## Equipment (if relevant), ## Steps (numbered), ## Notes. Keep it short, safe, and doable at home. 21+ for alcohol.`;
+      const { data, error } = await supabase.functions.invoke("chat-with-ai", {
+        body: {
+          message: `${sys}\n\nUser request: ${aiPrompt}`,
+          model: "cridergpt-5.0",
+          preferLocal: true,
+        },
+      });
+      if (error) throw new Error(error.message || "Edge function failed");
+      if (data?.error && !data?.response) throw new Error(data.error);
+      const text = data?.response;
+      if (!text) throw new Error("Empty response from AI");
+      setAiResult(text);
+      setAiSource(data?._local || data?.source === "local" ? "local" : "cloud");
+    } catch (e: any) {
+      toast({ title: "AI generator failed", description: (e?.message || "Unknown error").slice(0, 220), variant: "destructive" });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const set = (k: string, v: string) => setExtra((p) => ({ ...p, [k]: v }));
 
   const generate = async () => {
