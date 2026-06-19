@@ -427,7 +427,16 @@ export default function MoneySplitCalc() {
   const updateRoundMode = (mode: RoundMode) => {
     setRoundMode(mode);
     localStorage.setItem(ROUND_KEY, mode);
+    void syncStateToBackend({ roundMode: mode });
   };
+
+  // Debounced sync of income/period/pct to backend whenever they change
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => { void syncStateToBackend({ income, period, pct }); }, 600);
+    return () => clearTimeout(t);
+  }, [user?.id, income, period, pct]);
+
 
   const periodMultiplier = useMemo(() => {
     switch (period) {
