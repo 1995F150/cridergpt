@@ -73,3 +73,6 @@ project_id = "udpldrrpebdyuiqdtqnq"
     verify_jwt = false
   [functions.email-lifecycle-sweeper]
     verify_jwt = false
+  [functions.money-split-advisor]
+    verify_jwt = false
+
