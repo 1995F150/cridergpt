@@ -475,8 +475,23 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
             type="file"
             multiple
             className="hidden"
-            onChange={(e) => handleFileSelect(e.target.files)}
+            onChange={(e) => {
+              handleFileSelect(e.target.files);
+              e.target.value = "";
+            }}
           />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              handleFileSelect(e.target.files);
+              e.target.value = "";
+            }}
+          />
+
 
           {/* Text Input */}
           <div className="flex-1 relative">
