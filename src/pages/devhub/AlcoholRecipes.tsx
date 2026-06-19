@@ -221,12 +221,14 @@ export default function AlcoholRecipes() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Tabs value={mode} onValueChange={(v) => { setMode(v as Mode); setExtra({}); }}>
-                <TabsList className="grid grid-cols-4 w-full">
+                <TabsList className="grid grid-cols-5 w-full">
                   <TabsTrigger value="wine" className="gap-2"><Wine className="h-4 w-4" /> Wine</TabsTrigger>
                   <TabsTrigger value="cocktail" className="gap-2"><GlassWater className="h-4 w-4" /> Cocktail</TabsTrigger>
                   <TabsTrigger value="beer" className="gap-2"><Beer className="h-4 w-4" /> Beer</TabsTrigger>
                   <TabsTrigger value="pairing" className="gap-2"><Flame className="h-4 w-4" /> Pairing</TabsTrigger>
+                  <TabsTrigger value="grade" className="gap-2"><Camera className="h-4 w-4" /> Grade</TabsTrigger>
                 </TabsList>
+
 
                 <TabsContent value="wine" className="space-y-3 mt-4">
                   <div className="grid grid-cols-3 gap-3">
