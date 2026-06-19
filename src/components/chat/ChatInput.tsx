@@ -87,9 +87,12 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
   const [showCamera, setShowCamera] = useState(false);
   const [showCallMode, setShowCallMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
+  const isMobileDevice = typeof navigator !== "undefined" &&
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
   // Initialize speech recognition
   const startListening = useCallback(() => {
