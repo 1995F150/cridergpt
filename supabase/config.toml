@@ -75,4 +75,9 @@ project_id = "udpldrrpebdyuiqdtqnq"
     verify_jwt = false
   [functions.money-split-advisor]
     verify_jwt = false
+  [functions.meal-plan-generator]
+    verify_jwt = false
+  [functions.fermentation-grader]
+    verify_jwt = false
+
 
