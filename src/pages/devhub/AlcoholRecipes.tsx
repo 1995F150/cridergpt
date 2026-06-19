@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X } from "lucide-react";
+import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X, Bot, Cpu, Cloud } from "lucide-react";
 
 type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade" | "ai";
 
