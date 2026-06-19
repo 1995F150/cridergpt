@@ -590,8 +590,15 @@ export default function MoneySplitCalc() {
     };
     const next = [entry, ...history].slice(0, 50);
     persistHistory(next);
+    if (user) {
+      supabase.from("money_split_history").insert({
+        id: entry.id, user_id: user.id, ts: new Date(entry.ts).toISOString(),
+        income: entry.income, period: entry.period, pct: entry.pct, cash_bills: entry.cashBills,
+      }).then(({ error }) => { if (error) console.warn("history insert failed", error); });
+    }
     toast.success("Saved to history");
   };
+
 
   const loadEntry = (e: HistoryEntry) => {
     setIncome(e.income);
