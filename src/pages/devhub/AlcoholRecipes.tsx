@@ -453,9 +453,51 @@ export default function AlcoholRecipes() {
                     </Card>
                   )}
                 </TabsContent>
+                <TabsContent value="ai" className="space-y-3 mt-4">
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Cpu className="h-3 w-3" /> Local-first — runs on your home AI when reachable, falls back to cloud.
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">What do you want to make?</label>
+                    <Textarea
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder="A spicy bourbon sour with peach… or a quick weeknight venison chili…"
+                      rows={3}
+                    />
+                  </div>
+                  <Button onClick={generateAI} disabled={aiLoading} className="w-full">
+                    {aiLoading ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>) : (<><Sparkles className="h-4 w-4 mr-2" /> Generate Recipe</>)}
+                  </Button>
+
+                  {aiResult && (
+                    <Card className="bg-muted/30">
+                      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          AI Recipe
+                          {aiSource && (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              {aiSource === "local" ? <><Cpu className="h-3 w-3" /> local</> : <><Cloud className="h-3 w-3" /> cloud</>}
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => { await navigator.clipboard.writeText(aiResult); toast({ title: "Copied" }); }}
+                        >
+                          <Copy className="h-4 w-4 mr-2" /> Copy
+                        </Button>
+                      </CardHeader>
+                      <CardContent>
+                        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{aiResult}</pre>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
               </Tabs>
 
-              {mode !== "grade" && (
+              {mode !== "grade" && mode !== "ai" && (
                 <>
                   <div>
                     <label className="text-xs text-muted-foreground">
