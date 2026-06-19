@@ -216,6 +216,14 @@ export default function MoneySplitCalc() {
   const [cashBills, setCashBills] = useState<CashBills>(() => makeEmptyCashBills());
   const [roundMode, setRoundMode] = useState<RoundMode>("off");
   const [autoBalance, setAutoBalance] = useState<boolean>(true);
+  const [aiNotes, setAiNotes] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiAdvice, setAiAdvice] = useState<{
+    suggestedPct?: Record<string, number>;
+    direction?: { placement?: string; priorities?: string; ffa?: string; longterm?: string };
+    summary?: string;
+  } | null>(null);
+
 
   useEffect(() => {
     try {
