@@ -614,12 +614,15 @@ export default function MoneySplitCalc() {
 
   const removeEntry = (id: string) => {
     persistHistory(history.filter(h => h.id !== id));
+    if (user) supabase.from("money_split_history").delete().eq("id", id).eq("user_id", user.id).then(() => {});
   };
 
   const clearHistory = () => {
     persistHistory([]);
+    if (user) supabase.from("money_split_history").delete().eq("user_id", user.id).then(() => {});
     toast.success("History cleared");
   };
+
 
   const slug = (s: string) =>
     s.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
