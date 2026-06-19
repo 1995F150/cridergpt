@@ -1267,11 +1267,12 @@ export default function MoneySplitCalc() {
   );
 }
 
-function Suggestion({ title, desc }: { title: string; desc: string }) {
+function DirectionBlock({ title, body }: { title: string; body: string }) {
   return (
     <div className="p-3 rounded-lg bg-muted/40 border border-border/60">
-      <div className="font-semibold mb-1">{title}</div>
-      <div className="text-muted-foreground leading-relaxed">{desc}</div>
+      <div className="font-semibold mb-1 text-sm">{title}</div>
+      <div className="text-muted-foreground leading-relaxed text-xs whitespace-pre-wrap">{body}</div>
     </div>
   );
 }
+
