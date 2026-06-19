@@ -404,7 +404,15 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
                 <ImageIcon className="h-4 w-4 mr-2" />
                 Upload Image
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowCamera(true)}>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (isMobileDevice && cameraInputRef.current) {
+                    cameraInputRef.current.click();
+                  } else {
+                    setShowCamera(true);
+                  }
+                }}
+              >
                 <Camera className="h-4 w-4 mr-2" />
                 Take Photo
               </DropdownMenuItem>
