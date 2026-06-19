@@ -392,8 +392,12 @@ export default function MoneySplitCalc() {
     if (!confirm("Empty every envelope and clear all transactions? This can't be undone.")) return;
     persistEnvelopes({});
     persistTxns([]);
+    if (user) {
+      supabase.from("money_split_txns").delete().eq("user_id", user.id).then(({ error }) => { if (error) console.warn("txn wipe failed", error); });
+    }
     toast.success("Lockbox reset");
   };
+
 
   const totalLockbox = useMemo(
     () => Object.values(envelopes).reduce((a, b) => a + b, 0),
