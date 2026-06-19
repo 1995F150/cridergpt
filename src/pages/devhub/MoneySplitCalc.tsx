@@ -6,14 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
   History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet, Banknote,
-  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef
+  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef, Sparkles, Loader2, Check
 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { addPDFHeader, addPDFFooter, addCornerWatermark } from "@/utils/pdfWatermark";
+import { supabase } from "@/integrations/supabase/client";
+
 
 type Period = "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
 
