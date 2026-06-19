@@ -16,6 +16,10 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { addPDFHeader, addPDFFooter, addCornerWatermark } from "@/utils/pdfWatermark";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { MealPlannerCard } from "@/components/devhub/MealPlannerCard";
+
+
 
 
 type Period = "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
