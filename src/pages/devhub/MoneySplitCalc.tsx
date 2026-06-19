@@ -1079,40 +1079,90 @@ export default function MoneySplitCalc() {
         </Card>
       )}
 
-      {/* Suggestions */}
-      <Card className="mt-4">
+      {/* AI Direction */}
+      <Card className="mt-4 border-primary/40 bg-gradient-to-br from-primary/5 via-amber-400/5 to-transparent">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Lightbulb className="w-4 h-4" /> Suggested Add-Ons
-          </CardTitle>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" /> AI Direction
+              <Badge variant="secondary" className="ml-1">CriderGPT advisor</Badge>
+            </CardTitle>
+            <Button size="sm" onClick={askAIAdvisor} disabled={aiLoading || income <= 0}>
+              {aiLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1" />}
+              {aiAdvice ? "Re-ask" : "Get direction"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            CriderGPT looks at your income, current split, envelopes, and livestock setup — then suggests percentages and tells you what to actually do with the cash this pay period.
+          </p>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <Suggestion
-            title="📱 CriderGPT Pro Subscription"
-            desc={`At $12/mo, that's just ${((12 / (yearlyIncome / 12)) * 100).toFixed(1)}% of a monthly paycheck. Upgrade when your CriderGPT bucket hits $15/mo.`}
-          />
-          <Suggestion
-            title="🛡️ High-Yield Savings"
-            desc="Park your emergency fund in a HYSA (4–5% APY). $1,000 sitting there earns ~$50/yr free."
-          />
-          <Suggestion
-            title="📊 Separate Business Account"
-            desc="Open a free business checking. Route all CriderGPT/ad revenue there so taxes are clean."
-          />
-          <Suggestion
-            title="🎯 Weekly Check-In Habit"
-            desc="Every Friday, open this calculator, punch in what you made, and move the money immediately."
-          />
-          <Suggestion
-            title="💳 Auto-Transfer Rules"
-            desc="Set up bank auto-transfers: 10% to emergency, 20% to CriderGPT the day you get paid."
-          />
-          <Suggestion
-            title="📦 Bulk Buy Savings"
-            desc="Use the ‘Fun’ bucket for bulk welding supplies once/quarter instead of weekly runs."
-          />
+        <CardContent className="space-y-3">
+          <div>
+            <Label className="text-xs">Anything the AI should know? (optional)</Label>
+            <Textarea
+              value={aiNotes}
+              onChange={e => setAiNotes(e.target.value)}
+              placeholder="e.g. show pig needs feed by Friday, truck tire blew, behind on phone bill"
+              className="mt-1 min-h-[60px] text-sm"
+            />
+          </div>
+
+          {!aiAdvice && !aiLoading && (
+            <div className="text-xs text-muted-foreground italic">
+              Hit "Get direction" to have CriderGPT propose a split and tell you where every dollar goes.
+            </div>
+          )}
+
+          {aiAdvice && (
+            <div className="space-y-3">
+              {aiAdvice.summary && (
+                <div className="p-3 rounded-lg bg-amber-400/10 border border-amber-400/30 text-sm font-medium">
+                  {aiAdvice.summary}
+                </div>
+              )}
+
+              {aiAdvice.suggestedPct && Object.keys(aiAdvice.suggestedPct).length > 0 && (
+                <div className="p-3 rounded-lg border border-primary/30 bg-muted/30">
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <div className="text-sm font-semibold">Suggested split (you can still override any slider)</div>
+                    <Button size="sm" variant="default" onClick={applyAISplit}>
+                      <Check className="w-3 h-3 mr-1" /> Apply
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    {BUCKETS.map(b => {
+                      const v = aiAdvice.suggestedPct?.[b.key] ?? 0;
+                      if (v <= 0) return null;
+                      return (
+                        <div key={b.key} className={`p-2 rounded ${b.bg} border border-border/40`}>
+                          <div className="font-medium truncate">{b.emoji} {b.label}</div>
+                          <div className="font-mono font-bold">{v}% · {fmt(income * (v / 100))}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                {aiAdvice.direction?.placement && (
+                  <DirectionBlock title="📍 Where the money goes" body={aiAdvice.direction.placement} />
+                )}
+                {aiAdvice.direction?.priorities && (
+                  <DirectionBlock title="⚡ This pay period priorities" body={aiAdvice.direction.priorities} />
+                )}
+                {aiAdvice.direction?.ffa && (
+                  <DirectionBlock title="🐄 FFA / livestock" body={aiAdvice.direction.ffa} />
+                )}
+                {aiAdvice.direction?.longterm && (
+                  <DirectionBlock title="📈 Long-term plan" body={aiAdvice.direction.longterm} />
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
 
       {/* Coverage Guide — what each bucket is allowed to pay for */}
       <Card className="mt-4 border-amber-400/30">
