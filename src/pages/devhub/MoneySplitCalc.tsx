@@ -210,6 +210,7 @@ const buildCashPlan = (pct: Record<string, number>, cashBills: CashBills): CashP
 };
 
 export default function MoneySplitCalc() {
+  const { user } = useAuth();
   const [income, setIncome] = useState(1000);
   const [period, setPeriod] = useState<Period>("weekly");
   const [pct, setPct] = useState<Record<string, number>>({ ...DEFAULTS });
@@ -227,6 +228,32 @@ export default function MoneySplitCalc() {
     direction?: { placement?: string; priorities?: string; ffa?: string; longterm?: string };
     summary?: string;
   } | null>(null);
+
+  // Push current state to backend (debounced via caller). No-op if signed out.
+  const syncStateToBackend = async (patch: Partial<{
+    envelopes: Record<string, number>;
+    pct: Record<string, number>;
+    cashBills: CashBills;
+    roundMode: RoundMode;
+    income: number;
+    period: Period;
+  }>) => {
+    if (!user) return;
+    try {
+      await supabase.from("money_split_state").upsert({
+        user_id: user.id,
+        envelopes: patch.envelopes ?? envelopes,
+        pct: patch.pct ?? pct,
+        cash_bills: patch.cashBills ?? cashBills,
+        round_mode: patch.roundMode ?? roundMode,
+        income: patch.income ?? income,
+        period: patch.period ?? period,
+      }, { onConflict: "user_id" });
+    } catch (e) {
+      console.warn("split state sync failed", e);
+    }
+  };
+
 
 
   useEffect(() => {
