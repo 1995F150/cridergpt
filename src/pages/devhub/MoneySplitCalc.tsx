@@ -456,6 +456,45 @@ export default function MoneySplitCalc() {
     toast.success("Adjusted to exactly 100%");
   };
 
+  const askAIAdvisor = async () => {
+    if (income <= 0) {
+      toast.error("Punch in your income first");
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("money-split-advisor", {
+        body: {
+          income,
+          period,
+          currentPct: pct,
+          envelopes,
+          buckets: BUCKETS.map(b => ({ key: b.key, label: b.label, desc: b.desc })),
+          notes: aiNotes.trim() || undefined,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setAiAdvice(data);
+      toast.success("Got fresh direction from CriderGPT");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "AI advisor failed");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const applyAISplit = () => {
+    const sp = aiAdvice?.suggestedPct;
+    if (!sp) return;
+    const next: Record<string, number> = { ...DEFAULTS };
+    BUCKETS.forEach(b => { next[b.key] = sp[b.key] ?? 0; });
+    setPct(next);
+    toast.success("Applied AI split — tweak any slider to override");
+  };
+
+
   const saveToHistory = () => {
     const entry: HistoryEntry = {
       id: crypto.randomUUID(),
