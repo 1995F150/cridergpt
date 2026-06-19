@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X } from "lucide-react";
 
-type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade";
+type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade" | "ai";
 
 
 const PROMPTS: Partial<Record<Mode, (req: string, extra: Record<string, string>) => string>> = {
