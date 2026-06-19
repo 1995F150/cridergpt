@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Wine, GlassWater, Beer, Flame, Loader2, Copy } from "lucide-react";
+import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X } from "lucide-react";
 
-type Mode = "wine" | "cocktail" | "beer" | "pairing";
+type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade";
+
 
 const PROMPTS: Record<Mode, (req: string, extra: Record<string, string>) => string> = {
   wine: (req, x) => `
