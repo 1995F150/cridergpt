@@ -87,9 +87,12 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
   const [showCamera, setShowCamera] = useState(false);
   const [showCallMode, setShowCallMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
+  const isMobileDevice = typeof navigator !== "undefined" &&
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
   // Initialize speech recognition
   const startListening = useCallback(() => {
@@ -401,7 +404,15 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
                 <ImageIcon className="h-4 w-4 mr-2" />
                 Upload Image
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowCamera(true)}>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (isMobileDevice && cameraInputRef.current) {
+                    cameraInputRef.current.click();
+                  } else {
+                    setShowCamera(true);
+                  }
+                }}
+              >
                 <Camera className="h-4 w-4 mr-2" />
                 Take Photo
               </DropdownMenuItem>
@@ -464,8 +475,23 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
             type="file"
             multiple
             className="hidden"
-            onChange={(e) => handleFileSelect(e.target.files)}
+            onChange={(e) => {
+              handleFileSelect(e.target.files);
+              e.target.value = "";
+            }}
           />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              handleFileSelect(e.target.files);
+              e.target.value = "";
+            }}
+          />
+
 
           {/* Text Input */}
           <div className="flex-1 relative">
