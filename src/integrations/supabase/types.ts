@@ -2971,6 +2971,138 @@ export type Database = {
         }
         Relationships: []
       }
+      money_split_history: {
+        Row: {
+          cash_bills: Json | null
+          created_at: string
+          id: string
+          income: number
+          pct: Json
+          period: string
+          ts: string
+          user_id: string
+        }
+        Insert: {
+          cash_bills?: Json | null
+          created_at?: string
+          id?: string
+          income: number
+          pct: Json
+          period: string
+          ts?: string
+          user_id: string
+        }
+        Update: {
+          cash_bills?: Json | null
+          created_at?: string
+          id?: string
+          income?: number
+          pct?: Json
+          period?: string
+          ts?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      money_split_meal_plans: {
+        Row: {
+          budget: number
+          created_at: string
+          household_size: number
+          id: string
+          notes: string | null
+          plan: Json
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          budget: number
+          created_at?: string
+          household_size?: number
+          id?: string
+          notes?: string | null
+          plan: Json
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          budget?: number
+          created_at?: string
+          household_size?: number
+          id?: string
+          notes?: string | null
+          plan?: Json
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      money_split_state: {
+        Row: {
+          cash_bills: Json
+          envelopes: Json
+          income: number
+          pct: Json
+          period: string
+          round_mode: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cash_bills?: Json
+          envelopes?: Json
+          income?: number
+          pct?: Json
+          period?: string
+          round_mode?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cash_bills?: Json
+          envelopes?: Json
+          income?: number
+          pct?: Json
+          period?: string
+          round_mode?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      money_split_txns: {
+        Row: {
+          amount: number
+          bucket: string
+          created_at: string
+          id: string
+          note: string | null
+          ts: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bucket: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          ts?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bucket?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          ts?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       music_tracks: {
         Row: {
           audio_url: string | null
