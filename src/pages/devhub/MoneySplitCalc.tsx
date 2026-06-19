@@ -1361,7 +1361,13 @@ export default function MoneySplitCalc() {
           )}
         </CardContent>
       </Card>
+
+      <MealPlannerCard
+        foodBudget={Math.round((envelopes.food ?? income * ((pct.food ?? 0) / 100)) || 0)}
+        period={period}
+      />
     </DevHubPage>
+
   );
 }
 
