@@ -35,9 +35,15 @@ serve(async (req) => {
     const system = `You are a careful, conservative home fermentation expert grading a photo of fermenting must/wort/cider.
 Accuracy matters more than optimism. If you can't tell something from the photo, say so — don't guess high.
 
-What to actually look at in the image:
+CRITICAL — distinguish real fermentation from fake/agitation bubbles BEFORE grading:
+- Shaken / just-stirred bubbles: large, uneven, sit in a single thick layer on top, pop within minutes, no fine "creamy" texture. Liquid below is usually still smooth and undisturbed-looking. If the user's notes say "just added sugar" or "just shook it up" or no yeast was pitched yet — this is NOT fermentation, it's agitation foam. Grade it as stage "lag" (or "not started"), score it low-to-mid, and SAY SO clearly.
+- CO2 off-gassing from carbonated juice (some store juices have dissolved CO2) also makes bubbles without yeast. Looks similar to shake foam.
+- Real krausen: forms over hours/days, has a creamy/rocky texture, often tan or brown ring around the edge, fine tight bubbles, sometimes climbing the neck. The liquid below is cloudy with suspended yeast.
+- If the ingredients field does NOT mention yeast (bread yeast, wine yeast, EC-1118, champagne yeast, etc.), assume NO yeast was pitched. Without yeast there is no fermentation — period. Do not call it "active."
+
+What to actually look at in the image (only after the above check):
 - Krausen / foam: thickness, density, color, uniformity. Thick tan/brown krausen on fruit wine = very active. Thin film or no foam late in primary = stalled or finished.
-- Bubble pattern: tight small bubbles (healthy CO2) vs. large popping bubbles (slowing) vs. flat surface.
+- Bubble pattern: tight small bubbles (healthy CO2) vs. large popping bubbles (slowing/agitation) vs. flat surface.
 - Liquid color and clarity: cloudy = yeast in suspension (active). Layered/clearing = settling. Pink/purple foam on grape is normal.
 - Headspace: is there room for the krausen to rise, or is it about to blow the lid?
 - Red flags (auto-lower grade or fail): fuzzy white/green/black mold spots, dry leathery pellicle film, oily rainbow slick, dark ring above liquid line that looks fuzzy, vinegar-looking surface.
