@@ -273,6 +273,40 @@ export default function MoneySplitCalc() {
     }
   }, []);
 
+  // When user signs in, hydrate from backend (overrides localStorage cache).
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [stateRes, txRes, histRes] = await Promise.all([
+          supabase.from("money_split_state").select("*").eq("user_id", user.id).maybeSingle(),
+          supabase.from("money_split_txns").select("*").eq("user_id", user.id).order("ts", { ascending: false }).limit(200),
+          supabase.from("money_split_history").select("*").eq("user_id", user.id).order("ts", { ascending: false }).limit(50),
+        ]);
+        if (cancelled) return;
+        const s: any = stateRes.data;
+        if (s) {
+          if (s.envelopes && typeof s.envelopes === "object") setEnvelopes(s.envelopes);
+          if (s.pct && typeof s.pct === "object" && Object.keys(s.pct).length) setPct({ ...DEFAULTS, ...s.pct });
+          if (s.cash_bills) setCashBills(sanitizeCashBills(s.cash_bills));
+          if (["off","1","5","10","20"].includes(s.round_mode)) setRoundMode(s.round_mode);
+          if (typeof s.income === "number" || typeof s.income === "string") setIncome(Number(s.income) || 0);
+          if (s.period) setPeriod(s.period);
+        }
+        if (Array.isArray(txRes.data)) {
+          setTxns(txRes.data.map((t: any) => ({ id: t.id, ts: new Date(t.ts).getTime(), bucket: t.bucket, amount: Number(t.amount), note: t.note || "" })));
+        }
+        if (Array.isArray(histRes.data)) {
+          setHistory(histRes.data.map((h: any) => ({ id: h.id, ts: new Date(h.ts).getTime(), income: Number(h.income), period: h.period, pct: h.pct || {}, cashBills: h.cash_bills || undefined })));
+        }
+      } catch (e) {
+        console.warn("split state hydrate failed", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const persistHistory = (next: HistoryEntry[]) => {
     setHistory(next);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
@@ -281,6 +315,7 @@ export default function MoneySplitCalc() {
   const persistEnvelopes = (next: Record<string, number>) => {
     setEnvelopes(next);
     localStorage.setItem(ENVELOPE_KEY, JSON.stringify(next));
+    void syncStateToBackend({ envelopes: next });
   };
 
   const persistTxns = (next: Txn[]) => {
@@ -292,14 +327,23 @@ export default function MoneySplitCalc() {
     setCashBills(prev => {
       const next = { ...prev, [value]: Math.max(0, Math.floor(count || 0)) };
       localStorage.setItem(CASH_BILLS_KEY, JSON.stringify(next));
+      void syncStateToBackend({ cashBills: next });
       return next;
     });
   };
 
   const logTxn = (bucket: string, amount: number, note: string, currentTxns: Txn[]) => {
     const entry: Txn = { id: crypto.randomUUID(), ts: Date.now(), bucket, amount, note };
+    if (user) {
+      // fire-and-forget insert; ignore errors
+      supabase.from("money_split_txns").insert({
+        id: entry.id, user_id: user.id, ts: new Date(entry.ts).toISOString(),
+        bucket: entry.bucket, amount: entry.amount, note: entry.note,
+      }).then(({ error }) => { if (error) console.warn("txn insert failed", error); });
+    }
     return [entry, ...currentTxns].slice(0, 200);
   };
+
 
   const depositPaycheck = () => {
     const nextEnv = { ...envelopes };
