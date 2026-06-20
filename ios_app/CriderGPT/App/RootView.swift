@@ -50,6 +50,11 @@ struct MainTabView: View {
                 EventsView()
             }
             .tabItem { Label("Calendar", systemImage: "calendar") }
+
+            NavigationStack {
+                ProfileView()
+            }
+            .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
         }
         .tint(Theme.accent)
         .background(Theme.background.ignoresSafeArea())
