@@ -158,19 +158,30 @@ export function MealPlannerCard({ foodBudget, period }: Props) {
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <Label className="text-xs">Food budget ($)</Label>
             <Input type="number" min={0} value={budget} onChange={e => setBudget(Number(e.target.value) || 0)} />
           </div>
           <div>
+            <Label className="text-xs">Spent so far ($)</Label>
+            <Input type="number" min={0} value={spent} onChange={e => setSpent(Math.max(0, Number(e.target.value) || 0))} />
+          </div>
+          <div>
             <Label className="text-xs">Household size</Label>
             <Input type="number" min={1} max={12} value={household} onChange={e => setHousehold(Math.max(1, Number(e.target.value) || 1))} />
           </div>
-          <div className="col-span-2 md:col-span-1">
+          <div>
             <Label className="text-xs">Pay period</Label>
             <Input value={period} readOnly className="bg-muted/40" />
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-xs">
+          <Badge variant={remaining > 0 ? "secondary" : "destructive"}>
+            Remaining: ${remaining.toFixed(2)}
+          </Badge>
+          <Badge variant="outline">{daysRemaining} day{daysRemaining === 1 ? "" : "s"} left this week</Badge>
         </div>
 
         <div>
