@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>CriderGPT</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.cridergpt.ios</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIColorName</key>
+        <string>BrandBackground</string>
+    </dict>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UIUserInterfaceStyle</key>
+    <string>Dark</string>
+
+    <!-- Supabase (publishable / anon key — safe to commit, same as web .env) -->
+    <key>SUPABASE_URL</key>
+    <string>https://udpldrrpebdyuiqdtqnq.supabase.co</string>
+    <key>SUPABASE_ANON_KEY</key>
+    <string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcGxkcnJwZWJkeXVpcWR0cW5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NjA4ODgsImV4cCI6MjA2NzIzNjg4OH0.Gsb6STpmSRsyspSsGIMJ_GJ03-fFR7W3Zizz7cCRnkc</string>
+
+    <!-- Google Sign-In: client id added when Google OAuth iOS client is created -->
+    <key>GIDClientID</key>
+    <string>REPLACE_WITH_GOOGLE_IOS_CLIENT_ID</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <!-- Reverse of GIDClientID -->
+                <string>com.googleusercontent.apps.REPLACE_WITH_GOOGLE_IOS_CLIENT_ID</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

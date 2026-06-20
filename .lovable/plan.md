@@ -1,68 +1,110 @@
-# CriderGPT Mobile Rebuild — Phased Plan
+# Native iOS + Android Parity Rebuild
 
-**Scope rules locked in from your answers:**
-- Only edit `src/pages/devhub/androidStarterFiles.ts` and `src/pages/devhub/iosStarterFiles.ts`. Do **not** touch `android_app/` (builder owns it).
-- Android `versionCode = 274` (you said 273 was highest uploaded), `versionName = "2.7.4"`.
-- Audit-first: I read the website source before rewriting any starter module. Existing working systems are preserved, not replaced with placeholders.
-- Web client ID `248754417531-pe960srs7ve7eu9f4ttm4k73tu33t1mi…` and Android client ID `248754417531-gnnhko80mrsohcfigs67lgmus81g4o57…` are wired in Phase 1.
+Goal: native iOS (SwiftUI) and native Android both match the website 1:1 for the v1 feature scope you picked — Chat/AI, Smart ID/NFC, Livestock + Events/Calendar, Auth + Profile + Subscriptions. iOS ships first; Android gets fixed in parallel so it's not a rerun of the half-broken state it's in now.
 
-## Phase 1 — Foundation (auth + nav + version)
-**Goal:** App launches, signs in, lands on a drawer that matches the website. No regressions to existing modules.
+## Ground rules (so we don't repeat the Android mess)
 
-1. **Audit pass (read-only)**
-   - `src/App.tsx` route table → canonical module list
-   - `src/components/` sidebar/drawer → canonical nav order
-   - `src/contexts/AuthContext.tsx`, `useAdmin`, `user_roles` → admin gate rules
-   - `useSubscriptionStatus` + `get-entitlement` → plan source of truth
-2. **Android starter (`androidStarterFiles.ts`)**
-   - `build.gradle`: `versionCode 274`, `versionName "2.7.4"`, `compileSdk 35`, `targetSdk 35`.
-   - `AndroidManifest.xml`: confirm no stray AD_ID permission (not used → stays removed); deep-link intent filter for `app.cridergpt.android://oauth/callback`.
-   - `SupabaseClient.kt`: unchanged URL/anon key (matches web).
-   - `AuthViewModel.kt`: Google Sign-In via Credential Manager using **Android client ID** above; fall back to Chrome Custom Tab OAuth (no SHA-1/Firebase) per existing memory.
-   - `MainActivity.kt`: handle OAuth deep-link → `supabase.auth.exchangeCodeForSession`.
-   - `NavigationDrawer` + `mobile_navigation.xml`: full website section order (MAIN → PRODUCTIVITY → CREATIVE → ACCOUNT → TOOLS → STORE → INFO → EXTERNAL → ADMIN), admin section hidden unless `has_role(uid,'admin')`.
-3. **iOS starter (`iosStarterFiles.ts`)**
-   - Mirror nav and auth. Google Sign-In uses **Web client ID** as `serverClientID`; deep-link via `ASWebAuthenticationSession`.
-   - IAP via StoreKit2, Stripe disabled for digital goods (per policy memory).
+- **No placeholder screens.** If a screen isn't wired to a real Supabase call, it doesn't get a nav entry. Period.
+- **One source of truth for nav:** the website's primary nav (derived from `src/App.tsx` routes you actually use) drives the mobile bottom-tab order. Both iOS and Android use the same 5 tabs in the same order.
+- **One source of truth for backend:** every API call goes through Supabase (same project: `udpldrrpebdyuiqdtqnq`, same anon key, same edge functions). No mock data anywhere.
+- **Theme parity:** dark CriderGPT brand, same accent color tokens as web (`src/index.css`).
+- **Smart ID:** scan-only, plain-text `CriderGPT-XXXXXX` tag format (per existing project memory). Same edge functions the website calls.
+- **No ad SDK on iOS in v1** — you said you haven't added the iOS AdMob ID yet. I'll leave the hook stubbed and disabled (no broken placeholder UI), gated behind a single feature flag so flipping it on later is one line.
 
-**Deliverable:** updated two starter files + a short changelog. You rebuild via the Ubuntu builder.
+## Mobile bottom-nav (1:1, both platforms)
 
-## Phase 2 — Core modules parity
-After Phase 1 is verified building, I wire the high-traffic modules to match the web behavior exactly:
-- Chat (fix ANR, image upload, send, generation, attachments)
-- Pattern system (button, save, sync, %, reset, delete, yellow suggestion chips driven by `user_patterns`)
-- AGI toggle + model selector (persisted in `user_preferences`)
-- Gallery (Supabase Storage `media_generations` bucket, refresh)
-- Files (upload/download/delete against same bucket the web uses)
-- Vision Memory read path
+Mirroring the existing Android tabs which already match the website's main mobile entry points:
 
-## Phase 3 — Account, payments, admin, polish
-- Plan/Payment screens call `get-entitlement` (single source); Google Play Billing for `cridergpt_plus_monthly` / `cridergpt_pro_monthly` → `verify-iap`; Stripe link only for physical store.
-- Admin Panel / Idea Planner / Dev Hub gated by `has_role` RPC; hidden in drawer otherwise.
-- Play Console compliance: targetSdk 35 confirmed, data-safety AD_ID = false, versionCode auto-increment helper script note in starter README.
-- Remaining bug sweep (sign-out clears session, state persistence, crash handlers).
+```text
+[ Chat ] [ Livestock ] [ Smart ID ] [ Calendar ] [ Profile ]
+```
 
-## Technical notes
-- No Capacitor, no WebView wrapper anywhere. Each screen is Compose (Android) / SwiftUI (iOS) calling the same Supabase tables/edge functions the web uses.
-- All new tables? **None** — web schema is the source of truth.
-- Edge functions touched? **None new** in Phase 1; Phase 3 may add a `bump-android-version` helper only if you want it.
+Calculators move into a section inside Profile/More (matches website where they live under devhub/utility pages, not the primary surface). Confirm or change after seeing the iOS scaffold.
 
-## Approval checkpoints
-- ✅ after Phase 1 → you build APK, confirm sign-in + drawer.
-- ✅ after Phase 2 → you confirm chat/gallery/pattern parity.
-- ✅ after Phase 3 → ship to internal track.
+## iOS app (new, SwiftUI)
 
-Reply "go phase 1" to start.
-Phase 2 additions to plan
+New folder: `ios_app/` — Xcode project, SwiftUI, iOS 16+. Bundle id: `com.cridergpt.ios` (confirm before I scaffold).
 
-## Phase 2 — Shipped
-- Android: ChatScreen now has AGI toggle, model selector (cridergpt-fast/pro, gpt-4o-mini/4o), and yellow pattern suggestion chips from `user_patterns`. Prefs persist to `user_preferences`. Payload to `chat-with-ai` now includes `model` and `agi_mode`.
-- Android: GalleryScreen reads `media_generations` (grid + refresh). VisionMemoryScreen reads `vision_memory`. Both wired into AppNav, removed from placeholder list.
-- iOS: ChatView mirrors AGI toggle, model menu, pattern chips, prefs persistence. ChatViewModel sends `model` + `agi_mode` to `chat-with-ai`.
-- iOS: GalleryView (`media_generations`) and VisionMemoryView (`vision_memory`) added.
-- Remaining for Phase 3: Files/Projects native screens, Plan/Payment via `get-entitlement`, Play Billing `verify-iap` wiring, Admin Panel polish, Play Console compliance check.
+### Structure
+```text
+ios_app/
+  CriderGPT.xcodeproj
+  CriderGPT/
+    App/
+      CriderGPTApp.swift          // entry, AppDelegate for push/IAP
+      RootView.swift              // tab router, auth gate
+      Theme.swift                 // brand colors, fonts (matches index.css tokens)
+    Supabase/
+      SupabaseClient.swift        // shared singleton, anon key from Info.plist
+      Auth.swift                  // sign in/up, Apple/Google, session restore
+      EdgeFunctions.swift         // typed wrappers for chat, fermentation-grader, etc.
+    Features/
+      Chat/         ChatView, ChatViewModel, MessageBubble, streaming via SSE
+      Livestock/    LivestockListView, AnimalDetailView, AddAnimalView
+      SmartID/      ScanView (CoreNFC), TagLookupView, RegisterTagView
+      Calendar/     CalendarView, EventDetailView, AddEventView
+      Profile/      ProfileView, SubscriptionView (StoreKit2), CalculatorsView
+    Models/         Animal, Event, ChatMessage, Profile, Subscription
+    Components/     LoadingView, ErrorBanner, BrandedHeader
+  Resources/
+    Assets.xcassets (app icon, brand colors)
+    Info.plist (NFC, camera, mic, push capabilities)
+```
 
-## Phase 3 — Shipped
-- Android: added `FilesScreen` (`user_reference_library`), `ProjectsScreen` (`projects`), `PlanScreen` (`user_subscriptions`), and `PaymentScreen` with Google Play Billing 7.0 wired to `cridergpt_plus_monthly` / `cridergpt_pro_monthly`. Purchases POST to the `verify-iap` edge function via new `SupabaseClient.invokeFunction` helper. Added `com.android.vending.BILLING` permission and `billing-ktx` dep. Routes wired in `AppNav`; entries removed from the placeholder list.
-- iOS: added `FilesView`, `ProjectsView`, `PlanView`. `PlanView` reads `user_subscriptions` and links into existing `SubscriptionView` (StoreKit 2 → `verify-iap`). New views surface in `ProfileView` under Subscription and Modules sections.
-- Play Console compliance: `targetSdk 35`, `versionCode 274`, no AD_ID permission, billing permission added; admin destinations remain hidden from non-admins (drawer + composable gates).
+### Auth
+- Apple Sign-In (required by App Store for iOS apps that have other social login) + Google Sign-In via popup-style OAuth (per project memory: no full-page redirects).
+- Session restored on launch via Supabase Swift SDK; tab bar only shows after auth.
+
+### Smart ID
+- `CoreNFC` `NFCNDEFReaderSession`, reads plain-text payload, validates `^CriderGPT-[A-Z0-9]{6}$`, calls same lookup edge function the website uses, navigates to TagLookupView.
+- Per project memory: iOS NFC limits acknowledged → fallback manual entry input below the scan button.
+
+### Chat
+- Streaming from same `chat` edge function as the website (Lovable AI Gateway).
+- Renders message parts (text now, room for tool calls later).
+
+### Subscriptions
+- StoreKit 2 only (Apple requires native IAP for digital goods).
+- Product IDs: `cridergpt_plus_monthly`, `cridergpt_pro_monthly` (same as Android per project memory).
+- Receipts verified server-side by existing `verify-iap` edge function.
+
+### Push & Deep Links
+- APNs via Supabase, same `push_subscriptions` table.
+- Universal links: `cridergpt.com/tag/:tagId` and `/livestockID/:tagId` open TagLookupView.
+
+## Android (audit + fix, no rewrite)
+
+Existing `android_app/` already has the 5 tabs and Kotlin/Compose scaffolding. I will:
+
+1. **Audit each tab fragment** in `android_app/app/src/main/java/com/cridergpt/android/ui/{chat,livestock,smartid,calculators,calendar,profile}` against the website behavior and the iOS scope above.
+2. **Fix or remove**, for each screen:
+   - missing Supabase wiring → wire to the same edge function the website calls
+   - placeholder buttons that no-op → either implement or delete
+   - mismatched titles/icons vs. website → align
+   - broken navigation transitions
+3. **Smart ID:** verify NFC reader uses plain-text `CriderGPT-XXXXXX` (no hardware lock — per `livestock-system-integrity` memory).
+4. **IAP:** confirm Play Billing wired to `cridergpt_plus_monthly` / `cridergpt_pro_monthly` and `verify-iap`.
+5. **No code is added to ship issues you don't want yet** (no in-app AdMob popups beyond what's already there; I won't enable AdMob on iOS at all in v1).
+
+`android/` folder (the one externally managed per project memory) will NOT be touched.
+
+## Delivery in staged commits
+
+1. **iOS scaffold + Theme + SupabaseClient + Auth + RootView/tabs** (you can open in Xcode and sign in)
+2. **iOS Chat (streaming)**
+3. **iOS Smart ID (NFC scan + TagLookup + manual fallback)**
+4. **iOS Livestock + Calendar/Events**
+5. **iOS Profile + StoreKit 2 subscriptions + Calculators section**
+6. **Android audit report + targeted fixes for each tab to match iOS feature scope**
+7. **Final pass: dark-theme parity, deep links, push, polishing, README for TestFlight build**
+
+After each stage I'll tell you exactly what to test before moving on, so we catch missing wiring early instead of discovering it 5 commits later.
+
+## What I need from you before I start stage 1
+
+1. **iOS bundle id** — `com.cridergpt.ios` OK, or different?
+2. **Confirm tab order** — `Chat | Livestock | Smart ID | Calendar | Profile`, with Calculators under Profile?
+3. **Apple Developer Program account** — confirm you have one ($99/yr) so TestFlight is actually reachable; otherwise stage 1 still works in the iOS simulator but you can't ship.
+4. **Anything from the website you DON'T want in v1 mobile** (e.g. Idea Planner, Recipes, Breeds, Snapchat Lens, FarmBureau, DevHub) — my default is to leave all of those website-only and not put them in the mobile tabs.
+
+Answer those 4 and I'll start stage 1.
