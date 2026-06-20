@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import Supabase
 
 /// UIApplicationDelegate adapter that owns APNS push registration and the
 /// device-token round-trip to the `register-device-token` edge function.
