@@ -14,6 +14,8 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.cridergpt.android.databinding.ActivityMainBinding
+import com.cridergpt.android.services.FCMTokenService
+import com.cridergpt.android.utils.DeepLink
 import com.cridergpt.android.utils.LocationUpdatesService
 import com.cridergpt.android.utils.NfcManager
 import com.cridergpt.android.viewmodels.AuthViewModel
@@ -102,17 +104,39 @@ class MainActivity : AppCompatActivity() {
             if (user == null) {
                 // Navigate to login if not authenticated
                 navController.navigate(R.id.navigation_auth)
+            } else {
+                // Push: ensure FCM token is on file for this signed-in user.
+                FCMTokenService.syncCurrentToken()
             }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleIntent(intent)
     }
 
     private fun handleIntent(intent: Intent) {
         nfcManager.handleNfcIntent(intent)
+
+        // Deep link routing
+        DeepLink.fromIntent(intent)?.let { link ->
+            val nav = (supportFragmentManager
+                .findFragmentById(R.id.nav_host_fragment_activity_main) as NavHostFragment)
+                .navController
+            when (link) {
+                is DeepLink.Tag -> {
+                    val args = android.os.Bundle().apply { putString("tag_id", link.tagId) }
+                    nav.navigate(R.id.navigation_smart_id, args)
+                }
+                DeepLink.Chat      -> nav.navigate(R.id.navigation_chat)
+                DeepLink.SmartId   -> nav.navigate(R.id.navigation_smart_id)
+                DeepLink.Livestock -> nav.navigate(R.id.navigation_livestock)
+                DeepLink.Events    -> nav.navigate(R.id.navigation_calendar)
+                DeepLink.Profile   -> nav.navigate(R.id.navigation_profile)
+            }
+        }
     }
 
     override fun onResume() {
