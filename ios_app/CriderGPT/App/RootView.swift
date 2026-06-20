@@ -28,33 +28,29 @@ struct RootView: View {
 ///   Stage 5: + Profile (with IAP, calculators)
 struct MainTabView: View {
     @EnvironmentObject var auth: AuthService
+    @EnvironmentObject var router: AppRouter
 
     var body: some View {
-        TabView {
-            NavigationStack {
-                ChatView()
-            }
-            .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
+        TabView(selection: $router.selectedTab) {
+            NavigationStack { ChatView() }
+                .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
+                .tag(AppRouter.Tab.chat)
 
-            NavigationStack {
-                SmartIDView()
-            }
-            .tabItem { Label("Smart ID", systemImage: "sensor.tag.radiowaves.forward.fill") }
+            NavigationStack { SmartIDView() }
+                .tabItem { Label("Smart ID", systemImage: "sensor.tag.radiowaves.forward.fill") }
+                .tag(AppRouter.Tab.smartID)
 
-            NavigationStack {
-                LivestockView()
-            }
-            .tabItem { Label("Livestock", systemImage: "pawprint.fill") }
+            NavigationStack { LivestockView() }
+                .tabItem { Label("Livestock", systemImage: "pawprint.fill") }
+                .tag(AppRouter.Tab.livestock)
 
-            NavigationStack {
-                EventsView()
-            }
-            .tabItem { Label("Calendar", systemImage: "calendar") }
+            NavigationStack { EventsView() }
+                .tabItem { Label("Calendar", systemImage: "calendar") }
+                .tag(AppRouter.Tab.events)
 
-            NavigationStack {
-                ProfileView()
-            }
-            .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
+            NavigationStack { ProfileView() }
+                .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
+                .tag(AppRouter.Tab.profile)
         }
         .tint(Theme.accent)
         .background(Theme.background.ignoresSafeArea())
