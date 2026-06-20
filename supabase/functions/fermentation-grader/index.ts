@@ -7,12 +7,16 @@ const corsHeaders = {
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
+interface PriorEntry { day_number?: number | null; grade?: string | null; score?: number | null; stage_observed?: string | null; created_at?: string; notes?: string | null; }
 interface ReqBody {
   imageData: string; // data: URL
   productType?: string; // "wine must", "beer wort", "cider"
   stage?: string;       // "primary day 1", "secondary", etc.
   ingredients?: string; // optional context: "blackberry + brown sugar + bread yeast"
   notes?: string;
+  batchName?: string;
+  dayNumber?: number;
+  priorEntries?: PriorEntry[];
 }
 
 serve(async (req) => {
@@ -24,7 +28,7 @@ serve(async (req) => {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { imageData, productType = "wine must", stage = "primary fermentation", ingredients, notes } =
+    const { imageData, productType = "wine must", stage = "primary fermentation", ingredients, notes, batchName, dayNumber, priorEntries } =
       (await req.json()) as ReqBody;
     if (!imageData || !imageData.startsWith("data:image")) {
       return new Response(JSON.stringify({ error: "imageData (data URL) required" }), {
@@ -85,11 +89,24 @@ Confidence rules:
 Never flatter the user. If the setup looks risky (e.g. sealed juice bottle, no airlock, no measured sugar), say so in concerns.`;
 
 
+    const priorBlock = (priorEntries && priorEntries.length)
+      ? `Prior log entries for batch "${batchName ?? "(unnamed)"}" (oldest first):\n` +
+        priorEntries
+          .slice()
+          .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
+          .map(p => `- Day ${p.day_number ?? "?"} | grade ${p.grade ?? "?"} (${p.score ?? "?"}/100) | stage: ${p.stage_observed ?? "?"}${p.notes ? ` | notes: ${p.notes}` : ""}`)
+          .join("\n") +
+        `\n\nCompare today's photo to the trend above. Call out whether activity is rising, peaking, slowing, or stalled vs. prior days.\n`
+      : "";
+
     const userMsg = `Product: ${productType}
 Stage: ${stage}
+${batchName ? `Batch: ${batchName}` : ""}
+${typeof dayNumber === "number" ? `Day number: ${dayNumber}` : ""}
 ${ingredients ? `Ingredients: ${ingredients}` : ""}
 ${notes ? `User notes: ${notes}` : ""}
 
+${priorBlock}
 Grade this batch from the photo. JSON only.`;
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

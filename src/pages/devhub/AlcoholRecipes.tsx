@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X, Bot, Cpu, Cloud } from "lucide-react";
+import { Wine, GlassWater, Beer, Flame, Loader2, Copy, Camera, Sparkles, Image as ImageIcon, X, Bot, Cpu, Cloud, History, Trash2 } from "lucide-react";
+
 
 type Mode = "wine" | "cocktail" | "beer" | "pairing" | "grade" | "ai";
 
@@ -123,8 +124,41 @@ export default function AlcoholRecipes() {
   const [gradeImage, setGradeImage] = useState<string>("");
   const [gradeLoading, setGradeLoading] = useState(false);
   const [gradeReport, setGradeReport] = useState<any>(null);
+  const [batchName, setBatchName] = useState<string>(() => localStorage.getItem("ferm_batch_name") || "");
+  const [dayNumber, setDayNumber] = useState<string>("");
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
+
+  const loadLogs = async (name: string) => {
+    if (!name.trim()) { setLogs([]); return; }
+    setLogsLoading(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("fermentation_logs")
+        .select("*")
+        .eq("batch_name", name.trim())
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setLogs(data || []);
+      // auto-suggest next day number
+      const maxDay = (data || []).reduce((m: number, r: any) => Math.max(m, r.day_number ?? 0), 0);
+      if (!dayNumber) setDayNumber(String(maxDay + 1));
+    } catch (e) {
+      // ignore — table may be empty or user not signed in
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (mode === "grade" && batchName) loadLogs(batchName);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  useEffect(() => { if (batchName) localStorage.setItem("ferm_batch_name", batchName); }, [batchName]);
 
   // AI-tab state (local-first via hybrid router)
   const [aiPrompt, setAiPrompt] = useState("");
@@ -209,6 +243,11 @@ export default function AlcoholRecipes() {
     setGradeLoading(true);
     setGradeReport(null);
     try {
+      const dayNum = dayNumber ? parseInt(dayNumber, 10) : undefined;
+      const priorEntries = logs.map((l) => ({
+        day_number: l.day_number, grade: l.grade, score: l.score,
+        stage_observed: l.stage_observed, created_at: l.created_at, notes: l.notes,
+      }));
       const { data, error } = await supabase.functions.invoke("fermentation-grader", {
         body: {
           imageData: gradeImage,
@@ -216,16 +255,52 @@ export default function AlcoholRecipes() {
           stage: extra.stage || "primary fermentation",
           ingredients: extra.ingredients,
           notes: extra.gradeNotes,
+          batchName: batchName.trim() || undefined,
+          dayNumber: dayNum,
+          priorEntries: priorEntries.length ? priorEntries : undefined,
         },
       });
       if (error) throw new Error(error.message || "Grader failed");
       if ((data as any)?.error) throw new Error((data as any).error);
       const report = (data as any)?.report || data;
       setGradeReport(report);
+
+      // Auto-save to log if batch name provided + user signed in
+      if (batchName.trim()) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          const { error: insErr } = await (supabase as any).from("fermentation_logs").insert({
+            user_id: userData.user.id,
+            batch_name: batchName.trim(),
+            day_number: dayNum ?? null,
+            image_url: gradeImage.length < 500_000 ? gradeImage : null, // skip huge data URLs
+            report,
+            grade: report?.grade ?? null,
+            score: typeof report?.score === "number" ? report.score : null,
+            stage_observed: report?.stage_observed ?? null,
+            product_type: extra.productType || "wine must",
+            ingredients: extra.ingredients || null,
+            notes: extra.gradeNotes || null,
+          });
+          if (!insErr) {
+            toast({ title: "Logged", description: `Saved day ${dayNum ?? "?"} of "${batchName.trim()}".` });
+            loadLogs(batchName);
+            setDayNumber(String((dayNum ?? 0) + 1));
+          }
+        }
+      }
     } catch (e: any) {
       toast({ title: "Grading failed", description: (e?.message || "Unknown error").slice(0, 220), variant: "destructive" });
     } finally {
       setGradeLoading(false);
+    }
+  };
+
+  const deleteLog = async (id: string) => {
+    const { error } = await (supabase as any).from("fermentation_logs").delete().eq("id", id);
+    if (!error) {
+      setLogs((p) => p.filter((l) => l.id !== id));
+      toast({ title: "Deleted" });
     }
   };
 
@@ -335,6 +410,27 @@ export default function AlcoholRecipes() {
                 </TabsContent>
 
                 <TabsContent value="grade" className="space-y-3 mt-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                      <label className="text-xs text-muted-foreground">Batch name (track day-by-day)</label>
+                      <Input
+                        placeholder="e.g. Grape Juice #1"
+                        value={batchName}
+                        onChange={(e) => setBatchName(e.target.value)}
+                        onBlur={() => loadLogs(batchName)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Day #</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="2"
+                        value={dayNumber}
+                        onChange={(e) => setDayNumber(e.target.value)}
+                      />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground">Product</label>
@@ -449,6 +545,44 @@ export default function AlcoholRecipes() {
                             </ul>
                           </div>
                         )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {batchName && (
+                    <Card className="bg-muted/20">
+                      <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <History className="h-4 w-4" /> Log — "{batchName}"
+                          {logsLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                        </CardTitle>
+                        <Button variant="ghost" size="sm" onClick={() => loadLogs(batchName)}>Refresh</Button>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {logs.length === 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            No entries yet. Snap a photo each day and they'll show up here.
+                          </div>
+                        )}
+                        {logs.map((l) => (
+                          <div key={l.id} className="flex items-center gap-2 text-xs border border-border rounded p-2">
+                            {l.image_url && (
+                              <img src={l.image_url} alt={`day ${l.day_number}`} className="h-12 w-12 object-cover rounded" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">Day {l.day_number ?? "?"}</Badge>
+                                <Badge>{l.grade ?? "?"}</Badge>
+                                {typeof l.score === "number" && <span className="text-muted-foreground">{l.score}/100</span>}
+                                <span className="text-muted-foreground ml-auto">{new Date(l.created_at).toLocaleDateString()}</span>
+                              </div>
+                              {l.stage_observed && <div className="text-muted-foreground truncate">{l.stage_observed}</div>}
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLog(l.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
                       </CardContent>
                     </Card>
                   )}

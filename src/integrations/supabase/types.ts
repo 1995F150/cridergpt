@@ -1817,6 +1817,54 @@ export type Database = {
         }
         Relationships: []
       }
+      fermentation_logs: {
+        Row: {
+          batch_name: string
+          created_at: string
+          day_number: number | null
+          grade: string | null
+          id: string
+          image_url: string | null
+          ingredients: string | null
+          notes: string | null
+          product_type: string | null
+          report: Json | null
+          score: number | null
+          stage_observed: string | null
+          user_id: string
+        }
+        Insert: {
+          batch_name: string
+          created_at?: string
+          day_number?: number | null
+          grade?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: string | null
+          notes?: string | null
+          product_type?: string | null
+          report?: Json | null
+          score?: number | null
+          stage_observed?: string | null
+          user_id: string
+        }
+        Update: {
+          batch_name?: string
+          created_at?: string
+          day_number?: number | null
+          grade?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: string | null
+          notes?: string | null
+          product_type?: string | null
+          report?: Json | null
+          score?: number | null
+          stage_observed?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       filter_orders: {
         Row: {
           admin_notes: string | null
