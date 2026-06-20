@@ -73,6 +73,12 @@ struct ProfileView: View {
                 row(icon: "function", title: "Calculators", trailing: "›")
             }
             Divider().overlay(Theme.surfaceElevated)
+            Button {
+                AppDelegate.requestPushAuthorization()
+            } label: {
+                row(icon: "bell.badge.fill", title: "Enable notifications", trailing: "›")
+            }
+            Divider().overlay(Theme.surfaceElevated)
             Button { Task { await auth.signOut() } } label: {
                 row(icon: "rectangle.portrait.and.arrow.right", title: "Sign out", trailing: "")
                     .foregroundStyle(.red)

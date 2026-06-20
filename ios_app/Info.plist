@@ -36,18 +36,40 @@
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
+            <key>CFBundleURLName</key>
+            <string>com.google.signin</string>
             <key>CFBundleURLSchemes</key>
             <array>
                 <!-- Reverse of GIDClientID -->
                 <string>com.googleusercontent.apps.REPLACE_WITH_GOOGLE_IOS_CLIENT_ID</string>
             </array>
         </dict>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>app.cridergpt.deeplink</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>cridergpt</string>
+            </array>
+        </dict>
     </array>
+
+    <!-- Universal Links: also requires Associated Domains capability with
+         "applinks:cridergpt.com" and a matching apple-app-site-association
+         file hosted at https://cridergpt.com/.well-known/. -->
 
     <!-- Smart ID (CoreNFC). Also requires entitlement
          `com.apple.developer.nfc.readersession.formats` = ["NDEF"] enabled in
          Xcode → Signing & Capabilities → Near Field Communication Tag Reading. -->
     <key>NFCReaderUsageDescription</key>
     <string>CriderGPT reads Smart ID NFC tags to look up livestock and owner contact info.</string>
+
+    <!-- Push notifications: also requires the "Push Notifications" capability
+         in Xcode → Signing & Capabilities, and Background Modes →
+         "Remote notifications" if you plan to do silent pushes. -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+    </array>
 </dict>
 </plist>
