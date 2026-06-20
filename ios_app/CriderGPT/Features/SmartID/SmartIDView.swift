@@ -36,7 +36,13 @@ struct SmartIDView: View {
                 }
             }
         }
+        .onReceive(router.$pendingTagLookup.compactMap { $0 }) { id in
+            vm.manualInput = id
+            Task { await vm.lookupManual() }
+            router.pendingTagLookup = nil
+        }
     }
+
 
     private var scanCard: some View {
         VStack(spacing: 12) {
