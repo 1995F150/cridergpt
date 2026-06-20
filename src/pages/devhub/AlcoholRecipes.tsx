@@ -128,8 +128,25 @@ export default function AlcoholRecipes() {
   const [dayNumber, setDayNumber] = useState<string>("");
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [batches, setBatches] = useState<string[]>([]);
+  const [newBatchName, setNewBatchName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
+
+  const loadBatches = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from("fermentation_logs")
+        .select("batch_name")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      const names = Array.from(new Set((data || []).map((r: any) => r.batch_name).filter(Boolean))) as string[];
+      setBatches(names);
+    } catch {
+      // ignore
+    }
+  };
 
   const loadLogs = async (name: string) => {
     if (!name.trim()) { setLogs([]); return; }
@@ -140,12 +157,11 @@ export default function AlcoholRecipes() {
         .select("*")
         .eq("batch_name", name.trim())
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
       if (error) throw error;
       setLogs(data || []);
-      // auto-suggest next day number
       const maxDay = (data || []).reduce((m: number, r: any) => Math.max(m, r.day_number ?? 0), 0);
-      if (!dayNumber) setDayNumber(String(maxDay + 1));
+      setDayNumber(String(maxDay + 1));
     } catch (e) {
       // ignore — table may be empty or user not signed in
     } finally {
@@ -153,8 +169,34 @@ export default function AlcoholRecipes() {
     }
   };
 
+  const selectBatch = (name: string) => {
+    setBatchName(name);
+    setGradeImage("");
+    setGradeReport(null);
+    loadLogs(name);
+  };
+
+  const startNewBatch = () => {
+    const name = newBatchName.trim();
+    if (!name) {
+      toast({ title: "Name it first", description: "Give your batch a name like 'Apple Cider #1'.", variant: "destructive" });
+      return;
+    }
+    setBatchName(name);
+    setNewBatchName("");
+    setDayNumber("1");
+    setLogs([]);
+    setGradeImage("");
+    setGradeReport(null);
+    setBatches((p) => p.includes(name) ? p : [name, ...p]);
+    toast({ title: "Batch started", description: `Now logging to "${name}".` });
+  };
+
   useEffect(() => {
-    if (mode === "grade" && batchName) loadLogs(batchName);
+    if (mode === "grade") {
+      loadBatches();
+      if (batchName) loadLogs(batchName);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
