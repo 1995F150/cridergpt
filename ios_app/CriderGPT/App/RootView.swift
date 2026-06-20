@@ -33,15 +33,6 @@ struct MainTabView: View {
         TabView {
             NavigationStack {
                 ChatView()
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                Task { await auth.signOut() }
-                            } label: {
-                                Image(systemName: "person.crop.circle")
-                            }
-                        }
-                    }
             }
             .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
 
@@ -59,6 +50,11 @@ struct MainTabView: View {
                 EventsView()
             }
             .tabItem { Label("Calendar", systemImage: "calendar") }
+
+            NavigationStack {
+                ProfileView()
+            }
+            .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
         }
         .tint(Theme.accent)
         .background(Theme.background.ignoresSafeArea())
