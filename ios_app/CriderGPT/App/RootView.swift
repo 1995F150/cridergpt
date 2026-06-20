@@ -44,6 +44,11 @@ struct MainTabView: View {
                     }
             }
             .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
+
+            NavigationStack {
+                SmartIDView()
+            }
+            .tabItem { Label("Smart ID", systemImage: "sensor.tag.radiowaves.forward.fill") }
         }
         .tint(Theme.accent)
         .background(Theme.background.ignoresSafeArea())

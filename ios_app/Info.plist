@@ -43,5 +43,11 @@
             </array>
         </dict>
     </array>
+
+    <!-- Smart ID (CoreNFC). Also requires entitlement
+         `com.apple.developer.nfc.readersession.formats` = ["NDEF"] enabled in
+         Xcode → Signing & Capabilities → Near Field Communication Tag Reading. -->
+    <key>NFCReaderUsageDescription</key>
+    <string>CriderGPT reads Smart ID NFC tags to look up livestock and owner contact info.</string>
 </dict>
 </plist>
