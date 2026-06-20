@@ -23,9 +23,9 @@ enum DeepLink: Equatable {
 
         // Tag lookup: /tag/<id>
         if let first = parts.first?.lowercased(), first == "tag",
-           let raw = parts.dropFirst().first,
-           let id = TagIdParser.normalize(raw) {
-            return .tag(id)
+           let raw = parts.dropFirst().first {
+            let id = TagIdParser.normalize(raw)
+            if TagIdParser.looksValid(id) { return .tag(id) }
         }
 
         // Section routing — accept either host (custom scheme) or first path segment (https)
