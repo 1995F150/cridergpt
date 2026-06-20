@@ -548,6 +548,44 @@ export default function AlcoholRecipes() {
                       </CardContent>
                     </Card>
                   )}
+
+                  {batchName && (
+                    <Card className="bg-muted/20">
+                      <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <History className="h-4 w-4" /> Log — "{batchName}"
+                          {logsLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                        </CardTitle>
+                        <Button variant="ghost" size="sm" onClick={() => loadLogs(batchName)}>Refresh</Button>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {logs.length === 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            No entries yet. Snap a photo each day and they'll show up here.
+                          </div>
+                        )}
+                        {logs.map((l) => (
+                          <div key={l.id} className="flex items-center gap-2 text-xs border border-border rounded p-2">
+                            {l.image_url && (
+                              <img src={l.image_url} alt={`day ${l.day_number}`} className="h-12 w-12 object-cover rounded" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">Day {l.day_number ?? "?"}</Badge>
+                                <Badge>{l.grade ?? "?"}</Badge>
+                                {typeof l.score === "number" && <span className="text-muted-foreground">{l.score}/100</span>}
+                                <span className="text-muted-foreground ml-auto">{new Date(l.created_at).toLocaleDateString()}</span>
+                              </div>
+                              {l.stage_observed && <div className="text-muted-foreground truncate">{l.stage_observed}</div>}
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLog(l.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
                 </TabsContent>
                 <TabsContent value="ai" className="space-y-3 mt-4">
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
