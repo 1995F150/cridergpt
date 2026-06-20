@@ -35,7 +35,7 @@ ios_app/
 2. Open this folder: `File → Open → ios_app/Package.swift`. Xcode will resolve packages.
 3. Add an Xcode project wrapper (only needed for App Store builds, not for running in simulator from SPM):
    - `File → New → Project → iOS App`
-   - Product name: **CriderGPT**, Bundle ID: **com.cridergpt.ios**, Interface: **SwiftUI**, Language: **Swift**, target iOS 16.
+   - Product name: **CriderGPT**, Bundle ID: **app.cridergpt.ios**, Interface: **SwiftUI**, Language: **Swift**, target iOS 16.
    - Drop the `CriderGPT/` folder into the new project's "CriderGPT" group, "Copy items if needed" UNCHECKED, "Create groups" selected.
    - In project settings → Signing & Capabilities → enable **Sign in with Apple**. Add other capabilities (Push Notifications, Associated Domains for `applinks:cridergpt.com`, Near Field Communication Tag Reading) in later stages when those features land.
 4. Add Info.plist values from `ios_app/Info.plist` (or replace the generated one).
