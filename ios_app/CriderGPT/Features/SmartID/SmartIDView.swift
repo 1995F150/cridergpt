@@ -5,6 +5,7 @@ import SwiftUI
 /// animal record; unauthorized scans show the public owner-contact card.
 struct SmartIDView: View {
     @StateObject private var vm = SmartIDViewModel()
+    @EnvironmentObject private var router: AppRouter
 
     var body: some View {
         ScrollView {
