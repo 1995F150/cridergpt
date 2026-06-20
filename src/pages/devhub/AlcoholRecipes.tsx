@@ -473,6 +473,52 @@ export default function AlcoholRecipes() {
                       />
                     </div>
                   </div>
+                  <Card className="bg-muted/20">
+                    <CardContent className="space-y-3 pt-4">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Active batch</label>
+                        {batches.length > 0 ? (
+                          <Select value={batchName} onValueChange={selectBatch}>
+                            <SelectTrigger><SelectValue placeholder="Pick a batch to log into" /></SelectTrigger>
+                            <SelectContent>
+                              {batches.map((b) => (
+                                <SelectItem key={b} value={b}>{b}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="text-xs text-muted-foreground py-2">No batches yet. Start one below.</div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">Start a new batch</label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="e.g. Apple Cider #1"
+                            value={newBatchName}
+                            onChange={(e) => setNewBatchName(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); startNewBatch(); } }}
+                          />
+                          <Button type="button" onClick={startNewBatch}>+ New</Button>
+                        </div>
+                      </div>
+                      {batchName && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground">Logging to:</span>
+                          <Badge>{batchName}</Badge>
+                          <span className="text-muted-foreground ml-auto">Next: Day</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={dayNumber}
+                            onChange={(e) => setDayNumber(e.target.value)}
+                            className="h-7 w-16"
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground">Product</label>
