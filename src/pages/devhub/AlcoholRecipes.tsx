@@ -452,27 +452,6 @@ export default function AlcoholRecipes() {
                 </TabsContent>
 
                 <TabsContent value="grade" className="space-y-3 mt-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2">
-                      <label className="text-xs text-muted-foreground">Batch name (track day-by-day)</label>
-                      <Input
-                        placeholder="e.g. Grape Juice #1"
-                        value={batchName}
-                        onChange={(e) => setBatchName(e.target.value)}
-                        onBlur={() => loadLogs(batchName)}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Day #</label>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="2"
-                        value={dayNumber}
-                        onChange={(e) => setDayNumber(e.target.value)}
-                      />
-                    </div>
-                  </div>
                   <Card className="bg-muted/20">
                     <CardContent className="space-y-3 pt-4">
                       <div>
