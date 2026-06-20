@@ -30,35 +30,23 @@ struct MainTabView: View {
     @EnvironmentObject var auth: AuthService
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                Spacer()
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 56))
-                    .foregroundStyle(Theme.accent)
-                Text("Signed in")
-                    .font(.title2.bold())
-                    .foregroundStyle(Theme.textPrimary)
-                Text("Feature tabs land in the next stages.\nNo broken placeholder screens.")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Theme.textSecondary)
-                    .padding(.horizontal)
-                Spacer()
-                Button(role: .destructive) {
-                    Task { await auth.signOut() }
-                } label: {
-                    Text("Sign out")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Theme.surfaceAlt)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
-                }
-                .padding(.horizontal)
-                .padding(.bottom)
+        TabView {
+            NavigationStack {
+                ChatView()
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                Task { await auth.signOut() }
+                            } label: {
+                                Image(systemName: "person.crop.circle")
+                            }
+                        }
+                    }
             }
-            .background(Theme.background.ignoresSafeArea())
-            .navigationTitle("CriderGPT")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
         }
+        .tint(Theme.accent)
+        .background(Theme.background.ignoresSafeArea())
+        .toolbarColorScheme(.dark, for: .navigationBar, .tabBar)
     }
 }
