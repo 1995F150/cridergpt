@@ -41,17 +41,5 @@ enum DeepLink: Equatable {
     }
 }
 
-/// Mirror of the Android/web tag normalizer so deep links and pasted text agree.
-enum TagIdParser {
-    private static let rx = try! NSRegularExpression(pattern: "CriderGPT-[A-Z0-9]{6}", options: [.caseInsensitive])
+// TagIdParser is defined in Features/SmartID/SmartIDModels.swift and reused here.
 
-    static func normalize(_ raw: String) -> String? {
-        var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if s.hasPrefix("{") && s.hasSuffix("}") { s = String(s.dropFirst().dropLast()) }
-        s = s.removingPercentEncoding ?? s
-        let range = NSRange(s.startIndex..., in: s)
-        guard let m = rx.firstMatch(in: s, range: range),
-              let r = Range(m.range, in: s) else { return nil }
-        return String(s[r]).uppercased()
-    }
-}
