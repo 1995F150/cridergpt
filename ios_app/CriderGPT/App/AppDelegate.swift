@@ -56,13 +56,16 @@ enum PushRegistration {
     static func register(token: String) async {
         do {
             let label = await UIDevice.current.name
-            _ = try await SupabaseClient.shared.functions.invoke(
+            struct Body: Encodable {
+                let platform: String
+                let token: String
+                let device_label: String
+            }
+            _ = try await SB.client.functions.invoke(
                 "register-device-token",
-                options: .init(body: [
-                    "platform": "ios",
-                    "token": token,
-                    "device_label": label,
-                ])
+                options: FunctionInvokeOptions(body: Body(
+                    platform: "ios", token: token, device_label: label
+                ))
             )
             print("[Push] registered APNS token")
         } catch {
