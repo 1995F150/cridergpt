@@ -28,7 +28,7 @@ struct ProfileView: View {
                 Circle().fill(Theme.surfaceElevated).frame(width: 72, height: 72)
                 Image(systemName: "person.fill").font(.system(size: 32)).foregroundStyle(Theme.accent)
             }
-            Text(auth.profile?.display_name ?? auth.profile?.email ?? "Signed in")
+            Text(auth.profile?.fullName ?? auth.profile?.username ?? "Signed in")
                 .font(.headline).foregroundStyle(Theme.textPrimary)
             Text(iap.tierName + " plan")
                 .font(.caption).padding(.horizontal, 10).padding(.vertical, 3)

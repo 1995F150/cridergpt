@@ -33,15 +33,6 @@ struct MainTabView: View {
         TabView {
             NavigationStack {
                 ChatView()
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                Task { await auth.signOut() }
-                            } label: {
-                                Image(systemName: "person.crop.circle")
-                            }
-                        }
-                    }
             }
             .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
 
