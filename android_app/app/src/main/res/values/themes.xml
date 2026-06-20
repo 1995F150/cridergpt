@@ -1,23 +1,24 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.CriderGPT" parent="Theme.Material3.DayNight">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">#1f8b4c</item>
-        <item name="colorPrimaryVariant">#1f8b4c</item>
-        <item name="colorOnPrimary">@android:color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">#1f8b4c</item>
-        <item name="colorSecondaryVariant">#1f8b4c</item>
-        <item name="colorOnSecondary">@android:color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
-        <!-- Background color. -->
-        <item name="android:colorBackground">#1a1a2e</item>
+    <!-- Dark cyber-blue theme mirroring iOS Theme.swift + web tokens. -->
+    <style name="Theme.CriderGPT" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#3FB6FF</item>
+        <item name="colorPrimaryVariant">#1E90FF</item>
+        <item name="colorOnPrimary">#0B0F14</item>
+        <item name="colorSecondary">#3FB6FF</item>
+        <item name="colorSecondaryVariant">#1E90FF</item>
+        <item name="colorOnSecondary">#0B0F14</item>
+        <item name="colorSurface">#121821</item>
+        <item name="colorOnSurface">#F5F7FA</item>
+        <item name="android:colorBackground">#0B0F14</item>
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor" tools:targetApi="l">#0B0F14</item>
+        <item name="android:navigationBarColor" tools:targetApi="l">#0B0F14</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
     </style>
 
     <!-- Splash Screen Theme -->
     <style name="Theme.CriderGPT.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/primary_dark</item>
+        <item name="windowSplashScreenBackground">#0B0F14</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
         <item name="windowSplashScreenAnimationDuration">300</item>
         <item name="postSplashScreenTheme">@style/Theme.CriderGPT</item>

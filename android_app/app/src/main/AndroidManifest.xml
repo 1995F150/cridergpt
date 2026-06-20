@@ -62,6 +62,25 @@
                 <action android:name="android.nfc.action.TAG_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+
+            <!-- Deep links: cridergpt://tag/CriderGPT-XXXXXX, /chat, /livestock, etc. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="cridergpt" />
+            </intent-filter>
+
+            <!-- App Links: https://cridergpt.com/tag/… (requires assetlinks.json at
+                 https://cridergpt.com/.well-known/assetlinks.json with this app's
+                 SHA-256 signing cert fingerprint before autoVerify will succeed). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="cridergpt.com" />
+                <data android:scheme="https" android:host="www.cridergpt.com" />
+            </intent-filter>
         </activity>
     </application>
 
