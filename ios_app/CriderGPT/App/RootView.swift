@@ -49,6 +49,16 @@ struct MainTabView: View {
                 SmartIDView()
             }
             .tabItem { Label("Smart ID", systemImage: "sensor.tag.radiowaves.forward.fill") }
+
+            NavigationStack {
+                LivestockView()
+            }
+            .tabItem { Label("Livestock", systemImage: "pawprint.fill") }
+
+            NavigationStack {
+                EventsView()
+            }
+            .tabItem { Label("Calendar", systemImage: "calendar") }
         }
         .tint(Theme.accent)
         .background(Theme.background.ignoresSafeArea())
