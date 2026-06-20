@@ -243,6 +243,11 @@ export default function AlcoholRecipes() {
     setGradeLoading(true);
     setGradeReport(null);
     try {
+      const dayNum = dayNumber ? parseInt(dayNumber, 10) : undefined;
+      const priorEntries = logs.map((l) => ({
+        day_number: l.day_number, grade: l.grade, score: l.score,
+        stage_observed: l.stage_observed, created_at: l.created_at, notes: l.notes,
+      }));
       const { data, error } = await supabase.functions.invoke("fermentation-grader", {
         body: {
           imageData: gradeImage,
@@ -250,16 +255,52 @@ export default function AlcoholRecipes() {
           stage: extra.stage || "primary fermentation",
           ingredients: extra.ingredients,
           notes: extra.gradeNotes,
+          batchName: batchName.trim() || undefined,
+          dayNumber: dayNum,
+          priorEntries: priorEntries.length ? priorEntries : undefined,
         },
       });
       if (error) throw new Error(error.message || "Grader failed");
       if ((data as any)?.error) throw new Error((data as any).error);
       const report = (data as any)?.report || data;
       setGradeReport(report);
+
+      // Auto-save to log if batch name provided + user signed in
+      if (batchName.trim()) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          const { error: insErr } = await (supabase as any).from("fermentation_logs").insert({
+            user_id: userData.user.id,
+            batch_name: batchName.trim(),
+            day_number: dayNum ?? null,
+            image_url: gradeImage.length < 500_000 ? gradeImage : null, // skip huge data URLs
+            report,
+            grade: report?.grade ?? null,
+            score: typeof report?.score === "number" ? report.score : null,
+            stage_observed: report?.stage_observed ?? null,
+            product_type: extra.productType || "wine must",
+            ingredients: extra.ingredients || null,
+            notes: extra.gradeNotes || null,
+          });
+          if (!insErr) {
+            toast({ title: "Logged", description: `Saved day ${dayNum ?? "?"} of "${batchName.trim()}".` });
+            loadLogs(batchName);
+            setDayNumber(String((dayNum ?? 0) + 1));
+          }
+        }
+      }
     } catch (e: any) {
       toast({ title: "Grading failed", description: (e?.message || "Unknown error").slice(0, 220), variant: "destructive" });
     } finally {
       setGradeLoading(false);
+    }
+  };
+
+  const deleteLog = async (id: string) => {
+    const { error } = await (supabase as any).from("fermentation_logs").delete().eq("id", id);
+    if (!error) {
+      setLogs((p) => p.filter((l) => l.id !== id));
+      toast({ title: "Deleted" });
     }
   };
 
