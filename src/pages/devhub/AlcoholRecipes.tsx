@@ -124,8 +124,41 @@ export default function AlcoholRecipes() {
   const [gradeImage, setGradeImage] = useState<string>("");
   const [gradeLoading, setGradeLoading] = useState(false);
   const [gradeReport, setGradeReport] = useState<any>(null);
+  const [batchName, setBatchName] = useState<string>(() => localStorage.getItem("ferm_batch_name") || "");
+  const [dayNumber, setDayNumber] = useState<string>("");
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
+
+  const loadLogs = async (name: string) => {
+    if (!name.trim()) { setLogs([]); return; }
+    setLogsLoading(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("fermentation_logs")
+        .select("*")
+        .eq("batch_name", name.trim())
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setLogs(data || []);
+      // auto-suggest next day number
+      const maxDay = (data || []).reduce((m: number, r: any) => Math.max(m, r.day_number ?? 0), 0);
+      if (!dayNumber) setDayNumber(String(maxDay + 1));
+    } catch (e) {
+      // ignore — table may be empty or user not signed in
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (mode === "grade" && batchName) loadLogs(batchName);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  useEffect(() => { if (batchName) localStorage.setItem("ferm_batch_name", batchName); }, [batchName]);
 
   // AI-tab state (local-first via hybrid router)
   const [aiPrompt, setAiPrompt] = useState("");
