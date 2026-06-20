@@ -28,7 +28,7 @@ serve(async (req) => {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { imageData, productType = "wine must", stage = "primary fermentation", ingredients, notes } =
+    const { imageData, productType = "wine must", stage = "primary fermentation", ingredients, notes, batchName, dayNumber, priorEntries } =
       (await req.json()) as ReqBody;
     if (!imageData || !imageData.startsWith("data:image")) {
       return new Response(JSON.stringify({ error: "imageData (data URL) required" }), {
