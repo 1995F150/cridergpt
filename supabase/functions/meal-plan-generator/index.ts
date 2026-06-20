@@ -12,6 +12,8 @@ interface ReqBody {
   household_size: number;
   period?: string;
   notes?: string;
+  spent?: number;
+  days_remaining?: number;
 }
 
 serve(async (req) => {
@@ -23,38 +25,43 @@ serve(async (req) => {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { budget, household_size, period = "weekly", notes } = (await req.json()) as ReqBody;
+    const { budget, household_size, period = "weekly", notes, spent = 0, days_remaining } = (await req.json()) as ReqBody;
     if (!budget || budget <= 0) {
       return new Response(JSON.stringify({ error: "budget required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const remaining = Math.max(0, Number(budget) - Number(spent || 0));
+    const daysLeft = Math.max(1, Math.min(7, Number(days_remaining) || 7));
 
     const system = `You are Jessie Crider — Southern, Gen Z, FFA Historian, homesteader.
-Plan 7 days of meals for a household on a strict food budget. Real grocery store prices (US, rural). Use leftovers across days. Bias toward bulk cuts, eggs, beans, rice, garden veg, deer/beef the user might have on hand.
+Plan meals for a household on a STRICT food budget. Real grocery store prices (US, rural Walmart). Use leftovers across days. Bias toward bulk cuts, eggs, beans, rice, garden veg, deer/beef the user might have on hand.
 
 Return STRICT JSON only, no markdown fences, matching:
 {
-  "summary": "1-2 sentence headline (e.g. 'Stretches $120 for 2 across 7 days with 3 leftover dinners.')",
-  "total_estimated": <number, total est cost across the week>,
+  "summary": "1-2 sentence headline mentioning remaining budget and days covered",
+  "total_estimated": <number, total est cost across the planned days>,
   "days": [
-    { "day": "Mon", "breakfast": "...", "lunch": "...", "dinner": "...", "snack": "...", "est_cost": <number> },
-    ... 7 entries Mon..Sun
+    { "day": "Mon", "breakfast": "...", "lunch": "...", "dinner": "...", "snack": "...", "est_cost": <number> }
   ],
   "grocery_list": [ { "item": "Ground beef 80/20", "qty": "2 lb", "est_cost": 9.5 }, ... ],
   "savings_tips": [ "short practical tip", ... 3-5 ]
 }
 
 Rules:
-- total_estimated MUST be <= budget. If tight, simplify meals.
+- total_estimated MUST be <= remaining_budget. NEVER go over. If tight, simplify to beans/rice/eggs.
+- Plan exactly days_remaining days (not always 7).
 - Sum of day est_cost should roughly equal total_estimated.
-- household_size scales portions, not necessarily cost linearly.
-- Be specific. No fluff. No "Furthermore".`;
+- household_size scales portions.
+- Be specific. No fluff.`;
 
-    const userMsg = `Budget: $${budget} for the ${period}.
+    const userMsg = `Total ${period} food budget: $${budget}
+Already spent this ${period}: $${spent}
+REMAINING TO SPEND: $${remaining.toFixed(2)}
+Days left to cover: ${daysLeft}
 Household size: ${household_size} people.
 ${notes ? `Notes: ${notes}` : ""}
-Plan a full 7-day menu and grocery list under budget. JSON only.`;
+Plan exactly ${daysLeft} days of meals + grocery list. Total cost MUST stay at or under $${remaining.toFixed(2)}. JSON only.`;
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
