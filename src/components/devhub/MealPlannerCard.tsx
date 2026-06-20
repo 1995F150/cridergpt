@@ -53,13 +53,30 @@ function thisWeekStart(): string {
 export function MealPlannerCard({ foodBudget, period }: Props) {
   const { user } = useAuth();
   const [budget, setBudget] = useState<number>(Math.max(foodBudget || 0, 0));
+  const [spent, setSpent] = useState<number>(0);
   const [household, setHousehold] = useState<number>(2);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<MealPlan | null>(null);
   const [saved, setSaved] = useState<SavedPlan[]>([]);
 
+  const weekStart = thisWeekStart();
+  const spentKey = user ? `mealPlanner:spent:${user.id}:${weekStart}` : `mealPlanner:spent:guest:${weekStart}`;
+  const remaining = Math.max(0, (budget || 0) - (spent || 0));
+  const daysRemaining = Math.max(1, 7 - (((new Date().getDay()) + 6) % 7));
+
   useEffect(() => { setBudget(Math.max(foodBudget || 0, 0)); }, [foodBudget]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(spentKey);
+      setSpent(raw ? Number(raw) || 0 : 0);
+    } catch { /* noop */ }
+  }, [spentKey]);
+
+  useEffect(() => {
+    try { localStorage.setItem(spentKey, String(spent || 0)); } catch { /* noop */ }
+  }, [spent, spentKey]);
 
   useEffect(() => {
     if (!user) return;
@@ -79,17 +96,21 @@ export function MealPlannerCard({ foodBudget, period }: Props) {
       toast.error("Set a food budget first (or fund the Food envelope)");
       return;
     }
+    if (remaining <= 0) {
+      toast.error("No budget left this week — bump spent down or raise budget");
+      return;
+    }
     setLoading(true);
     setPlan(null);
     try {
       const { data, error } = await supabase.functions.invoke("meal-plan-generator", {
-        body: { budget, household_size: household, period, notes: notes.trim() || undefined },
+        body: { budget, household_size: household, period, notes: notes.trim() || undefined, spent, days_remaining: daysRemaining },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       const p: MealPlan = (data as any)?.plan || (data as any);
       setPlan(p);
-      toast.success("Meal plan ready");
+      toast.success(`Plan ready — under $${remaining.toFixed(2)}`);
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || "Meal planner failed");
@@ -97,6 +118,7 @@ export function MealPlannerCard({ foodBudget, period }: Props) {
       setLoading(false);
     }
   };
+
 
   const save = async () => {
     if (!user) { toast.error("Sign in to save plans"); return; }
