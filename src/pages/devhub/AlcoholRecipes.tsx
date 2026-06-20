@@ -128,8 +128,25 @@ export default function AlcoholRecipes() {
   const [dayNumber, setDayNumber] = useState<string>("");
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [batches, setBatches] = useState<string[]>([]);
+  const [newBatchName, setNewBatchName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
+
+  const loadBatches = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from("fermentation_logs")
+        .select("batch_name")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      const names = Array.from(new Set((data || []).map((r: any) => r.batch_name).filter(Boolean))) as string[];
+      setBatches(names);
+    } catch {
+      // ignore
+    }
+  };
 
   const loadLogs = async (name: string) => {
     if (!name.trim()) { setLogs([]); return; }
@@ -140,12 +157,11 @@ export default function AlcoholRecipes() {
         .select("*")
         .eq("batch_name", name.trim())
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
       if (error) throw error;
       setLogs(data || []);
-      // auto-suggest next day number
       const maxDay = (data || []).reduce((m: number, r: any) => Math.max(m, r.day_number ?? 0), 0);
-      if (!dayNumber) setDayNumber(String(maxDay + 1));
+      setDayNumber(String(maxDay + 1));
     } catch (e) {
       // ignore — table may be empty or user not signed in
     } finally {
@@ -153,8 +169,34 @@ export default function AlcoholRecipes() {
     }
   };
 
+  const selectBatch = (name: string) => {
+    setBatchName(name);
+    setGradeImage("");
+    setGradeReport(null);
+    loadLogs(name);
+  };
+
+  const startNewBatch = () => {
+    const name = newBatchName.trim();
+    if (!name) {
+      toast({ title: "Name it first", description: "Give your batch a name like 'Apple Cider #1'.", variant: "destructive" });
+      return;
+    }
+    setBatchName(name);
+    setNewBatchName("");
+    setDayNumber("1");
+    setLogs([]);
+    setGradeImage("");
+    setGradeReport(null);
+    setBatches((p) => p.includes(name) ? p : [name, ...p]);
+    toast({ title: "Batch started", description: `Now logging to "${name}".` });
+  };
+
   useEffect(() => {
-    if (mode === "grade" && batchName) loadLogs(batchName);
+    if (mode === "grade") {
+      loadBatches();
+      if (batchName) loadLogs(batchName);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
@@ -410,27 +452,52 @@ export default function AlcoholRecipes() {
                 </TabsContent>
 
                 <TabsContent value="grade" className="space-y-3 mt-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2">
-                      <label className="text-xs text-muted-foreground">Batch name (track day-by-day)</label>
-                      <Input
-                        placeholder="e.g. Grape Juice #1"
-                        value={batchName}
-                        onChange={(e) => setBatchName(e.target.value)}
-                        onBlur={() => loadLogs(batchName)}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Day #</label>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="2"
-                        value={dayNumber}
-                        onChange={(e) => setDayNumber(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                  <Card className="bg-muted/20">
+                    <CardContent className="space-y-3 pt-4">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Active batch</label>
+                        {batches.length > 0 ? (
+                          <Select value={batchName} onValueChange={selectBatch}>
+                            <SelectTrigger><SelectValue placeholder="Pick a batch to log into" /></SelectTrigger>
+                            <SelectContent>
+                              {batches.map((b) => (
+                                <SelectItem key={b} value={b}>{b}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="text-xs text-muted-foreground py-2">No batches yet. Start one below.</div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">Start a new batch</label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="e.g. Apple Cider #1"
+                            value={newBatchName}
+                            onChange={(e) => setNewBatchName(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); startNewBatch(); } }}
+                          />
+                          <Button type="button" onClick={startNewBatch}>+ New</Button>
+                        </div>
+                      </div>
+                      {batchName && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground">Logging to:</span>
+                          <Badge>{batchName}</Badge>
+                          <span className="text-muted-foreground ml-auto">Next: Day</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={dayNumber}
+                            onChange={(e) => setDayNumber(e.target.value)}
+                            className="h-7 w-16"
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground">Product</label>
