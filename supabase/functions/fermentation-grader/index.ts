@@ -7,12 +7,16 @@ const corsHeaders = {
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
+interface PriorEntry { day_number?: number | null; grade?: string | null; score?: number | null; stage_observed?: string | null; created_at?: string; notes?: string | null; }
 interface ReqBody {
   imageData: string; // data: URL
   productType?: string; // "wine must", "beer wort", "cider"
   stage?: string;       // "primary day 1", "secondary", etc.
   ingredients?: string; // optional context: "blackberry + brown sugar + bread yeast"
   notes?: string;
+  batchName?: string;
+  dayNumber?: number;
+  priorEntries?: PriorEntry[];
 }
 
 serve(async (req) => {
