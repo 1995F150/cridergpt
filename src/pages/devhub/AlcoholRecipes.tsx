@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { supabase } from "@/integrations/supabase/client";
