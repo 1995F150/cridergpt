@@ -28,7 +28,7 @@ export default function IOSStarterExport() {
       a.download = "cridergpt-ios-starter.zip";
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Downloaded — unzip, run `bash reset-xcode-project.sh`, then pick iPhone 14 and Run");
+      toast.success("Downloaded — cd into cridergpt-ios-starter, run bash reset-xcode-project.sh, then pick a simulator and Run");
     } catch (e: any) {
       toast.error(e?.message ?? "Download failed");
     }
@@ -63,7 +63,7 @@ export default function IOSStarterExport() {
               <CardTitle className="text-lg">What's inside</CardTitle>
               <CardDescription>
                 Full website-parity scaffold mirroring the Android starter. The <strong>website is the source of truth</strong> — every screen hits the same Supabase tables/functions.
-                Run <code>bash reset-xcode-project.sh</code> first; it clears stale Xcode output and opens a fresh <code>CriderGPT.xcodeproj</code>.
+                Unzip, <strong>cd into the unzipped folder</strong>, then run <code>bash reset-xcode-project.sh</code> to clear stale Xcode output and open a fresh <code>CriderGPT.xcodeproj</code>.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-3 text-sm">
@@ -150,11 +150,12 @@ export default function IOSStarterExport() {
               <CardTitle className="text-lg">Next steps</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>1. Unzip and run <code>bash reset-xcode-project.sh</code> to produce a fresh <code>.xcodeproj</code>.</p>
-              <p>2. Open in Xcode → set your Apple Team in Signing &amp; Capabilities.</p>
-              <p>3. Run on a device or simulator — sign in with any existing CriderGPT account.</p>
-              <p>4. Paste your real IAP product IDs into <code>Config.swift</code> once App Store Connect is ready (Play Console defaults are already wired).</p>
-              <p>5. Push to your iOS GitHub repo to keep the native client in sync with the website.</p>
+              <p>1. Unzip and <strong>cd into the unzipped folder</strong> (e.g., <code>cd ~/Downloads/cridergpt-ios-starter</code>).</p>
+              <p>2. Run <code>bash reset-xcode-project.sh</code> from that folder to produce a fresh <code>.xcodeproj</code>.</p>
+              <p>3. Open in Xcode → set your Apple Team in Signing &amp; Capabilities.</p>
+              <p>4. Run on a device or simulator — sign in with any existing CriderGPT account.</p>
+              <p>5. Paste your real IAP product IDs into <code>Config.swift</code> once App Store Connect is ready (Play Console defaults are already wired).</p>
+              <p>6. Push to your iOS GitHub repo to keep the native client in sync with the website.</p>
             </CardContent>
           </Card>
         </div>
