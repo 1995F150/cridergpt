@@ -150,11 +150,12 @@ export default function IOSStarterExport() {
               <CardTitle className="text-lg">Next steps</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>1. Unzip and run <code>bash reset-xcode-project.sh</code> to produce a fresh <code>.xcodeproj</code>.</p>
-              <p>2. Open in Xcode → set your Apple Team in Signing &amp; Capabilities.</p>
-              <p>3. Run on a device or simulator — sign in with any existing CriderGPT account.</p>
-              <p>4. Paste your real IAP product IDs into <code>Config.swift</code> once App Store Connect is ready (Play Console defaults are already wired).</p>
-              <p>5. Push to your iOS GitHub repo to keep the native client in sync with the website.</p>
+              <p>1. Unzip and <strong>cd into the unzipped folder</strong> (e.g., <code>cd ~/Downloads/cridergpt-ios-starter</code>).</p>
+              <p>2. Run <code>bash reset-xcode-project.sh</code> from that folder to produce a fresh <code>.xcodeproj</code>.</p>
+              <p>3. Open in Xcode → set your Apple Team in Signing &amp; Capabilities.</p>
+              <p>4. Run on a device or simulator — sign in with any existing CriderGPT account.</p>
+              <p>5. Paste your real IAP product IDs into <code>Config.swift</code> once App Store Connect is ready (Play Console defaults are already wired).</p>
+              <p>6. Push to your iOS GitHub repo to keep the native client in sync with the website.</p>
             </CardContent>
           </Card>
         </div>
