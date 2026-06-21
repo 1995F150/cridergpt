@@ -2137,11 +2137,26 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: .
-        excludes:
-          - "README.md"
-          - "Project.yml"
-          - "Info.plist.txt"
+      # Keep sources explicit so generated files (Info.plist, .xcodeproj,
+      # DerivedData, etc.) never get copied into the app bundle twice.
+      - Config.swift
+      - CriderGPTApp.swift
+      - RootView.swift
+      - MainTabView.swift
+      - Network
+      - Auth
+      - Chat
+      - Gallery
+      - VisionMemory
+      - Livestock
+      - Ideas
+      - Calendar
+      - Profile
+      - DevHub
+      - Navigation
+      - Files
+      - Projects
+      - Plan
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.cridergpt.ios
