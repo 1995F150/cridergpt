@@ -1836,7 +1836,7 @@ struct AutopilotView: View {
         OwnerGate {
             Form {
                 Section { Toggle("Autopilot Enabled", isOn: $enabled)
-                    .onChange(of: enabled) { _, v in Task { await set(v) } }.disabled(loading) }
+                    .onChange(of: enabled) { v in Task { await set(v) } }.disabled(loading) }
                 if let e = errorMsg { Section { Text(e).foregroundStyle(.orange).font(.footnote) } }
                 Section(footer: Text("Toggles autopilot_enabled in user_settings.")) {}
             }
@@ -1915,7 +1915,12 @@ struct AndroidBuilderView: View {
         triggering = false
     }
     private func statusColor(_ s: String?) -> Color {
-        switch s { case "success": .green; case "failed": .red; case "running": .blue; default: .secondary }
+        switch s {
+        case "success": return Color.green
+        case "failed": return Color.red
+        case "running": return Color.blue
+        default: return Color.secondary
+        }
     }
 }
 private struct _AB: Encodable {}
@@ -2180,7 +2185,7 @@ struct AutoPromoView: View {
         OwnerGate {
             Form {
                 Section { Toggle("Auto-Promo Enabled", isOn: $enabled)
-                    .onChange(of: enabled) { _, v in Task { await set(v) } }.disabled(loading) }
+                    .onChange(of: enabled) { v in Task { await set(v) } }.disabled(loading) }
                 if let e = errorMsg { Section { Text(e).foregroundStyle(.orange).font(.footnote) } }
                 Section(footer: Text("Toggles auto_promo_enabled in user_settings. Hourly promo agent reads this flag before posting.")) {}
             }
