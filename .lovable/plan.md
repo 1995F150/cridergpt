@@ -1,19 +1,12 @@
-## Why you're still seeing those errors
+## Why you were seeing those errors
 
-The two red errors — `Cannot find 'ContentUnavailableView' in scope` in `GalleryView` and `LivestockListView` — happen because that SwiftUI API requires **iOS 17+**. The yellow warning ("Traditional headermap style…") is just a deprecation notice from Xcode 16 and is harmless.
+The red errors — `Cannot find 'ContentUnavailableView' in scope` in `GalleryView`, `VisionMemoryView`, `LivestockListView`, and `CalendarView` — happen because that SwiftUI API requires **iOS 17+**. You are building on **Xcode 14**, which only ships the iOS 16 SDK, so those symbols do not exist even though the project was set to target iOS 17.0.
 
-The iOS starter export in this Lovable project was already updated so `Project.yml` sets:
-
-```
-deploymentTarget:
-  iOS: "17.0"
-```
-
-But the folder you ran `reset-xcode-project.sh` against was unzipped **before** that fix landed, so its `Project.yml` still says `iOS: "16.0"`. XcodeGen regenerated the project from the old yml, so Xcode is still building against iOS 16 and the iOS 17 symbol can't resolve.
+The `Project.yml` in the iOS starter export has been changed from iOS 17.0 to iOS 16.0, and the four `ContentUnavailableView` usages have been replaced with iOS 16-compatible `VStack` empty-state views. The `.topBarTrailing` / `.topBarLeading` toolbar placements (also iOS 17-biased) have been swapped for the older `.navigationBarTrailing` / `.navigationBarLeading` placements so Xcode 14 compiles them cleanly.
 
 ## Plan
 
-No code changes needed in Lovable — the source of truth here is already correct. Steps for you on the Mac:
+Get the updated bundle and regenerate the project on your Mac:
 
 1. In Lovable, open **Dev Hub → iOS Starter Export** and click **Download Zip** again to get the updated bundle.
 2. In Terminal:
@@ -24,8 +17,9 @@ No code changes needed in Lovable — the source of truth here is already correc
    cd cridergpt-ios-starter
    bash reset-xcode-project.sh
    ```
-3. After Xcode reopens, confirm under **General → Minimum Deployments** that iPhone shows **17.0**. The two `ContentUnavailableView` errors will be gone.
+3. After Xcode reopens, confirm under **General → Minimum Deployments** that **iPhone** shows **16.0**. The `ContentUnavailableView` errors and any toolbar placement errors should be gone.
 
-If you'd rather patch in place instead of re-downloading, open `Project.yml` in the existing folder and change `iOS: "16.0"` → `iOS: "17.0"` under `deploymentTarget`, then re-run `bash reset-xcode-project.sh`.
-
-Want me to switch to build mode to add a one-line note inside the iOS Starter Export page reminding you to re-download after fixes, or are we good with just the steps above?
+If you would rather patch the folder you already have, change these three things in the existing files before running `bash reset-xcode-project.sh`:
+- `Project.yml` → `deploymentTarget: iOS: "16.0"`
+- Replace every `ContentUnavailableView(...)` with a simple `VStack` containing an `Image(systemName: ...)` and `Text(...)`.
+- Replace every `.topBarTrailing` with `.navigationBarTrailing` and `.topBarLeading` with `.navigationBarLeading`.
