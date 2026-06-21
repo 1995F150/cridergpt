@@ -833,7 +833,7 @@ struct GalleryView: View {
         }
         .navigationTitle("Gallery")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button { Task { await vm.refresh() } } label: { Image(systemName: "arrow.clockwise") }
             }
         }
@@ -972,7 +972,7 @@ struct LivestockListView: View {
         }
         .navigationTitle("Livestock")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showScanner = true } label: { Image(systemName: "barcode.viewfinder") }
             }
         }
@@ -1258,7 +1258,7 @@ struct ProfileView: View {
         }
         .navigationTitle("Profile")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .navigationBarLeading) {
                 Button { withAnimation { showMenu.toggle() } } label: { Image(systemName: "line.3.horizontal") }
             }
         }
@@ -2058,7 +2058,7 @@ struct BackendWiringView: View {
                 }
             }
             .navigationTitle("Backend Wiring")
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Refresh") { Task { await fetch() } } } }
+            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Refresh") { Task { await fetch() } } } }
             .task { await fetch() }
         }
     }
@@ -2524,7 +2524,7 @@ struct SideMenuView: View {
             .navigationTitle("CriderGPT")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Close") { isOpen = false }
                 }
             }
