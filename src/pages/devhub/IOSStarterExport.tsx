@@ -28,7 +28,7 @@ export default function IOSStarterExport() {
       a.download = "cridergpt-ios-starter.zip";
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Downloaded — unzip, run `bash reset-xcode-project.sh`, then pick iPhone 14 and Run");
+      toast.success("Downloaded — cd into cridergpt-ios-starter, run bash reset-xcode-project.sh, then pick a simulator and Run");
     } catch (e: any) {
       toast.error(e?.message ?? "Download failed");
     }
