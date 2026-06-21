@@ -1261,6 +1261,102 @@ final class ProfileViewModel: ObservableObject {
 }
 `,
 
+  "Profile/IAPManager.swift": `import Foundation
+import StoreKit
+
+@MainActor
+final class IAPManager: ObservableObject {
+    static let shared = IAPManager()
+
+    @Published var products: [Product] = []
+    @Published var purchasedProductIDs: Set<String> = []
+    @Published var currentPlanLabel: String = "Free"
+
+    private var updatesTask: Task<Void, Never>?
+
+    private init() {
+        updatesTask = Task { [weak self] in
+            for await result in Transaction.updates {
+                await self?.handle(result)
+            }
+        }
+    }
+
+    deinit { updatesTask?.cancel() }
+
+    func loadProducts() async {
+        do {
+            let loaded = try await Product.products(for: Config.IAP.allProductIDs)
+            self.products = loaded.sorted { $0.price < $1.price }
+        } catch {
+            print("[IAPManager] loadProducts error: \\(error)")
+        }
+    }
+
+    func purchase(_ product: Product) async {
+        do {
+            let result = try await product.purchase()
+            switch result {
+            case .success(let verification):
+                await handle(verification)
+            case .userCancelled, .pending:
+                break
+            @unknown default:
+                break
+            }
+        } catch {
+            print("[IAPManager] purchase error: \\(error)")
+        }
+    }
+
+    func restore() async {
+        try? await AppStore.sync()
+        await refreshEntitlements()
+    }
+
+    func refreshEntitlements() async {
+        var owned: Set<String> = []
+        for await result in Transaction.currentEntitlements {
+            if case .verified(let tx) = result {
+                owned.insert(tx.productID)
+                await verifyServerSide(tx)
+            }
+        }
+        self.purchasedProductIDs = owned
+        self.currentPlanLabel = label(for: owned)
+    }
+
+    private func handle(_ result: VerificationResult<Transaction>) async {
+        guard case .verified(let tx) = result else { return }
+        purchasedProductIDs.insert(tx.productID)
+        currentPlanLabel = label(for: purchasedProductIDs)
+        await verifyServerSide(tx)
+        await tx.finish()
+    }
+
+    private func label(for ids: Set<String>) -> String {
+        if ids.contains(Config.IAP.proMonthly) { return "Pro" }
+        if ids.contains(Config.IAP.plusMonthly) { return "Plus" }
+        return "Free"
+    }
+
+    private func verifyServerSide(_ tx: Transaction) async {
+        guard let uid = SessionManager.shared.userId else { return }
+        let payload: [String: Any] = [
+            "user_id": uid,
+            "product_id": tx.productID,
+            "transaction_id": String(tx.id),
+            "original_transaction_id": String(tx.originalID),
+            "platform": "ios"
+        ]
+        _ = try? await SupabaseClient.shared.invokeFunction(
+            Config.verifyIapFunction,
+            body: payload
+        )
+    }
+}
+`,
+
   "Profile/SubscriptionView.swift": `import SwiftUI
 import StoreKit
 
