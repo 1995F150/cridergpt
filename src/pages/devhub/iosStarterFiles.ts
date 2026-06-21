@@ -68,13 +68,23 @@ Product IDs live in \`Config.swift\` — paste the exact IDs from App Store Conn
 
 ## Open in Xcode
 
-1. Unzip.
-2. From Terminal inside the unzipped folder, run \`bash reset-xcode-project.sh\`.
-3. The script deletes stale Xcode project/DerivedData output, regenerates \`CriderGPT.xcodeproj\`, then opens it.
-4. Set your Apple Team in Signing & Capabilities.
-5. Plug in an iPhone or pick a simulator → press Run ▶.
+1. Unzip the file (e.g., `cridergpt-ios-starter.zip`).
+2. In Finder, open the unzipped `cridergpt-ios-starter` folder.
+3. Open Terminal and **cd into that folder**:
+   ```bash
+   cd ~/Downloads/cridergpt-ios-starter
+   ```
+   (Use the actual folder path if you put it somewhere else.)
+4. Run the reset script:
+   ```bash
+   bash reset-xcode-project.sh
+   ```
+   The script deletes stale Xcode project/DerivedData output, regenerates `CriderGPT.xcodeproj`, then opens it.
+5. Set your Apple Team in Signing & Capabilities.
+6. Plug in an iPhone or pick a simulator → press Run ▶.
 
-If Xcode ever says **Multiple commands produce**, close Xcode and run \`bash reset-xcode-project.sh\` again. The project file intentionally lists only Swift sources so generated files, old build folders, and \`Info.plist\` are not copied into the app twice.
+If Xcode ever says **Multiple commands produce**, close Xcode and run `bash reset-xcode-project.sh` again from that same folder. The project file intentionally lists only Swift sources so generated files, old build folders, and `Info.plist` are not copied into the app twice.
+
 
 You'll be on the sign-in screen against live Supabase auth.
 `,
