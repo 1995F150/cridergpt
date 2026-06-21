@@ -69,9 +69,12 @@ Product IDs live in \`Config.swift\` — paste the exact IDs from App Store Conn
 ## Open in Xcode
 
 1. Unzip.
-2. Open \`CriderGPT.xcodeproj\` (or use Cursor/AI agent — the entire project is plain text).
-3. Set your Apple Team in Signing & Capabilities.
-4. Plug in an iPhone or pick a simulator → press Run ▶.
+2. From Terminal inside the unzipped folder, run \`xcodegen generate\`.
+3. Open \`CriderGPT.xcodeproj\`.
+4. Set your Apple Team in Signing & Capabilities.
+5. Plug in an iPhone or pick a simulator → press Run ▶.
+
+If Xcode ever says **Multiple commands produce**, delete \`CriderGPT.xcodeproj\`, run \`xcodegen generate\` again, then reopen it. The project file intentionally lists only Swift sources so generated files like \`Info.plist\` are not copied into the app twice.
 
 You'll be on the sign-in screen against live Supabase auth.
 `,
@@ -2134,11 +2137,26 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: .
-        excludes:
-          - "README.md"
-          - "Project.yml"
-          - "Info.plist.txt"
+      # Keep sources explicit so generated files (Info.plist, .xcodeproj,
+      # DerivedData, etc.) never get copied into the app bundle twice.
+      - Config.swift
+      - CriderGPTApp.swift
+      - RootView.swift
+      - MainTabView.swift
+      - Network
+      - Auth
+      - Chat
+      - Gallery
+      - VisionMemory
+      - Livestock
+      - Ideas
+      - Calendar
+      - Profile
+      - DevHub
+      - Navigation
+      - Files
+      - Projects
+      - Plan
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.cridergpt.ios
