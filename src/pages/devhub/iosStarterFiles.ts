@@ -2233,7 +2233,7 @@ options:
   bundleIdPrefix: app.cridergpt
   createIntermediateGroups: true
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "17.0"
 settings:
   base:
     DEVELOPMENT_TEAM: ""
