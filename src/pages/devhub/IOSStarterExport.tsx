@@ -28,7 +28,7 @@ export default function IOSStarterExport() {
       a.download = "cridergpt-ios-starter.zip";
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Downloaded — unzip, run `xcodegen generate`, then open CriderGPT.xcodeproj");
+      toast.success("Downloaded — unzip, run `bash reset-xcode-project.sh`, then pick iPhone 14 and Run");
     } catch (e: any) {
       toast.error(e?.message ?? "Download failed");
     }
@@ -63,7 +63,7 @@ export default function IOSStarterExport() {
               <CardTitle className="text-lg">What's inside</CardTitle>
               <CardDescription>
                 Full website-parity scaffold mirroring the Android starter. The <strong>website is the source of truth</strong> — every screen hits the same Supabase tables/functions.
-                Run <code>xcodegen generate</code> first, then open the generated <code>CriderGPT.xcodeproj</code>.
+                Run <code>bash reset-xcode-project.sh</code> first; it clears stale Xcode output and opens a fresh <code>CriderGPT.xcodeproj</code>.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-3 text-sm">
@@ -150,7 +150,7 @@ export default function IOSStarterExport() {
               <CardTitle className="text-lg">Next steps</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>1. Unzip and run <code>xcodegen generate</code> to produce a fresh <code>.xcodeproj</code>.</p>
+              <p>1. Unzip and run <code>bash reset-xcode-project.sh</code> to produce a fresh <code>.xcodeproj</code>.</p>
               <p>2. Open in Xcode → set your Apple Team in Signing &amp; Capabilities.</p>
               <p>3. Run on a device or simulator — sign in with any existing CriderGPT account.</p>
               <p>4. Paste your real IAP product IDs into <code>Config.swift</code> once App Store Connect is ready (Play Console defaults are already wired).</p>
