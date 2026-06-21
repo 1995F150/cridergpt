@@ -1340,18 +1340,28 @@ final class IAPManager: ObservableObject {
         return "Free"
     }
 
+    private struct _IAPVerifyPayload: Encodable {
+        let user_id: String
+        let product_id: String
+        let transaction_id: String
+        let original_transaction_id: String
+        let platform: String
+    }
+    private struct _IAPVerifyResponse: Decodable {}
+
     private func verifyServerSide(_ tx: Transaction) async {
         guard let uid = SessionManager.shared.userId else { return }
-        let payload: [String: Any] = [
-            "user_id": uid,
-            "product_id": tx.productID,
-            "transaction_id": String(tx.id),
-            "original_transaction_id": String(tx.originalID),
-            "platform": "ios"
-        ]
+        let payload = _IAPVerifyPayload(
+            user_id: uid,
+            product_id: tx.productID,
+            transaction_id: String(tx.id),
+            original_transaction_id: String(tx.originalID),
+            platform: "ios"
+        )
         _ = try? await SupabaseClient.shared.invokeFunction(
             Config.verifyIapFunction,
-            body: payload
+            body: payload,
+            as: _IAPVerifyResponse.self
         )
     }
 }
@@ -1916,7 +1926,12 @@ struct IOSBuilderView: View {
         triggering = false
     }
     private func statusColor(_ s: String?) -> Color {
-        switch s { case "success": .green; case "failed": .red; case "running": .blue; default: .secondary }
+        switch s {
+        case "success": return Color.green
+        case "failed": return Color.red
+        case "running": return Color.blue
+        default: return Color.secondary
+        }
     }
 }
 private struct _IB: Encodable {}
@@ -2233,7 +2248,7 @@ options:
   bundleIdPrefix: app.cridergpt
   createIntermediateGroups: true
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "17.0"
 settings:
   base:
     DEVELOPMENT_TEAM: ""
