@@ -46,7 +46,7 @@ Output as:
 
   "ios-swift": (screen, notes) => `
 You are a senior iOS engineer. Produce a UI blueprint for the native CriderGPT iOS app
-(SwiftUI, iOS 17+, MainTabView + SupabaseService already exist).
+(SwiftUI, iOS 16+, MainTabView + SupabaseService already exist).
 
 Screen: ${screen}
 Notes / constraints: ${notes || "match existing dark theme + tab bar"}

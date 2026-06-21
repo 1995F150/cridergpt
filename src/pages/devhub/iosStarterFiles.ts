@@ -803,9 +803,14 @@ struct GalleryView: View {
             } else if let err = vm.error {
                 Text("Error: \\(err)").foregroundStyle(.red).padding()
             } else if vm.items.isEmpty {
-                ContentUnavailableView("No generated media yet",
-                    systemImage: "photo.on.rectangle.angled")
-                    .padding(.top, 60)
+                VStack(spacing: 12) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    Text("No generated media yet")
+                        .font(.headline)
+                }
+                .padding(.top, 60)
             } else {
                 LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(vm.items) { item in
@@ -828,7 +833,7 @@ struct GalleryView: View {
         }
         .navigationTitle("Gallery")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button { Task { await vm.refresh() } } label: { Image(systemName: "arrow.clockwise") }
             }
         }
@@ -880,9 +885,17 @@ struct VisionMemoryView: View {
             } else if let err = vm.error {
                 Text("Error: \\(err)").foregroundStyle(.red)
             } else if vm.entries.isEmpty {
-                ContentUnavailableView("No vision memory yet",
-                    systemImage: "eye",
-                    description: Text("Vision-tagged moments will appear here."))
+                VStack(spacing: 12) {
+                    Image(systemName: "eye")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    Text("No vision memory yet")
+                        .font(.headline)
+                    Text("Vision-tagged moments will appear here.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             } else {
                 ForEach(vm.entries) { e in
                     VStack(alignment: .leading, spacing: 4) {
@@ -938,8 +951,17 @@ struct LivestockListView: View {
     var body: some View {
         List {
             if vm.animals.isEmpty {
-                ContentUnavailableView("No animals yet", systemImage: "pawprint",
-                    description: Text("Scan a CriderGPT tag to register your first animal."))
+                VStack(spacing: 12) {
+                    Image(systemName: "pawprint")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    Text("No animals yet")
+                        .font(.headline)
+                    Text("Scan a CriderGPT tag to register your first animal.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             }
             ForEach(vm.animals) { a in
                 VStack(alignment: .leading) {
@@ -950,7 +972,7 @@ struct LivestockListView: View {
         }
         .navigationTitle("Livestock")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showScanner = true } label: { Image(systemName: "barcode.viewfinder") }
             }
         }
@@ -1166,7 +1188,13 @@ struct CalendarView: View {
         }
         .overlay {
             if vm.events.isEmpty {
-                ContentUnavailableView("No events", systemImage: "calendar")
+                VStack(spacing: 12) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    Text("No events")
+                        .font(.headline)
+                }
             }
         }
         .navigationTitle("Calendar")
@@ -1230,7 +1258,7 @@ struct ProfileView: View {
         }
         .navigationTitle("Profile")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .navigationBarLeading) {
                 Button { withAnimation { showMenu.toggle() } } label: { Image(systemName: "line.3.horizontal") }
             }
         }
@@ -2030,7 +2058,7 @@ struct BackendWiringView: View {
                 }
             }
             .navigationTitle("Backend Wiring")
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Refresh") { Task { await fetch() } } } }
+            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Refresh") { Task { await fetch() } } } }
             .task { await fetch() }
         }
     }
@@ -2248,7 +2276,7 @@ options:
   bundleIdPrefix: app.cridergpt
   createIntermediateGroups: true
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "16.0"
 settings:
   base:
     DEVELOPMENT_TEAM: ""
@@ -2496,7 +2524,7 @@ struct SideMenuView: View {
             .navigationTitle("CriderGPT")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Close") { isOpen = false }
                 }
             }

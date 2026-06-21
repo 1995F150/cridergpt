@@ -101,7 +101,7 @@ export default function IOSStarterExport() {
                 </span>
               </div>
               <div className="flex gap-2 flex-wrap sm:col-span-2">
-                <Badge variant="secondary">Swift 5.9 / iOS 17+</Badge>
+                <Badge variant="secondary">Swift 5.9 / iOS 16+</Badge>
                 <Badge variant="secondary">SwiftUI + Combine</Badge>
                 <Badge variant="secondary">Bottom tabs: Chat · Livestock · Ideas · Calendar · Profile</Badge>
                 <Badge variant="secondary">Side menu with external website links → Safari</Badge>
