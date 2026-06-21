@@ -724,6 +724,10 @@ final class ChatViewModel: ObservableObject {
     struct ChatResponse: Decodable { let response: String }
     private struct PrefsRow: Decodable { let preferences: Prefs? }
     private struct Prefs: Decodable { let agi_mode: Bool?; let preferred_model: String? }
+    private struct PrefsPayload: Encodable { let preferences: PrefsBody }
+    private struct PrefsBody: Encodable { let agi_mode: Bool; let preferred_model: String }
+    private struct ChatRequestBody: Encodable { let messages: [ChatWireMessage]; let model: String; let agi_mode: Bool }
+    private struct ChatWireMessage: Encodable { let role: String; let content: String }
     private struct PatternRow: Decodable { let pattern_text: String }
 
     func loadPrefs() async {
@@ -755,7 +759,7 @@ final class ChatViewModel: ObservableObject {
     func persistPrefs() async {
         _ = try? await SupabaseClient.shared.upsert(
             "user_preferences",
-            body: ["preferences": ["agi_mode": agi, "preferred_model": model]] as [String: Any]
+            body: PrefsPayload(preferences: PrefsBody(agi_mode: agi, preferred_model: model))
         )
     }
 
@@ -782,14 +786,10 @@ final class ChatViewModel: ObservableObject {
         let user = ChatMessage(role: "user", content: trimmed)
         messages.append(user)
         do {
-            let history = messages.map { ["role": $0.role, "content": $0.content] }
+            let history = messages.map { ChatWireMessage(role: $0.role, content: $0.content) }
             let res: ChatResponse = try await SupabaseClient.shared.invokeFunction(
                 Config.chatFunction,
-                body: [
-                    "messages": history,
-                    "model": model,
-                    "agi_mode": agi,
-                ] as [String: Any],
+                body: ChatRequestBody(messages: history, model: model, agi_mode: agi),
                 as: ChatResponse.self
             )
             messages.append(ChatMessage(role: "assistant", content: res.response))
