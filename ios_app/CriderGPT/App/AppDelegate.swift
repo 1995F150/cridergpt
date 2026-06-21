@@ -1,6 +1,7 @@
 import UIKit
 import UserNotifications
 import Supabase
+import GoogleSignIn
 
 /// UIApplicationDelegate adapter that owns APNS push registration and the
 /// device-token round-trip to the `register-device-token` edge function.
@@ -14,6 +15,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         return true
+    }
+
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        return GIDSignIn.sharedInstance.handle(url)
     }
 
     /// Call from anywhere (e.g. Profile → "Enable notifications") to prompt for

@@ -15,27 +15,35 @@ final class AuthService: ObservableObject {
     }
 
     @Published private(set) var state: State = .loading
+    @Published private(set) var profile: Profile?
     @Published var lastError: String?
+
+    private var authChangesTask: Task<Void, Never>?
 
     private init() {}
 
     // MARK: - Session
 
     func restoreSession() async {
+        authChangesTask?.cancel()
         do {
             let session = try await SB.client.auth.session
             state = .signedIn(session.user)
+            await loadProfile(for: session.user)
         } catch {
             state = .signedOut
+            profile = nil
         }
         // Subscribe to future auth state changes
-        Task { [weak self] in
+        authChangesTask = Task { [weak self] in
             for await change in SB.client.auth.authStateChanges {
                 guard let self else { return }
                 if let user = change.session?.user {
                     self.state = .signedIn(user)
+                    await self.loadProfile(for: user)
                 } else {
                     self.state = .signedOut
+                    self.profile = nil
                 }
             }
         }
@@ -47,6 +55,7 @@ final class AuthService: ObservableObject {
         do {
             let session = try await SB.client.auth.signIn(email: email, password: password)
             state = .signedIn(session.user)
+            await loadProfile(for: session.user)
         } catch {
             lastError = error.localizedDescription
         }
@@ -55,9 +64,8 @@ final class AuthService: ObservableObject {
     func signUp(email: String, password: String) async {
         do {
             let result = try await SB.client.auth.signUp(email: email, password: password)
-            if let user = result.user as User? {
-                state = .signedIn(user)
-            }
+            state = .signedIn(result.user)
+            await loadProfile(for: result.user)
         } catch {
             lastError = error.localizedDescription
         }
@@ -67,6 +75,7 @@ final class AuthService: ObservableObject {
         do {
             try await SB.client.auth.signOut()
             state = .signedOut
+            profile = nil
         } catch {
             lastError = error.localizedDescription
         }
@@ -85,6 +94,7 @@ final class AuthService: ObservableObject {
                 credentials: .init(provider: .apple, idToken: token)
             )
             state = .signedIn(session.user)
+            await loadProfile(for: session.user)
         } catch {
             lastError = error.localizedDescription
         }
@@ -107,8 +117,26 @@ final class AuthService: ObservableObject {
                 )
             )
             state = .signedIn(session.user)
+            await loadProfile(for: session.user)
         } catch {
             lastError = error.localizedDescription
+        }
+    }
+
+    // MARK: - Profile
+
+    private func loadProfile(for user: User) async {
+        do {
+            let rows: [Profile] = try await SB.client
+                .from("profiles")
+                .select("user_id, username, full_name, tier, avatar_url")
+                .eq("user_id", value: user.id.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            profile = rows.first
+        } catch {
+            profile = nil
         }
     }
 }
