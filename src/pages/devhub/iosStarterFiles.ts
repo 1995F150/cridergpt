@@ -1916,7 +1916,12 @@ struct IOSBuilderView: View {
         triggering = false
     }
     private func statusColor(_ s: String?) -> Color {
-        switch s { case "success": .green; case "failed": .red; case "running": .blue; default: .secondary }
+        switch s {
+        case "success": return Color.green
+        case "failed": return Color.red
+        case "running": return Color.blue
+        default: return Color.secondary
+        }
     }
 }
 private struct _IB: Encodable {}
