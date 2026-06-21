@@ -31,7 +31,7 @@ export default function SwiftCodeGenerator() {
           body: { prompt: `Write Kotlin + Jetpack Compose code for Android (single file, production-ready):\n\n${prompt}` },
         }),
         supabase.functions.invoke("generate-code", {
-          body: { prompt: `Write Swift + SwiftUI code for iOS 17+ (single file, production-ready, follows Apple HIG):\n\n${prompt}` },
+          body: { prompt: `Write Swift + SwiftUI code for iOS 16+ (single file, production-ready, follows Apple HIG):\n\n${prompt}` },
         }),
       ]);
       if (k.error) throw k.error;
