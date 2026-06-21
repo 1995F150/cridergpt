@@ -63,7 +63,7 @@ export default function IOSStarterExport() {
               <CardTitle className="text-lg">What's inside</CardTitle>
               <CardDescription>
                 Full website-parity scaffold mirroring the Android starter. The <strong>website is the source of truth</strong> — every screen hits the same Supabase tables/functions.
-                Run <code>bash reset-xcode-project.sh</code> first; it clears stale Xcode output and opens a fresh <code>CriderGPT.xcodeproj</code>.
+                Unzip, <strong>cd into the unzipped folder</strong>, then run <code>bash reset-xcode-project.sh</code> to clear stale Xcode output and open a fresh <code>CriderGPT.xcodeproj</code>.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-3 text-sm">
