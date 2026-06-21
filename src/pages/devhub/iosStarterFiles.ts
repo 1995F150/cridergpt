@@ -2311,6 +2311,8 @@ settings:
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
     SUPPORTS_MACCATALYST: NO
     SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+    ALWAYS_SEARCH_USER_PATHS: NO
+    USE_HEADERMAP: NO
 targets:
   CriderGPT:
     type: application
