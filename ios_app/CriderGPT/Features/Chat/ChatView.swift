@@ -52,7 +52,7 @@ struct ChatView: View {
         .navigationTitle("CriderGPT")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Picker("Model", selection: $vm.model) {
                         Text("CriderGPT 4.1 (fast)").tag("cridergpt-4.1")

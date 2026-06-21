@@ -21,7 +21,7 @@ struct EventsView: View {
         }
         .navigationTitle("Calendar")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showCreate = true } label: { Image(systemName: "plus") }
             }
         }

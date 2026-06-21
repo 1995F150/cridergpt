@@ -31,7 +31,7 @@ struct SmartIDView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if vm.result != nil || vm.errorMessage != nil {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Clear") { vm.reset() }
                 }
             }

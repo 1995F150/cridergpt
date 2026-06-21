@@ -303,6 +303,25 @@ actor SupabaseClient {
         return try await send(req)
     }
 
+    func upsert<T: Encodable>(
+        _ table: String,
+        body: T,
+        onConflict: String? = nil
+    ) async throws {
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("rest/v1/\(table)"),
+            resolvingAgainstBaseURL: false
+        )!
+        if let onConflict { components.queryItems = [URLQueryItem(name: "on_conflict", value: onConflict)] }
+        var req = URLRequest(url: components.url!)
+        req.httpMethod = "POST"
+        await applyAuthHeaders(&req)
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+        req.httpBody = try encoder.encode(body)
+        _ = try await urlSession.data(for: req)
+    }
+
     func update<T: Encodable>(
         _ table: String,
         match: [URLQueryItem],
@@ -599,7 +618,7 @@ struct ChatView: View {
                         .labelStyle(.titleAndIcon)
                 }
                 .toggleStyle(.switch)
-                .onChange(of: vm.agi) { _, _ in Task { await vm.persistPrefs() } }
+                .onChange(of: vm.agi) { _ in Task { await vm.persistPrefs() } }
                 Spacer()
                 Menu {
                     ForEach(models, id: \\.id) { m in
@@ -639,7 +658,7 @@ struct ChatView: View {
                     }
                     .padding()
                 }
-                .onChange(of: vm.messages.count) { _, _ in
+                .onChange(of: vm.messages.count) { _ in
                     if let last = vm.messages.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
             }
@@ -705,6 +724,10 @@ final class ChatViewModel: ObservableObject {
     struct ChatResponse: Decodable { let response: String }
     private struct PrefsRow: Decodable { let preferences: Prefs? }
     private struct Prefs: Decodable { let agi_mode: Bool?; let preferred_model: String? }
+    private struct PrefsPayload: Encodable { let preferences: PrefsBody }
+    private struct PrefsBody: Encodable { let agi_mode: Bool; let preferred_model: String }
+    private struct ChatRequestBody: Encodable { let messages: [ChatWireMessage]; let model: String; let agi_mode: Bool }
+    private struct ChatWireMessage: Encodable { let role: String; let content: String }
     private struct PatternRow: Decodable { let pattern_text: String }
 
     func loadPrefs() async {
@@ -736,7 +759,7 @@ final class ChatViewModel: ObservableObject {
     func persistPrefs() async {
         _ = try? await SupabaseClient.shared.upsert(
             "user_preferences",
-            body: ["preferences": ["agi_mode": agi, "preferred_model": model]] as [String: Any]
+            body: PrefsPayload(preferences: PrefsBody(agi_mode: agi, preferred_model: model))
         )
     }
 
@@ -763,14 +786,10 @@ final class ChatViewModel: ObservableObject {
         let user = ChatMessage(role: "user", content: trimmed)
         messages.append(user)
         do {
-            let history = messages.map { ["role": $0.role, "content": $0.content] }
+            let history = messages.map { ChatWireMessage(role: $0.role, content: $0.content) }
             let res: ChatResponse = try await SupabaseClient.shared.invokeFunction(
                 Config.chatFunction,
-                body: [
-                    "messages": history,
-                    "model": model,
-                    "agi_mode": agi,
-                ] as [String: Any],
+                body: ChatRequestBody(messages: history, model: model, agi_mode: agi),
                 as: ChatResponse.self
             )
             messages.append(ChatMessage(role: "assistant", content: res.response))
@@ -1817,7 +1836,7 @@ struct AutopilotView: View {
         OwnerGate {
             Form {
                 Section { Toggle("Autopilot Enabled", isOn: $enabled)
-                    .onChange(of: enabled) { _, v in Task { await set(v) } }.disabled(loading) }
+                    .onChange(of: enabled) { v in Task { await set(v) } }.disabled(loading) }
                 if let e = errorMsg { Section { Text(e).foregroundStyle(.orange).font(.footnote) } }
                 Section(footer: Text("Toggles autopilot_enabled in user_settings.")) {}
             }
@@ -1896,7 +1915,12 @@ struct AndroidBuilderView: View {
         triggering = false
     }
     private func statusColor(_ s: String?) -> Color {
-        switch s { case "success": .green; case "failed": .red; case "running": .blue; default: .secondary }
+        switch s {
+        case "success": return Color.green
+        case "failed": return Color.red
+        case "running": return Color.blue
+        default: return Color.secondary
+        }
     }
 }
 private struct _AB: Encodable {}
@@ -2161,7 +2185,7 @@ struct AutoPromoView: View {
         OwnerGate {
             Form {
                 Section { Toggle("Auto-Promo Enabled", isOn: $enabled)
-                    .onChange(of: enabled) { _, v in Task { await set(v) } }.disabled(loading) }
+                    .onChange(of: enabled) { v in Task { await set(v) } }.disabled(loading) }
                 if let e = errorMsg { Section { Text(e).foregroundStyle(.orange).font(.footnote) } }
                 Section(footer: Text("Toggles auto_promo_enabled in user_settings. Hourly promo agent reads this flag before posting.")) {}
             }
@@ -2280,13 +2304,15 @@ options:
 settings:
   base:
     DEVELOPMENT_TEAM: ""
-    SWIFT_VERSION: "5.9"
+    SWIFT_VERSION: "5.0"
     PRODUCT_NAME: CriderGPT
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
     SUPPORTS_MACCATALYST: NO
     SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+    ALWAYS_SEARCH_USER_PATHS: NO
+    USE_HEADERMAP: NO
 targets:
   CriderGPT:
     type: application
