@@ -303,6 +303,25 @@ actor SupabaseClient {
         return try await send(req)
     }
 
+    func upsert<T: Encodable>(
+        _ table: String,
+        body: T,
+        onConflict: String? = nil
+    ) async throws {
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("rest/v1/\(table)"),
+            resolvingAgainstBaseURL: false
+        )!
+        if let onConflict { components.queryItems = [URLQueryItem(name: "on_conflict", value: onConflict)] }
+        var req = URLRequest(url: components.url!)
+        req.httpMethod = "POST"
+        await applyAuthHeaders(&req)
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+        req.httpBody = try encoder.encode(body)
+        _ = try await urlSession.data(for: req)
+    }
+
     func update<T: Encodable>(
         _ table: String,
         match: [URLQueryItem],
@@ -599,7 +618,7 @@ struct ChatView: View {
                         .labelStyle(.titleAndIcon)
                 }
                 .toggleStyle(.switch)
-                .onChange(of: vm.agi) { _, _ in Task { await vm.persistPrefs() } }
+                .onChange(of: vm.agi) { _ in Task { await vm.persistPrefs() } }
                 Spacer()
                 Menu {
                     ForEach(models, id: \\.id) { m in
@@ -639,7 +658,7 @@ struct ChatView: View {
                     }
                     .padding()
                 }
-                .onChange(of: vm.messages.count) { _, _ in
+                .onChange(of: vm.messages.count) { _ in
                     if let last = vm.messages.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
             }
