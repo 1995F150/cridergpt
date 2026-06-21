@@ -27,7 +27,7 @@ export default function IOSStarterExport() {
       a.download = "cridergpt-ios-starter.zip";
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Downloaded — unzip into one folder, run bash reset-xcode-project.sh there, then pick a simulator and Run");
+      toast.success("Downloaded — open the unzipped folder, run bash reset-xcode-project.sh inside it, then pick a simulator and Run");
     } catch (e: any) {
       toast.error(e?.message ?? "Download failed");
     }
@@ -62,7 +62,7 @@ export default function IOSStarterExport() {
               <CardTitle className="text-lg">What's inside</CardTitle>
               <CardDescription>
                 Full website-parity scaffold mirroring the Android starter. The <strong>website is the source of truth</strong> — every screen hits the same Supabase tables/functions.
-                Unzip into one folder, <strong>cd into that folder</strong>, then run <code>bash reset-xcode-project.sh</code> to clear stale Xcode output and open a fresh <code>CriderGPT.xcodeproj</code>.
+                Open the unzipped folder in Terminal, then run <code>bash reset-xcode-project.sh</code> from the folder that contains the script. It deletes stale Xcode output, regenerates <code>CriderGPT.xcodeproj</code>, and opens it.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-3 text-sm">
@@ -100,7 +100,7 @@ export default function IOSStarterExport() {
                 </span>
               </div>
               <div className="flex gap-2 flex-wrap sm:col-span-2">
-                <Badge variant="secondary">Swift 5.9 / iOS 16+</Badge>
+                <Badge variant="secondary">Swift 5.0 / iOS 16.0</Badge>
                 <Badge variant="secondary">SwiftUI + Combine</Badge>
                 <Badge variant="secondary">Bottom tabs: Chat · Livestock · Ideas · Calendar · Profile</Badge>
                 <Badge variant="secondary">Side menu with external website links → Safari</Badge>
@@ -149,8 +149,8 @@ export default function IOSStarterExport() {
               <CardTitle className="text-lg">Next steps</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>1. Unzip into one folder and <strong>cd into that folder</strong> (e.g., <code>cd ~/Downloads/cridergpt-ios-starter</code>).</p>
-              <p>2. Run <code>bash reset-xcode-project.sh</code> from that folder to produce a fresh <code>.xcodeproj</code>.</p>
+              <p>1. Unzip and make sure the folder contains <code>reset-xcode-project.sh</code> (e.g., <code>cd ~/Downloads/cridergpt-ios-starter/cridergpt-ios-starter</code> if your unzip created a nested folder).</p>
+              <p>2. Run <code>bash reset-xcode-project.sh</code> from that exact folder to produce a fresh <code>.xcodeproj</code>. The script installs XcodeGen automatically if it is missing.</p>
               <p>3. Open in Xcode → set your Apple Team in Signing &amp; Capabilities.</p>
               <p>4. Run on a device or simulator — sign in with any existing CriderGPT account.</p>
               <p>5. Paste your real IAP product IDs into <code>Config.swift</code> once App Store Connect is ready (Play Console defaults are already wired).</p>
