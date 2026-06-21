@@ -2304,7 +2304,7 @@ options:
 settings:
   base:
     DEVELOPMENT_TEAM: ""
-    SWIFT_VERSION: "5.9"
+    SWIFT_VERSION: "5.0"
     PRODUCT_NAME: CriderGPT
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
