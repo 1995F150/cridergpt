@@ -69,12 +69,12 @@ Product IDs live in \`Config.swift\` — paste the exact IDs from App Store Conn
 ## Open in Xcode
 
 1. Unzip.
-2. From Terminal inside the unzipped folder, run \`xcodegen generate\`.
-3. Open \`CriderGPT.xcodeproj\`.
+2. From Terminal inside the unzipped folder, run \`bash reset-xcode-project.sh\`.
+3. The script deletes stale Xcode project/DerivedData output, regenerates \`CriderGPT.xcodeproj\`, then opens it.
 4. Set your Apple Team in Signing & Capabilities.
 5. Plug in an iPhone or pick a simulator → press Run ▶.
 
-If Xcode ever says **Multiple commands produce**, delete \`CriderGPT.xcodeproj\`, run \`xcodegen generate\` again, then reopen it. The project file intentionally lists only Swift sources so generated files like \`Info.plist\` are not copied into the app twice.
+If Xcode ever says **Multiple commands produce**, close Xcode and run \`bash reset-xcode-project.sh\` again. The project file intentionally lists only Swift sources so generated files, old build folders, and \`Info.plist\` are not copied into the app twice.
 
 You'll be on the sign-in screen against live Supabase auth.
 `,
@@ -2126,12 +2126,19 @@ struct IdeaPlannerDevView: View {
 name: CriderGPT
 options:
   bundleIdPrefix: app.cridergpt
+  createIntermediateGroups: true
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "16.0"
 settings:
   base:
     DEVELOPMENT_TEAM: ""
     SWIFT_VERSION: "5.9"
+    PRODUCT_NAME: CriderGPT
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+    SUPPORTS_MACCATALYST: NO
+    SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
 targets:
   CriderGPT:
     type: application
@@ -2160,6 +2167,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.cridergpt.ios
+        PRODUCT_NAME: CriderGPT
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_CFBundleDisplayName: CriderGPT
@@ -2173,6 +2181,30 @@ targets:
     capabilities:
       - com.apple.developer.in-app-payments
       - com.apple.developer.nfc.readersession.formats
+`,
+
+  "reset-xcode-project.sh": `#!/bin/zsh
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+echo "Closing any stale generated Xcode files..."
+rm -rf CriderGPT.xcodeproj CriderGPT.xcworkspace build DerivedData .build
+rm -rf "$HOME/Library/Developer/Xcode/DerivedData/CriderGPT-"*
+
+if ! command -v xcodegen >/dev/null 2>&1; then
+  if command -v brew >/dev/null 2>&1; then
+    echo "Installing XcodeGen with Homebrew..."
+    brew install xcodegen
+  else
+    echo "XcodeGen is missing. Install Homebrew first, then run: brew install xcodegen"
+    exit 1
+  fi
+fi
+
+echo "Generating a clean CriderGPT.xcodeproj..."
+xcodegen generate
+open CriderGPT.xcodeproj
 `,
 
   "Navigation/WebsiteNav.swift": `import Foundation
