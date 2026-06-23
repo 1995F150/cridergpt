@@ -83,7 +83,10 @@ const BUCKETS: Bucket[] = [
     covers: ["Quarterly estimated tax (IRS)", "State income tax", "1099 self-employment 15.3% bite", "CPA filing fee in April", "Never spend, this is the IRS's money"] },
   { key: "livestock", label: "Livestock / Feed", emoji: "🐄", icon: Beef, color: "text-lime-400", bg: "bg-lime-400/10", desc: "Animal feed, vet, show fees, tags",
     covers: ["Cattle / goat / sheep feed", "Hay, minerals, supplements", "Vet visits & vaccines", "Show entry fees & transport", "CriderGPT NFC tags & supplies"] },
+  { key: "dodgeRestore", label: "1st Gen Dodge Restore", emoji: "🛻", icon: Truck, color: "text-rose-400", bg: "bg-rose-400/10", desc: "Cash stash for bringing the first-gen Dodge back to life",
+    covers: ["Radiator replacement / coolant system", "Rear end and driveshaft rebuild", "Fuel pump, filter, and fuse diagnostics", "Bodywork and paint for the first-gen Dodge", "Suspension, tires, and brake upgrades"] },
 ];
+
 
 const PRESETS = [
   { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0, livestock: 0 } },
