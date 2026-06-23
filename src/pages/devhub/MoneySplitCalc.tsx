@@ -237,6 +237,9 @@ export default function MoneySplitCalc() {
     summary?: string;
   } | null>(null);
 
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saving, setSaving] = useState(false);
+
   // Push current state to backend (debounced via caller). No-op if signed out.
   const syncStateToBackend = async (patch: Partial<{
     envelopes: Record<string, number>;
@@ -248,6 +251,7 @@ export default function MoneySplitCalc() {
   }>) => {
     if (!user) return;
     try {
+      setSaving(true);
       await supabase.from("money_split_state").upsert({
         user_id: user.id,
         envelopes: patch.envelopes ?? envelopes,
@@ -257,9 +261,21 @@ export default function MoneySplitCalc() {
         income: patch.income ?? income,
         period: patch.period ?? period,
       }, { onConflict: "user_id" });
+      setLastSaved(new Date());
     } catch (e) {
       console.warn("split state sync failed", e);
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const saveNow = async () => {
+    if (!user) {
+      toast.info("Sign in to save to the cloud");
+      return;
+    }
+    await syncStateToBackend({ income, period, pct, envelopes, cashBills, roundMode });
+    toast.success("Calculator saved to your account");
   };
 
 
