@@ -900,12 +900,14 @@ export default function MoneySplitCalc() {
                 Last saved {lastSaved.toLocaleTimeString()}
               </div>
             )}
+            <div className="grid grid-cols-2 gap-2">
               <Button onClick={() => exportPDF()} variant="outline" size="sm">
                 <FileDown className="w-4 h-4 mr-1" /> PDF
               </Button>
               <Button onClick={() => exportCSV()} variant="outline" size="sm">
                 <FileSpreadsheet className="w-4 h-4 mr-1" /> CSV
               </Button>
+            </div>
             </div>
           </CardContent>
         </Card>
