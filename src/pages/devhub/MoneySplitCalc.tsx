@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
   History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet, Banknote,
-  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef, Sparkles, Loader2, Check, Truck
+  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef, Sparkles, Loader2, Check, Truck, Cloud
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -89,6 +89,7 @@ const BUCKETS: Bucket[] = [
 
 
 const PRESETS = [
+  { name: "Jessie's Priority Plan", desc: "CriderGPT first, then bills, then the 1st Gen Dodge", values: { cridergpt: 30, living: 25, dodgeRestore: 20, emergency: 10, food: 8, taxes: 4, livestock: 3, bathhouse: 0, fun: 0, savings: 0 } },
   { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
   { name: "Friday $500 Plan", desc: "Bills 30 / Food 20 / CriderGPT 15 / Emergency 15 / Bath House 10 / Fun 10", values: { living: 30, food: 20, cridergpt: 15, emergency: 15, bathhouse: 10, fun: 10, savings: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
   { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, food: 0, bathhouse: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
@@ -236,6 +237,9 @@ export default function MoneySplitCalc() {
     summary?: string;
   } | null>(null);
 
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saving, setSaving] = useState(false);
+
   // Push current state to backend (debounced via caller). No-op if signed out.
   const syncStateToBackend = async (patch: Partial<{
     envelopes: Record<string, number>;
@@ -247,6 +251,7 @@ export default function MoneySplitCalc() {
   }>) => {
     if (!user) return;
     try {
+      setSaving(true);
       await supabase.from("money_split_state").upsert({
         user_id: user.id,
         envelopes: patch.envelopes ?? envelopes,
@@ -256,9 +261,21 @@ export default function MoneySplitCalc() {
         income: patch.income ?? income,
         period: patch.period ?? period,
       }, { onConflict: "user_id" });
+      setLastSaved(new Date());
     } catch (e) {
       console.warn("split state sync failed", e);
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const saveNow = async () => {
+    if (!user) {
+      toast.info("Sign in to save to the cloud");
+      return;
+    }
+    await syncStateToBackend({ income, period, pct, envelopes, cashBills, roundMode });
+    toast.success("Calculator saved to your account");
   };
 
 
@@ -300,6 +317,7 @@ export default function MoneySplitCalc() {
           if (["off","1","5","10","20"].includes(s.round_mode)) setRoundMode(s.round_mode);
           if (typeof s.income === "number" || typeof s.income === "string") setIncome(Number(s.income) || 0);
           if (s.period) setPeriod(s.period);
+          if (s.updated_at) setLastSaved(new Date(s.updated_at));
         }
         if (Array.isArray(txRes.data)) {
           setTxns(txRes.data.map((t: any) => ({ id: t.id, ts: new Date(t.ts).getTime(), bucket: t.bucket, amount: Number(t.amount), note: t.note || "" })));
@@ -868,6 +886,21 @@ export default function MoneySplitCalc() {
             <Button onClick={saveToHistory} className="w-full" size="sm">
               <Save className="w-4 h-4 mr-2" /> Save This Calculation
             </Button>
+            <Button
+              onClick={saveNow}
+              variant="secondary"
+              className="w-full"
+              size="sm"
+              disabled={saving || !user}
+            >
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Cloud className="w-4 h-4 mr-2" />}
+              {saving ? "Saving..." : "Save to Cloud"}
+            </Button>
+            {lastSaved && (
+              <div className="text-[11px] text-muted-foreground text-center">
+                Last saved {lastSaved.toLocaleTimeString()}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <Button onClick={() => exportPDF()} variant="outline" size="sm">
                 <FileDown className="w-4 h-4 mr-1" /> PDF
