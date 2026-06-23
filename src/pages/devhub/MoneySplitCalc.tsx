@@ -885,7 +885,21 @@ export default function MoneySplitCalc() {
             <Button onClick={saveToHistory} className="w-full" size="sm">
               <Save className="w-4 h-4 mr-2" /> Save This Calculation
             </Button>
-            <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={saveNow}
+              variant="secondary"
+              className="w-full"
+              size="sm"
+              disabled={saving || !user}
+            >
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Cloud className="w-4 h-4 mr-2" />}
+              {saving ? "Saving..." : "Save to Cloud"}
+            </Button>
+            {lastSaved && (
+              <div className="text-[11px] text-muted-foreground text-center">
+                Last saved {lastSaved.toLocaleTimeString()}
+              </div>
+            )}
               <Button onClick={() => exportPDF()} variant="outline" size="sm">
                 <FileDown className="w-4 h-4 mr-1" /> PDF
               </Button>
