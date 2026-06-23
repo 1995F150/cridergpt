@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
   History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet, Banknote,
-  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef, Sparkles, Loader2, Check, Truck
+  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef, Sparkles, Loader2, Check, Truck, Cloud
 } from "lucide-react";
 
 import { toast } from "sonner";
