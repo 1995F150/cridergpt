@@ -317,6 +317,7 @@ export default function MoneySplitCalc() {
           if (["off","1","5","10","20"].includes(s.round_mode)) setRoundMode(s.round_mode);
           if (typeof s.income === "number" || typeof s.income === "string") setIncome(Number(s.income) || 0);
           if (s.period) setPeriod(s.period);
+          if (s.updated_at) setLastSaved(new Date(s.updated_at));
         }
         if (Array.isArray(txRes.data)) {
           setTxns(txRes.data.map((t: any) => ({ id: t.id, ts: new Date(t.ts).getTime(), bucket: t.bucket, amount: Number(t.amount), note: t.note || "" })));
