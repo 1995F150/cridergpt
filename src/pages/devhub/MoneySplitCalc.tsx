@@ -106,7 +106,9 @@ const DEFAULTS: Record<string, number> = {
   savings: 5,
   taxes: 5,
   livestock: 5,
+  dodgeRestore: 0,
 };
+
 
 type RoundMode = "off" | "1" | "5" | "10" | "20";
 const ROUND_KEY = "money-split-round-mode";
