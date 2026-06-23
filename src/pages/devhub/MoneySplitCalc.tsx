@@ -89,6 +89,7 @@ const BUCKETS: Bucket[] = [
 
 
 const PRESETS = [
+  { name: "Jessie's Priority Plan", desc: "CriderGPT first, then bills, then the 1st Gen Dodge", values: { cridergpt: 30, living: 25, dodgeRestore: 20, emergency: 10, food: 8, taxes: 4, livestock: 3, bathhouse: 0, fun: 0, savings: 0 } },
   { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
   { name: "Friday $500 Plan", desc: "Bills 30 / Food 20 / CriderGPT 15 / Emergency 15 / Bath House 10 / Fun 10", values: { living: 30, food: 20, cridergpt: 15, emergency: 15, bathhouse: 10, fun: 10, savings: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
   { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, food: 0, bathhouse: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
