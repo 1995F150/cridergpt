@@ -908,7 +908,6 @@ export default function MoneySplitCalc() {
                 <FileSpreadsheet className="w-4 h-4 mr-1" /> CSV
               </Button>
             </div>
-            </div>
           </CardContent>
         </Card>
 
