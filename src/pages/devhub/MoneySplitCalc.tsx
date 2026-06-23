@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   PiggyBank, Wallet, Zap, Home, TrendingUp, AlertTriangle, Lightbulb, RotateCcw,
   History, Trash2, Save, Lock, Plus, Minus, ArrowDownToLine, FileDown, FileSpreadsheet, Banknote,
-  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef, Sparkles, Loader2, Check
+  UtensilsCrossed, Wrench, BookOpen, CheckCircle2, Beef, Sparkles, Loader2, Check, Truck
 } from "lucide-react";
+
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { addPDFHeader, addPDFFooter, addCornerWatermark } from "@/utils/pdfWatermark";
@@ -82,15 +83,19 @@ const BUCKETS: Bucket[] = [
     covers: ["Quarterly estimated tax (IRS)", "State income tax", "1099 self-employment 15.3% bite", "CPA filing fee in April", "Never spend, this is the IRS's money"] },
   { key: "livestock", label: "Livestock / Feed", emoji: "🐄", icon: Beef, color: "text-lime-400", bg: "bg-lime-400/10", desc: "Animal feed, vet, show fees, tags",
     covers: ["Cattle / goat / sheep feed", "Hay, minerals, supplements", "Vet visits & vaccines", "Show entry fees & transport", "CriderGPT NFC tags & supplies"] },
+  { key: "dodgeRestore", label: "1st Gen Dodge Restore", emoji: "🛻", icon: Truck, color: "text-rose-400", bg: "bg-rose-400/10", desc: "Cash stash for bringing the first-gen Dodge back to life",
+    covers: ["Radiator replacement / coolant system", "Rear end and driveshaft rebuild", "Fuel pump, filter, and fuse diagnostics", "Bodywork and paint for the first-gen Dodge", "Suspension, tires, and brake upgrades"] },
 ];
 
+
 const PRESETS = [
-  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0, livestock: 0 } },
-  { name: "Friday $500 Plan", desc: "Bills 30 / Food 20 / CriderGPT 15 / Emergency 15 / Bath House 10 / Fun 10", values: { living: 30, food: 20, cridergpt: 15, emergency: 15, bathhouse: 10, fun: 10, savings: 0, taxes: 0, livestock: 0 } },
-  { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, food: 0, bathhouse: 0, taxes: 0, livestock: 0 } },
-  { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 20, food: 10, fun: 10, savings: 5, bathhouse: 0, taxes: 5, livestock: 0 } },
-  { name: "Bath House Sprint", desc: "Stack remodel cash fast", values: { bathhouse: 35, living: 25, food: 15, emergency: 10, cridergpt: 10, fun: 5, savings: 0, taxes: 0, livestock: 0 } },
+  { name: "4-Slot Cash Lockbox", desc: "Jessie's real box: CriderGPT 20% / Emergency 35% / Bills 35% / Fun 10%", values: { cridergpt: 20, emergency: 35, living: 35, fun: 10, food: 0, bathhouse: 0, savings: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
+  { name: "Friday $500 Plan", desc: "Bills 30 / Food 20 / CriderGPT 15 / Emergency 15 / Bath House 10 / Fun 10", values: { living: 30, food: 20, cridergpt: 15, emergency: 15, bathhouse: 10, fun: 10, savings: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
+  { name: "50/30/20 Classic", desc: "Living 50% / Fun 30% / Savings 20%", values: { living: 50, fun: 30, savings: 20, cridergpt: 0, emergency: 0, food: 0, bathhouse: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
+  { name: "Business First", desc: "Aggressive reinvestment mode", values: { cridergpt: 40, emergency: 10, living: 20, food: 10, fun: 10, savings: 5, bathhouse: 0, taxes: 5, livestock: 0, dodgeRestore: 0 } },
+  { name: "Bath House Sprint", desc: "Stack remodel cash fast", values: { bathhouse: 35, living: 25, food: 15, emergency: 10, cridergpt: 10, fun: 5, savings: 0, taxes: 0, livestock: 0, dodgeRestore: 0 } },
 ];
+
 
 const DEFAULTS: Record<string, number> = {
   cridergpt: 15,
@@ -102,7 +107,9 @@ const DEFAULTS: Record<string, number> = {
   savings: 5,
   taxes: 5,
   livestock: 5,
+  dodgeRestore: 0,
 };
+
 
 type RoundMode = "off" | "1" | "5" | "10" | "20";
 const ROUND_KEY = "money-split-round-mode";
@@ -790,7 +797,7 @@ export default function MoneySplitCalc() {
   };
 
   return (
-    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, food, fun, savings, livestock">
+    <DevHubPage title="Money Split Calculator" subtitle="Divide every dollar: CriderGPT, emergency, food, fun, savings, livestock, and the 1st Gen Dodge restore">
       {/* Hero strip */}
       <div className="mb-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/15 via-amber-400/10 to-emerald-400/10 p-4 flex items-center gap-3 shadow-lg shadow-primary/5">
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 flex items-center justify-center text-2xl shadow-inner">
