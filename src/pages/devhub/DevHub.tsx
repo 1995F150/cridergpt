@@ -51,6 +51,7 @@ const modules = [
   { to: "/devhub/android-starter", icon: Smartphone, title: "CriderGPT Android Starter (ZIP)", desc: "Pre-written Kotlin + Compose project for app.cridergpt.android, pre-wired to Supabase auth + chat-with-ai. Download → File → Open in Android Studio. No payment code.", tag: "Builder" },
   { to: "/devhub/ios-starter", icon: Apple, title: "CriderGPT iOS Starter (ZIP)", desc: "Pre-written Swift + SwiftUI project for app.cridergpt.ios, pre-wired to Supabase + StoreKit 2. Same parity as the Android starter. Only placeholder: IAP product IDs in Config.swift.", tag: "iOS" },
   { to: "/devhub/repo-sync", icon: Github, title: "Repo Sync (Android + iOS)", desc: "Push the latest starters into github.com/1995F150/CriderGPT-android-native + CriderGPT-IOS with one script. Includes GitHub Actions to auto-build signed APK/AAB and iOS .xcarchive on every push.", tag: "Builder" },
+  { to: "/devhub/live-coding-prep", icon: GraduationCap, title: "Live Coding Prep", desc: "4 mock OpenAI API interview rounds (warmup, mid, debug, hard). Type your answer, AI grades it 0-10 with bugs + fixes. History saves locally.", tag: "Builder" },
 ];
 
 export default function DevHub() {
