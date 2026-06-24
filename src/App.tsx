@@ -91,6 +91,7 @@ import DevAlcoholRecipes from "./pages/devhub/AlcoholRecipes";
 import DevUIBlueprints from "./pages/devhub/UIBlueprints";
 import DevTechKnowledgeLibrary from "./pages/devhub/TechKnowledgeLibrary";
 import DevAutoPromoSystem from "./pages/devhub/AutoPromoSystem";
+import DevLiveCodingPrep from "./pages/devhub/LiveCodingPrep";
 import { ReferralCaptureMount } from "./components/growth/ReferralCaptureMount";
 import { AppOpenInterstitial } from "./components/AppOpenInterstitial";
 
@@ -216,6 +217,7 @@ const App = () => {
                     <Route path="/devhub/android-starter" element={<DevAndroidStarterExport />} />
                     <Route path="/devhub/ios-starter" element={<DevIOSStarterExport />} />
                     <Route path="/devhub/repo-sync" element={<DevRepoSync />} />
+                    <Route path="/devhub/live-coding-prep" element={<DevLiveCodingPrep />} />
 
 
 
