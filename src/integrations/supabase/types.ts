@@ -3462,6 +3462,57 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_loans: {
+        Row: {
+          amount_paid: number
+          borrower_contact: string | null
+          borrower_name: string
+          created_at: string
+          id: string
+          interest_rate: number
+          invoice_number: string
+          notes: string | null
+          owner_id: string
+          principal: number
+          start_date: string
+          status: string
+          term_months: number
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          borrower_contact?: string | null
+          borrower_name: string
+          created_at?: string
+          id?: string
+          interest_rate?: number
+          invoice_number?: string
+          notes?: string | null
+          owner_id: string
+          principal: number
+          start_date?: string
+          status?: string
+          term_months?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          borrower_contact?: string | null
+          borrower_name?: string
+          created_at?: string
+          id?: string
+          interest_rate?: number
+          invoice_number?: string
+          notes?: string | null
+          owner_id?: string
+          principal?: number
+          start_date?: string
+          status?: string
+          term_months?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plan_configurations: {
         Row: {
           created_at: string

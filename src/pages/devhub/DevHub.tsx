@@ -3,7 +3,7 @@ import { DevHubGuard } from "@/components/devhub/DevHubGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat, Cloud, Wine, Layout, GraduationCap, Zap, Mail, Chrome, Tv, Github
+  Terminal, Cpu, Code2, Flame, DollarSign, Activity, BookLock, Bot, Wrench, Boxes, Rocket, Keyboard, Hammer, PiggyBank, Sparkles, Smartphone, Database, Apple, Image as ImageIcon, ArrowRightLeft, Megaphone, Music2, ClipboardList, Globe, Bug, Repeat, Cloud, Wine, Layout, GraduationCap, Zap, Mail, Chrome, Tv, Github, FileText
 } from "lucide-react";
 
 const modules = [
@@ -52,6 +52,7 @@ const modules = [
   { to: "/devhub/ios-starter", icon: Apple, title: "CriderGPT iOS Starter (ZIP)", desc: "Pre-written Swift + SwiftUI project for app.cridergpt.ios, pre-wired to Supabase + StoreKit 2. Same parity as the Android starter. Only placeholder: IAP product IDs in Config.swift.", tag: "iOS" },
   { to: "/devhub/repo-sync", icon: Github, title: "Repo Sync (Android + iOS)", desc: "Push the latest starters into github.com/1995F150/CriderGPT-android-native + CriderGPT-IOS with one script. Includes GitHub Actions to auto-build signed APK/AAB and iOS .xcarchive on every push.", tag: "Builder" },
   { to: "/devhub/live-coding-prep", icon: GraduationCap, title: "Live Coding Prep", desc: "4 mock OpenAI API interview rounds (warmup, mid, debug, hard). Type your answer, AI grades it 0-10 with bugs + fixes. History saves locally.", tag: "Builder" },
+  { to: "/devhub/loan-tracker", icon: FileText, title: "Personal Loan Tracker", desc: "Record money you loan out. 25% default APR. Auto-generates an invoice PDF (borrower, principal, monthly payment, total due) every time you add a loan.", tag: "Shop + Money" },
 ];
 
 export default function DevHub() {
