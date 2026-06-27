@@ -47,11 +47,11 @@ const ENVELOPE_KEY = "money-split-envelopes";
 const TXN_KEY = "money-split-txns";
 const CASH_BILLS_KEY = "money-split-cash-bills";
 
-type BillValue = 20 | 10 | 5 | 1;
+type BillValue = 100 | 50 | 20 | 10 | 5 | 1;
 type CashBills = Record<BillValue, number>;
 
-const BILL_VALUES: BillValue[] = [20, 10, 5, 1];
-const makeEmptyCashBills = (): CashBills => ({ 20: 0, 10: 0, 5: 0, 1: 0 });
+const BILL_VALUES: BillValue[] = [100, 50, 20, 10, 5, 1];
+const makeEmptyCashBills = (): CashBills => ({ 100: 0, 50: 0, 20: 0, 10: 0, 5: 0, 1: 0 });
 
 interface Bucket {
   key: string;
