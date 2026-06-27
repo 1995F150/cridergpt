@@ -314,7 +314,7 @@ export default function MoneySplitCalc() {
           if (s.envelopes && typeof s.envelopes === "object") setEnvelopes(s.envelopes);
           if (s.pct && typeof s.pct === "object" && Object.keys(s.pct).length) setPct({ ...DEFAULTS, ...s.pct });
           if (s.cash_bills) setCashBills(sanitizeCashBills(s.cash_bills));
-          if (["off","1","5","10","20"].includes(s.round_mode)) setRoundMode(s.round_mode);
+          if (["off","1","5","10","20","50"].includes(s.round_mode)) setRoundMode(s.round_mode);
           if (typeof s.income === "number" || typeof s.income === "string") setIncome(Number(s.income) || 0);
           if (s.period) setPeriod(s.period);
           if (s.updated_at) setLastSaved(new Date(s.updated_at));
