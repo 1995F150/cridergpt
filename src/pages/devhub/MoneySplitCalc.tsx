@@ -112,7 +112,7 @@ const DEFAULTS: Record<string, number> = {
 };
 
 
-type RoundMode = "off" | "1" | "5" | "10" | "20";
+type RoundMode = "off" | "1" | "5" | "10" | "20" | "50";
 const ROUND_KEY = "money-split-round-mode";
 
 interface CashPlanRow {
