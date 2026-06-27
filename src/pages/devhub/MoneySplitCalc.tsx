@@ -47,11 +47,11 @@ const ENVELOPE_KEY = "money-split-envelopes";
 const TXN_KEY = "money-split-txns";
 const CASH_BILLS_KEY = "money-split-cash-bills";
 
-type BillValue = 20 | 10 | 5 | 1;
+type BillValue = 100 | 50 | 20 | 10 | 5 | 1;
 type CashBills = Record<BillValue, number>;
 
-const BILL_VALUES: BillValue[] = [20, 10, 5, 1];
-const makeEmptyCashBills = (): CashBills => ({ 20: 0, 10: 0, 5: 0, 1: 0 });
+const BILL_VALUES: BillValue[] = [100, 50, 20, 10, 5, 1];
+const makeEmptyCashBills = (): CashBills => ({ 100: 0, 50: 0, 20: 0, 10: 0, 5: 0, 1: 0 });
 
 interface Bucket {
   key: string;
@@ -112,7 +112,7 @@ const DEFAULTS: Record<string, number> = {
 };
 
 
-type RoundMode = "off" | "1" | "5" | "10" | "20";
+type RoundMode = "off" | "1" | "5" | "10" | "20" | "50";
 const ROUND_KEY = "money-split-round-mode";
 
 interface CashPlanRow {
@@ -291,7 +291,7 @@ export default function MoneySplitCalc() {
       const bills = localStorage.getItem(CASH_BILLS_KEY);
       if (bills) setCashBills(sanitizeCashBills(JSON.parse(bills)));
       const rm = localStorage.getItem(ROUND_KEY);
-      if (rm === "1" || rm === "5" || rm === "10" || rm === "20" || rm === "off") setRoundMode(rm);
+      if (rm === "1" || rm === "5" || rm === "10" || rm === "20" || rm === "50" || rm === "off") setRoundMode(rm);
     } catch (error) {
       console.warn("Could not load money split data", error);
     }
@@ -314,7 +314,7 @@ export default function MoneySplitCalc() {
           if (s.envelopes && typeof s.envelopes === "object") setEnvelopes(s.envelopes);
           if (s.pct && typeof s.pct === "object" && Object.keys(s.pct).length) setPct({ ...DEFAULTS, ...s.pct });
           if (s.cash_bills) setCashBills(sanitizeCashBills(s.cash_bills));
-          if (["off","1","5","10","20"].includes(s.round_mode)) setRoundMode(s.round_mode);
+          if (["off","1","5","10","20","50"].includes(s.round_mode)) setRoundMode(s.round_mode);
           if (typeof s.income === "number" || typeof s.income === "string") setIncome(Number(s.income) || 0);
           if (s.period) setPeriod(s.period);
           if (s.updated_at) setLastSaved(new Date(s.updated_at));
@@ -867,7 +867,7 @@ export default function MoneySplitCalc() {
             <div>
               <Label className="text-xs">Round each cut to bill size</Label>
               <div className="grid grid-cols-5 gap-1 mt-1">
-                {(["off","1","5","10","20"] as RoundMode[]).map(m => (
+                {(["off","1","5","10","20","50"] as RoundMode[]).map(m => (
                   <Button
                     key={m}
                     variant={roundMode === m ? "default" : "outline"}
