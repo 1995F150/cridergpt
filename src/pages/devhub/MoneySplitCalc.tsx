@@ -867,7 +867,7 @@ export default function MoneySplitCalc() {
             <div>
               <Label className="text-xs">Round each cut to bill size</Label>
               <div className="grid grid-cols-5 gap-1 mt-1">
-                {(["off","1","5","10","20"] as RoundMode[]).map(m => (
+                {(["off","1","5","10","20","50"] as RoundMode[]).map(m => (
                   <Button
                     key={m}
                     variant={roundMode === m ? "default" : "outline"}
