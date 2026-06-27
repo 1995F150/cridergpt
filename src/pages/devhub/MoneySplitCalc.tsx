@@ -291,7 +291,7 @@ export default function MoneySplitCalc() {
       const bills = localStorage.getItem(CASH_BILLS_KEY);
       if (bills) setCashBills(sanitizeCashBills(JSON.parse(bills)));
       const rm = localStorage.getItem(ROUND_KEY);
-      if (rm === "1" || rm === "5" || rm === "10" || rm === "20" || rm === "off") setRoundMode(rm);
+      if (rm === "1" || rm === "5" || rm === "10" || rm === "20" || rm === "50" || rm === "off") setRoundMode(rm);
     } catch (error) {
       console.warn("Could not load money split data", error);
     }
