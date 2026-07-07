@@ -1041,19 +1041,175 @@ serve(async (req) => {
   );
 
   try {
-    const { message, imageData, conversation_history, sensor_context, model } = await req.json();
+    const body = await req.json();
+    const {
+      message,
+      imageData,
+      conversation_history,
+      sensor_context,
+      model,
+      // ── Unified multi-modal contract ──
+      mode: rawMode,          // "chat" | "image_generate" | "image_recognize"
+      image_url,              // for recognize: URL to analyze (preferred over base64)
+      image_base64,           // for recognize: alt to image_url
+      image_prompt,           // for generate: prompt (falls back to message)
+      reference_urls,         // for generate: array of dataset URLs (photo of Jessie, Sarah, David, Dr. Harman, etc.)
+      size,                   // for generate: "1024x1024" etc
+    } = body;
 
-    if (!message && !imageData) {
+    const mode: 'chat' | 'image_generate' | 'image_recognize' =
+      rawMode === 'image_generate' || rawMode === 'image_recognize' ? rawMode : 'chat';
+
+    if (mode === 'chat' && !message && !imageData) {
       throw new Error('Message or image is required');
     }
 
-    console.log('Received message:', message?.substring(0, 100));
-    console.log('Has image:', !!imageData);
-    console.log('LOVABLE_API_KEY available:', !!LOVABLE_API_KEY);
+    console.log('[chat-with-ai] mode:', mode, 'message:', message?.substring(0, 100), 'has image:', !!(imageData || image_base64 || image_url));
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
+
+    // =========================================================
+    // MULTI-MODAL SHORT-CIRCUIT — routes image_generate and
+    // image_recognize to the CriderGPT Engine when configured,
+    // else falls back to Lovable AI Gateway. Chat path below is
+    // unchanged.
+    // =========================================================
+    if (mode === 'image_generate' || mode === 'image_recognize') {
+      const ENGINE_URL = Deno.env.get('CRIDERGPT_ENGINE_URL');
+      const ENGINE_API_KEY = Deno.env.get('CRIDERGPT_ENGINE_API_KEY');
+      const engineEnabled = !!(ENGINE_URL && ENGINE_API_KEY);
+
+      // ---- 1) Try the engine first if configured ----
+      if (engineEnabled) {
+        try {
+          const enginePath = mode === 'image_generate' ? '/image/generate' : '/image/analyze';
+          const enginePayload = mode === 'image_generate'
+            ? {
+                prompt: image_prompt || message || '',
+                reference_urls: Array.isArray(reference_urls) ? reference_urls : [],
+                size: size || '1024x1024',
+                model: model || null,
+              }
+            : {
+                image_url: image_url || null,
+                image_base64: image_base64 || imageData || null,
+                prompt: message || 'Describe this image in detail.',
+                model: model || null,
+              };
+          const r = await fetch(`${ENGINE_URL.replace(/\/$/, '')}${enginePath}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': ENGINE_API_KEY },
+            body: JSON.stringify(enginePayload),
+            signal: AbortSignal.timeout(120000),
+          });
+          if (r.ok) {
+            const data = await r.json();
+            return new Response(
+              JSON.stringify({
+                mode,
+                source: 'engine',
+                response: data.response ?? data.description ?? data.caption ?? '',
+                image_url: data.image_url ?? null,
+                image_base64: data.image_base64 ?? null,
+                model: data.model ?? 'cridergpt-engine',
+                latency_ms: data.latency_ms ?? null,
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          console.warn(`[chat-with-ai] engine ${enginePath} returned ${r.status}, falling back to cloud`);
+        } catch (e) {
+          console.warn('[chat-with-ai] engine call failed, falling back to cloud:', e instanceof Error ? e.message : e);
+        }
+      }
+
+      // ---- 2) Cloud fallback via Lovable AI Gateway ----
+      if (mode === 'image_generate') {
+        const promptText = image_prompt || message || '';
+        const parts: any[] = [{ type: 'text', text: promptText }];
+        // Attach dataset reference photos so the model can lock likeness
+        if (Array.isArray(reference_urls)) {
+          for (const url of reference_urls.slice(0, 6)) {
+            if (typeof url === 'string' && url) parts.push({ type: 'image_url', image_url: { url } });
+          }
+        }
+        const genRes = await fetch('https://ai.gateway.lovable.dev/v1/images/generations', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: model || 'google/gemini-3-pro-image',
+            messages: [{ role: 'user', content: parts }],
+            modalities: ['image', 'text'],
+            stream: false,
+          }),
+        });
+        if (!genRes.ok) {
+          const errText = await genRes.text().catch(() => '');
+          return new Response(
+            JSON.stringify({ error: `Image generation failed: ${genRes.status}`, detail: errText.slice(0, 500) }),
+            { status: genRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        const genData = await genRes.json();
+        const b64 = genData?.data?.[0]?.b64_json ?? null;
+        return new Response(
+          JSON.stringify({
+            mode,
+            source: 'cloud',
+            response: b64 ? 'Image generated.' : (genData?.choices?.[0]?.message?.content ?? ''),
+            image_base64: b64,
+            image_url: b64 ? `data:image/png;base64,${b64}` : null,
+            model: model || 'google/gemini-3-pro-image',
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // image_recognize cloud fallback via chat completions vision
+      {
+        const visionParts: any[] = [{ type: 'text', text: message || 'Describe this image in detail.' }];
+        if (image_url) visionParts.push({ type: 'image_url', image_url: { url: image_url } });
+        else if (image_base64 || imageData) {
+          const b = image_base64 || imageData;
+          const url = typeof b === 'string' && b.startsWith('data:') ? b : `data:image/jpeg;base64,${b}`;
+          visionParts.push({ type: 'image_url', image_url: { url } });
+        } else {
+          return new Response(
+            JSON.stringify({ error: 'image_recognize requires image_url or image_base64' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        const visRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: model || 'google/gemini-2.5-pro',
+            messages: [{ role: 'user', content: visionParts }],
+          }),
+        });
+        if (!visRes.ok) {
+          const errText = await visRes.text().catch(() => '');
+          return new Response(
+            JSON.stringify({ error: `Vision failed: ${visRes.status}`, detail: errText.slice(0, 500) }),
+            { status: visRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        const visData = await visRes.json();
+        const text = visData?.choices?.[0]?.message?.content ?? '';
+        return new Response(
+          JSON.stringify({
+            mode,
+            source: 'cloud',
+            response: text,
+            model: model || 'google/gemini-2.5-pro',
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    // === End multi-modal short-circuit ===
 
     // === AI Infrastructure settings (admin-controlled) ===
     let infraSettings: any = null;
