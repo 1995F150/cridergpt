@@ -105,7 +105,7 @@ export function useAILearning() {
     category?: string,
     imageData?: string,
     sensorContext?: string
-  ): Promise<{ response: string; imageUrl?: string }> => {
+  ): Promise<{ response: string; imageUrl?: string; source?: string }> => {
     // Handle demo mode for non-authenticated users
     if (!user) {
       if (imageData) {
