@@ -1526,180 +1526,75 @@ serve(async (req) => {
     if (localAnswer) {
       // Use local answer directly
       aiResponse = localAnswer;
+      responseSource = 'cridergpt-local';
       console.log('Serving response from LOCAL corpus');
     } else {
-      // Fall back to external API
-      const messages: any[] = [
-        { role: 'system', content: systemPrompt }
-      ];
+      // === ENGINE-ONLY MODE ===
+      // All chat traffic routes to the CriderGPT Engine. No cloud fallback.
+      const ENGINE_URL = Deno.env.get('CRIDERGPT_ENGINE_URL');
+      const ENGINE_API_KEY = Deno.env.get('CRIDERGPT_ENGINE_API_KEY');
 
-      // Add conversation history if provided
-      if (conversation_history && Array.isArray(conversation_history)) {
-        messages.push(...conversation_history.slice(-20));
+      if (!ENGINE_URL) {
+        return new Response(JSON.stringify({
+          error: 'CriderGPT Engine is not configured. Set CRIDERGPT_ENGINE_URL secret.',
+          source: 'engine-missing',
+        }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // Add current message with optional image
-      if (imageData) {
-        messages.push({
-          role: 'user',
-          content: [
-            { type: 'text', text: message || 'Analyze this image' },
-            { type: 'image_url', image_url: { url: imageData } }
-          ]
-        });
-      } else {
-        messages.push({ role: 'user', content: message });
-      }
+      const enginePayload: any = {
+        message: message || '',
+        system_prompt: systemPrompt,
+        conversation_history: Array.isArray(conversation_history) ? conversation_history.slice(-20) : [],
+        user_id: userId ?? null,
+        conversation_id: (typeof (body as any)?.conversation_id === 'string' && (body as any).conversation_id) || null,
+        model: criderModel?.backend || (typeof model === 'string' ? model : null),
+        temperature: typeof criderModel?.temperature === 'number' ? criderModel.temperature : (infraSettings?.temperature ?? 0.7),
+        max_tokens: infraSettings?.max_tokens || 2000,
+        image_url: imageData || null,
+      };
 
-      // Decide backend model: CriderGPT registry > raw model > admin default > fallback
-      const rawModel = typeof model === 'string' ? model.trim() : '';
-      const adminDefaultModel = infraSettings?.default_model || '';
-      const resolvedBackend = criderModel?.backend || rawModel || adminDefaultModel;
-      const prefersLovable = (resolvedBackend || '').startsWith('google/') || (resolvedBackend || '').startsWith('openai/');
-      const useOpenAI = !!OPENAI_API_KEY && !prefersLovable;
-      const apiUrl = useOpenAI
-        ? 'https://api.openai.com/v1/chat/completions'
-        : 'https://ai.gateway.lovable.dev/v1/chat/completions';
-      const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
-      const defaultModel = resolvedBackend || (useOpenAI
-        ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
-        : (imageData ? 'openai/gpt-5' : 'openai/gpt-5-mini'));
-
-      if (!apiKey) {
-        throw new Error('No AI API key configured (OPENAI_API_KEY or LOVABLE_API_KEY required)');
-      }
-
-      // Tool-calling loop — limit per plan ("free will" intensity)
-      const origin = req.headers.get('origin') || 'https://cridergpt.lovable.app';
-      let toolLoopData: any = null;
-      let toolIterations = 0;
-      // Free will is ALWAYS on; plan caps how many autonomous tool/reasoning steps per turn.
-      const FREE_WILL_CAPS: Record<string, number> = { free: 2, plus: 5, pro: 10, lifetime: 25 };
-      const planKey = (userPlan || 'free').toLowerCase();
-      const MAX_TOOL_ITERATIONS = FREE_WILL_CAPS[planKey] ?? 4;
-      console.log(`[free-will] plan=${planKey} maxSteps=${MAX_TOOL_ITERATIONS}`);
-
-      const effectiveTemperature = typeof criderModel?.temperature === 'number'
-        ? criderModel.temperature
-        : (typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7);
-
-      // === Hybrid local-first router ===
-      // Try the user's local Ollama for casual/simple turns when enabled.
-      // Falls through to the cloud fetch if local fails or task is too complex.
-      let hybridSettings: HybridSettings | null = null;
-      if (userId) {
-        const { data: hs } = await supabase
-          .from('hybrid_router_settings')
-          .select('enabled, local_endpoint, local_model, prefer_local_for, cloud_fallback, max_local_latency_ms')
-          .eq('user_id', userId)
-          .maybeSingle();
-        if (hs) hybridSettings = hs as HybridSettings;
-      }
-
-      while (toolIterations < MAX_TOOL_ITERATIONS) {
-        const requestBody: any = {
-          model: defaultModel,
-          messages,
-          max_tokens: infraSettings?.max_tokens || 2000,
-          temperature: effectiveTemperature,
-        };
-        // Only attach tools when not doing image analysis (vision + tools combo is flaky)
-        if (!imageData) {
-          requestBody.tools = PRODUCT_TOOLS_CHAT;
-          requestBody.tool_choice = 'auto';
-        }
-
-        // First-iteration only: try local route before cloud
-        let response: Response | null = null;
-        let usedLocal = false;
-        if (toolIterations === 0 && !imageData) {
-          const decision = decideRoute(
-            { message: typeof message === 'string' ? message : '', has_image: !!imageData },
-            hybridSettings,
-          );
-          if (decision.route === 'local' && decision.endpoint && decision.model) {
-            const localRes = await callLocalOllama(
-              decision.endpoint,
-              decision.model,
-              messages.map((m: any) => ({ role: m.role, content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) })),
-              { temperature: effectiveTemperature, max_tokens: requestBody.max_tokens, timeout_ms: hybridSettings?.max_local_latency_ms || 30000 },
-            );
-            if (localRes.ok) {
-              console.log(`[router] LOCAL hit (${localRes.latency_ms}ms) reason=${decision.reason}`);
-              toolLoopData = localRes.data;
-              usedLocal = true;
-              break; // local has no tool calls — done
-            } else {
-              console.log(`[router] local failed (${localRes.error}), falling back to cloud`);
-              if (hybridSettings && !hybridSettings.cloud_fallback) {
-                throw new Error(`Local AI failed and cloud fallback disabled: ${localRes.error}`);
-              }
-            }
-          }
-        }
-
-        response = await fetch(apiUrl, {
+      const startedAt = Date.now();
+      let engineRes: Response;
+      try {
+        engineRes = await fetch(`${ENGINE_URL.replace(/\/$/, '')}/chat`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
+            ...(ENGINE_API_KEY ? { 'X-API-Key': ENGINE_API_KEY } : {}),
           },
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify(enginePayload),
+          signal: AbortSignal.timeout(120000),
         });
-
-        // Fallback chain: home server (already tried above) -> OpenAI -> Lovable Gateway
-        if ((!response || !response.ok) && useOpenAI && LOVABLE_API_KEY) {
-          console.warn(`[fallback] OpenAI failed (${response?.status}), retrying via Lovable Gateway`);
-          const fallbackBody = { ...requestBody, model: requestBody.model?.startsWith('openai/') ? requestBody.model : `openai/${requestBody.model || 'gpt-5-mini'}` };
-          response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(fallbackBody),
-          });
-        }
-
-        if (!response || !response.ok) {
-          if (!response) throw new Error('No response from AI gateway');
-          const errorText = await response.text();
-          console.error('AI Gateway error:', response.status, errorText);
-          if (response.status === 429) {
-            return new Response(JSON.stringify({ error: "Rate limited. Please try again in a moment." }), {
-              status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
-          if (response.status === 402) {
-            return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits." }), {
-              status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
-          throw new Error(`AI Gateway error: ${response.status}`);
-        }
-
-        toolLoopData = await response.json();
-        const choice = toolLoopData.choices?.[0];
-        const toolCalls = choice?.message?.tool_calls;
-
-        if (!toolCalls || toolCalls.length === 0) break;
-
-        // Append assistant message with tool calls + run each tool
-        messages.push(choice.message);
-        for (const call of toolCalls) {
-          let parsedArgs: any = {};
-          try { parsedArgs = JSON.parse(call.function.arguments || '{}'); } catch {}
-          console.log('[chat-with-ai] tool call:', call.function.name, parsedArgs);
-          const result = await runProductTool(call.function.name, parsedArgs, userId ?? null, userEmail ?? null, origin);
-          messages.push({
-            role: 'tool',
-            tool_call_id: call.id,
-            content: JSON.stringify(result),
-          });
-        }
-        toolIterations += 1;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error('[chat-with-ai] engine unreachable:', msg);
+        return new Response(JSON.stringify({
+          error: `CriderGPT Engine unreachable: ${msg}`,
+          source: 'engine-unreachable',
+        }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      aiResponse = toolLoopData?.choices?.[0]?.message?.content || 'No response generated';
-      responseSource = useOpenAI ? 'openai' : 'gateway';
-    } // end else (external API)
+      if (!engineRes.ok) {
+        const errText = await engineRes.text().catch(() => '');
+        console.error('[chat-with-ai] engine error:', engineRes.status, errText.substring(0, 500));
+        return new Response(JSON.stringify({
+          error: `CriderGPT Engine returned ${engineRes.status}`,
+          detail: errText.substring(0, 500),
+          source: 'engine-error',
+        }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const engineData = await engineRes.json().catch(() => ({} as any));
+      aiResponse = engineData.response ?? engineData.reply ?? engineData.text ?? engineData.message ?? '';
+      if (!aiResponse) {
+        return new Response(JSON.stringify({
+          error: 'CriderGPT Engine returned an empty response.',
+          source: 'engine-empty',
+        }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      responseSource = 'engine';
+      console.log(`[chat-with-ai] engine reply in ${Date.now() - startedAt}ms (model=${engineData.model ?? 'unknown'})`);
+    } // end else (engine)
 
     // Store interaction in ai_memory
     if (userId) {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Brain, BookOpen, Sparkles, Terminal } from "lucide-react";
+import { MessageSquare, Brain, BookOpen, Sparkles, Terminal, Cpu, Cloud } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ModelSelector from "./ModelSelector";
 import { useModelSelection } from "@/hooks/useModelSelection";
@@ -25,6 +25,7 @@ interface FilePreview {
 function OpenAIChat() {
   const [reply, setReply] = useState("");
   const [replySource, setReplySource] = useState<'ai' | 'legacy'>('ai');
+  const [engineSource, setEngineSource] = useState<string | null>(null);
   const [legacyMode, setLegacyMode] = useState(false);
   const [knowledgeStats, setKnowledgeStats] = useState({
     totalInteractions: 0,
@@ -181,6 +182,7 @@ function OpenAIChat() {
       }
 
       // Handle text message with AI (include document context if available)
+      let lastSource: string | null = null;
       if (message.trim()) {
         const contextMessage = processedDocContent 
           ? `${processedDocContent}\n\nUser question: ${message}`
@@ -188,10 +190,12 @@ function OpenAIChat() {
         
         const result = await generateSmartResponse(contextMessage, selectedModel, 'chat');
         responseText += typeof result === 'string' ? result : result.response;
+        if (typeof result !== 'string') lastSource = result.source ?? null;
       }
 
       setReply(responseText);
       setReplySource('ai');
+      setEngineSource(lastSource);
       
       // Update knowledge stats
       const updatedStats = await getKnowledgeStats();
@@ -335,6 +339,21 @@ function OpenAIChat() {
                 <Badge variant="outline" className="text-xs text-green-600 border-green-500/30">
                   🐍 Original Engine
                 </Badge>
+              )}
+              {replySource === 'ai' && engineSource && (
+                engineSource === 'engine' ? (
+                  <Badge variant="outline" className="text-xs text-emerald-500 border-emerald-500/40 flex items-center gap-1">
+                    <Cpu className="h-3 w-3" /> CriderGPT Engine
+                  </Badge>
+                ) : engineSource === 'cridergpt-local' ? (
+                  <Badge variant="outline" className="text-xs text-[#D8B142] border-[#D8B142]/40">
+                    📚 Local Corpus
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs text-sky-500 border-sky-500/40 flex items-center gap-1">
+                    <Cloud className="h-3 w-3" /> {engineSource}
+                  </Badge>
+                )
               )}
             </p>
             <p className="whitespace-pre-wrap leading-relaxed">{reply}</p>
