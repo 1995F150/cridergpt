@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Brain, BookOpen, Sparkles, Terminal } from "lucide-react";
+import { MessageSquare, Brain, BookOpen, Sparkles, Terminal, Cpu, Cloud } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ModelSelector from "./ModelSelector";
 import { useModelSelection } from "@/hooks/useModelSelection";
