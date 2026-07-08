@@ -340,6 +340,21 @@ function OpenAIChat() {
                   🐍 Original Engine
                 </Badge>
               )}
+              {replySource === 'ai' && engineSource && (
+                engineSource === 'engine' ? (
+                  <Badge variant="outline" className="text-xs text-emerald-500 border-emerald-500/40 flex items-center gap-1">
+                    <Cpu className="h-3 w-3" /> CriderGPT Engine
+                  </Badge>
+                ) : engineSource === 'cridergpt-local' ? (
+                  <Badge variant="outline" className="text-xs text-[#D8B142] border-[#D8B142]/40">
+                    📚 Local Corpus
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs text-sky-500 border-sky-500/40 flex items-center gap-1">
+                    <Cloud className="h-3 w-3" /> {engineSource}
+                  </Badge>
+                )
+              )}
             </p>
             <p className="whitespace-pre-wrap leading-relaxed">{reply}</p>
           </div>
