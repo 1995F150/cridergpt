@@ -25,6 +25,7 @@ interface FilePreview {
 function OpenAIChat() {
   const [reply, setReply] = useState("");
   const [replySource, setReplySource] = useState<'ai' | 'legacy'>('ai');
+  const [engineSource, setEngineSource] = useState<string | null>(null);
   const [legacyMode, setLegacyMode] = useState(false);
   const [knowledgeStats, setKnowledgeStats] = useState({
     totalInteractions: 0,
