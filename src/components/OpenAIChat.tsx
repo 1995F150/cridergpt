@@ -182,6 +182,7 @@ function OpenAIChat() {
       }
 
       // Handle text message with AI (include document context if available)
+      let lastSource: string | null = null;
       if (message.trim()) {
         const contextMessage = processedDocContent 
           ? `${processedDocContent}\n\nUser question: ${message}`
@@ -189,10 +190,12 @@ function OpenAIChat() {
         
         const result = await generateSmartResponse(contextMessage, selectedModel, 'chat');
         responseText += typeof result === 'string' ? result : result.response;
+        if (typeof result !== 'string') lastSource = result.source ?? null;
       }
 
       setReply(responseText);
       setReplySource('ai');
+      setEngineSource(lastSource);
       
       // Update knowledge stats
       const updatedStats = await getKnowledgeStats();
