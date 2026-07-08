@@ -162,7 +162,7 @@ export function useAILearning() {
         }
       );
       
-      return { response, imageUrl: imageData };
+      return { response, imageUrl: imageData, source: data?.source };
     } catch (error) {
       console.error('Error generating smart response:', error);
       throw error;
