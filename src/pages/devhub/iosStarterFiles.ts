@@ -173,34 +173,45 @@ struct RootView: View {
 
   "MainTabView.swift": `import SwiftUI
 
+private enum AppTab: Hashable { case chat, smartID, livestock, calendar, profile }
+
 struct MainTabView: View {
     @State private var showMenu = false
+    @State private var selected: AppTab = .chat
+    @State private var drawerRoute: String?
 
     var body: some View {
         ZStack(alignment: .leading) {
-            TabView {
-                NavigationStack { ChatView() }
-                    .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
-
-                NavigationStack { LivestockListView() }
-                    .tabItem { Label("Livestock", systemImage: "pawprint") }
-
-                NavigationStack { IdeaPlannerView() }
-                    .tabItem { Label("Ideas", systemImage: "lightbulb") }
-
-                NavigationStack { CalendarView() }
-                    .tabItem { Label("Calendar", systemImage: "calendar") }
-
-                NavigationStack { ProfileView(showMenu: $showMenu) }
-                    .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+            TabView(selection: $selected) {
+                NavigationStack { ChatView() }.tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }.tag(AppTab.chat)
+                NavigationStack { SmartIDView() }.tabItem { Label("Smart ID", systemImage: "sensor.tag.radiowaves.forward") }.tag(AppTab.smartID)
+                NavigationStack { LivestockListView() }.tabItem { Label("Livestock", systemImage: "pawprint") }.tag(AppTab.livestock)
+                NavigationStack { CalendarView() }.tabItem { Label("Calendar", systemImage: "calendar") }.tag(AppTab.calendar)
+                NavigationStack { ProfileView(showMenu: $showMenu) }.tabItem { Label("Profile", systemImage: "person.crop.circle") }.tag(AppTab.profile)
             }
-
             if showMenu {
-                Color.black.opacity(0.4).ignoresSafeArea()
-                    .onTapGesture { withAnimation { showMenu = false } }
-                SideMenuView(isOpen: $showMenu)
-                    .frame(maxWidth: 300)
-                    .transition(.move(edge: .leading))
+                Color.black.opacity(0.4).ignoresSafeArea().onTapGesture { withAnimation { showMenu = false } }
+                SideMenuView(isOpen: $showMenu).frame(maxWidth: 300).transition(.move(edge: .leading))
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToRoute)) { note in
+            guard let route = note.object as? String else { return }
+            switch route {
+            case "chat": selected = .chat
+            case "smart-id": selected = .smartID
+            case "livestock": selected = .livestock
+            case "calendar": selected = .calendar
+            case "profile": selected = .profile
+            default: drawerRoute = route
+            }
+        }
+        .sheet(isPresented: Binding(get: { drawerRoute != nil }, set: { if !$0 { drawerRoute = nil } })) {
+            NavigationStack {
+                NativeModulePlaceholder(
+                    title: drawerRoute?.replacingOccurrences(of: "-", with: " ").capitalized ?? "CriderGPT",
+                    message: "This is a native module shell. It never loads the website inside the app."
+                )
+                .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Close") { drawerRoute = nil } } }
             }
         }
     }
@@ -1233,6 +1244,9 @@ struct ProfileView: View {
     @EnvironmentObject var session: SessionManager
     @EnvironmentObject var iap: IAPManager
     @StateObject private var vm = ProfileViewModel()
+    @State private var showDeleteAccount = false
+    @State private var deletingAccount = false
+    @State private var deleteError: String?
 
     var body: some View {
         Form {
@@ -1273,6 +1287,13 @@ struct ProfileView: View {
                 NavigationLink("Inbox") { NotificationsView() }
             }
 
+            Section("Privacy & Account") {
+                Link("Privacy Policy", destination: URL(string: "https://cridergpt.com/privacy")!)
+                Button("Delete Account", role: .destructive) { showDeleteAccount = true }
+                    .disabled(deletingAccount)
+                if let deleteError { Text(deleteError).foregroundStyle(.red) }
+            }
+
             Section {
                 Button(role: .destructive) {
                     Task { await session.signOut() }
@@ -1286,8 +1307,28 @@ struct ProfileView: View {
             }
         }
         .task { await vm.loadRoles() }
+        .alert("Permanently delete account?", isPresented: $showDeleteAccount) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Permanently", role: .destructive) { Task { await deleteAccount() } }
+        } message: {
+            Text("This removes your CriderGPT account and associated application data. Existing store orders and legally required payment records may be retained.")
+        }
+    }
+
+    private func deleteAccount() async {
+        deletingAccount = true; deleteError = nil
+        defer { deletingAccount = false }
+        do {
+            let result: DeleteAccountResult = try await SupabaseClient.shared.invokeFunction(
+                "delete-account", body: EmptyDeleteRequest(), as: DeleteAccountResult.self)
+            if result.success == true { await session.signOut() }
+            else { deleteError = result.error ?? "Account deletion failed." }
+        } catch { deleteError = error.localizedDescription }
     }
 }
+
+private struct EmptyDeleteRequest: Encodable {}
+private struct DeleteAccountResult: Decodable { let success: Bool?; let error: String? }
 
 @MainActor
 final class ProfileViewModel: ObservableObject {
@@ -1495,7 +1536,6 @@ struct NotificationsView: View {
     }
 }
 `,
-
 
   "DevHub/DevHubView.swift": `import SwiftUI
 
@@ -2297,6 +2337,200 @@ struct IdeaPlannerDevView: View {
 </array>
 `,
 
+  "SmartID/NFCReader.swift": `import Foundation
+import CoreNFC
+
+@MainActor
+final class NFCReader: NSObject, ObservableObject {
+    private var session: NFCNDEFReaderSession?
+    private var continuation: CheckedContinuation<String, Error>?
+    static var isAvailable: Bool { NFCNDEFReaderSession.readingAvailable }
+
+    func scan() async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+            let session = NFCNDEFReaderSession(delegate: self, queue: nil, invalidateAfterFirstRead: true)
+            session.alertMessage = "Hold your iPhone near the CriderGPT Smart ID tag."
+            self.session = session
+            session.begin()
+        }
+    }
+
+    private func finish(_ result: Result<String, Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        self.session = nil
+        switch result {
+        case .success(let tag): continuation.resume(returning: tag)
+        case .failure(let error): continuation.resume(throwing: error)
+        }
+    }
+
+    nonisolated private func normalized(_ raw: String) -> String? {
+        let pattern = "CriderGPT-[A-Za-z0-9]{6}"
+        guard let range = raw.range(of: pattern, options: .regularExpression) else { return nil }
+        let suffix = raw[range].split(separator: "-").last!.uppercased()
+        return "CriderGPT-" + suffix
+    }
+}
+
+extension NFCReader: NFCNDEFReaderSessionDelegate {
+    nonisolated func readerSession(_ session: NFCNDEFReaderSession, didDetectNDEFs messages: [NFCNDEFMessage]) {
+        for record in messages.flatMap({ $0.records }) {
+            let text = record.wellKnownTypeTextPayload().0 ?? String(data: record.payload, encoding: .utf8)
+            if let text, let tag = normalized(text) {
+                Task { @MainActor in self.finish(.success(tag)) }
+                return
+            }
+        }
+        Task { @MainActor in self.finish(.failure(NFCScanError.invalidTag)) }
+    }
+
+    nonisolated func readerSession(_ session: NFCNDEFReaderSession, didInvalidateWithError error: Error) {
+        let code = (error as NSError).code
+        if code == NFCReaderError.readerSessionInvalidationErrorFirstNDEFTagRead.rawValue { return }
+        Task { @MainActor in self.finish(.failure(error)) }
+    }
+}
+
+enum NFCScanError: LocalizedError {
+    case invalidTag
+    var errorDescription: String? { "This is not a valid CriderGPT Smart ID tag." }
+}
+`,
+
+  "SmartID/SmartIDView.swift": `import SwiftUI
+
+private struct TagLookupResult: Decodable {
+    struct Animal: Decodable {
+        let id: String?; let name: String?; let species: String?; let breed: String?
+        let sex: String?; let status: String?; let tagId: String?; let notes: String?
+    }
+    let authorized: Bool?
+    let animal: Animal?
+    let animalName: String?
+    let species: String?
+    let ownerName: String?
+    let error: String?
+    let status: String?
+}
+
+private struct SmartIDRequest: Encodable { let tagId: String }
+private struct RegisterAnimal: Encodable {
+    let name: String?; let species: String; let breed: String?; let status = "active"
+}
+private struct RegisterRequest: Encodable { let tagId: String; let animal: RegisterAnimal }
+private struct RegisterResult: Decodable { let success: Bool?; let error: String? }
+
+@MainActor
+final class SmartIDViewModel: ObservableObject {
+    @Published var tag = ""
+    @Published var loading = false
+    @Published var result: TagLookupResult?
+    @Published var error: String?
+    @Published var canRegister = false
+    let nfc = NFCReader()
+
+    private func normalize(_ raw: String) -> String? {
+        guard let range = raw.range(of: "CriderGPT-[A-Za-z0-9]{6}", options: .regularExpression) else { return nil }
+        return "CriderGPT-" + raw[range].split(separator: "-").last!.uppercased()
+    }
+
+    func scan() async {
+        do { let raw = try await nfc.scan(); try await lookup(raw) } catch { self.error = error.localizedDescription }
+    }
+
+    func lookup(_ raw: String? = nil) async throws {
+        guard let normalized = normalize(raw ?? tag) else { error = "Expected CriderGPT-XXXXXX"; return }
+        tag = normalized; loading = true; error = nil; result = nil; canRegister = false
+        defer { loading = false }
+        let response: TagLookupResult = try await SupabaseClient.shared.invokeFunction(
+            "tag-lookup", body: SmartIDRequest(tagId: normalized), as: TagLookupResult.self)
+        result = response
+        canRegister = response.status == "not_found" || response.error != nil
+    }
+
+    func register(name: String, species: String, breed: String) async {
+        guard !species.trimmingCharacters(in: .whitespaces).isEmpty else { error = "Species is required"; return }
+        loading = true; defer { loading = false }
+        do {
+            let response: RegisterResult = try await SupabaseClient.shared.invokeFunction(
+                "claim-tag",
+                body: RegisterRequest(tagId: tag, animal: RegisterAnimal(
+                    name: name.isEmpty ? nil : name, species: species,
+                    breed: breed.isEmpty ? nil : breed)),
+                as: RegisterResult.self)
+            if response.success == true { canRegister = false; try await lookup(tag) }
+            else { error = response.error ?? "Registration failed" }
+        } catch { self.error = error.localizedDescription }
+    }
+}
+
+struct SmartIDView: View {
+    @StateObject private var vm = SmartIDViewModel()
+    @State private var name = ""
+    @State private var species = ""
+    @State private var breed = ""
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                Image(systemName: "sensor.tag.radiowaves.forward.fill").font(.system(size: 52)).foregroundStyle(.tint)
+                Text("Scan, register, and manage CriderGPT Smart IDs without leaving the app.")
+                    .multilineTextAlignment(.center).foregroundStyle(.secondary)
+                Button { Task { await vm.scan() } } label: {
+                    Label("Scan NFC tag", systemImage: "wave.3.right")
+                        .frame(maxWidth: .infinity).padding()
+                }.buttonStyle(.borderedProminent).disabled(!NFCReader.isAvailable || vm.loading)
+                TextField("CriderGPT-XXXXXX", text: $vm.tag)
+                    .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                    .textFieldStyle(.roundedBorder)
+                Button("Look up Smart ID") { Task { try? await vm.lookup() } }
+                    .buttonStyle(.bordered).disabled(vm.loading)
+                if vm.loading { ProgressView() }
+                if let error = vm.error { Text(error).foregroundStyle(.red) }
+                if let result = vm.result {
+                    GroupBox(result.authorized == true ? "Full animal profile" : "Public Smart ID result") {
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let animal = result.animal {
+                                Text("Name: " + (animal.name ?? "Not recorded"))
+                                Text("Species: " + (animal.species ?? "Not recorded"))
+                                Text("Breed: " + (animal.breed ?? "Not recorded"))
+                                Text("Status: " + (animal.status ?? "Not recorded"))
+                            } else {
+                                Text("Animal: " + (result.animalName ?? "Not registered"))
+                                if let species = result.species { Text("Species: " + species) }
+                                if let owner = result.ownerName { Text("Owner: " + owner) }
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                if vm.canRegister {
+                    GroupBox("Register this Smart ID") {
+                        VStack(spacing: 8) {
+                            TextField("Animal name", text: $name).textFieldStyle(.roundedBorder)
+                            TextField("Species (required)", text: $species).textFieldStyle(.roundedBorder)
+                            TextField("Breed", text: $breed).textFieldStyle(.roundedBorder)
+                            Button("Claim tag and create animal") {
+                                Task { await vm.register(name: name, species: species, breed: breed) }
+                            }.buttonStyle(.borderedProminent).disabled(vm.loading)
+                        }
+                    }
+                }
+            }.padding()
+        }.navigationTitle("Smart ID")
+    }
+}
+`,
+
+  "CriderGPT.entitlements": `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>com.apple.developer.nfc.readersession.formats</key>
+<array><string>NDEF</string></array>
+</dict></plist>
+`,
+
   "Project.yml": `# Use XcodeGen (brew install xcodegen) to generate the .xcodeproj:
 #   xcodegen generate
 name: CriderGPT
@@ -2308,7 +2542,7 @@ options:
 settings:
   base:
     DEVELOPMENT_TEAM: ""
-    SWIFT_VERSION: "5.0"
+    SWIFT_VERSION: "5.7"
     PRODUCT_NAME: CriderGPT
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
@@ -2337,6 +2571,7 @@ targets:
       - Ideas
       - Calendar
       - Profile
+      - SmartID
       - DevHub
       - Navigation
       - Files
@@ -2346,6 +2581,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.cridergpt.ios
         PRODUCT_NAME: CriderGPT
+        CODE_SIGN_ENTITLEMENTS: CriderGPT.entitlements
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_CFBundleDisplayName: CriderGPT
@@ -2356,9 +2592,6 @@ targets:
         NSCameraUsageDescription: "CriderGPT uses the camera to scan tags and capture animal photos."
         NSPhotoLibraryUsageDescription: "CriderGPT can attach photos from your library to animal records."
         NSFaceIDUsageDescription: "CriderGPT uses Face ID to protect owner-only DevHub tools."
-    capabilities:
-      - com.apple.developer.in-app-payments
-      - com.apple.developer.nfc.readersession.formats
 `,
 
   "reset-xcode-project.sh": `#!/bin/zsh
@@ -2413,7 +2646,9 @@ enum WebsiteNav {
             NavItem(label: "Vision Memory", route: "vision-memory"),
         ]),
         NavSection(title: "Productivity", items: [
+            NavItem(label: "Smart ID", route: "smart-id"),
             NavItem(label: "Livestock ID", route: "livestock"),
+            NavItem(label: "Hatching", route: "hatching"),
             NavItem(label: "Receipts", route: "receipts"),
             NavItem(label: "Agent Swarm", route: "agent-swarm"),
             NavItem(label: "Voice Studio", route: "voice-studio"),
@@ -2459,10 +2694,7 @@ enum WebsiteNav {
             NavItem(label: "Contact", route: "contact"),
         ]),
         NavSection(title: "External", items: [
-            NavItem(label: "Snapchat Lens",      externalURL: URL(string: "https://cridergpt.com/snapchat-lens")!),
-            NavItem(label: "Custom Filters",     externalURL: URL(string: "https://cridergpt.com/custom-filters")!),
-            NavItem(label: "Farming Simulator",  externalURL: URL(string: "https://cridergpt.com/farm-bureau")!),
-            NavItem(label: "Terms & Privacy",    externalURL: URL(string: "https://cridergpt.com/user-agreement")!),
+            NavItem(label: "Privacy Policy", externalURL: URL(string: "https://cridergpt.com/privacy")!),
         ]),
         NavSection(title: "Admin", items: [
             NavItem(label: "Admin Panel",  route: "admin",              requiresAdmin: true),
@@ -2752,4 +2984,3 @@ final class PlanViewModel: ObservableObject {
 }
 `,
 };
-
