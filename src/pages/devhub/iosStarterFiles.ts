@@ -1337,11 +1337,9 @@ final class ProfileViewModel: ObservableObject {
 
     func loadRoles() async {
         guard let uid = SessionManager.shared.userId else { return }
-        async let ownerTask: Bool = (try? await SupabaseClient.shared.rpc(
-            "has_role",
-            params: ["_user_id": uid, "_role": "owner"],
-            as: Bool.self
-        )) ?? false
+        async let ownerTask: Bool = (try? await SupabaseClient.shared.invokeFunction(
+            "verify-owner", body: EmptyOwnerCheck(), as: OwnerCheck.self
+        ).isOwner) ?? false
         async let adminTask: Bool = (try? await SupabaseClient.shared.rpc(
             "has_role",
             params: ["_user_id": uid, "_role": "admin"],
@@ -2724,16 +2722,21 @@ final class RoleGate: ObservableObject {
     private func check(_ role: String) async -> Bool {
         guard let uid = SessionManager.shared.userId else { return false }
         do {
+            if role == "owner" {
+                let response: OwnerCheck = try await SupabaseClient.shared.invokeFunction(
+                    "verify-owner", body: EmptyOwnerCheck(), as: OwnerCheck.self)
+                return response.isOwner
+            }
             return try await SupabaseClient.shared.rpc(
-                "has_role",
-                params: ["_user_id": uid, "_role": role],
-                as: Bool.self
-            )
+                "has_role", params: ["_user_id": uid, "_role": role], as: Bool.self)
         } catch {
             return false
         }
     }
 }
+
+struct EmptyOwnerCheck: Encodable {}
+struct OwnerCheck: Decodable { let isOwner: Bool }
 `,
 
   "Navigation/SideMenuView.swift": `import SwiftUI
