@@ -1,45 +1,29 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Egg,
-  RefreshCw,
-  Thermometer,
-  Droplets,
-  Calendar,
-  TrendingUp,
-  AlertCircle,
-  Bird,
-  DollarSign,
-  Activity,
-} from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from 'recharts';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Egg, RefreshCw, Thermometer, Droplets, Bird, ShoppingCart, HeartPulse, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
-const NR = 'Not recorded';
-const NA = 'Not available';
-const EM_DASH = '—';
-
-type Summary = {
-  active_batches: number | null;
-  planned_batches: number | null;
-  eggs_in_incubation: number | null;
-  chicks_available: number | null;
-  next_expected_hatch: string | null;
+const db = supabase as any;
+const today = () => new Date().toISOString().slice(0, 10);
+const localInputNow = () => {
+  const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 16);
 };
+const num = (v: string) => (v === "" ? null : Number(v));
+const dateOnly = (v?: string | null) => {
+  if (!v) return "Not recorded";
+  const [y, m, d] = v.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
+const dateTime = (v?: string | null) =>
+  v ? new Date(v).toLocaleString("en-US", { timeZone: "America/New_York" }) : "Not recorded";
+const weeksOld = (v: string) => Math.max(0, Math.floor((Date.now() - new Date(v + "T12:00:00").getTime()) / 604800000));
 
 type Batch = {
   id: string;
@@ -47,160 +31,121 @@ type Batch = {
   status: string;
   breed: string | null;
   eggs_set: number | null;
-  eggs_shipped: number | null;
   set_date: string | null;
   expected_hatch_date: string | null;
-  lockdown_date: string | null;
-  actual_hatch_date: string | null;
 };
-
-type LatestCheck = {
-  batch_id: string | null;
-  incubation_day: number | null;
-  checked_at: string | null;
-  temperature_f: number | null;
-  humidity_percent: number | null;
-  observed_humidity_range: string | null;
-  water_type: string | null;
-  water_reservoir_status: string | null;
-  egg_turner_status: string | null;
-  candling_status: string | null;
-  vent_status: string | null;
-  next_action: string | null;
-};
-
-type Candling = {
-  batch_id: string;
-  candling_day: number;
-  scheduled_date?: string | null;
-  performed_at?: string | null;
-};
-
-type Financial = {
-  batch_id: string | null;
-  batch_code: string | null;
-  total_expenses: number | null;
-  savings: number | null;
-  total_revenue: number | null;
-  profit: number | null;
-  break_even_per_chick: number | null;
-};
-
 type Check = {
+  id?: string;
   batch_id: string;
   checked_at: string;
   incubation_day: number | null;
   temperature_f: number | null;
   humidity_percent: number | null;
+  observed_humidity_range?: string | null;
+  water_type?: string | null;
+  water_reservoir_status?: string | null;
+  egg_turner_status?: string | null;
+  candling_status?: string | null;
+  vent_status?: string | null;
+  next_action?: string | null;
+  notes?: string | null;
+};
+type Supply = {
+  id: string;
+  batch_id: string | null;
+  item_name: string;
+  category: string;
+  quantity: number;
+  unit: string | null;
+  estimated_cost: number | null;
+  actual_cost: number | null;
+  priority: string;
+  needed_by: string | null;
+  purchased: boolean;
+  purchased_at: string | null;
+  notes: string | null;
+};
+type Group = {
+  id: string;
+  batch_id: string;
+  group_name: string | null;
+  breed: string | null;
+  hatch_date: string;
+  initial_count: number;
+  current_count: number;
+  brooder_location: string | null;
+  status: string;
+  notes: string | null;
+};
+type Health = {
+  id: string;
+  chick_group_id: string;
+  batch_id: string;
+  log_date: string;
+  health_status: string;
+  symptoms: string | null;
+  treatment: string | null;
+  medication: string | null;
+  mortality_count: number;
+  average_weight_oz: number | null;
+  brooder_temperature_f: number | null;
+  notes: string | null;
 };
 
-// Format date-only (YYYY-MM-DD) without TZ shift
-function fmtDateOnly(iso: string | null | undefined): string {
-  if (!iso) return NR;
-  const dateOnly = iso.slice(0, 10);
-  const [y, m, d] = dateOnly.split('-').map(Number);
-  if (!y || !m || !d) return NR;
-  const dt = new Date(y, m - 1, d);
-  return dt.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function fmtDateTime(iso: string | null | undefined): string {
-  if (!iso) return NR;
-  try {
-    return new Date(iso).toLocaleString('en-US', {
-      timeZone: 'America/New_York',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  } catch {
-    return NR;
-  }
-}
-
-function orNR(v: string | number | null | undefined): string {
-  if (v === null || v === undefined || v === '') return NR;
-  return String(v);
-}
-
-function statusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  const s = status?.toLowerCase() ?? '';
-  if (s.includes('incubat') || s === 'active') return 'default';
-  if (s.includes('plan')) return 'secondary';
-  if (s.includes('fail') || s.includes('cancel')) return 'destructive';
-  return 'outline';
-}
-
-function daysBetween(from: string | null, to: Date = new Date()): number | null {
-  if (!from) return null;
-  const [y, m, d] = from.slice(0, 10).split('-').map(Number);
-  if (!y) return null;
-  const start = new Date(y, m - 1, d);
-  const diff = Math.floor((to.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  return diff;
-}
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <label className="space-y-1 text-sm">
+    <span className="font-medium text-foreground">{label}</span>
+    {children}
+  </label>
+);
+const inputClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
+const areaClass = inputClass + " min-h-20";
 
 export function HatchingDashboardPanel() {
   const { user, loading: authLoading } = useAuth();
+  const [owner, setOwner] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [summary, setSummary] = useState<Summary | null>(null);
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [latestChecks, setLatestChecks] = useState<LatestCheck[]>([]);
-  const [candling, setCandling] = useState<Candling[]>([]);
-  const [financials, setFinancials] = useState<Financial[]>([]);
   const [checks, setChecks] = useState<Check[]>([]);
+  const [supplies, setSupplies] = useState<Supply[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [health, setHealth] = useState<Health[]>([]);
+  const [supplyFilter, setSupplyFilter] = useState("all");
 
   const loadAll = useCallback(async () => {
     if (!user) return;
     setError(null);
     try {
-      const [sumRes, batchRes, latestRes, candRes, finRes, chkRes] = await Promise.all([
-        supabase.from('hatch_dashboard_summary').select('*').maybeSingle(),
-        supabase
-          .from('hatch_batches')
-          .select(
-            'id,batch_code,status,breed,eggs_set,eggs_shipped,set_date,expected_hatch_date,lockdown_date,actual_hatch_date'
-          )
-          .order('set_date', { ascending: false, nullsFirst: false })
-          .limit(50),
-        supabase.from('hatch_latest_checks').select('*').limit(50),
-        supabase
-          .from('hatch_candling_events')
-          .select('batch_id,candling_day,scheduled_date,performed_at')
-          .order('scheduled_date', { ascending: true, nullsFirst: false })
-          .limit(50),
-        supabase.from('hatch_batch_financials').select('*').limit(50),
-        supabase
-          .from('hatch_incubation_checks')
-          .select('batch_id,checked_at,incubation_day,temperature_f,humidity_percent')
-          .order('checked_at', { ascending: true })
-          .limit(200),
+      const access = await db.rpc("is_hatching_owner");
+      if (access.error) throw access.error;
+      const allowed = access.data === true;
+      setOwner(allowed);
+      if (!allowed) return;
+      const [b, c, s, g, h] = await Promise.all([
+        db
+          .from("hatch_batches")
+          .select("id,batch_code,status,breed,eggs_set,set_date,expected_hatch_date")
+          .order("set_date", { ascending: false, nullsFirst: false }),
+        db.from("hatch_incubation_checks").select("*").order("checked_at", { ascending: false }).limit(200),
+        db
+          .from("hatch_supply_items")
+          .select("*")
+          .order("purchased", { ascending: true })
+          .order("needed_by", { ascending: true, nullsFirst: false }),
+        db.from("hatch_chick_groups").select("*").order("hatch_date", { ascending: false }),
+        db.from("hatch_health_logs").select("*").order("log_date", { ascending: false }).limit(200),
       ]);
-
-      if (sumRes.error) throw sumRes.error;
-      if (batchRes.error) throw batchRes.error;
-      if (latestRes.error) throw latestRes.error;
-      if (candRes.error) throw candRes.error;
-      if (finRes.error) throw finRes.error;
-      if (chkRes.error) throw chkRes.error;
-
-      setSummary(sumRes.data as Summary | null);
-      setBatches((batchRes.data ?? []) as Batch[]);
-      setLatestChecks((latestRes.data ?? []) as LatestCheck[]);
-      setCandling((candRes.data ?? []) as Candling[]);
-      setFinancials((finRes.data ?? []) as Financial[]);
-      setChecks((chkRes.data ?? []) as Check[]);
+      for (const r of [b, c, s, g, h]) if (r.error) throw r.error;
+      setBatches(b.data || []);
+      setChecks(c.data || []);
+      setSupplies(s.data || []);
+      setGroups(g.data || []);
+      setHealth(h.data || []);
     } catch (e: any) {
-      console.error('[HatchingDashboard] load error', e);
-      setError(e?.message ?? 'Failed to load hatching data');
+      console.error("[HatchingDashboard]", e);
+      setError(e?.message || "Failed to load hatching data");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -208,520 +153,763 @@ export function HatchingDashboardPanel() {
   }, [user]);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      loadAll();
-    } else if (!authLoading && !user) {
+    if (authLoading) return;
+    if (!user) {
       setLoading(false);
+      setOwner(false);
+      return;
     }
+    loadAll();
   }, [authLoading, user, loadAll]);
 
-  const handleRefresh = () => {
+  const refresh = () => {
     setRefreshing(true);
     loadAll();
   };
-
-  const activeBatch = useMemo(
-    () =>
-      batches.find((b) => b.batch_code === 'BATCH-001') ??
-      batches.find((b) => b.status?.toLowerCase().includes('incubat')) ??
-      null,
-    [batches]
+  const batchName = (id: string | null) => batches.find((b) => b.id === id)?.batch_code || "No batch";
+  const groupName = (id: string) => groups.find((g) => g.id === id)?.group_name || "Chick group";
+  const active = batches.filter((b) => b.status.toLowerCase().includes("incubat")).length;
+  const planned = batches.filter((b) => b.status.toLowerCase().includes("plan")).length;
+  const eggs = batches
+    .filter((b) => b.status.toLowerCase().includes("incubat"))
+    .reduce((n, b) => n + (b.eggs_set || 0), 0);
+  const filteredSupplies = supplies.filter(
+    (s) => supplyFilter === "all" || (supplyFilter === "needed" ? !s.purchased : s.purchased),
   );
+  const estimate = supplies.reduce((n, s) => n + Number(s.estimated_cost || 0), 0);
+  const spent = supplies.reduce((n, s) => n + Number(s.actual_cost || 0), 0);
 
-  const activeLatest = useMemo(
-    () => (activeBatch ? latestChecks.find((c) => c.batch_id === activeBatch.id) ?? null : null),
-    [activeBatch, latestChecks]
-  );
-
-  const activeChecks = useMemo(
-    () => (activeBatch ? checks.filter((c) => c.batch_id === activeBatch.id) : []),
-    [activeBatch, checks]
-  );
-
-  const milestones = useMemo(() => {
-    const items: { date: string; label: string; batch: string }[] = [];
-    for (const b of batches) {
-      if (['failed', 'cancelled', 'complete', 'completed'].includes(b.status?.toLowerCase() ?? '')) continue;
-      if (b.expected_hatch_date) items.push({ date: b.expected_hatch_date, label: 'Expected hatch', batch: b.batch_code });
-      if (b.lockdown_date) items.push({ date: b.lockdown_date, label: 'Lockdown', batch: b.batch_code });
+  const insertRow = async (table: string, payload: any, success: string) => {
+    const r = await db.from(table).insert({ ...payload, owner_id: user!.id });
+    if (r.error) {
+      toast.error(r.error.message);
+      return false;
     }
-    for (const c of candling) {
-      const d = c.scheduled_date ?? c.performed_at;
-      const b = batches.find((x) => x.id === c.batch_id);
-      if (!b) continue;
-      if (['failed', 'cancelled', 'complete', 'completed'].includes(b.status?.toLowerCase() ?? '')) continue;
-      if (d) items.push({ date: d, label: `Candling day ${c.candling_day}`, batch: b.batch_code });
-    }
-    return items.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
-  }, [batches, candling]);
+    toast.success(success);
+    await loadAll();
+    return true;
+  };
 
-  // ===== Render states =====
-  if (authLoading) {
+  if (authLoading || (user && owner === null && loading))
     return (
       <div className="p-6 space-y-4">
         <Skeleton className="h-10 w-72" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
-  }
-
-  if (!user) {
+  if (!user)
     return (
-      <div className="flex items-center justify-center min-h-[400px] p-6">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Egg className="h-5 w-5 text-primary" />
-              Chicken Hatching Dashboard
-            </CardTitle>
-            <CardDescription>Sign in to track incubation, candling, hatch dates, and profitability.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => (window.location.href = '/auth')} className="w-full">
-              Sign in
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Centered
+        title="Chicken Hatching Dashboard"
+        text="Sign in to use this private DevHub tool."
+        action={<Button onClick={() => (location.href = "/auth")}>Sign in</Button>}
+      />
     );
-  }
+  if (owner === false)
+    return <Centered title="Owner-only DevHub tool" text="This dashboard is available only to the CriderGPT owner." />;
+  if (error && batches.length === 0) return <Centered title="Could not load dashboard" text={error} />;
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
+    <div className="p-4 md:p-6 space-y-5 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
             <Egg className="h-7 w-7 text-primary" />
             Chicken Hatching Dashboard
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track incubation, candling, hatch dates, inventory, and profitability.
+          <p className="text-sm text-muted-foreground">
+            Private DevHub operations for incubation, supplies, chicks, and health.
           </p>
         </div>
-        <Button onClick={handleRefresh} disabled={refreshing || loading} variant="outline" size="sm">
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+        <Button variant="outline" size="sm" onClick={refresh} disabled={refreshing}>
+          <RefreshCw className={"h-4 w-4 mr-2 " + (refreshing ? "animate-spin" : "")} />
           Refresh
         </Button>
       </div>
-
       {error && (
-        <Card className="border-destructive/50 bg-destructive/5">
-          <CardContent className="p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
-            <div>
-              <p className="font-medium text-destructive">Failed to load</p>
-              <p className="text-sm text-muted-foreground">{error}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive flex gap-2">
+          <AlertCircle className="h-4 w-4" />
+          {error}
         </div>
-      ) : (
-        <>
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <SummaryCard label="Active Batches" value={summary?.active_batches ?? 0} icon={Activity} />
-            <SummaryCard label="Planned Batches" value={summary?.planned_batches ?? 0} icon={Calendar} />
-            <SummaryCard label="Eggs Incubating" value={summary?.eggs_in_incubation ?? 0} icon={Egg} />
-            <SummaryCard label="Chicks Available" value={summary?.chicks_available ?? 0} icon={Bird} />
-            <SummaryCard
-              label="Next Expected Hatch"
-              value={summary?.next_expected_hatch ? fmtDateOnly(summary.next_expected_hatch) : NR}
-              icon={TrendingUp}
-              small
-            />
+      )}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="grid h-auto grid-cols-2 md:grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="checks">Daily Log</TabsTrigger>
+          <TabsTrigger value="supplies">Supplies</TabsTrigger>
+          <TabsTrigger value="health">Chicks & Health</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <Metric title="Active batches" value={active} icon={Egg} />
+            <Metric title="Planned batches" value={planned} icon={RefreshCw} />
+            <Metric title="Eggs incubating" value={eggs} icon={Bird} />
+            <Metric title="Chicks tracked" value={groups.reduce((n, g) => n + g.current_count, 0)} icon={HeartPulse} />
           </div>
-
-          {/* Active Incubation Spotlight */}
-          <ActiveSpotlight batch={activeBatch} latest={activeLatest} />
-
-          {/* Milestones + Monitoring */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  Upcoming Milestones
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {milestones.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No upcoming milestones scheduled.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {milestones.map((m, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{m.label}</p>
-                          <p className="text-xs text-muted-foreground">{m.batch}</p>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {fmtDateOnly(m.date)}
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Thermometer className="h-4 w-4 text-primary" />
-                  Monitoring
-                </CardTitle>
-                <CardDescription>
-                  {activeBatch ? `Trends for ${activeBatch.batch_code}` : 'Select an active batch'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MonitorCharts checks={activeChecks} />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Batches */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Batches</CardTitle>
-              <CardDescription>All incubation batches</CardDescription>
+              <CardTitle>Batches</CardTitle>
+              <CardDescription>BATCH-001 remains active; BATCH-002 remains planned.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <BatchesList batches={batches} />
+            <CardContent className="grid md:grid-cols-2 gap-3">
+              {batches.map((b) => (
+                <div key={b.id} className="rounded-lg border p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <strong>{b.batch_code}</strong>
+                    <Badge variant="outline">{b.status}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{b.breed || "Breed not recorded"}</p>
+                  <div className="grid grid-cols-3 text-sm">
+                    <span>Eggs: {b.eggs_set ?? "—"}</span>
+                    <span>Set: {dateOnly(b.set_date)}</span>
+                    <span>Hatch: {dateOnly(b.expected_hatch_date)}</span>
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
-
-          {/* Financials */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                Financial Snapshot
+              <CardTitle className="flex gap-2">
+                <Thermometer className="h-5 w-5" />
+                Recent readings
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <FinancialsTable rows={financials} />
+            <CardContent className="space-y-2">
+              {checks.slice(0, 8).map((c, i) => (
+                <div key={c.id || i} className="grid grid-cols-2 md:grid-cols-5 gap-2 rounded-md border p-3 text-sm">
+                  <strong>{batchName(c.batch_id)}</strong>
+                  <span>Day {c.incubation_day ?? "—"}</span>
+                  <span>{c.temperature_f ?? "—"}°F</span>
+                  <span>{c.humidity_percent ?? "—"}%</span>
+                  <span className="text-muted-foreground">{dateTime(c.checked_at)}</span>
+                </div>
+              ))}
             </CardContent>
           </Card>
-        </>
-      )}
+        </TabsContent>
+        <TabsContent value="checks">
+          <DailyLog
+            batches={batches}
+            checks={checks}
+            submit={(p: any) => insertRow("hatch_incubation_checks", p, "Incubator reading saved")}
+          />
+        </TabsContent>
+        <TabsContent value="supplies" className="space-y-4">
+          <SupplyForm batches={batches} submit={(p: any) => insertRow("hatch_supply_items", p, "Supply item added")} />
+          <div className="grid grid-cols-2 gap-3">
+            <Metric title="Estimated" value={"$" + estimate.toFixed(2)} icon={ShoppingCart} />
+            <Metric title="Purchased" value={"$" + spent.toFixed(2)} icon={ShoppingCart} />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant={supplyFilter === "all" ? "default" : "outline"}
+              onClick={() => setSupplyFilter("all")}
+            >
+              All
+            </Button>
+            <Button
+              size="sm"
+              variant={supplyFilter === "needed" ? "default" : "outline"}
+              onClick={() => setSupplyFilter("needed")}
+            >
+              Still needed
+            </Button>
+            <Button
+              size="sm"
+              variant={supplyFilter === "purchased" ? "default" : "outline"}
+              onClick={() => setSupplyFilter("purchased")}
+            >
+              Purchased
+            </Button>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {filteredSupplies.map((s) => (
+              <Card key={s.id}>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex justify-between gap-2">
+                    <strong>{s.item_name}</strong>
+                    <Badge variant={s.purchased ? "secondary" : "outline"}>
+                      {s.purchased ? "Purchased" : s.priority}
+                    </Badge>
+                  </div>
+                  <p className="text-sm">
+                    {s.quantity} {s.unit || ""} · {s.category} · {batchName(s.batch_id)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Needed {dateOnly(s.needed_by)} · Est.{" "}
+                    {s.estimated_cost == null ? "—" : "$" + Number(s.estimated_cost).toFixed(2)}
+                  </p>
+                  {!s.purchased && (
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        const cost = window.prompt("Actual cost (optional)") || "";
+                        const r = await db
+                          .from("hatch_supply_items")
+                          .update({ purchased: true, purchased_at: new Date().toISOString(), actual_cost: num(cost) })
+                          .eq("id", s.id);
+                        if (r.error) toast.error(r.error.message);
+                        else {
+                          toast.success("Marked purchased");
+                          loadAll();
+                        }
+                      }}
+                    >
+                      Mark purchased
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="health" className="space-y-4">
+          <ChickForm batches={batches} submit={(p: any) => insertRow("hatch_chick_groups", p, "Chick group added")} />
+          <div className="grid md:grid-cols-2 gap-3">
+            {groups.map((g) => (
+              <Card key={g.id}>
+                <CardContent className="p-4">
+                  <div className="flex justify-between">
+                    <strong>{g.group_name || batchName(g.batch_id)}</strong>
+                    <Badge variant="outline">{g.status}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {g.breed || "Breed not recorded"} · Hatched {dateOnly(g.hatch_date)}
+                  </p>
+                  <p className="mt-2 font-medium">
+                    {weeksOld(g.hatch_date)} weeks old · {g.current_count}/{g.initial_count} chicks
+                  </p>
+                  <p className="text-sm">{g.brooder_location || "Brooder location not recorded"}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <HealthForm groups={groups} submit={(p: any) => insertRow("hatch_health_logs", p, "Health log saved")} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent health timeline</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {health.map((h) => (
+                <div key={h.id} className="border-l-2 border-primary pl-3 py-1">
+                  <div className="flex justify-between gap-2">
+                    <strong>{groupName(h.chick_group_id)}</strong>
+                    <span className="text-xs text-muted-foreground">{dateOnly(h.log_date)}</span>
+                  </div>
+                  <p className="text-sm">
+                    <Badge variant="outline">{h.health_status}</Badge> Mortality: {h.mortality_count} · Weight:{" "}
+                    {h.average_weight_oz ?? "—"} oz · Brooder: {h.brooder_temperature_f ?? "—"}°F
+                  </p>
+                  {(h.symptoms || h.treatment || h.medication || h.notes) && (
+                    <p className="text-sm text-muted-foreground">
+                      {[h.symptoms, h.treatment, h.medication, h.notes].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
-// ============ Sub-components ============
-
-function SummaryCard({
-  label,
-  value,
-  icon: Icon,
-  small,
-}: {
-  label: string;
-  value: React.ReactNode;
-  icon: React.ElementType;
-  small?: boolean;
-}) {
+function Centered({ title, text, action }: { title: string; text: string; action?: React.ReactNode }) {
+  return (
+    <div className="min-h-[420px] grid place-items-center p-6">
+      <Card className="max-w-md w-full">
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{text}</CardDescription>
+        </CardHeader>
+        {action && <CardContent>{action}</CardContent>}
+      </Card>
+    </div>
+  );
+}
+function Metric({ title, value, icon: Icon }: { title: string; value: React.ReactNode; icon: React.ElementType }) {
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
-          <Icon className="h-4 w-4 text-muted-foreground" />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>{title}</span>
+          <Icon className="h-4 w-4" />
         </div>
-        <p className={small ? 'text-sm font-semibold text-foreground' : 'text-2xl font-bold text-foreground'}>
-          {value}
-        </p>
+        <p className="text-2xl font-bold mt-2">{value}</p>
       </CardContent>
     </Card>
   );
 }
 
-function ActiveSpotlight({ batch, latest }: { batch: Batch | null; latest: LatestCheck | null }) {
-  if (!batch) {
-    return (
+function DailyLog({
+  batches,
+  checks,
+  submit,
+}: {
+  batches: Batch[];
+  checks: Check[];
+  submit: (p: any) => Promise<boolean>;
+}) {
+  const [f, setF] = useState<any>({
+    batch_id: batches[0]?.id || "",
+    checked_at: localInputNow(),
+    incubation_day: "",
+    temperature_f: "",
+    humidity_percent: "",
+    observed_humidity_range: "",
+    water_type: "",
+    water_reservoir_status: "",
+    egg_turner_status: "",
+    candling_status: "",
+    vent_status: "",
+    next_action: "",
+    notes: "",
+  });
+  useEffect(() => {
+    if (!f.batch_id && batches[0]) setF((x: any) => ({ ...x, batch_id: batches[0].id }));
+  }, [batches, f.batch_id]);
+  const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
+  return (
+    <div className="grid lg:grid-cols-2 gap-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Active Incubation</CardTitle>
+          <CardTitle>Log incubator conditions</CardTitle>
+          <CardDescription>
+            Record daily temperature, humidity, water, turner, candling, and vent status.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No active incubating batch found.</p>
+          <form
+            className="grid sm:grid-cols-2 gap-3"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (
+                await submit({
+                  ...f,
+                  checked_at: new Date(f.checked_at).toISOString(),
+                  incubation_day: num(f.incubation_day),
+                  temperature_f: num(f.temperature_f),
+                  humidity_percent: num(f.humidity_percent),
+                  recorded_by: null,
+                })
+              )
+                setF({ ...f, checked_at: localInputNow(), temperature_f: "", humidity_percent: "", notes: "" });
+            }}
+          >
+            <Field label="Batch">
+              <select className={inputClass} required value={f.batch_id} onChange={set("batch_id")}>
+                {batches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.batch_code}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Checked at">
+              <input
+                className={inputClass}
+                type="datetime-local"
+                required
+                value={f.checked_at}
+                onChange={set("checked_at")}
+              />
+            </Field>
+            <Field label="Incubation day">
+              <input
+                className={inputClass}
+                type="number"
+                min="0"
+                max="40"
+                value={f.incubation_day}
+                onChange={set("incubation_day")}
+              />
+            </Field>
+            <Field label="Temperature °F">
+              <input
+                className={inputClass}
+                type="number"
+                step="0.1"
+                value={f.temperature_f}
+                onChange={set("temperature_f")}
+              />
+            </Field>
+            <Field label="Humidity %">
+              <input
+                className={inputClass}
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={f.humidity_percent}
+                onChange={set("humidity_percent")}
+              />
+            </Field>
+            <Field label="Observed humidity range">
+              <input
+                className={inputClass}
+                value={f.observed_humidity_range}
+                onChange={set("observed_humidity_range")}
+              />
+            </Field>
+            {[
+              "water_type",
+              "water_reservoir_status",
+              "egg_turner_status",
+              "candling_status",
+              "vent_status",
+              "next_action",
+            ].map((k) => (
+              <Field key={k} label={k.replaceAll("_", " ")}>
+                <input className={inputClass} value={f[k]} onChange={set(k)} />
+              </Field>
+            ))}
+            <div className="sm:col-span-2">
+              <Field label="Notes">
+                <textarea className={areaClass} value={f.notes} onChange={set("notes")} />
+              </Field>
+            </div>
+            <Button className="sm:col-span-2" type="submit">
+              Save daily reading
+            </Button>
+          </form>
         </CardContent>
       </Card>
-    );
-  }
+      <Card>
+        <CardHeader>
+          <CardTitle>Reading history</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 max-h-[650px] overflow-auto">
+          {checks.map((c, i) => (
+            <div key={c.id || i} className="rounded-md border p-3 text-sm">
+              <div className="flex justify-between">
+                <strong>{batches.find((b) => b.id === c.batch_id)?.batch_code}</strong>
+                <span>{dateTime(c.checked_at)}</span>
+              </div>
+              <p>
+                <Thermometer className="inline h-4 w-4" /> {c.temperature_f ?? "—"}°F ·{" "}
+                <Droplets className="inline h-4 w-4" /> {c.humidity_percent ?? "—"}% · Day {c.incubation_day ?? "—"}
+              </p>
+              <p className="text-muted-foreground">
+                {[c.egg_turner_status, c.candling_status, c.vent_status, c.next_action, c.notes]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
-  const setDay = daysBetween(batch.set_date);
-  const totalDays = 21;
-  const progress =
-    setDay !== null && setDay >= 0 ? Math.min(100, Math.round((setDay / totalDays) * 100)) : null;
-
+function SupplyForm({ batches, submit }: { batches: Batch[]; submit: (p: any) => Promise<boolean> }) {
+  const [f, setF] = useState<any>({
+    batch_id: "",
+    item_name: "",
+    category: "feed",
+    quantity: "1",
+    unit: "",
+    estimated_cost: "",
+    priority: "normal",
+    needed_by: "",
+    notes: "",
+  });
+  const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
   return (
-    <Card className="border-primary/30">
+    <Card>
       <CardHeader>
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Egg className="h-5 w-5 text-primary" />
-              {batch.batch_code}
-            </CardTitle>
-            <CardDescription>{batch.breed ?? NR}</CardDescription>
-          </div>
-          <Badge variant={statusVariant(batch.status)}>{batch.status}</Badge>
-        </div>
+        <CardTitle>Add supply item</CardTitle>
+        <CardDescription>Track feed, brooder, bedding, health, and equipment purchases.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <Info label="Eggs Set" value={batch.eggs_set ?? NR} />
-          <Info label="Eggs Shipped" value={batch.eggs_shipped ?? NR} />
-          <Info label="Set Date" value={fmtDateOnly(batch.set_date)} />
-          <Info label="Expected Hatch" value={fmtDateOnly(batch.expected_hatch_date)} />
-        </div>
-
-        <div>
-          <div className="flex justify-between mb-1 text-xs text-muted-foreground">
-            <span>
-              Incubation Day {setDay !== null && setDay >= 0 ? setDay : NR} / {totalDays}
-            </span>
-            <span>{progress !== null ? `${progress}%` : NR}</span>
+      <CardContent>
+        <form
+          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (
+              await submit({
+                ...f,
+                batch_id: f.batch_id || null,
+                quantity: Number(f.quantity),
+                estimated_cost: num(f.estimated_cost),
+                needed_by: f.needed_by || null,
+                purchased: false,
+              })
+            )
+              setF({ ...f, item_name: "", notes: "" });
+          }}
+        >
+          <Field label="Item">
+            <input className={inputClass} required value={f.item_name} onChange={set("item_name")} />
+          </Field>
+          <Field label="Batch (optional)">
+            <select className={inputClass} value={f.batch_id} onChange={set("batch_id")}>
+              <option value="">All chicks</option>
+              {batches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.batch_code}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Category">
+            <select className={inputClass} value={f.category} onChange={set("category")}>
+              {["feed", "brooder", "water", "bedding", "health", "equipment", "other"].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Priority">
+            <select className={inputClass} value={f.priority} onChange={set("priority")}>
+              {["low", "normal", "high", "urgent"].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Quantity">
+            <input
+              className={inputClass}
+              required
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={f.quantity}
+              onChange={set("quantity")}
+            />
+          </Field>
+          <Field label="Unit">
+            <input className={inputClass} value={f.unit} onChange={set("unit")} />
+          </Field>
+          <Field label="Estimated cost">
+            <input
+              className={inputClass}
+              type="number"
+              step="0.01"
+              min="0"
+              value={f.estimated_cost}
+              onChange={set("estimated_cost")}
+            />
+          </Field>
+          <Field label="Needed by">
+            <input className={inputClass} type="date" value={f.needed_by} onChange={set("needed_by")} />
+          </Field>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Field label="Notes">
+              <textarea className={areaClass} value={f.notes} onChange={set("notes")} />
+            </Field>
           </div>
-          <Progress value={progress ?? 0} className="h-2" />
-        </div>
+          <Button className="sm:col-span-2 lg:col-span-4" type="submit">
+            Add to shopping list
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm pt-2 border-t border-border">
-          <Info
-            label="Temperature"
-            value={latest?.temperature_f != null ? `${latest.temperature_f}°F` : NR}
-            icon={Thermometer}
-          />
-          <Info
-            label="Humidity"
-            value={latest?.humidity_percent != null ? `${latest.humidity_percent}%` : NR}
-            icon={Droplets}
-          />
-          <Info label="Observed Humidity Range" value={orNR(latest?.observed_humidity_range)} />
-          <Info label="Water Type" value={orNR(latest?.water_type)} />
-          <Info label="Reservoir" value={orNR(latest?.water_reservoir_status)} />
-          <Info label="Egg Turner" value={orNR(latest?.egg_turner_status)} />
-          <Info label="Candling" value={orNR(latest?.candling_status)} />
-          <Info label="Vent" value={orNR(latest?.vent_status)} />
-          <Info label="Next Action" value={orNR(latest?.next_action)} />
-        </div>
+function ChickForm({ batches, submit }: { batches: Batch[]; submit: (p: any) => Promise<boolean> }) {
+  const [f, setF] = useState<any>({
+    batch_id: batches[0]?.id || "",
+    group_name: "",
+    breed: "",
+    hatch_date: today(),
+    initial_count: "1",
+    current_count: "1",
+    brooder_location: "",
+    status: "active",
+    notes: "",
+  });
+  useEffect(() => {
+    if (!f.batch_id && batches[0]) setF((x: any) => ({ ...x, batch_id: batches[0].id }));
+  }, [batches, f.batch_id]);
+  const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Add hatched chick group</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await submit({ ...f, initial_count: Number(f.initial_count), current_count: Number(f.current_count) });
+          }}
+        >
+          <Field label="Batch">
+            <select className={inputClass} required value={f.batch_id} onChange={set("batch_id")}>
+              {batches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.batch_code}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Group name">
+            <input className={inputClass} value={f.group_name} onChange={set("group_name")} />
+          </Field>
+          <Field label="Breed">
+            <input className={inputClass} value={f.breed} onChange={set("breed")} />
+          </Field>
+          <Field label="Hatch date">
+            <input className={inputClass} required type="date" value={f.hatch_date} onChange={set("hatch_date")} />
+          </Field>
+          <Field label="Initial count">
+            <input
+              className={inputClass}
+              required
+              type="number"
+              min="0"
+              value={f.initial_count}
+              onChange={set("initial_count")}
+            />
+          </Field>
+          <Field label="Current count">
+            <input
+              className={inputClass}
+              required
+              type="number"
+              min="0"
+              value={f.current_count}
+              onChange={set("current_count")}
+            />
+          </Field>
+          <Field label="Brooder location">
+            <input className={inputClass} value={f.brooder_location} onChange={set("brooder_location")} />
+          </Field>
+          <Field label="Status">
+            <select className={inputClass} value={f.status} onChange={set("status")}>
+              {["active", "sold", "moved", "complete"].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </Field>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Field label="Notes">
+              <textarea className={areaClass} value={f.notes} onChange={set("notes")} />
+            </Field>
+          </div>
+          <Button className="sm:col-span-2 lg:col-span-4" type="submit">
+            Add chick group
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
-        {latest?.checked_at && (
-          <p className="text-xs text-muted-foreground">Last check: {fmtDateTime(latest.checked_at)}</p>
+function HealthForm({ groups, submit }: { groups: Group[]; submit: (p: any) => Promise<boolean> }) {
+  const [f, setF] = useState<any>({
+    chick_group_id: groups[0]?.id || "",
+    log_date: today(),
+    health_status: "healthy",
+    symptoms: "",
+    treatment: "",
+    medication: "",
+    mortality_count: "0",
+    average_weight_oz: "",
+    brooder_temperature_f: "",
+    notes: "",
+  });
+  useEffect(() => {
+    if (!f.chick_group_id && groups[0]) setF((x: any) => ({ ...x, chick_group_id: groups[0].id }));
+  }, [groups, f.chick_group_id]);
+  const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Log chick health</CardTitle>
+        <CardDescription>Daily wellness, weights, treatments, medication, and mortality.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {groups.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Add a chick group before creating health logs.</p>
+        ) : (
+          <form
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const g = groups.find((x) => x.id === f.chick_group_id)!;
+              await submit({
+                ...f,
+                batch_id: g.batch_id,
+                mortality_count: Number(f.mortality_count),
+                average_weight_oz: num(f.average_weight_oz),
+                brooder_temperature_f: num(f.brooder_temperature_f),
+              });
+            }}
+          >
+            <Field label="Chick group">
+              <select className={inputClass} required value={f.chick_group_id} onChange={set("chick_group_id")}>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.group_name || g.breed || "Chicks"}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Log date">
+              <input className={inputClass} required type="date" value={f.log_date} onChange={set("log_date")} />
+            </Field>
+            <Field label="Health status">
+              <select className={inputClass} value={f.health_status} onChange={set("health_status")}>
+                {["healthy", "watch", "sick", "recovering"].map((x) => (
+                  <option key={x}>{x}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Mortality count">
+              <input
+                className={inputClass}
+                type="number"
+                min="0"
+                value={f.mortality_count}
+                onChange={set("mortality_count")}
+              />
+            </Field>
+            <Field label="Average weight (oz)">
+              <input
+                className={inputClass}
+                type="number"
+                step="0.01"
+                min="0"
+                value={f.average_weight_oz}
+                onChange={set("average_weight_oz")}
+              />
+            </Field>
+            <Field label="Brooder temp °F">
+              <input
+                className={inputClass}
+                type="number"
+                step="0.1"
+                value={f.brooder_temperature_f}
+                onChange={set("brooder_temperature_f")}
+              />
+            </Field>
+            <Field label="Symptoms">
+              <input className={inputClass} value={f.symptoms} onChange={set("symptoms")} />
+            </Field>
+            <Field label="Treatment">
+              <input className={inputClass} value={f.treatment} onChange={set("treatment")} />
+            </Field>
+            <Field label="Medication">
+              <input className={inputClass} value={f.medication} onChange={set("medication")} />
+            </Field>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <Field label="Notes">
+                <textarea className={areaClass} value={f.notes} onChange={set("notes")} />
+              </Field>
+            </div>
+            <Button className="sm:col-span-2 lg:col-span-4" type="submit">
+              Save health log
+            </Button>
+          </form>
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function Info({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: React.ReactNode;
-  icon?: React.ElementType;
-}) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-        {Icon && <Icon className="h-3 w-3" />}
-        {label}
-      </p>
-      <p className="text-sm font-medium text-foreground mt-0.5">{value}</p>
-    </div>
-  );
-}
-
-function MonitorCharts({ checks }: { checks: Check[] }) {
-  if (checks.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
-        No incubation checks recorded yet. Once you log readings, trends will appear here.
-      </p>
-    );
-  }
-
-  const data = checks.map((c) => ({
-    day: c.incubation_day ?? '',
-    time: new Date(c.checked_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }),
-    temp: c.temperature_f,
-    humidity: c.humidity_percent,
-  }));
-
-  const single = checks.length === 1;
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <p className="text-xs text-muted-foreground mb-1">Temperature (°F)</p>
-        <div className="h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-              <Tooltip
-                contentStyle={{
-                  background: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  fontSize: 12,
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="temp"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                dot={{ r: single ? 4 : 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      <div>
-        <p className="text-xs text-muted-foreground mb-1">Humidity (%)</p>
-        <div className="h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-              <Tooltip
-                contentStyle={{
-                  background: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  fontSize: 12,
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="humidity"
-                stroke="hsl(var(--chart-2, var(--primary)))"
-                strokeWidth={2}
-                dot={{ r: single ? 4 : 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      {single && (
-        <p className="text-xs text-muted-foreground">
-          Only one reading logged so far — add more checks to build a trend.
-        </p>
-      )}
-    </div>
-  );
-}
-
-function BatchesList({ batches }: { batches: Batch[] }) {
-  const visible = batches.filter((b) => !!b.batch_code);
-  if (visible.length === 0) {
-    return <p className="text-sm text-muted-foreground">No batches yet.</p>;
-  }
-  return (
-    <ScrollArea className="w-full">
-      <div className="min-w-[640px]">
-        <div className="grid grid-cols-6 gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b border-border">
-          <div>Batch</div>
-          <div>Status</div>
-          <div>Set</div>
-          <div>Expected</div>
-          <div className="text-right">Eggs Set</div>
-          <div>Progress</div>
-        </div>
-        {visible.map((b) => {
-          const day = daysBetween(b.set_date);
-          const progress = day !== null && day >= 0 ? Math.min(100, Math.round((day / 21) * 100)) : null;
-          return (
-            <div
-              key={b.id}
-              className="grid grid-cols-6 gap-3 px-3 py-3 text-sm border-b border-border/50 last:border-0 items-center"
-            >
-              <div className="font-medium text-foreground">{b.batch_code}</div>
-              <div>
-                <Badge variant={statusVariant(b.status)} className="text-xs">
-                  {b.status}
-                </Badge>
-              </div>
-              <div className="text-muted-foreground">{fmtDateOnly(b.set_date)}</div>
-              <div className="text-muted-foreground">{fmtDateOnly(b.expected_hatch_date)}</div>
-              <div className="text-right">{b.eggs_set ?? NR}</div>
-              <div>
-                {progress !== null ? (
-                  <div className="flex items-center gap-2">
-                    <Progress value={progress} className="h-1.5 flex-1" />
-                    <span className="text-xs text-muted-foreground">{progress}%</span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">{NR}</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </ScrollArea>
-  );
-}
-
-function FinancialsTable({ rows }: { rows: Financial[] }) {
-  const visible = rows.filter((r) => !!r.batch_code);
-  if (visible.length === 0) {
-    return <p className="text-sm text-muted-foreground">No financial data yet.</p>;
-  }
-  const fmt = (n: number | null) =>
-    n === null || n === undefined ? EM_DASH : `$${Number(n).toFixed(2)}`;
-  return (
-    <ScrollArea className="w-full">
-      <div className="min-w-[640px]">
-        <div className="grid grid-cols-6 gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b border-border">
-          <div>Batch</div>
-          <div className="text-right">Expenses</div>
-          <div className="text-right">Savings</div>
-          <div className="text-right">Revenue</div>
-          <div className="text-right">Profit</div>
-          <div className="text-right">Break-even/chick</div>
-        </div>
-        {visible.map((r) => (
-          <div
-            key={r.batch_id ?? r.batch_code!}
-            className="grid grid-cols-6 gap-3 px-3 py-3 text-sm border-b border-border/50 last:border-0"
-          >
-            <div className="font-medium text-foreground">{r.batch_code}</div>
-            <div className="text-right">{fmt(r.total_expenses)}</div>
-            <div className="text-right">{fmt(r.savings)}</div>
-            <div className="text-right">{fmt(r.total_revenue)}</div>
-            <div
-              className={`text-right font-medium ${
-                r.profit !== null && r.profit >= 0 ? 'text-emerald-500' : 'text-destructive'
-              }`}
-            >
-              {fmt(r.profit)}
-            </div>
-            <div className="text-right text-muted-foreground">
-              {r.break_even_per_chick === null || r.break_even_per_chick === undefined
-                ? `${EM_DASH} ${NA}`
-                : fmt(r.break_even_per_chick)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </ScrollArea>
   );
 }
 
