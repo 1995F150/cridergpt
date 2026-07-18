@@ -73,7 +73,7 @@ type Candling = {
   batch_id: string;
   candling_day: number;
   scheduled_date?: string | null;
-  event_date?: string | null;
+  performed_at?: string | null;
 };
 
 type Financial = {
