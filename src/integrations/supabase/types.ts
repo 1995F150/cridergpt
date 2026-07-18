@@ -2128,6 +2128,639 @@ export type Database = {
           },
         ]
       }
+      hatch_batches: {
+        Row: {
+          actual_hatch_date: string | null
+          batch_code: string
+          breed: string | null
+          created_at: string
+          eggs_not_set: number | null
+          eggs_set: number | null
+          eggs_shipped: number | null
+          expected_hatch_date: string | null
+          id: string
+          incubator_id: string | null
+          lockdown_date: string | null
+          notes: string | null
+          npip_code: string | null
+          owner_id: string
+          reason_not_set: string | null
+          set_date: string | null
+          shipment_date: string | null
+          source_row: Json
+          status: string
+          supplier_id: string | null
+          supplier_invoice: string | null
+          supplier_item_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_hatch_date?: string | null
+          batch_code: string
+          breed?: string | null
+          created_at?: string
+          eggs_not_set?: number | null
+          eggs_set?: number | null
+          eggs_shipped?: number | null
+          expected_hatch_date?: string | null
+          id?: string
+          incubator_id?: string | null
+          lockdown_date?: string | null
+          notes?: string | null
+          npip_code?: string | null
+          owner_id: string
+          reason_not_set?: string | null
+          set_date?: string | null
+          shipment_date?: string | null
+          source_row?: Json
+          status?: string
+          supplier_id?: string | null
+          supplier_invoice?: string | null
+          supplier_item_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_hatch_date?: string | null
+          batch_code?: string
+          breed?: string | null
+          created_at?: string
+          eggs_not_set?: number | null
+          eggs_set?: number | null
+          eggs_shipped?: number | null
+          expected_hatch_date?: string | null
+          id?: string
+          incubator_id?: string | null
+          lockdown_date?: string | null
+          notes?: string | null
+          npip_code?: string | null
+          owner_id?: string
+          reason_not_set?: string | null
+          set_date?: string | null
+          shipment_date?: string | null
+          source_row?: Json
+          status?: string
+          supplier_id?: string | null
+          supplier_invoice?: string | null
+          supplier_item_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_batches_incubator_fk"
+            columns: ["incubator_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_incubators"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_batches_supplier_fk"
+            columns: ["supplier_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_suppliers"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_candling_events: {
+        Row: {
+          batch_id: string
+          candling_day: number
+          created_at: string
+          developing_count: number | null
+          fertile_count: number | null
+          id: string
+          notes: string | null
+          owner_id: string
+          performed_at: string | null
+          questionable_count: number | null
+          recorded_by: string | null
+          removal_reason: string | null
+          removed_count: number | null
+          scheduled_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          candling_day: number
+          created_at?: string
+          developing_count?: number | null
+          fertile_count?: number | null
+          id?: string
+          notes?: string | null
+          owner_id: string
+          performed_at?: string | null
+          questionable_count?: number | null
+          recorded_by?: string | null
+          removal_reason?: string | null
+          removed_count?: number | null
+          scheduled_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          candling_day?: number
+          created_at?: string
+          developing_count?: number | null
+          fertile_count?: number | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          performed_at?: string | null
+          questionable_count?: number | null
+          recorded_by?: string | null
+          removal_reason?: string | null
+          removed_count?: number | null
+          scheduled_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_candling_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_candling_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_customers: {
+        Row: {
+          created_at: string
+          display_name: string
+          email: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          owner_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hatch_expenses: {
+        Row: {
+          amount: number
+          batch_id: string
+          created_at: string
+          expense_date: string | null
+          expense_type: string
+          id: string
+          invoice_reference: string | null
+          notes: string | null
+          owner_id: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount: number
+          batch_id: string
+          created_at?: string
+          expense_date?: string | null
+          expense_type: string
+          id?: string
+          invoice_reference?: string | null
+          notes?: string | null
+          owner_id: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          batch_id?: string
+          created_at?: string
+          expense_date?: string | null
+          expense_type?: string
+          id?: string
+          invoice_reference?: string | null
+          notes?: string | null
+          owner_id?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_expenses_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_expenses_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_incubation_checks: {
+        Row: {
+          batch_id: string
+          candling_status: string | null
+          checked_at: string
+          created_at: string
+          egg_turner_status: string | null
+          humidity_percent: number | null
+          id: string
+          incubation_day: number | null
+          next_action: string | null
+          notes: string | null
+          observed_humidity_range: string | null
+          owner_id: string
+          recorded_by: string | null
+          temperature_f: number | null
+          vent_status: string | null
+          water_reservoir_status: string | null
+          water_type: string | null
+        }
+        Insert: {
+          batch_id: string
+          candling_status?: string | null
+          checked_at: string
+          created_at?: string
+          egg_turner_status?: string | null
+          humidity_percent?: number | null
+          id?: string
+          incubation_day?: number | null
+          next_action?: string | null
+          notes?: string | null
+          observed_humidity_range?: string | null
+          owner_id: string
+          recorded_by?: string | null
+          temperature_f?: number | null
+          vent_status?: string | null
+          water_reservoir_status?: string | null
+          water_type?: string | null
+        }
+        Update: {
+          batch_id?: string
+          candling_status?: string | null
+          checked_at?: string
+          created_at?: string
+          egg_turner_status?: string | null
+          humidity_percent?: number | null
+          id?: string
+          incubation_day?: number | null
+          next_action?: string | null
+          notes?: string | null
+          observed_humidity_range?: string | null
+          owner_id?: string
+          recorded_by?: string | null
+          temperature_f?: number | null
+          vent_status?: string | null
+          water_reservoir_status?: string | null
+          water_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_checks_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_checks_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_incubators: {
+        Row: {
+          active: boolean
+          capacity: number | null
+          created_at: string
+          id: string
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          owner_id: string
+          target_humidity_max: number | null
+          target_humidity_min: number | null
+          target_temperature_f: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          owner_id: string
+          target_humidity_max?: number | null
+          target_humidity_min?: number | null
+          target_temperature_f?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          owner_id?: string
+          target_humidity_max?: number | null
+          target_humidity_min?: number | null
+          target_temperature_f?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hatch_inventory_events: {
+        Row: {
+          age_weeks: number | null
+          batch_id: string
+          breed: string | null
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          notes: string | null
+          owner_id: string
+          quantity: number
+          reason: string | null
+        }
+        Insert: {
+          age_weeks?: number | null
+          batch_id: string
+          breed?: string | null
+          created_at?: string
+          event_date?: string
+          event_type: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          quantity: number
+          reason?: string | null
+        }
+        Update: {
+          age_weeks?: number | null
+          batch_id?: string
+          breed?: string | null
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          quantity?: number
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_inventory_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_inventory_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_results: {
+        Row: {
+          assisted_hatches: number | null
+          batch_id: string
+          chick_losses: number | null
+          chicks_hatched: number | null
+          created_at: string
+          hatch_completed_at: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          unhatched_eggs: number | null
+          updated_at: string
+        }
+        Insert: {
+          assisted_hatches?: number | null
+          batch_id: string
+          chick_losses?: number | null
+          chicks_hatched?: number | null
+          created_at?: string
+          hatch_completed_at?: string | null
+          id?: string
+          notes?: string | null
+          owner_id: string
+          unhatched_eggs?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assisted_hatches?: number | null
+          batch_id?: string
+          chick_losses?: number | null
+          chicks_hatched?: number | null
+          created_at?: string
+          hatch_completed_at?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          unhatched_eggs?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_results_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_results_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_sale_items: {
+        Row: {
+          age_weeks: number | null
+          batch_id: string
+          breed: string | null
+          created_at: string
+          id: string
+          line_total: number | null
+          owner_id: string
+          quantity: number
+          sale_id: string
+          unit_price: number
+        }
+        Insert: {
+          age_weeks?: number | null
+          batch_id: string
+          breed?: string | null
+          created_at?: string
+          id?: string
+          line_total?: number | null
+          owner_id: string
+          quantity: number
+          sale_id: string
+          unit_price: number
+        }
+        Update: {
+          age_weeks?: number | null
+          batch_id?: string
+          breed?: string | null
+          created_at?: string
+          id?: string
+          line_total?: number | null
+          owner_id?: string
+          quantity?: number
+          sale_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_sale_items_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_sale_items_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_sale_items_sale_fk"
+            columns: ["sale_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_sales"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_sales: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          customer_id: string | null
+          discount: number
+          id: string
+          notes: string | null
+          owner_id: string
+          payment_status: string
+          sale_date: string
+          subtotal: number
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          customer_id?: string | null
+          discount?: number
+          id?: string
+          notes?: string | null
+          owner_id: string
+          payment_status?: string
+          sale_date?: string
+          subtotal?: number
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          customer_id?: string | null
+          discount?: number
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          payment_status?: string
+          sale_date?: string
+          subtotal?: number
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_sales_customer_fk"
+            columns: ["customer_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_customers"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_suppliers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          npip_code: string | null
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          npip_code?: string | null
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          npip_code?: string | null
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hybrid_router_settings: {
         Row: {
           cloud_fallback: boolean
@@ -6102,6 +6735,65 @@ export type Database = {
         }
         Relationships: []
       }
+      hatch_batch_financials: {
+        Row: {
+          batch_code: string | null
+          batch_id: string | null
+          break_even_per_chick: number | null
+          owner_id: string | null
+          profit: number | null
+          savings: number | null
+          total_expenses: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
+      hatch_dashboard_summary: {
+        Row: {
+          active_batches: number | null
+          chicks_available: number | null
+          eggs_in_incubation: number | null
+          next_expected_hatch: string | null
+          owner_id: string | null
+          planned_batches: number | null
+        }
+        Relationships: []
+      }
+      hatch_latest_checks: {
+        Row: {
+          batch_id: string | null
+          candling_status: string | null
+          checked_at: string | null
+          egg_turner_status: string | null
+          humidity_percent: number | null
+          id: string | null
+          incubation_day: number | null
+          next_action: string | null
+          notes: string | null
+          observed_humidity_range: string | null
+          owner_id: string | null
+          temperature_f: number | null
+          vent_status: string | null
+          water_reservoir_status: string | null
+          water_type: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_checks_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_checks_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
       sellable_ai_categories: {
         Row: {
           ai_response: string | null
@@ -6561,8 +7253,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       update_pro_access: {
         Args: { new_pro_status: boolean; user_id: string }
         Returns: undefined
