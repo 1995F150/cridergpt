@@ -240,9 +240,141 @@ dependencies {
 </adaptive-icon>
 `,
 
+
+  [`app/src/main/java/${PKG_PATH}/ui/smartid/SmartIdScreen.kt`]: `package ${PKG}.ui.smartid
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+import ${PKG}.data.SupabaseClient
+import ${PKG}.util.SmartIdBus
+
+private val SMART_ID = Regex("^CriderGPT-[A-Z0-9]{6}$", RegexOption.IGNORE_CASE)
+private fun normalizeTag(raw: String): String? {
+    val clean = raw.trim().trim('{','}','<','>','[',']')
+    val match = Regex("CriderGPT-[A-Z0-9]{6}", RegexOption.IGNORE_CASE).find(clean)?.value ?: return null
+    return "CriderGPT-" + match.substringAfter('-').uppercase()
+}
+
+@Composable
+fun SmartIdScreen() {
+    val scanned by SmartIdBus.pendingTag.collectAsState()
+    var input by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    var response by remember { mutableStateOf<JSONObject?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var showRegister by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
+    var species by remember { mutableStateOf("") }
+    var breed by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+
+    fun lookup(raw: String) {
+        val tag = normalizeTag(raw)
+        if (tag == null || !SMART_ID.matches(tag)) { message = "Expected CriderGPT-XXXXXX"; return }
+        input = tag; loading = true; message = null; response = null; showRegister = false
+        scope.launch {
+            runCatching {
+                JSONObject(SupabaseClient.invokeFunction("tag-lookup", JSONObject().put("tag_id", tag)))
+            }.onSuccess {
+                response = it
+                if (it.optString("status") == "not_found" || it.has("error")) showRegister = true
+            }.onFailure { message = it.message ?: "Lookup failed" }
+            loading = false
+        }
+    }
+
+    LaunchedEffect(scanned) {
+        scanned?.let { lookup(it); SmartIdBus.consume() }
+    }
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Smart ID", style = MaterialTheme.typography.headlineSmall)
+        Text("Scan a CriderGPT NFC tag with your phone, or enter its ID. Lookup, registration, and animal details stay inside the app.")
+        OutlinedTextField(input, { input = it }, label = { Text("CriderGPT-XXXXXX") }, modifier = Modifier.fillMaxWidth())
+        Button(onClick = { lookup(input) }, enabled = !loading, modifier = Modifier.fillMaxWidth()) { Text("Look up Smart ID") }
+        ElevatedCard(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("NFC scanner ready", style = MaterialTheme.typography.titleMedium)
+                Text("Hold the NFC tag against the back of this Android phone. CriderGPT opens this screen automatically.")
+            }
+        }
+        if (loading) CircularProgressIndicator()
+        message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        response?.let { obj ->
+            val authorized = obj.optBoolean("authorized", false)
+            val animal = obj.optJSONObject("animal")
+            ElevatedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(if (authorized) "Full animal profile" else "Public Smart ID result", style = MaterialTheme.typography.titleMedium)
+                    Text("Tag: $input")
+                    if (animal != null) {
+                        Text("Name: " + animal.optString("name", "Not recorded"))
+                        Text("Species: " + animal.optString("species", "Not recorded"))
+                        Text("Breed: " + animal.optString("breed", "Not recorded"))
+                        Text("Sex: " + animal.optString("sex", "Not recorded"))
+                        Text("Status: " + animal.optString("status", "Not recorded"))
+                    } else {
+                        Text("Animal: " + obj.optString("animal_name", "Not registered"))
+                        Text("Species: " + obj.optString("species", "Not recorded"))
+                        obj.optString("owner_name").takeIf { it.isNotBlank() }?.let { Text("Owner: $it") }
+                    }
+                }
+            }
+        }
+        if (showRegister) {
+            ElevatedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Register this Smart ID", style = MaterialTheme.typography.titleMedium)
+                    Text("Only genuine tags from the CriderGPT tag pool can be registered.")
+                    OutlinedTextField(name, { name = it }, label = { Text("Animal name") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(species, { species = it }, label = { Text("Species (required)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(breed, { breed = it }, label = { Text("Breed") }, modifier = Modifier.fillMaxWidth())
+                    Button(enabled = species.isNotBlank() && !loading, modifier = Modifier.fillMaxWidth(), onClick = {
+                        loading = true
+                        scope.launch {
+                            val animal = JSONObject().put("name", name).put("species", species).put("breed", breed).put("status", "active")
+                            runCatching {
+                                JSONObject(SupabaseClient.invokeFunction("claim-tag",
+                                    JSONObject().put("tag_id", input).put("animal", animal)))
+                            }.onSuccess { result ->
+                                if (result.optBoolean("success")) { message = "Smart ID registered"; showRegister = false; lookup(input) }
+                                else message = result.optString("error", "Registration failed")
+                            }.onFailure { message = it.message }
+                            loading = false
+                        }
+                    }) { Text("Claim tag and create animal") }
+                }
+            }
+        }
+    }
+}
+`,
+
+  [`app/src/main/java/${PKG_PATH}/util/SmartIdBus.kt`]: `package ${PKG}.util
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+object SmartIdBus {
+    private val mutableTag = MutableStateFlow<String?>(null)
+    val pendingTag = mutableTag.asStateFlow()
+    fun submit(raw: String?) { mutableTag.value = raw }
+    fun consume() { mutableTag.value = null }
+}
+`,
+
   [`app/src/main/java/${PKG_PATH}/MainActivity.kt`]: `package ${PKG}
 
 import android.os.Bundle
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -253,6 +385,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import ${PKG}.data.SessionManager
 import ${PKG}.data.SupabaseClient
+import ${PKG}.util.NfcReader
+import ${PKG}.util.SmartIdBus
 import ${PKG}.ui.auth.SignInScreen
 import ${PKG}.ui.nav.AppNav
 import ${PKG}.ui.theme.CriderGPTTheme
@@ -263,6 +397,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         SessionManager.init(applicationContext)
         SupabaseClient.init()
+        SmartIdBus.submit(NfcReader.parseIntent(intent))
         // Best-effort refresh on cold start so the user stays signed in across app closes.
         lifecycleScope.launch { SessionManager.refreshIfNeeded() }
 
@@ -281,6 +416,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        SmartIdBus.submit(NfcReader.parseIntent(intent))
     }
 
     override fun onResume() {
@@ -658,7 +799,9 @@ val WEBSITE_NAV: List<NavSection> = listOf(
         NavItem("Vision Memory", route = "vision-memory"),
     )),
     NavSection("Productivity", listOf(
+        NavItem("Smart ID", route = "smart-id"),
         NavItem("Livestock ID", route = "livestock"),
+        NavItem("Hatching", route = "hatching"),
         NavItem("Receipts", route = "receipts"),
         NavItem("Agent Swarm", route = "agent-swarm"),
         NavItem("Voice Studio", route = "voice-studio"),
@@ -704,10 +847,7 @@ val WEBSITE_NAV: List<NavSection> = listOf(
         NavItem("Contact", route = "contact"),
     )),
     NavSection("External", listOf(
-        NavItem("Snapchat Lens", externalUrl = "https://cridergpt.com/snapchat-lens"),
-        NavItem("Custom Filters", externalUrl = "https://cridergpt.com/custom-filters"),
-        NavItem("Farming Simulator", externalUrl = "https://cridergpt.com/farm-bureau"),
-        NavItem("Terms & Privacy", externalUrl = "https://cridergpt.com/user-agreement"),
+        NavItem("Privacy Policy", externalUrl = "https://cridergpt.com/privacy"),
     )),
     NavSection("Admin", listOf(
         NavItem("Admin Panel",  route = "admin",              requiresAdmin = true),
@@ -763,6 +903,7 @@ import ${PKG}.ui.livestock.LivestockListScreen
 import ${PKG}.ui.notifications.NotificationsScreen
 import ${PKG}.ui.profile.AccountManagementScreen
 import ${PKG}.ui.profile.ProfileScreen
+import ${PKG}.ui.smartid.SmartIdScreen
 import ${PKG}.ui.vision.VisionMemoryScreen
 import ${PKG}.ui.files.FilesScreen
 import ${PKG}.ui.projects.ProjectsScreen
@@ -774,8 +915,8 @@ private data class Tab(val route: String, val label: String, val icon: @Composab
 
 private val TABS = listOf(
     Tab("chat", "Chat") { Icon(Icons.Default.Chat, null) },
+    Tab("smart-id", "Smart ID") { Icon(Icons.Default.Nfc, null) },
     Tab("livestock", "Livestock") { Icon(Icons.Default.Pets, null) },
-    Tab("ideas", "Ideas") { Icon(Icons.Default.Lightbulb, null) },
     Tab("calendar", "Calendar") { Icon(Icons.Default.Event, null) },
     Tab("profile", "Profile") { Icon(Icons.Default.Person, null) },
 )
@@ -908,6 +1049,7 @@ fun AppNav(onSignOut: () -> Unit) {
             ) {
                 // Fully wired native screens
                 composable("chat") { ChatScreen() }
+                composable("smart-id") { SmartIdScreen() }
                 composable("livestock") { LivestockListScreen() }
                 composable("ideas") { IdeaPlannerScreen() }
                 composable("calendar") { CalendarScreen() }
@@ -961,6 +1103,7 @@ fun AppNav(onSignOut: () -> Unit) {
                 // wired. These are NOT WebViews — they render real native UI and call
                 // the same backend the website uses.
                 listOf(
+                    "hatching" to "Hatching",
                     "receipts" to "Receipts",
                     "agent-swarm" to "Agent Swarm",
                     "voice-studio" to "Voice Studio",
@@ -1738,45 +1881,70 @@ fun ProfileScreen() {
 }
 `,
 
-  [`app/src/main/java/${PKG_PATH}/ui/profile/AccountManagementScreen.kt`]: `package ${PKG}.ui.profile
+  [`app/src/main/java/${PKG_PATH}/ui/profile/AccountManagementScreen.kt`package ${PKG}.ui.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 import ${PKG}.data.SessionManager
 import ${PKG}.data.SupabaseClient
 
 @Composable
 fun AccountManagementScreen() {
     var tier by remember { mutableStateOf("loading...") }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
     val uid = SessionManager.userId()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(uid) {
         if (uid == null) { tier = "Not signed in"; return@LaunchedEffect }
         runCatching {
-            val arr = SupabaseClient.select(
-                "user_subscriptions",
-                select = "tier,status,current_period_end",
-                filters = mapOf("user_id" to "eq.\$uid"),
-                order = "current_period_end.desc",
-                limit = 1
-            )
+            val arr = SupabaseClient.select("user_subscriptions", select = "tier,status,current_period_end",
+                filters = mapOf("user_id" to "eq.$uid"), order = "current_period_end.desc", limit = 1)
             if (arr.length() > 0) {
-                val o = arr.getJSONObject(0)
-                tier = "\${o.optString("tier", "free")} (\${o.optString("status", "active")})"
+                val row = arr.getJSONObject(0)
+                tier = "${row.optString("tier", "free")} (${row.optString("status", "active")})"
             } else tier = "free"
-        }.onFailure { tier = "Error: \${it.message}" }
+        }.onFailure { tier = "Error: ${it.message}" }
     }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Account", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(12.dp))
-        Text("Current plan: \$tier")
-        Spacer(Modifier.height(24.dp))
-        Text("Manage billing on the website.", style = MaterialTheme.typography.bodySmall)
+        Text("Current plan: $tier")
+        Text("Privacy Policy", color = MaterialTheme.colorScheme.primary)
+        HorizontalDivider()
+        Text("Delete account", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+        Text("Permanently deletes your CriderGPT account and associated application data. This cannot be undone.")
+        Button(colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+            enabled = !deleting, onClick = { confirmDelete = true }) { Text("Delete my account") }
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
+
+    if (confirmDelete) AlertDialog(
+        onDismissRequest = { if (!deleting) confirmDelete = false },
+        title = { Text("Permanently delete account?") },
+        text = { Text("This removes your account and associated data. Existing store orders and legally required payment records may be retained.") },
+        confirmButton = {
+            TextButton(enabled = !deleting, onClick = {
+                deleting = true
+                scope.launch {
+                    runCatching { JSONObject(SupabaseClient.invokeFunction("delete-account", JSONObject())) }
+                        .onSuccess {
+                            if (it.optBoolean("success")) { SessionManager.signOut(); confirmDelete = false }
+                            else error = it.optString("error", "Deletion failed")
+                        }.onFailure { error = it.message }
+                    deleting = false
+                }
+            }) { Text(if (deleting) "Deleting..." else "Delete permanently") }
+        },
+        dismissButton = { TextButton(enabled = !deleting, onClick = { confirmDelete = false }) { Text("Cancel") } }
+    )
 }
 `,
 
