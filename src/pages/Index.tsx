@@ -218,6 +218,7 @@ export default function Index() {
       case 'textures': return <TexturesPanel />;
       case 'metadata': return <MetadataPanel />;
       case 'music': return <MusicPanel />;
+      case 'hatching': return <HatchingDashboardPanel />;
       default: return <ChatPanel />;
     }
   };
