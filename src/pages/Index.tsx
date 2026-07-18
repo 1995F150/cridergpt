@@ -56,6 +56,7 @@ const FrequencyPanel = lazy(() => import('@/components/panels/FrequencyPanel').t
 const TexturesPanel = lazy(() => import('@/components/panels/TexturesPanel').then(m => ({ default: m.TexturesPanel })));
 const MetadataPanel = lazy(() => import('@/components/panels/MetadataPanel').then(m => ({ default: m.MetadataPanel })));
 const MusicPanel = lazy(() => import('@/components/panels/MusicPanel').then(m => ({ default: m.MusicPanel })));
+const HatchingDashboardPanel = lazy(() => import('@/components/panels/HatchingDashboardPanel').then(m => ({ default: m.HatchingDashboardPanel })));
 
 export type PanelType = 
   | 'chat' 
@@ -97,7 +98,8 @@ export type PanelType =
   | 'frequency'
   | 'textures'
   | 'metadata'
-  | 'music';
+  | 'music'
+  | 'hatching';
 
 // Set of valid panel slugs (kept in sync with PanelType + livestockID alias)
 const VALID_PANELS = new Set<string>([
@@ -105,7 +107,7 @@ const VALID_PANELS = new Set<string>([
   'projects','contact','profile','payment','updates','timeline','memorial','ffa',
   'ai-image','document-ai','plan','app-converter','cloud-gaming','3d-converter','studio',
   'zip-to-exe','code-editor','admin','guardian','livestock','livestockID','receipts',
-  'agent-swarm','voice-studio','shared-spending','usb-hub','rdr2-guide','sensors','frequency','textures','metadata','music'
+  'agent-swarm','voice-studio','shared-spending','usb-hub','rdr2-guide','sensors','frequency','textures','metadata','music','hatching'
 ]);
 
 // Map URL slug → internal panel id
@@ -216,6 +218,7 @@ export default function Index() {
       case 'textures': return <TexturesPanel />;
       case 'metadata': return <MetadataPanel />;
       case 'music': return <MusicPanel />;
+      case 'hatching': return <HatchingDashboardPanel />;
       default: return <ChatPanel />;
     }
   };
