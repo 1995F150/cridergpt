@@ -41,6 +41,7 @@ import {
   Tag,
   Music,
   Lightbulb,
+  Egg,
   Terminal
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
