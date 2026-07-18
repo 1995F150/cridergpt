@@ -174,7 +174,7 @@ export function HatchingDashboardPanel() {
         supabase.from('hatch_latest_checks').select('*').limit(50),
         supabase
           .from('hatch_candling_events')
-          .select('batch_id,candling_day,scheduled_date,event_date')
+          .select('batch_id,candling_day,scheduled_date,performed_at')
           .order('scheduled_date', { ascending: true, nullsFirst: false })
           .limit(50),
         supabase.from('hatch_batch_financials').select('*').limit(50),
