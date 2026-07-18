@@ -676,10 +676,6 @@ import ${PKG}.data.SessionManager
 import ${PKG}.data.SupabaseClient
 import org.json.JSONObject
 
-/**
- * Returns null while loading, true/false once resolved. Uses the same
- * has_role(uid, role) RPC the website uses.
- */
 @Composable
 fun rememberHasRole(role: String): Boolean? {
     var result by remember(role) { mutableStateOf<Boolean?>(null) }
@@ -687,11 +683,12 @@ fun rememberHasRole(role: String): Boolean? {
     LaunchedEffect(role, uid) {
         if (uid == null) { result = false; return@LaunchedEffect }
         result = runCatching {
-            val raw = SupabaseClient.rpc(
-                "has_role",
-                JSONObject().put("_user_id", uid).put("_role", role)
-            ).trim()
-            raw == "true"
+            if (role == "owner") {
+                JSONObject(SupabaseClient.invokeFunction("verify-owner", JSONObject())).optBoolean("isOwner", false)
+            } else {
+                SupabaseClient.rpc("has_role",
+                    JSONObject().put("_user_id", uid).put("_role", role)).trim() == "true"
+            }
         }.getOrDefault(false)
     }
     return result
