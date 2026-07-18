@@ -35,7 +35,8 @@ import {
   HandCoins,
   Usb,
   AudioLines,
-  Terminal
+  Terminal,
+  Egg
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
