@@ -246,7 +246,7 @@ export function HatchingDashboardPanel() {
       if (b.lockdown_date) items.push({ date: b.lockdown_date, label: 'Lockdown', batch: b.batch_code });
     }
     for (const c of candling) {
-      const d = c.scheduled_date ?? c.event_date;
+      const d = c.scheduled_date ?? c.performed_at;
       const b = batches.find((x) => x.id === c.batch_id);
       if (!b) continue;
       if (['failed', 'cancelled', 'complete', 'completed'].includes(b.status?.toLowerCase() ?? '')) continue;
