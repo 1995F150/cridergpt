@@ -1432,7 +1432,7 @@ fun ChatScreen() {
                                     messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) }
                                 })
                             val raw = runCatching { SupabaseClient.invoke("chat-with-ai", payload) }
-                                .getOrElse { "Error: \${it.message}" }
+                                .getOrElse { "Error: \\${it.message}" }
                             val reply = runCatching {
                                 val j = JSONObject(raw); j.optString("response", j.optString("message", raw))
                             }.getOrDefault(raw)
@@ -1874,7 +1874,7 @@ fun ProfileScreen() {
                         JSONObject().put("display_name", displayName)
                     )
                 }.onSuccess { saved = "Saved." }
-                    .onFailure { saved = "Error: \${it.message}" }
+                    .onFailure { saved = "Error: \\${it.message}" }
             }
         }) { Text("Save") }
     }
@@ -1909,9 +1909,9 @@ fun AccountManagementScreen() {
                 filters = mapOf("user_id" to "eq.$uid"), order = "current_period_end.desc", limit = 1)
             if (arr.length() > 0) {
                 val row = arr.getJSONObject(0)
-                tier = "${row.optString("tier", "free")} (${row.optString("status", "active")})"
+                tier = "\${row.optString("tier", "free")} (\${row.optString("status", "active")})"
             } else tier = "free"
-        }.onFailure { tier = "Error: ${it.message}" }
+        }.onFailure { tier = "Error: \${it.message}" }
     }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -2279,7 +2279,7 @@ fun ServerConsoleScreen(onBack: () -> Unit) {
                             add(ContainerStatus(o.optString("name"), o.optString("status")))
                         }
                     } else listOf(ContainerStatus("server-status edge fn", "Backend not wired yet — create edge fn server-status"))
-                }.onFailure { error = "Backend not wired yet — create edge fn server-status (\${it.message})" }
+                }.onFailure { error = "Backend not wired yet — create edge fn server-status (\\${it.message})" }
                 loading = false
             }
         }
@@ -2353,7 +2353,7 @@ fun VaultScreen(onBack: () -> Unit) {
                 val arr = SupabaseClient.select("secrets_vault", select = "name",
                     filters = mapOf("user_id" to "eq.\$uid"), order = "name.asc")
                 secrets = buildList { for (i in 0 until arr.length()) add(arr.getJSONObject(i).optString("name")) }
-            }.onFailure { error = "Backend not wired yet — create secrets_vault table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create secrets_vault table (\\${it.message})" }
         }
 
         LaunchedEffect(Unit) { reload() }
@@ -2460,7 +2460,7 @@ fun AgentDispatcherScreen(onBack: () -> Unit) {
                             .put("agent_count", agentCount.toIntOrNull() ?: 1)
                         scope.launch {
                             result = runCatching { SupabaseClient.invoke("agent-dispatch", payload) }
-                                .getOrElse { "Backend not wired yet — create edge fn agent-dispatch (\${it.message})" }
+                                .getOrElse { "Backend not wired yet — create edge fn agent-dispatch (\\${it.message})" }
                             loading = false
                         }
                     }, modifier = Modifier.fillMaxWidth()) {
@@ -2514,7 +2514,7 @@ fun AutopilotScreen(onBack: () -> Unit) {
                 val arr = SupabaseClient.select("user_settings", select = "autopilot_enabled",
                     filters = mapOf("user_id" to "eq.\$uid"), limit = 1)
                 if (arr.length() > 0) enabled = arr.getJSONObject(0).optBoolean("autopilot_enabled", false)
-            }.onFailure { error = "Backend not wired yet — create user_settings table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create user_settings table (\\${it.message})" }
             loading = false
         }
 
@@ -2591,7 +2591,7 @@ fun AndroidBuilderScreen(onBack: () -> Unit) {
                     val o = arr.getJSONObject(i)
                     add(BuildRun(o.optString("id"), o.optString("status"), o.optString("created_at", null)))
                 }}
-            }.onFailure { error = "Backend not wired yet — create build_runs table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create build_runs table (\\${it.message})" }
         }
 
         LaunchedEffect(Unit) { loadRuns() }
@@ -2606,7 +2606,7 @@ fun AndroidBuilderScreen(onBack: () -> Unit) {
                     triggering = true; error = null
                     scope.launch {
                         runCatching { SupabaseClient.invoke("trigger-android-build", JSONObject()) }
-                            .onFailure { error = "Backend not wired yet — create edge fn trigger-android-build (\${it.message})" }
+                            .onFailure { error = "Backend not wired yet — create edge fn trigger-android-build (\\${it.message})" }
                         loadRuns(); triggering = false
                     }
                 }, modifier = Modifier.fillMaxWidth()) {
@@ -2670,7 +2670,7 @@ fun IosBuilderScreen(onBack: () -> Unit) {
                     val o = arr.getJSONObject(i)
                     add(BuildRun(o.optString("id"), o.optString("status"), o.optString("created_at", null)))
                 }}
-            }.onFailure { error = "Backend not wired yet — create build_runs table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create build_runs table (\\${it.message})" }
         }
 
         LaunchedEffect(Unit) { loadRuns() }
@@ -2685,7 +2685,7 @@ fun IosBuilderScreen(onBack: () -> Unit) {
                     triggering = true; error = null
                     scope.launch {
                         runCatching { SupabaseClient.invoke("trigger-ios-build", JSONObject()) }
-                            .onFailure { error = "Backend not wired yet — create edge fn trigger-ios-build (\${it.message})" }
+                            .onFailure { error = "Backend not wired yet — create edge fn trigger-ios-build (\\${it.message})" }
                         loadRuns(); triggering = false
                     }
                 }, modifier = Modifier.fillMaxWidth()) {
@@ -2748,7 +2748,7 @@ fun ChromeExtensionsScreen(onBack: () -> Unit) {
                     add(ChromeExt(o.optString("id"), o.optString("name"),
                         o.optString("description", null), o.optString("version", null)))
                 }}
-            }.onFailure { error = "Backend not wired yet — create chrome_extensions table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create chrome_extensions table (\\${it.message})" }
             loading = false
         }
 
@@ -2809,7 +2809,7 @@ fun RokuStudioScreen(onBack: () -> Unit) {
                     val o = arr.getJSONObject(i)
                     add(RokuChannel(o.optString("id"), o.optString("name"), o.optString("status", null)))
                 }}
-            }.onFailure { error = "Backend not wired yet — create roku_channels table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create roku_channels table (\\${it.message})" }
             loading = false
         }
 
@@ -2877,7 +2877,7 @@ fun BackendWiringScreen(onBack: () -> Unit) {
                         val o = arr.getJSONObject(i)
                         add(TableInfo(o.optString("name"), o.optString("count", "?")))
                     }} else listOf(TableInfo("db-diagnostic edge fn", "Not wired yet"))
-                }.onFailure { error = "Backend not wired yet — create edge fn db-diagnostic (\${it.message})" }
+                }.onFailure { error = "Backend not wired yet — create edge fn db-diagnostic (\\${it.message})" }
                 loading = false
             }
         }
@@ -2946,7 +2946,7 @@ fun UiBlueprintsScreen(onBack: () -> Unit) {
                     add(UiBlueprint(o.optString("id"), o.optString("name"),
                         o.optString("description", null)))
                 }}
-            }.onFailure { error = "Backend not wired yet — create ui_blueprints table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create ui_blueprints table (\\${it.message})" }
             loading = false
         }
 
@@ -3011,7 +3011,7 @@ fun TechLibraryScreen(onBack: () -> Unit) {
                     add(TechEntry(o.optString("id"), o.optString("title"),
                         o.optString("category", null), o.optString("summary", null)))
                 }}
-            }.onFailure { error = "Backend not wired yet — create tech_library table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create tech_library table (\\${it.message})" }
             loading = false
         }
 
@@ -3073,7 +3073,7 @@ fun AutoPromoScreen(onBack: () -> Unit) {
                 val arr = SupabaseClient.select("user_settings", select = "auto_promo_enabled",
                     filters = mapOf("user_id" to "eq.\$uid"), limit = 1)
                 if (arr.length() > 0) enabled = arr.getJSONObject(0).optBoolean("auto_promo_enabled", false)
-            }.onFailure { error = "Backend not wired yet — create user_settings table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create user_settings table (\\${it.message})" }
             loading = false
         }
 
@@ -3152,7 +3152,7 @@ fun DevIdeaPlannerScreen(onBack: () -> Unit) {
                     add(DevIdea(o.optString("id"), o.optString("title"),
                         o.optString("body", null), o.optString("status", null)))
                 }}
-            }.onFailure { error = "Backend not wired yet — create ideas table (\${it.message})" }
+            }.onFailure { error = "Backend not wired yet — create ideas table (\\${it.message})" }
         }
 
         LaunchedEffect(Unit) { reload() }
@@ -3530,7 +3530,7 @@ fun PaymentScreen(onBack: () -> Unit) {
     LaunchedEffect(Unit) {
         runCatching { PlayBilling.querySubs(ctx) }
             .onSuccess { products = it; status = if (it.isEmpty()) "No products available — check Play Console setup." else "" }
-            .onFailure { status = "Play Billing error: \${it.message}" }
+            .onFailure { status = "Play Billing error: \\${it.message}" }
     }
 
     Scaffold(topBar = {
@@ -3562,7 +3562,7 @@ fun PaymentScreen(onBack: () -> Unit) {
                                             }
                                             SupabaseClient.invokeFunction("verify-iap", body)
                                             status = "Purchase verified — plan active."
-                                        }.onFailure { status = "Verify failed: \${it.message}" }
+                                        }.onFailure { status = "Verify failed: \\${it.message}" }
                                     }
                                 }
                             }
