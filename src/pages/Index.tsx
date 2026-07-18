@@ -56,6 +56,7 @@ const FrequencyPanel = lazy(() => import('@/components/panels/FrequencyPanel').t
 const TexturesPanel = lazy(() => import('@/components/panels/TexturesPanel').then(m => ({ default: m.TexturesPanel })));
 const MetadataPanel = lazy(() => import('@/components/panels/MetadataPanel').then(m => ({ default: m.MetadataPanel })));
 const MusicPanel = lazy(() => import('@/components/panels/MusicPanel').then(m => ({ default: m.MusicPanel })));
+const HatchingDashboardPanel = lazy(() => import('@/components/panels/HatchingDashboardPanel').then(m => ({ default: m.HatchingDashboardPanel })));
 
 export type PanelType = 
   | 'chat' 
