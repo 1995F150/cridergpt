@@ -12,6 +12,39 @@ interface TagScannerProps {
 
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+const CRIDER_ID_RE = /CriderGPT-([A-Za-z0-9]{4,})/i;
+
+/**
+ * Normalize any reader input to a canonical CriderGPT tag when possible.
+ * Falls back to the trimmed raw value so legacy/nonstandard tags still work.
+ * Never logs the tag contents.
+ */
+function normalizeTagInput(raw: string): string {
+  if (!raw) return '';
+  let value = raw.trim();
+  if (!value) return '';
+
+  // CGPT: base64 JSON payload
+  if (value.startsWith('CGPT:')) {
+    try {
+      const decoded = JSON.parse(atob(value.slice(5)));
+      if (decoded && typeof decoded.id === 'string') {
+        value = decoded.id.trim();
+      }
+    } catch {
+      /* fall through to regex/raw */
+    }
+  }
+
+  // URL / path / query string containing a CriderGPT ID
+  const match = value.match(CRIDER_ID_RE);
+  if (match) {
+    return `CriderGPT-${match[1].toUpperCase()}`;
+  }
+
+  return value;
+}
+
 export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) {
   const [manualTag, setManualTag] = useState('');
   const [scanning, setScanning] = useState(false);
