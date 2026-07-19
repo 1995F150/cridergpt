@@ -2290,6 +2290,69 @@ export type Database = {
           },
         ]
       }
+      hatch_chick_groups: {
+        Row: {
+          batch_id: string
+          breed: string | null
+          brooder_location: string | null
+          created_at: string
+          current_count: number
+          group_name: string | null
+          hatch_date: string
+          id: string
+          initial_count: number
+          notes: string | null
+          owner_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          breed?: string | null
+          brooder_location?: string | null
+          created_at?: string
+          current_count: number
+          group_name?: string | null
+          hatch_date: string
+          id?: string
+          initial_count: number
+          notes?: string | null
+          owner_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          breed?: string | null
+          brooder_location?: string | null
+          created_at?: string
+          current_count?: number
+          group_name?: string | null
+          hatch_date?: string
+          id?: string
+          initial_count?: number
+          notes?: string | null
+          owner_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_chick_groups_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_chick_groups_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
       hatch_customers: {
         Row: {
           created_at: string
@@ -2376,6 +2439,82 @@ export type Database = {
             columns: ["batch_id", "owner_id"]
             isOneToOne: false
             referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      hatch_health_logs: {
+        Row: {
+          average_weight_oz: number | null
+          batch_id: string
+          brooder_temperature_f: number | null
+          chick_group_id: string
+          created_at: string
+          health_status: string
+          id: string
+          log_date: string
+          medication: string | null
+          mortality_count: number
+          notes: string | null
+          owner_id: string
+          symptoms: string | null
+          treatment: string | null
+          updated_at: string
+        }
+        Insert: {
+          average_weight_oz?: number | null
+          batch_id: string
+          brooder_temperature_f?: number | null
+          chick_group_id: string
+          created_at?: string
+          health_status?: string
+          id?: string
+          log_date?: string
+          medication?: string | null
+          mortality_count?: number
+          notes?: string | null
+          owner_id: string
+          symptoms?: string | null
+          treatment?: string | null
+          updated_at?: string
+        }
+        Update: {
+          average_weight_oz?: number | null
+          batch_id?: string
+          brooder_temperature_f?: number | null
+          chick_group_id?: string
+          created_at?: string
+          health_status?: string
+          id?: string
+          log_date?: string
+          medication?: string | null
+          mortality_count?: number
+          notes?: string | null
+          owner_id?: string
+          symptoms?: string | null
+          treatment?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_health_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_health_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_health_group_fk"
+            columns: ["chick_group_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_chick_groups"
             referencedColumns: ["id", "owner_id"]
           },
         ]
@@ -2760,6 +2899,78 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      hatch_supply_items: {
+        Row: {
+          actual_cost: number | null
+          batch_id: string | null
+          category: string
+          created_at: string
+          estimated_cost: number | null
+          id: string
+          item_name: string
+          needed_by: string | null
+          notes: string | null
+          owner_id: string
+          priority: string
+          purchased: boolean
+          purchased_at: string | null
+          quantity: number
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          batch_id?: string | null
+          category?: string
+          created_at?: string
+          estimated_cost?: number | null
+          id?: string
+          item_name: string
+          needed_by?: string | null
+          notes?: string | null
+          owner_id: string
+          priority?: string
+          purchased?: boolean
+          purchased_at?: string | null
+          quantity?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          batch_id?: string | null
+          category?: string
+          created_at?: string
+          estimated_cost?: number | null
+          id?: string
+          item_name?: string
+          needed_by?: string | null
+          notes?: string | null
+          owner_id?: string
+          priority?: string
+          purchased?: boolean
+          purchased_at?: string | null
+          quantity?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hatch_supply_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batch_financials"
+            referencedColumns: ["batch_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "hatch_supply_batch_fk"
+            columns: ["batch_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "hatch_batches"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
       }
       hybrid_router_settings: {
         Row: {
@@ -7201,6 +7412,7 @@ export type Database = {
         Args: { child_uuid: string; guardian_uuid: string }
         Returns: boolean
       }
+      is_hatching_owner: { Args: never; Returns: boolean }
       is_spending_group_member: {
         Args: { check_group_id: string; check_user_id: string }
         Returns: boolean

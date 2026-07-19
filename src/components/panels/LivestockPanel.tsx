@@ -168,36 +168,121 @@ export function LivestockPanel() {
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <p className="text-3xl font-bold text-primary">{animals.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Animals</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <p className="text-3xl font-bold text-primary">{animals.filter(a => a.status === 'active').length}</p>
-                  <p className="text-sm text-muted-foreground">Active</p>
-                </CardContent>
-              </Card>
-            </div>
+            {(() => {
+              const total = animals.length;
+              const active = animals.filter(a => a.status === 'active').length;
+              const tagged = animals.filter(a => !!(a as any).tag_id).length;
+              const missingTag = total - tagged;
+              const isChicken = (a: any) => {
+                const s = (a.species || '').toLowerCase();
+                return s === 'chicken' || s === 'chickens' || s === 'poultry';
+              };
+              const chickens = animals.filter(isChicken);
+              const missingBreed = animals.filter(a => !(a as any).breed).length;
+              const missingSex = animals.filter(a => !(a as any).sex).length;
+              const missingDob = animals.filter(a => !(a as any).birth_date && !(a as any).hatch_date).length;
 
-            {Object.entries(speciesCounts).length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">By Species</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {Object.entries(speciesCounts).map(([species, count]) => (
-                    <div key={species} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <span className="capitalize font-medium">{species}</span>
-                      <Badge variant="outline">{count}</Badge>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+              const chickenBreedCounts = chickens.reduce((acc, a: any) => {
+                const b = (a.breed || 'Unknown').toString();
+                acc[b] = (acc[b] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>);
+
+              const pct = (n: number) => total ? Math.round((n / total) * 100) : 0;
+
+              return (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <Card><CardContent className="p-4 text-center">
+                      <p className="text-3xl font-bold text-primary">{total}</p>
+                      <p className="text-xs text-muted-foreground">Total</p>
+                    </CardContent></Card>
+                    <Card><CardContent className="p-4 text-center">
+                      <p className="text-3xl font-bold text-primary">{active}</p>
+                      <p className="text-xs text-muted-foreground">Active</p>
+                    </CardContent></Card>
+                    <Card><CardContent className="p-4 text-center">
+                      <p className="text-3xl font-bold text-primary">{tagged}</p>
+                      <p className="text-xs text-muted-foreground">Tagged</p>
+                    </CardContent></Card>
+                    <Card><CardContent className="p-4 text-center">
+                      <p className="text-3xl font-bold text-primary">{chickens.length}</p>
+                      <p className="text-xs text-muted-foreground">Chickens</p>
+                    </CardContent></Card>
+                    <Card><CardContent className="p-4 text-center">
+                      <p className="text-3xl font-bold text-primary">{missingTag}</p>
+                      <p className="text-xs text-muted-foreground">Missing Tag</p>
+                    </CardContent></Card>
+                  </div>
+
+                  {Object.entries(speciesCounts).length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-3"><CardTitle className="text-base">By Species</CardTitle></CardHeader>
+                      <CardContent className="space-y-2">
+                        {Object.entries(speciesCounts)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([species, count]) => (
+                            <div key={species} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                              <span className="capitalize font-medium">{species}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">{pct(count)}%</span>
+                                <Badge variant="outline">{count}</Badge>
+                              </div>
+                            </div>
+                          ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {chickens.length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-3"><CardTitle className="text-base">Chicken Breeds</CardTitle></CardHeader>
+                      <CardContent className="space-y-2">
+                        {Object.entries(chickenBreedCounts)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([breed, count]) => (
+                            <div key={breed} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                              <span className="font-medium">{breed}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">
+                                  {Math.round((count / chickens.length) * 100)}%
+                                </span>
+                                <Badge variant="outline">{count}</Badge>
+                              </div>
+                            </div>
+                          ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {total > 0 && (
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Data Quality</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {[
+                          ['Missing breed', missingBreed],
+                          ['Missing sex', missingSex],
+                          ['Missing hatch/birth date', missingDob],
+                          ['Missing tag', missingTag],
+                        ].map(([label, n]) => (
+                          <div key={label as string} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                            <span className="text-sm">{label}</span>
+                            <Badge variant={(n as number) > 0 ? 'secondary' : 'outline'}>
+                              {n as number}
+                            </Badge>
+                          </div>
+                        ))}
+                        <p className="text-xs text-muted-foreground pt-1">
+                          Complete these fields on each animal profile to improve reports.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </div>

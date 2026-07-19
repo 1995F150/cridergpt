@@ -12,6 +12,39 @@ interface TagScannerProps {
 
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+const CRIDER_ID_RE = /CriderGPT-([A-Za-z0-9]{4,})/i;
+
+/**
+ * Normalize any reader input to a canonical CriderGPT tag when possible.
+ * Falls back to the trimmed raw value so legacy/nonstandard tags still work.
+ * Never logs the tag contents.
+ */
+function normalizeTagInput(raw: string): string {
+  if (!raw) return '';
+  let value = raw.trim();
+  if (!value) return '';
+
+  // CGPT: base64 JSON payload
+  if (value.startsWith('CGPT:')) {
+    try {
+      const decoded = JSON.parse(atob(value.slice(5)));
+      if (decoded && typeof decoded.id === 'string') {
+        value = decoded.id.trim();
+      }
+    } catch {
+      /* fall through to regex/raw */
+    }
+  }
+
+  // URL / path / query string containing a CriderGPT ID
+  const match = value.match(CRIDER_ID_RE);
+  if (match) {
+    return `CriderGPT-${match[1].toUpperCase()}`;
+  }
+
+  return value;
+}
+
 export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) {
   const [manualTag, setManualTag] = useState('');
   const [scanning, setScanning] = useState(false);
@@ -39,12 +72,13 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
   }, [manualTag]);
 
   const handleScan = async (tagId: string) => {
-    if (!tagId) return;
+    const normalized = normalizeTagInput(tagId);
+    if (!normalized) return;
     setScanning(true);
-    setLastScanned(tagId);
+    setLastScanned(normalized);
     setScanResult(null);
     try {
-      const result = await onTagScanned(tagId);
+      const result = await onTagScanned(normalized);
       setScanResult(result);
     } finally {
       setScanning(false);
@@ -59,41 +93,26 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
       await ndef.scan();
       setScanning(true);
       ndef.addEventListener('reading', ({ message, serialNumber }: any) => {
-        let tagId = '';
+        let raw = '';
         if (message?.records) {
           for (const record of message.records) {
-            if (record.recordType === 'text') {
-              const decoder = new TextDecoder(record.encoding || 'utf-8');
-              let raw = decoder.decode(record.data).trim();
-              if (raw.startsWith('CGPT:')) {
-                try {
-                  const decoded = JSON.parse(atob(raw.slice(5)));
-                  raw = decoded.id || raw;
-                } catch {}
-              }
-              tagId = raw;
-              break;
-            } else if (record.recordType === 'url' || record.recordType === 'unknown') {
+            if (record.recordType === 'text' || record.recordType === 'url' || record.recordType === 'unknown') {
               try {
-                const decoder = new TextDecoder('utf-8');
+                const decoder = new TextDecoder((record as any).encoding || 'utf-8');
                 const decoded = decoder.decode(record.data).trim();
-                if (decoded.startsWith('CriderGPT-') || decoded.length > 3) {
-                  tagId = decoded;
+                if (decoded) {
+                  raw = decoded;
                   break;
                 }
               } catch {}
             }
           }
         }
-        if (!tagId) {
-          tagId = serialNumber || '';
-        }
-        if (tagId) {
-          handleScan(tagId);
-        }
+        if (!raw) raw = serialNumber || '';
+        if (raw) handleScan(raw);
       });
     } catch (err) {
-      console.error('NFC scan failed:', err);
+      console.error('NFC scan failed');
     }
   };
 
