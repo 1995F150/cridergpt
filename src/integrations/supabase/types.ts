@@ -3570,6 +3570,66 @@ export type Database = {
           },
         ]
       }
+      livestock_public_health_records: {
+        Row: {
+          animal_id: string
+          category: string
+          created_at: string
+          event_date: string | null
+          id: string
+          is_active: boolean
+          next_due_date: string | null
+          owner_id: string
+          public_summary: string | null
+          public_title: string
+          source_health_record_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          animal_id: string
+          category: string
+          created_at?: string
+          event_date?: string | null
+          id?: string
+          is_active?: boolean
+          next_due_date?: string | null
+          owner_id: string
+          public_summary?: string | null
+          public_title: string
+          source_health_record_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          animal_id?: string
+          category?: string
+          created_at?: string
+          event_date?: string | null
+          id?: string
+          is_active?: boolean
+          next_due_date?: string | null
+          owner_id?: string
+          public_summary?: string | null
+          public_title?: string
+          source_health_record_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livestock_public_health_records_animal_id_fkey"
+            columns: ["animal_id"]
+            isOneToOne: false
+            referencedRelation: "livestock_animals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "livestock_public_health_records_source_health_record_id_fkey"
+            columns: ["source_health_record_id"]
+            isOneToOne: false
+            referencedRelation: "livestock_health_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       livestock_public_profiles: {
         Row: {
           animal_id: string
