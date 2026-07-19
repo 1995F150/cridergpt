@@ -1,15 +1,39 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Scale, Pill, StickyNote, Tag, Activity, TrendingUp, Smartphone, Trash2, Users, UserMinus } from 'lucide-react';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  ArrowLeft,
+  Scale,
+  Pill,
+  StickyNote,
+  Tag,
+  Activity,
+  TrendingUp,
+  Smartphone,
+  Trash2,
+  Users,
+  UserMinus,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 import type {
   LivestockAnimal,
   LivestockWeight,
@@ -18,7 +42,7 @@ import type {
   LivestockTag,
   LivestockAccessGrant,
   LivestockAccessPermissions,
-} from '@/hooks/useLivestock';
+} from "@/hooks/useLivestock";
 
 interface AnimalProfileProps {
   animal: LivestockAnimal;
@@ -38,17 +62,22 @@ interface AnimalProfileProps {
     animalId: string,
     email: string,
     role?: string,
-    permissions?: LivestockAccessPermissions
+    permissions?: LivestockAccessPermissions,
   ) => Promise<boolean>;
   onRevokeAccess?: (accessId: string, animalId: string) => Promise<void>;
 }
 
 const speciesEmoji: Record<string, string> = {
-  cattle: '🐄', pig: '🐷', sheep: '🐑', goat: '🐐', chicken: '🐔', horse: '🐴',
+  cattle: "🐄",
+  pig: "🐷",
+  sheep: "🐑",
+  goat: "🐐",
+  chicken: "🐔",
+  horse: "🐴",
 };
 
 function getAge(birthDate: string | null): string {
-  if (!birthDate) return 'Unknown';
+  if (!birthDate) return "Unknown";
   const birth = new Date(birthDate);
   const now = new Date();
   const days = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24));
@@ -58,33 +87,42 @@ function getAge(birthDate: string | null): string {
 }
 
 export function AnimalProfile({
-  animal, weights, healthRecords, notes, tags,
-  onBack, onAddWeight, onAddHealth, onAddNote, onAddTag, onDelete,
+  animal,
+  weights,
+  healthRecords,
+  notes,
+  tags,
+  onBack,
+  onAddWeight,
+  onAddHealth,
+  onAddNote,
+  onAddTag,
+  onDelete,
   sharedAccess = [],
   accessLoading = false,
   onGrantAccess,
   onRevokeAccess,
 }: AnimalProfileProps) {
-  const [newWeight, setNewWeight] = useState('');
-  const [weightNotes, setWeightNotes] = useState('');
-  const [noteContent, setNoteContent] = useState('');
-  const [tagNumber, setTagNumber] = useState('');
-  const [tagType, setTagType] = useState('visual');
-  const [tagLocation, setTagLocation] = useState('');
-  
+  const [newWeight, setNewWeight] = useState("");
+  const [weightNotes, setWeightNotes] = useState("");
+  const [noteContent, setNoteContent] = useState("");
+  const [tagNumber, setTagNumber] = useState("");
+  const [tagType, setTagType] = useState("visual");
+  const [tagLocation, setTagLocation] = useState("");
+
   // Health record form
-  const [healthType, setHealthType] = useState('checkup');
-  const [healthTitle, setHealthTitle] = useState('');
-  const [healthDesc, setHealthDesc] = useState('');
-  const [healthMed, setHealthMed] = useState('');
-  const [healthDosage, setHealthDosage] = useState('');
-  const [healthVet, setHealthVet] = useState('');
-  const [shareEmail, setShareEmail] = useState('');
-  const [shareRole, setShareRole] = useState('farm_worker');
+  const [healthType, setHealthType] = useState("checkup");
+  const [healthTitle, setHealthTitle] = useState("");
+  const [healthDesc, setHealthDesc] = useState("");
+  const [healthMed, setHealthMed] = useState("");
+  const [healthDosage, setHealthDosage] = useState("");
+  const [healthVet, setHealthVet] = useState("");
+  const [shareEmail, setShareEmail] = useState("");
+  const [shareRole, setShareRole] = useState("farm_worker");
   const [sharing, setSharing] = useState(false);
 
   const latestWeight = weights[0]?.weight_lbs;
-  const emoji = speciesEmoji[animal.species] || '🐾';
+  const emoji = speciesEmoji[animal.species] || "🐾";
 
   return (
     <div className="space-y-4">
@@ -97,13 +135,13 @@ export function AnimalProfile({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-2xl">{emoji}</span>
             <h2 className="text-xl font-bold text-foreground">{animal.name || animal.animal_id}</h2>
-            <Badge variant="outline" className="text-xs">{animal.animal_id}</Badge>
+            <Badge variant="outline" className="text-xs">
+              {animal.animal_id}
+            </Badge>
             {animal.tag_id && (
-              <Badge className="text-xs bg-primary/10 text-primary border-primary/30 font-mono">
-                {animal.tag_id}
-              </Badge>
+              <Badge className="text-xs bg-primary/10 text-primary border-primary/30 font-mono">{animal.tag_id}</Badge>
             )}
-            {'NDEFReader' in window && animal.tag_id && (
+            {"NDEFReader" in window && animal.tag_id && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -111,10 +149,10 @@ export function AnimalProfile({
                 onClick={async () => {
                   try {
                     const ndef = new (window as any).NDEFReader();
-                    await ndef.write({ records: [{ recordType: 'text', data: animal.tag_id }] });
-                    toast.success('Tag ID written to NFC tag! 📡');
+                    await ndef.write({ records: [{ recordType: "text", data: animal.tag_id }] });
+                    toast.success("Tag ID written to NFC tag! 📡");
                   } catch (err) {
-                    toast.error('NFC write failed. Hold tag closer.');
+                    toast.error("NFC write failed. Hold tag closer.");
                   }
                 }}
               >
@@ -123,13 +161,19 @@ export function AnimalProfile({
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            {animal.breed || animal.species} · {animal.sex === 'male' ? '♂ Male' : animal.sex === 'female' ? '♀ Female' : ''} · Age: {getAge(animal.birth_date)}
+            {animal.breed || animal.species} ·{" "}
+            {animal.sex === "male" ? "♂ Male" : animal.sex === "female" ? "♀ Female" : ""} · Age:{" "}
+            {getAge(animal.birth_date)}
           </p>
         </div>
         {onDelete && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
                 <Trash2 className="h-5 w-5" />
               </Button>
             </AlertDialogTrigger>
@@ -137,7 +181,8 @@ export function AnimalProfile({
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete {animal.name || animal.animal_id}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete this animal and all its records (weights, health, notes, tags). This action cannot be undone.
+                  This will permanently delete this animal and all its records (weights, health, notes, tags). This
+                  action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -156,26 +201,34 @@ export function AnimalProfile({
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card><CardContent className="p-3 text-center">
-          <Scale className="h-5 w-5 mx-auto mb-1 text-primary" />
-          <p className="text-lg font-bold">{latestWeight ? `${latestWeight}` : '—'}</p>
-          <p className="text-xs text-muted-foreground">lbs</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3 text-center">
-          <Activity className="h-5 w-5 mx-auto mb-1 text-primary" />
-          <p className="text-lg font-bold">{healthRecords.length}</p>
-          <p className="text-xs text-muted-foreground">Records</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3 text-center">
-          <Tag className="h-5 w-5 mx-auto mb-1 text-primary" />
-          <p className="text-lg font-bold">{tags.length}</p>
-          <p className="text-xs text-muted-foreground">Tags</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3 text-center">
-          <TrendingUp className="h-5 w-5 mx-auto mb-1 text-primary" />
-          <p className="text-lg font-bold">{weights.length}</p>
-          <p className="text-xs text-muted-foreground">Weigh-ins</p>
-        </CardContent></Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <Scale className="h-5 w-5 mx-auto mb-1 text-primary" />
+            <p className="text-lg font-bold">{latestWeight ? `${latestWeight}` : "—"}</p>
+            <p className="text-xs text-muted-foreground">lbs</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <Activity className="h-5 w-5 mx-auto mb-1 text-primary" />
+            <p className="text-lg font-bold">{healthRecords.length}</p>
+            <p className="text-xs text-muted-foreground">Records</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <Tag className="h-5 w-5 mx-auto mb-1 text-primary" />
+            <p className="text-lg font-bold">{tags.length}</p>
+            <p className="text-xs text-muted-foreground">Tags</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <TrendingUp className="h-5 w-5 mx-auto mb-1 text-primary" />
+            <p className="text-lg font-bold">{weights.length}</p>
+            <p className="text-xs text-muted-foreground">Weigh-ins</p>
+          </CardContent>
+        </Card>
       </div>
 
       {onGrantAccess && (
@@ -200,7 +253,9 @@ export function AnimalProfile({
               <div>
                 <Label>Role</Label>
                 <Select value={shareRole} onValueChange={setShareRole}>
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="farm_worker">Farm Worker</SelectItem>
                     <SelectItem value="manager">Manager</SelectItem>
@@ -222,13 +277,13 @@ export function AnimalProfile({
                   add_notes: true,
                   add_weights: true,
                   add_health: true,
-                  manage_tags: shareRole === 'manager',
+                  manage_tags: shareRole === "manager",
                 });
                 setSharing(false);
-                if (granted) setShareEmail('');
+                if (granted) setShareEmail("");
               }}
             >
-              {sharing ? 'Granting access...' : 'Grant Access'}
+              {sharing ? "Granting access..." : "Grant Access"}
             </Button>
 
             {accessLoading ? (
@@ -241,7 +296,7 @@ export function AnimalProfile({
                   <div key={access.id} className="flex items-center justify-between rounded-md border p-3">
                     <div>
                       <p className="text-sm font-medium">{access.permissions?.grantee_email || access.granted_to}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{access.role.replace('_', ' ')}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{access.role.replace("_", " ")}</p>
                     </div>
                     {onRevokeAccess && (
                       <Button
@@ -262,13 +317,23 @@ export function AnimalProfile({
         </Card>
       )}
 
+      <PublicProfileManager animal={animal} />
+
       {/* Tabs — 4 tabs: Health, Weight, Notes, Tags */}
       <Tabs defaultValue="health" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4 h-12">
-          <TabsTrigger value="health" className="text-xs sm:text-sm">💊 Health</TabsTrigger>
-          <TabsTrigger value="weight" className="text-xs sm:text-sm">⚖️ Weight</TabsTrigger>
-          <TabsTrigger value="notes" className="text-xs sm:text-sm">📝 Notes</TabsTrigger>
-          <TabsTrigger value="tags" className="text-xs sm:text-sm">🏷️ Tags</TabsTrigger>
+          <TabsTrigger value="health" className="text-xs sm:text-sm">
+            💊 Health
+          </TabsTrigger>
+          <TabsTrigger value="weight" className="text-xs sm:text-sm">
+            ⚖️ Weight
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="text-xs sm:text-sm">
+            📝 Notes
+          </TabsTrigger>
+          <TabsTrigger value="tags" className="text-xs sm:text-sm">
+            🏷️ Tags
+          </TabsTrigger>
         </TabsList>
 
         {/* Health Tab */}
@@ -284,7 +349,9 @@ export function AnimalProfile({
                 <div>
                   <Label>Type</Label>
                   <Select value={healthType} onValueChange={setHealthType}>
-                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="checkup">Checkup</SelectItem>
                       <SelectItem value="vaccination">Vaccination</SelectItem>
@@ -297,38 +364,71 @@ export function AnimalProfile({
                 </div>
                 <div>
                   <Label>Title *</Label>
-                  <Input placeholder="e.g. Annual checkup" value={healthTitle} onChange={e => setHealthTitle(e.target.value)} className="h-11" />
+                  <Input
+                    placeholder="e.g. Annual checkup"
+                    value={healthTitle}
+                    onChange={(e) => setHealthTitle(e.target.value)}
+                    className="h-11"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Medication</Label>
-                  <Input placeholder="e.g. Penicillin" value={healthMed} onChange={e => setHealthMed(e.target.value)} className="h-11" />
+                  <Input
+                    placeholder="e.g. Penicillin"
+                    value={healthMed}
+                    onChange={(e) => setHealthMed(e.target.value)}
+                    className="h-11"
+                  />
                 </div>
                 <div>
                   <Label>Dosage</Label>
-                  <Input placeholder="e.g. 10ml" value={healthDosage} onChange={e => setHealthDosage(e.target.value)} className="h-11" />
+                  <Input
+                    placeholder="e.g. 10ml"
+                    value={healthDosage}
+                    onChange={(e) => setHealthDosage(e.target.value)}
+                    className="h-11"
+                  />
                 </div>
               </div>
               <div>
                 <Label>Vet Name</Label>
-                <Input placeholder="Dr. Smith" value={healthVet} onChange={e => setHealthVet(e.target.value)} className="h-11" />
+                <Input
+                  placeholder="Dr. Smith"
+                  value={healthVet}
+                  onChange={(e) => setHealthVet(e.target.value)}
+                  className="h-11"
+                />
               </div>
               <div>
                 <Label>Description</Label>
-                <Textarea placeholder="Details..." value={healthDesc} onChange={e => setHealthDesc(e.target.value)} rows={2} />
+                <Textarea
+                  placeholder="Details..."
+                  value={healthDesc}
+                  onChange={(e) => setHealthDesc(e.target.value)}
+                  rows={2}
+                />
               </div>
-              <Button className="w-full h-11" disabled={!healthTitle} onClick={async () => {
-                await onAddHealth(animal.id, {
-                  record_type: healthType,
-                  title: healthTitle,
-                  description: healthDesc || undefined,
-                  medication: healthMed || undefined,
-                  dosage: healthDosage || undefined,
-                  vet_name: healthVet || undefined,
-                });
-                setHealthTitle(''); setHealthDesc(''); setHealthMed(''); setHealthDosage(''); setHealthVet('');
-              }}>
+              <Button
+                className="w-full h-11"
+                disabled={!healthTitle}
+                onClick={async () => {
+                  await onAddHealth(animal.id, {
+                    record_type: healthType,
+                    title: healthTitle,
+                    description: healthDesc || undefined,
+                    medication: healthMed || undefined,
+                    dosage: healthDosage || undefined,
+                    vet_name: healthVet || undefined,
+                  });
+                  setHealthTitle("");
+                  setHealthDesc("");
+                  setHealthMed("");
+                  setHealthDosage("");
+                  setHealthVet("");
+                }}
+              >
                 Save Health Record
               </Button>
             </CardContent>
@@ -337,18 +437,26 @@ export function AnimalProfile({
           {healthRecords.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">History</h3>
-              {healthRecords.map(r => (
+              {healthRecords.map((r) => (
                 <Card key={r.id}>
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">{r.record_type}</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {r.record_type}
+                        </Badge>
                         <span className="font-medium text-sm">{r.title}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{new Date(r.recorded_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(r.recorded_at).toLocaleDateString()}
+                      </span>
                     </div>
                     {r.description && <p className="text-xs text-muted-foreground">{r.description}</p>}
-                    {r.medication && <p className="text-xs">💊 {r.medication} {r.dosage && `— ${r.dosage}`}</p>}
+                    {r.medication && (
+                      <p className="text-xs">
+                        💊 {r.medication} {r.dosage && `— ${r.dosage}`}
+                      </p>
+                    )}
                     {r.vet_name && <p className="text-xs">🩺 {r.vet_name}</p>}
                   </CardContent>
                 </Card>
@@ -368,16 +476,32 @@ export function AnimalProfile({
             <CardContent className="space-y-3">
               <div>
                 <Label>Weight (lbs) *</Label>
-                <Input type="number" placeholder="e.g. 850" value={newWeight} onChange={e => setNewWeight(e.target.value)} className="h-12 text-lg" />
+                <Input
+                  type="number"
+                  placeholder="e.g. 850"
+                  value={newWeight}
+                  onChange={(e) => setNewWeight(e.target.value)}
+                  className="h-12 text-lg"
+                />
               </div>
               <div>
                 <Label>Notes</Label>
-                <Input placeholder="Optional notes" value={weightNotes} onChange={e => setWeightNotes(e.target.value)} className="h-11" />
+                <Input
+                  placeholder="Optional notes"
+                  value={weightNotes}
+                  onChange={(e) => setWeightNotes(e.target.value)}
+                  className="h-11"
+                />
               </div>
-              <Button className="w-full h-11" disabled={!newWeight} onClick={async () => {
-                await onAddWeight(animal.id, parseFloat(newWeight), weightNotes || undefined);
-                setNewWeight(''); setWeightNotes('');
-              }}>
+              <Button
+                className="w-full h-11"
+                disabled={!newWeight}
+                onClick={async () => {
+                  await onAddWeight(animal.id, parseFloat(newWeight), weightNotes || undefined);
+                  setNewWeight("");
+                  setWeightNotes("");
+                }}
+              >
                 Record Weight
               </Button>
             </CardContent>
@@ -386,14 +510,16 @@ export function AnimalProfile({
           {weights.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">Weight History</h3>
-              {weights.map(w => (
+              {weights.map((w) => (
                 <Card key={w.id}>
                   <CardContent className="p-3 flex items-center justify-between">
                     <div>
                       <span className="font-bold text-lg">{w.weight_lbs} lbs</span>
                       {w.notes && <p className="text-xs text-muted-foreground">{w.notes}</p>}
                     </div>
-                    <span className="text-xs text-muted-foreground">{new Date(w.recorded_at).toLocaleDateString()}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(w.recorded_at).toLocaleDateString()}
+                    </span>
                   </CardContent>
                 </Card>
               ))}
@@ -410,11 +536,21 @@ export function AnimalProfile({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Textarea placeholder="What did you observe?" value={noteContent} onChange={e => setNoteContent(e.target.value)} rows={3} className="text-base" />
-              <Button className="w-full h-11" disabled={!noteContent.trim()} onClick={async () => {
-                await onAddNote(animal.id, noteContent);
-                setNoteContent('');
-              }}>
+              <Textarea
+                placeholder="What did you observe?"
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                rows={3}
+                className="text-base"
+              />
+              <Button
+                className="w-full h-11"
+                disabled={!noteContent.trim()}
+                onClick={async () => {
+                  await onAddNote(animal.id, noteContent);
+                  setNoteContent("");
+                }}
+              >
                 Add Note
               </Button>
             </CardContent>
@@ -422,7 +558,7 @@ export function AnimalProfile({
 
           {notes.length > 0 && (
             <div className="space-y-2">
-              {notes.map(n => (
+              {notes.map((n) => (
                 <Card key={n.id}>
                   <CardContent className="p-3">
                     <p className="text-sm">{n.content}</p>
@@ -445,13 +581,20 @@ export function AnimalProfile({
             <CardContent className="space-y-3">
               <div>
                 <Label>Tag Number *</Label>
-                <Input placeholder="Scan or type tag ID" value={tagNumber} onChange={e => setTagNumber(e.target.value)} className="h-12 text-lg font-mono" />
+                <Input
+                  placeholder="Scan or type tag ID"
+                  value={tagNumber}
+                  onChange={(e) => setTagNumber(e.target.value)}
+                  className="h-12 text-lg font-mono"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Tag Type</Label>
                   <Select value={tagType} onValueChange={setTagType}>
-                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="visual">Visual Ear Tag</SelectItem>
                       <SelectItem value="rfid">RFID</SelectItem>
@@ -463,7 +606,9 @@ export function AnimalProfile({
                 <div>
                   <Label>Location</Label>
                   <Select value={tagLocation} onValueChange={setTagLocation}>
-                    <SelectTrigger className="h-11"><SelectValue placeholder="Where on animal" /></SelectTrigger>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Where on animal" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="left_ear">Left Ear</SelectItem>
                       <SelectItem value="right_ear">Right Ear</SelectItem>
@@ -473,10 +618,15 @@ export function AnimalProfile({
                   </Select>
                 </div>
               </div>
-              <Button className="w-full h-11" disabled={!tagNumber.trim()} onClick={async () => {
-                await onAddTag(animal.id, tagNumber, tagType, tagLocation || undefined);
-                setTagNumber(''); setTagLocation('');
-              }}>
+              <Button
+                className="w-full h-11"
+                disabled={!tagNumber.trim()}
+                onClick={async () => {
+                  await onAddTag(animal.id, tagNumber, tagType, tagLocation || undefined);
+                  setTagNumber("");
+                  setTagLocation("");
+                }}
+              >
                 Link Tag
               </Button>
             </CardContent>
@@ -485,16 +635,20 @@ export function AnimalProfile({
           {tags.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">Linked Tags</h3>
-              {tags.map(t => (
+              {tags.map((t) => (
                 <Card key={t.id}>
                   <CardContent className="p-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Tag className="h-4 w-4 text-primary" />
                       <span className="font-mono font-medium">{t.tag_number}</span>
-                      <Badge variant="outline" className="text-xs">{t.tag_type}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {t.tag_type}
+                      </Badge>
                       {t.is_primary && <Badge className="text-xs bg-primary/10 text-primary border-0">Primary</Badge>}
                     </div>
-                    {t.tag_location && <span className="text-xs text-muted-foreground">{t.tag_location.replace('_', ' ')}</span>}
+                    {t.tag_location && (
+                      <span className="text-xs text-muted-foreground">{t.tag_location.replace("_", " ")}</span>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -503,5 +657,242 @@ export function AnimalProfile({
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+const publicDefaults = {
+  public_enabled: false,
+  lost_status: "safe",
+  public_owner_name: "",
+  public_phone: "",
+  public_email: "",
+  preferred_contact_method: "phone",
+  emergency_instructions: "",
+  last_seen_general_area: "",
+  show_photo: true,
+  show_name: true,
+  show_species: true,
+  show_breed: true,
+  show_sex: true,
+  show_birth_date: true,
+  show_color_markings: true,
+  show_owner_contact: false,
+  show_vaccinations: false,
+  show_health_alerts: false,
+};
+
+function PublicProfileManager({ animal }: { animal: LivestockAnimal }) {
+  const [profile, setProfile] = useState<any>(publicDefaults);
+  const [publicRecords, setPublicRecords] = useState<any[]>([]);
+  const [publicTitle, setPublicTitle] = useState("");
+  const [publicSummary, setPublicSummary] = useState("");
+  const [publicCategory, setPublicCategory] = useState("vaccination");
+  const [publicLoading, setPublicLoading] = useState(true);
+
+  const loadPublicProfile = async () => {
+    setPublicLoading(true);
+    const [{ data: p }, { data: rows }] = await Promise.all([
+      supabase.from("livestock_public_profiles").select("*").eq("animal_id", animal.id).maybeSingle(),
+      supabase
+        .from("livestock_public_health_records")
+        .select("*")
+        .eq("animal_id", animal.id)
+        .order("event_date", { ascending: false }),
+    ]);
+    if (p) setProfile({ ...publicDefaults, ...p });
+    setPublicRecords(rows || []);
+    setPublicLoading(false);
+  };
+
+  useEffect(() => {
+    loadPublicProfile();
+  }, [animal.id]);
+
+  const savePublicProfile = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const payload: any = { ...profile, animal_id: animal.id, owner_id: user.id };
+    delete payload.id;
+    delete payload.created_at;
+    delete payload.updated_at;
+    const { data, error } = await supabase
+      .from("livestock_public_profiles")
+      .upsert(payload, { onConflict: "animal_id" })
+      .select()
+      .single();
+    if (error) toast.error(error.message);
+    else {
+      setProfile({ ...publicDefaults, ...data });
+      toast.success("Public Smart ID profile saved");
+    }
+  };
+
+  const addPublicRecord = async () => {
+    if (!publicTitle.trim()) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase
+      .from("livestock_public_health_records")
+      .insert({
+        animal_id: animal.id,
+        owner_id: user.id,
+        category: publicCategory,
+        public_title: publicTitle.trim(),
+        public_summary: publicSummary.trim() || null,
+        is_active: true,
+      });
+    if (error) toast.error(error.message);
+    else {
+      setPublicTitle("");
+      setPublicSummary("");
+      await loadPublicProfile();
+    }
+  };
+
+  if (publicLoading)
+    return (
+      <Card>
+        <CardContent className="p-4 text-center text-sm text-muted-foreground">Loading public profile…</CardContent>
+      </Card>
+    );
+  const update = (key: string, value: any) => setProfile((p: any) => ({ ...p, [key]: value }));
+  const visibility = [
+    ["show_name", "Name"],
+    ["show_photo", "Photo"],
+    ["show_species", "Species"],
+    ["show_breed", "Breed"],
+    ["show_sex", "Sex"],
+    ["show_birth_date", "Birth date"],
+    ["show_owner_contact", "Owner contact"],
+    ["show_vaccinations", "Vaccinations"],
+    ["show_health_alerts", "Health alerts"],
+  ];
+
+  return (
+    <Card className="border-primary/20">
+      <CardHeader>
+        <CardTitle className="text-base">🔎 Public Lost-Animal Profile</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between rounded border p-3">
+          <div>
+            <Label>Enable public lookup</Label>
+            <p className="text-xs text-muted-foreground">Only the fields you select are public.</p>
+          </div>
+          <Switch checked={profile.public_enabled} onCheckedChange={(v) => update("public_enabled", v)} />
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <Label>Status</Label>
+            <Select value={profile.lost_status} onValueChange={(v) => update("lost_status", v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["safe", "lost", "found", "stolen"].map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Public owner name</Label>
+            <Input
+              value={profile.public_owner_name || ""}
+              onChange={(e) => update("public_owner_name", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Public phone</Label>
+            <Input value={profile.public_phone || ""} onChange={(e) => update("public_phone", e.target.value)} />
+          </div>
+          <div>
+            <Label>Public email</Label>
+            <Input
+              type="email"
+              value={profile.public_email || ""}
+              onChange={(e) => update("public_email", e.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Last seen general area</Label>
+            <Input
+              value={profile.last_seen_general_area || ""}
+              onChange={(e) => update("last_seen_general_area", e.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Emergency instructions</Label>
+            <Textarea
+              value={profile.emergency_instructions || ""}
+              onChange={(e) => update("emergency_instructions", e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-2">
+          {visibility.map(([key, label]) => (
+            <div key={key} className="flex items-center justify-between rounded border p-2 text-sm">
+              <span>{label}</span>
+              <Switch checked={!!profile[key]} onCheckedChange={(v) => update(key, v)} />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={savePublicProfile}>Save public profile</Button>
+          {animal.tag_id && (
+            <Button variant="outline" asChild>
+              <a href={`/tag/${encodeURIComponent(animal.tag_id)}`} target="_blank" rel="noreferrer">
+                Preview lookup
+              </a>
+            </Button>
+          )}
+        </div>
+        <div className="border-t pt-4 space-y-2">
+          <Label>Public health or vaccination entry</Label>
+          <p className="text-xs text-muted-foreground">
+            Enter a separate public-safe summary. Private notes, dosage, costs, and vet details are never copied.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-2">
+            <Select value={publicCategory} onValueChange={setPublicCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["vaccination", "allergy", "medication_alert", "condition", "other"].map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {v.split("_").join(" ")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input placeholder="Public title" value={publicTitle} onChange={(e) => setPublicTitle(e.target.value)} />
+            <Textarea
+              className="sm:col-span-2"
+              placeholder="Public-safe summary"
+              value={publicSummary}
+              onChange={(e) => setPublicSummary(e.target.value)}
+            />
+          </div>
+          <Button variant="secondary" onClick={addPublicRecord}>
+            Add public entry
+          </Button>
+          {publicRecords.map((r) => (
+            <div key={r.id} className="rounded border p-2 text-sm">
+              <strong>{r.public_title}</strong>
+              <Badge variant="outline" className="ml-2">
+                {r.category.split("_").join(" ")}
+              </Badge>
+              {r.public_summary && <p className="text-xs text-muted-foreground mt-1">{r.public_summary}</p>}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
