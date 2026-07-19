@@ -562,7 +562,7 @@ function DailyLog({
               "vent_status",
               "next_action",
             ].map((k) => (
-              <Field key={k} label={k.replaceAll("_", " ")}>
+              <Field key={k} label={k.split("_").join(" ")}>
                 <input className={inputClass} value={f[k]} onChange={set(k)} />
               </Field>
             ))}
