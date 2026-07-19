@@ -3570,6 +3570,30 @@ export type Database = {
           },
         ]
       }
+      livestock_public_profiles: {
+        Row: {
+          animal_id: string
+          created_at: string
+          id: string
+          owner_id: string
+          public_enabled: boolean
+        }
+        Insert: {
+          animal_id: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          public_enabled?: boolean
+        }
+        Update: {
+          animal_id?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          public_enabled?: boolean
+        }
+        Relationships: []
+      }
       livestock_scan_logs: {
         Row: {
           animal_id: string | null
