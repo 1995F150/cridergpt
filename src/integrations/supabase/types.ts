@@ -3649,7 +3649,15 @@ export type Database = {
           show_vaccinations?: boolean
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_lpp_animal"
+            columns: ["animal_id"]
+            isOneToOne: true
+            referencedRelation: "livestock_animals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       livestock_scan_logs: {
         Row: {
