@@ -3573,24 +3573,81 @@ export type Database = {
       livestock_public_profiles: {
         Row: {
           animal_id: string
+          color_markings: string | null
           created_at: string
+          emergency_instructions: string | null
           id: string
+          last_seen_general_area: string | null
+          lost_status: string
           owner_id: string
+          preferred_contact_method: string | null
+          public_email: string | null
           public_enabled: boolean
+          public_owner_name: string | null
+          public_phone: string | null
+          show_birth_date: boolean
+          show_breed: boolean
+          show_color_markings: boolean
+          show_health_alerts: boolean
+          show_name: boolean
+          show_owner_contact: boolean
+          show_photo: boolean
+          show_sex: boolean
+          show_species: boolean
+          show_vaccinations: boolean
+          updated_at: string
         }
         Insert: {
           animal_id: string
+          color_markings?: string | null
           created_at?: string
+          emergency_instructions?: string | null
           id?: string
+          last_seen_general_area?: string | null
+          lost_status?: string
           owner_id: string
+          preferred_contact_method?: string | null
+          public_email?: string | null
           public_enabled?: boolean
+          public_owner_name?: string | null
+          public_phone?: string | null
+          show_birth_date?: boolean
+          show_breed?: boolean
+          show_color_markings?: boolean
+          show_health_alerts?: boolean
+          show_name?: boolean
+          show_owner_contact?: boolean
+          show_photo?: boolean
+          show_sex?: boolean
+          show_species?: boolean
+          show_vaccinations?: boolean
+          updated_at?: string
         }
         Update: {
           animal_id?: string
+          color_markings?: string | null
           created_at?: string
+          emergency_instructions?: string | null
           id?: string
+          last_seen_general_area?: string | null
+          lost_status?: string
           owner_id?: string
+          preferred_contact_method?: string | null
+          public_email?: string | null
           public_enabled?: boolean
+          public_owner_name?: string | null
+          public_phone?: string | null
+          show_birth_date?: boolean
+          show_breed?: boolean
+          show_color_markings?: boolean
+          show_health_alerts?: boolean
+          show_name?: boolean
+          show_owner_contact?: boolean
+          show_photo?: boolean
+          show_sex?: boolean
+          show_species?: boolean
+          show_vaccinations?: boolean
+          updated_at?: string
         }
         Relationships: []
       }

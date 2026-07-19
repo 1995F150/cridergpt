@@ -1,0 +1,21 @@
+
+ALTER TABLE public.livestock_public_profiles
+  ADD COLUMN lost_status text NOT NULL DEFAULT 'safe' CHECK (lost_status IN ('safe','lost','found','stolen')),
+  ADD COLUMN public_owner_name text,
+  ADD COLUMN public_phone text,
+  ADD COLUMN public_email text,
+  ADD COLUMN preferred_contact_method text DEFAULT 'phone' CHECK (preferred_contact_method IN ('phone','email','either')),
+  ADD COLUMN emergency_instructions text,
+  ADD COLUMN last_seen_general_area text,
+  ADD COLUMN show_photo boolean NOT NULL DEFAULT true,
+  ADD COLUMN show_name boolean NOT NULL DEFAULT true,
+  ADD COLUMN show_species boolean NOT NULL DEFAULT true,
+  ADD COLUMN show_breed boolean NOT NULL DEFAULT true,
+  ADD COLUMN show_sex boolean NOT NULL DEFAULT true,
+  ADD COLUMN show_birth_date boolean NOT NULL DEFAULT true,
+  ADD COLUMN show_color_markings boolean NOT NULL DEFAULT true,
+  ADD COLUMN show_owner_contact boolean NOT NULL DEFAULT false,
+  ADD COLUMN show_vaccinations boolean NOT NULL DEFAULT false,
+  ADD COLUMN show_health_alerts boolean NOT NULL DEFAULT false,
+  ADD COLUMN color_markings text,
+  ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
