@@ -72,12 +72,13 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
   }, [manualTag]);
 
   const handleScan = async (tagId: string) => {
-    if (!tagId) return;
+    const normalized = normalizeTagInput(tagId);
+    if (!normalized) return;
     setScanning(true);
-    setLastScanned(tagId);
+    setLastScanned(normalized);
     setScanResult(null);
     try {
-      const result = await onTagScanned(tagId);
+      const result = await onTagScanned(normalized);
       setScanResult(result);
     } finally {
       setScanning(false);
@@ -92,41 +93,26 @@ export function TagScanner({ onTagScanned, onRegisterAnimal }: TagScannerProps) 
       await ndef.scan();
       setScanning(true);
       ndef.addEventListener('reading', ({ message, serialNumber }: any) => {
-        let tagId = '';
+        let raw = '';
         if (message?.records) {
           for (const record of message.records) {
-            if (record.recordType === 'text') {
-              const decoder = new TextDecoder(record.encoding || 'utf-8');
-              let raw = decoder.decode(record.data).trim();
-              if (raw.startsWith('CGPT:')) {
-                try {
-                  const decoded = JSON.parse(atob(raw.slice(5)));
-                  raw = decoded.id || raw;
-                } catch {}
-              }
-              tagId = raw;
-              break;
-            } else if (record.recordType === 'url' || record.recordType === 'unknown') {
+            if (record.recordType === 'text' || record.recordType === 'url' || record.recordType === 'unknown') {
               try {
-                const decoder = new TextDecoder('utf-8');
+                const decoder = new TextDecoder((record as any).encoding || 'utf-8');
                 const decoded = decoder.decode(record.data).trim();
-                if (decoded.startsWith('CriderGPT-') || decoded.length > 3) {
-                  tagId = decoded;
+                if (decoded) {
+                  raw = decoded;
                   break;
                 }
               } catch {}
             }
           }
         }
-        if (!tagId) {
-          tagId = serialNumber || '';
-        }
-        if (tagId) {
-          handleScan(tagId);
-        }
+        if (!raw) raw = serialNumber || '';
+        if (raw) handleScan(raw);
       });
     } catch (err) {
-      console.error('NFC scan failed:', err);
+      console.error('NFC scan failed');
     }
   };
 
