@@ -155,31 +155,76 @@ export const ChatInterface: React.FC = () => {
 
   // Send message
   const sendMessage = async () => {
-    if (!inputMessage.trim() || !currentConversation || !user) return;
+    if (!inputMessage.trim() || !currentConversation || !user || isLoading) return;
+
+    const userText = inputMessage.trim();
+    setInputMessage('');
+    setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('chat-operations', {
+      // 1) Persist user message
+      const { data: userSave, error: userErr } = await supabase.functions.invoke('chat-operations', {
         body: {
           action: 'send_message',
           conversation_id: currentConversation,
           role: 'user',
-          content: inputMessage
-        }
+          content: userText,
+        },
       });
-
-      if (error) throw error;
-
-      if (data.message) {
-        setMessages(prev => [...prev, data.message]);
-        setInputMessage('');
+      if (userErr) throw userErr;
+      if (userSave?.message) {
+        setMessages(prev => [...prev, userSave.message]);
       }
-    } catch (error) {
+
+      // 2) Build conversation history and invoke AI
+      const history = [
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: userText },
+      ];
+
+      const { data: aiData, error: aiErr } = await supabase.functions.invoke('chat-with-ai', {
+        body: {
+          message: userText,
+          conversation_history: history,
+        },
+      });
+      if (aiErr) throw aiErr;
+
+      const assistantText = aiData?.response;
+      if (!assistantText) throw new Error(aiData?.error || 'AI returned no response');
+
+      // 3) Persist assistant message
+      const { data: aiSave, error: aiSaveErr } = await supabase.functions.invoke('chat-operations', {
+        body: {
+          action: 'send_message',
+          conversation_id: currentConversation,
+          role: 'assistant',
+          content: assistantText,
+          tokens_used: aiData?.tokens_used ?? 0,
+        },
+      });
+      if (aiSaveErr) throw aiSaveErr;
+      if (aiSave?.message) {
+        setMessages(prev => [...prev, aiSave.message]);
+      } else {
+        // Fallback render if server didn't echo the row
+        setMessages(prev => [...prev, {
+          id: `assistant-${Date.now()}`,
+          content: assistantText,
+          role: 'assistant',
+          created_at: new Date().toISOString(),
+          user_id: user.id,
+        } as any]);
+      }
+    } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive"
+        title: 'Error',
+        description: error?.message || 'Failed to send message',
+        variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
