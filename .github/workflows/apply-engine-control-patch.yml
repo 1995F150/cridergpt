@@ -1,0 +1,34 @@
+name: Apply Engine Control Patch
+
+on:
+  push:
+    paths:
+      - .github/workflows/apply-engine-control-patch.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Apply control-plane integration
+        run: python scripts/apply-engine-control-patch.py
+      - name: Commit patched source
+        run: |
+          if git diff --quiet; then
+            echo "Patch already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/admin/AIInfrastructure.tsx supabase/functions/chat-with-ai/index.ts
+          git commit -m "Wire AI Infrastructure dashboard to CriderGPT Engine"
+          git push origin HEAD:main
