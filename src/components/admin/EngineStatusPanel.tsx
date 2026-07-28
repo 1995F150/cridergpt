@@ -122,10 +122,12 @@ export function EngineStatusPanel() {
   async function saveConnection() {
     setAction("save");
     try {
+      const timeout = Math.min(Math.max(Number(settings.engine_request_timeout_ms) || 120000, 1000), 3600000);
       const data = await invoke({
         action: "set_url",
         engine_base_url: settings.engine_base_url,
         engine_enabled: settings.engine_enabled,
+        engine_request_timeout_ms: timeout,
       });
       if (data.settings) setSettings((current) => ({ ...current, ...data.settings }));
       toast.success("Engine connection saved");
