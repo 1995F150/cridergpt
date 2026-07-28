@@ -280,8 +280,6 @@ export function AIInfrastructure() {
 
       <EngineStatusPanel />
 
-      <EngineStatusPanel />
-
       {/* Kill switch */}
       <Card className={settings.kill_switch ? "border-destructive" : ""}>
         <CardHeader>
