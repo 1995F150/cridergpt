@@ -49,6 +49,8 @@ type EngineSettings = {
   config_updated_at?: string;
 };
 
+type DisplayState = "online" | "degraded" | "maintenance" | "offline" | "unknown";
+
 type ControlResponse = {
   settings?: EngineSettings;
   status?: RuntimeStatus;
@@ -150,7 +152,7 @@ export function EngineStatusPanel() {
     }
   }
 
-  const state = useMemo(() => {
+  const state = useMemo<DisplayState>(() => {
     if (computedOnline || runtime?.status === "online") return "online";
     if (runtime?.status === "degraded") return "degraded";
     if (runtime?.status === "maintenance") return "maintenance";
@@ -247,7 +249,7 @@ export function EngineStatusPanel() {
             <div className="flex flex-wrap gap-2">
               {services.map(([name, value]) => (
                 <Badge key={name} variant={serviceOnline(value) ? "default" : "outline"} className="capitalize">
-                  {name.replaceAll("_", " ")}: {serviceOnline(value) ? "ready" : "not ready"}
+                  {name.split("_").join(" ")}: {serviceOnline(value) ? "ready" : "not ready"}
                 </Badge>
               ))}
             </div>
@@ -259,7 +261,7 @@ export function EngineStatusPanel() {
             <Label>Reported capabilities</Label>
             <div className="flex flex-wrap gap-2">
               {capabilities.map((name) => (
-                <Badge key={name} variant="secondary" className="capitalize">{name.replaceAll("_", " ")}</Badge>
+                <Badge key={name} variant="secondary" className="capitalize">{name.split("_").join(" ")}</Badge>
               ))}
             </div>
           </div>

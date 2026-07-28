@@ -18,6 +18,7 @@ import { MyReferencesLibrary } from "./MyReferencesLibrary";
 import { HybridRouterPanel } from "./HybridRouterPanel";
 import { PublicApiKeysPanel } from "./PublicApiKeysPanel";
 import { EngineStatusPanel } from "./EngineStatusPanel";
+import { EngineStatusPanel } from "./EngineStatusPanel";
 
 interface InfraSettings {
   id: string;
@@ -277,6 +278,8 @@ export function AIInfrastructure() {
           )}
         </div>
       </div>
+
+      <EngineStatusPanel />
 
       <EngineStatusPanel />
 

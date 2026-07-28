@@ -1170,6 +1170,12 @@ serve(async (req) => {
             last_health_check: new Date().toISOString(),
             last_error: `HTTP ${r.status} on ${enginePath}`,
           });
+          await recordEngineStatus({
+            online: false,
+            status: 'degraded',
+            last_health_check: new Date().toISOString(),
+            last_error: `HTTP ${r.status} on ${enginePath}`,
+          });
           console.warn(`[chat-with-ai] engine ${enginePath} returned ${r.status}, falling back to cloud`);
         } catch (e) {
           await recordEngineStatus({
