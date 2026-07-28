@@ -1066,6 +1066,44 @@ serve(async (req) => {
 
     console.log('[chat-with-ai] mode:', mode, 'message:', message?.substring(0, 100), 'has image:', !!(imageData || image_base64 || image_url));
 
+    // Central AI Infrastructure control plane. The public URL is stored in
+    // Supabase; the API key remains an Edge Function secret.
+    let infraSettings: any = null;
+    try {
+      const { data: infra } = await supabase
+        .from('ai_infrastructure_settings')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      infraSettings = infra;
+    } catch (e) {
+      console.warn('[chat-with-ai] could not load AI infrastructure settings:', e);
+    }
+    const ENGINE_URL = String(
+      infraSettings?.engine_base_url || Deno.env.get('CRIDERGPT_ENGINE_URL') || ''
+    ).replace(/\/$/, '');
+    const ENGINE_API_KEY = Deno.env.get('CRIDERGPT_ENGINE_API_KEY');
+    const ENGINE_ENABLED = infraSettings?.engine_enabled !== false;
+    const ENGINE_TIMEOUT_MS = Math.min(
+      Math.max(Number(infraSettings?.engine_request_timeout_ms) || 120000, 1000),
+      3600000,
+    );
+
+    async function recordEngineStatus(patch: Record<string, unknown>) {
+      try {
+        await supabase.from('engine_runtime_status').upsert({
+          engine_id: 'primary',
+          base_url: ENGINE_URL || infraSettings?.engine_base_url || 'https://cridergpt.com/engine/api',
+          config_version: Number(infraSettings?.config_version) || 0,
+          updated_at: new Date().toISOString(),
+          ...patch,
+        });
+      } catch (statusError) {
+        console.warn('[chat-with-ai] engine status update skipped:', statusError);
+      }
+    }
+
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
@@ -1077,9 +1115,7 @@ serve(async (req) => {
     // unchanged.
     // =========================================================
     if (mode === 'image_generate' || mode === 'image_recognize') {
-      const ENGINE_URL = Deno.env.get('CRIDERGPT_ENGINE_URL');
-      const ENGINE_API_KEY = Deno.env.get('CRIDERGPT_ENGINE_API_KEY');
-      const engineEnabled = !!(ENGINE_URL && ENGINE_API_KEY);
+      const engineEnabled = Boolean(ENGINE_ENABLED && ENGINE_URL && ENGINE_API_KEY);
 
       // ---- 1) Try the engine first if configured ----
       if (engineEnabled) {
@@ -1102,10 +1138,19 @@ serve(async (req) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-API-Key': ENGINE_API_KEY },
             body: JSON.stringify(enginePayload),
-            signal: AbortSignal.timeout(120000),
+            signal: AbortSignal.timeout(ENGINE_TIMEOUT_MS),
           });
           if (r.ok) {
             const data = await r.json();
+            await recordEngineStatus({
+              online: true,
+              status: data.status === 'degraded' ? 'degraded' : 'online',
+              last_heartbeat: new Date().toISOString(),
+              last_health_check: new Date().toISOString(),
+              latency_ms: data.latency_ms ?? null,
+              active_model: data.model ?? null,
+              last_error: null,
+            });
             return new Response(
               JSON.stringify({
                 mode,
@@ -1119,8 +1164,20 @@ serve(async (req) => {
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
+          await recordEngineStatus({
+            online: false,
+            status: 'degraded',
+            last_health_check: new Date().toISOString(),
+            last_error: `HTTP ${r.status} on ${enginePath}`,
+          });
           console.warn(`[chat-with-ai] engine ${enginePath} returned ${r.status}, falling back to cloud`);
         } catch (e) {
+          await recordEngineStatus({
+            online: false,
+            status: 'offline',
+            last_health_check: new Date().toISOString(),
+            last_error: e instanceof Error ? e.message : String(e),
+          });
           console.warn('[chat-with-ai] engine call failed, falling back to cloud:', e instanceof Error ? e.message : e);
         }
       }
@@ -1211,19 +1268,7 @@ serve(async (req) => {
     }
     // === End multi-modal short-circuit ===
 
-    // === AI Infrastructure settings (admin-controlled) ===
-    let infraSettings: any = null;
-    try {
-      const { data: infra } = await supabase
-        .from('ai_infrastructure_settings')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      infraSettings = infra;
-    } catch (e) {
-      console.log('Could not load AI infra settings, using defaults');
-    }
+    // AI Infrastructure settings were loaded before modality routing.
 
     if (infraSettings?.kill_switch) {
       return new Response(
@@ -1531,12 +1576,15 @@ serve(async (req) => {
     } else {
       // === ENGINE-ONLY MODE ===
       // All chat traffic routes to the CriderGPT Engine. No cloud fallback.
-      const ENGINE_URL = Deno.env.get('CRIDERGPT_ENGINE_URL');
-      const ENGINE_API_KEY = Deno.env.get('CRIDERGPT_ENGINE_API_KEY');
-
+      if (!ENGINE_ENABLED) {
+        return new Response(JSON.stringify({
+          error: 'CriderGPT Engine is disabled in AI Infrastructure.',
+          source: 'engine-disabled',
+        }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       if (!ENGINE_URL) {
         return new Response(JSON.stringify({
-          error: 'CriderGPT Engine is not configured. Set CRIDERGPT_ENGINE_URL secret.',
+          error: 'CriderGPT Engine URL is not configured.',
           source: 'engine-missing',
         }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
@@ -1563,10 +1611,17 @@ serve(async (req) => {
             ...(ENGINE_API_KEY ? { 'X-API-Key': ENGINE_API_KEY } : {}),
           },
           body: JSON.stringify(enginePayload),
-          signal: AbortSignal.timeout(120000),
+          signal: AbortSignal.timeout(ENGINE_TIMEOUT_MS),
         });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        await recordEngineStatus({
+          online: false,
+          status: 'offline',
+          last_health_check: new Date().toISOString(),
+          latency_ms: Date.now() - startedAt,
+          last_error: msg,
+        });
         console.error('[chat-with-ai] engine unreachable:', msg);
         return new Response(JSON.stringify({
           error: `CriderGPT Engine unreachable: ${msg}`,
@@ -1576,6 +1631,13 @@ serve(async (req) => {
 
       if (!engineRes.ok) {
         const errText = await engineRes.text().catch(() => '');
+        await recordEngineStatus({
+          online: false,
+          status: 'degraded',
+          last_health_check: new Date().toISOString(),
+          latency_ms: Date.now() - startedAt,
+          last_error: `HTTP ${engineRes.status}: ${errText.substring(0, 300)}`,
+        });
         console.error('[chat-with-ai] engine error:', engineRes.status, errText.substring(0, 500));
         return new Response(JSON.stringify({
           error: `CriderGPT Engine returned ${engineRes.status}`,
@@ -1593,6 +1655,16 @@ serve(async (req) => {
         }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       responseSource = 'engine';
+      await recordEngineStatus({
+        online: true,
+        status: engineData.status === 'degraded' ? 'degraded' : 'online',
+        last_heartbeat: new Date().toISOString(),
+        last_health_check: new Date().toISOString(),
+        latency_ms: engineData.latency_ms ?? (Date.now() - startedAt),
+        active_model: engineData.model ?? null,
+        ack_config_version: Number(engineData.ack_config_version) || undefined,
+        last_error: null,
+      });
       console.log(`[chat-with-ai] engine reply in ${Date.now() - startedAt}ms (model=${engineData.model ?? 'unknown'})`);
     } // end else (engine)
 

@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { MyReferencesLibrary } from "./MyReferencesLibrary";
 import { HybridRouterPanel } from "./HybridRouterPanel";
 import { PublicApiKeysPanel } from "./PublicApiKeysPanel";
+import { EngineStatusPanel } from "./EngineStatusPanel";
 
 interface InfraSettings {
   id: string;
@@ -36,6 +37,11 @@ interface InfraSettings {
   notes: string | null;
   updated_at: string;
   advanced_addons?: AdvancedAddons;
+  engine_base_url?: string;
+  engine_enabled?: boolean;
+  engine_request_timeout_ms?: number;
+  config_version?: number;
+  config_updated_at?: string;
 }
 
 interface AdvancedAddons {
@@ -271,6 +277,8 @@ export function AIInfrastructure() {
           )}
         </div>
       </div>
+
+      <EngineStatusPanel />
 
       {/* Kill switch */}
       <Card className={settings.kill_switch ? "border-destructive" : ""}>
