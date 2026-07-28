@@ -268,7 +268,12 @@ export type Database = {
         Row: {
           advanced_addons: Json
           blocked_keywords: string[]
+          config_updated_at: string
+          config_version: number
           default_model: string
+          engine_base_url: string
+          engine_enabled: boolean
+          engine_request_timeout_ms: number
           fallback_model: string
           fine_tune_enabled: boolean
           id: string
@@ -288,7 +293,12 @@ export type Database = {
         Insert: {
           advanced_addons?: Json
           blocked_keywords?: string[]
+          config_updated_at?: string
+          config_version?: number
           default_model?: string
+          engine_base_url?: string
+          engine_enabled?: boolean
+          engine_request_timeout_ms?: number
           fallback_model?: string
           fine_tune_enabled?: boolean
           id?: string
@@ -308,7 +318,12 @@ export type Database = {
         Update: {
           advanced_addons?: Json
           blocked_keywords?: string[]
+          config_updated_at?: string
+          config_version?: number
           default_model?: string
+          engine_base_url?: string
+          engine_enabled?: boolean
+          engine_request_timeout_ms?: number
           fallback_model?: string
           fine_tune_enabled?: boolean
           id?: string
@@ -498,6 +513,51 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           user_plan?: string
+        }
+        Relationships: []
+      }
+      ai_usage_events: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          input_tokens: number
+          media_tokens: number
+          modality: string
+          model: string | null
+          output_tokens: number
+          request_id: string | null
+          tool: string
+          total_tokens: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id: string
+          input_tokens?: number
+          media_tokens?: number
+          modality: string
+          model?: string | null
+          output_tokens?: number
+          request_id?: string | null
+          tool: string
+          total_tokens?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          input_tokens?: number
+          media_tokens?: number
+          modality?: string
+          model?: string | null
+          output_tokens?: number
+          request_id?: string | null
+          tool?: string
+          total_tokens?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -1658,6 +1718,75 @@ export type Database = {
           stripe_price_id?: string | null
           tags?: string[] | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      engine_runtime_status: {
+        Row: {
+          ack_config_version: number
+          active_model: string | null
+          base_url: string
+          capabilities: Json
+          config_synced: boolean | null
+          config_version: number
+          engine_id: string
+          engine_version: string | null
+          git_sha: string | null
+          hostname: string | null
+          last_error: string | null
+          last_health_check: string | null
+          last_heartbeat: string | null
+          latency_ms: number | null
+          metadata: Json
+          online: boolean
+          services: Json
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ack_config_version?: number
+          active_model?: string | null
+          base_url?: string
+          capabilities?: Json
+          config_synced?: boolean | null
+          config_version?: number
+          engine_id?: string
+          engine_version?: string | null
+          git_sha?: string | null
+          hostname?: string | null
+          last_error?: string | null
+          last_health_check?: string | null
+          last_heartbeat?: string | null
+          latency_ms?: number | null
+          metadata?: Json
+          online?: boolean
+          services?: Json
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ack_config_version?: number
+          active_model?: string | null
+          base_url?: string
+          capabilities?: Json
+          config_synced?: boolean | null
+          config_version?: number
+          engine_id?: string
+          engine_version?: string | null
+          git_sha?: string | null
+          hostname?: string | null
+          last_error?: string | null
+          last_health_check?: string | null
+          last_heartbeat?: string | null
+          latency_ms?: number | null
+          metadata?: Json
+          online?: boolean
+          services?: Json
+          started_at?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -5035,6 +5164,89 @@ export type Database = {
         }
         Relationships: []
       }
+      rag_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string
+          embedding: string
+          id: string
+          metadata: Json
+          source_id: string
+          token_estimate: number | null
+          user_id: string
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string
+          embedding: string
+          id?: string
+          metadata?: Json
+          source_id: string
+          token_estimate?: number | null
+          user_id: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          embedding?: string
+          id?: string
+          metadata?: Json
+          source_id?: string
+          token_estimate?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rag_chunks_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "rag_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rag_sources: {
+        Row: {
+          content_hash: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          metadata: Json
+          source_type: string
+          source_uri: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_hash?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          source_type?: string
+          source_uri?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_hash?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          source_type?: string
+          source_uri?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       receipts: {
         Row: {
           amount: number
@@ -6858,6 +7070,69 @@ export type Database = {
         }
         Relationships: []
       }
+      video_generation_jobs: {
+        Row: {
+          aspect_ratio: string | null
+          created_at: string
+          duration_seconds: number | null
+          error_message: string | null
+          id: string
+          model: string | null
+          negative_prompt: string | null
+          output_url: string | null
+          preview_url: string | null
+          progress: number
+          prompt: string
+          provider: string
+          provider_job_id: string
+          provider_payload: Json
+          reference_image_url: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aspect_ratio?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          id: string
+          model?: string | null
+          negative_prompt?: string | null
+          output_url?: string | null
+          preview_url?: string | null
+          progress?: number
+          prompt: string
+          provider?: string
+          provider_job_id: string
+          provider_payload?: Json
+          reference_image_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aspect_ratio?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          model?: string | null
+          negative_prompt?: string | null
+          output_url?: string | null
+          preview_url?: string | null
+          progress?: number
+          prompt?: string
+          provider?: string
+          provider_job_id?: string
+          provider_payload?: Json
+          reference_image_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vision_memory: {
         Row: {
           ai_response: string
@@ -7585,6 +7860,22 @@ export type Database = {
             }
             Returns: undefined
           }
+      match_rag_chunks: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          match_user_id: string
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          similarity: number
+          source_id: string
+          source_type: string
+          source_uri: string
+          title: string
+        }[]
+      }
       purge_old_ai_interactions: { Args: never; Returns: undefined }
       record_calculator_usage: {
         Args: {
