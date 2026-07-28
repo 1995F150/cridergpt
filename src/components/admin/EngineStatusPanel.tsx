@@ -122,10 +122,12 @@ export function EngineStatusPanel() {
   async function saveConnection() {
     setAction("save");
     try {
+      const timeout = Math.min(Math.max(Number(settings.engine_request_timeout_ms) || 120000, 1000), 3600000);
       const data = await invoke({
         action: "set_url",
         engine_base_url: settings.engine_base_url,
         engine_enabled: settings.engine_enabled,
+        engine_request_timeout_ms: timeout,
       });
       if (data.settings) setSettings((current) => ({ ...current, ...data.settings }));
       toast.success("Engine connection saved");
@@ -211,15 +213,34 @@ export function EngineStatusPanel() {
               Requests append routes such as /chat, /image/generate, /image/analyze, and /health. The API key stays in Edge Function secrets.
             </p>
           </div>
-          <div className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3 lg:min-w-48">
-            <div>
-              <Label>Engine enabled</Label>
-              <p className="text-xs text-muted-foreground">Allow Edge Functions to call it.</p>
+          <div className="flex flex-col gap-3 rounded-lg border px-4 py-3 lg:min-w-56">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label>Engine enabled</Label>
+                <p className="text-xs text-muted-foreground">Allow Edge Functions to call it.</p>
+              </div>
+              <Switch
+                checked={settings.engine_enabled !== false}
+                onCheckedChange={(value) => setSettings((current) => ({ ...current, engine_enabled: value }))}
+              />
             </div>
-            <Switch
-              checked={settings.engine_enabled !== false}
-              onCheckedChange={(value) => setSettings((current) => ({ ...current, engine_enabled: value }))}
-            />
+            <div className="space-y-1">
+              <Label htmlFor="engine-timeout" className="text-xs">Request timeout (ms)</Label>
+              <Input
+                id="engine-timeout"
+                type="number"
+                min={1000}
+                max={3600000}
+                step={1000}
+                value={settings.engine_request_timeout_ms ?? 120000}
+                onChange={(event) => setSettings((current) => ({ ...current, engine_request_timeout_ms: Number(event.target.value) }))}
+              />
+            </div>
+            {settings.config_updated_at && (
+              <p className="text-[10px] text-muted-foreground">
+                Config v{settings.config_version ?? 0} · updated {formatTime(settings.config_updated_at)}
+              </p>
+            )}
           </div>
         </div>
 
