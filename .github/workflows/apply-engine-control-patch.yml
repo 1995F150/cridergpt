@@ -20,7 +20,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Apply control-plane integration
-        run: python scripts/apply-engine-control-patch.py
+        run: |
+          python scripts/apply-engine-control-patch.py
+          python scripts/fix-engine-status-build.py
       - name: Commit patched source
         run: |
           if git diff --quiet; then
@@ -29,6 +31,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/components/admin/AIInfrastructure.tsx supabase/functions/chat-with-ai/index.ts
-          git commit -m "Wire AI Infrastructure dashboard to CriderGPT Engine"
+          git add src/components/admin/AIInfrastructure.tsx src/components/admin/EngineStatusPanel.tsx supabase/functions/chat-with-ai/index.ts
+          git commit -m "Fix Engine Status dashboard build"
           git push origin HEAD:main
