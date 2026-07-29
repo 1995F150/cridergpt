@@ -100,7 +100,9 @@ export type PanelType =
   | 'textures'
   | 'metadata'
   | 'music'
-  | 'hatching';
+  | 'hatching'
+  | 'pos';
+
 
 // Set of valid panel slugs (kept in sync with PanelType + livestockID alias)
 const VALID_PANELS = new Set<string>([
