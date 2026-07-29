@@ -36,7 +36,8 @@ import {
   Usb,
   AudioLines,
   Terminal,
-  Egg
+  Egg,
+  CreditCard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';

@@ -42,6 +42,7 @@ import {
   Music,
   Lightbulb,
   Egg,
+  CreditCard,
   Terminal
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
