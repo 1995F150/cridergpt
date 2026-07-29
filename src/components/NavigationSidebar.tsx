@@ -84,6 +84,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { id: 'livestock', label: 'Livestock ID', icon: Beef },
       { id: 'hatching', label: 'Hatching', icon: Egg },
+      { id: 'pos', label: 'Chick POS', icon: CreditCard },
       { id: 'receipts', label: 'Receipts', icon: Receipt },
       { id: 'agent-swarm', label: 'Agent Swarm', icon: Brain },
       { id: 'voice-studio', label: 'Voice Studio', icon: AudioLines },
