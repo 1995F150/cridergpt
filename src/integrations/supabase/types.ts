@@ -4731,6 +4731,66 @@ export type Database = {
         }
         Relationships: []
       }
+      pos_sales: {
+        Row: {
+          amount_cents: number
+          checkout_url: string | null
+          created_at: string
+          currency: string
+          customer_email: string | null
+          customer_name: string | null
+          id: string
+          item_label: string
+          method: string
+          notes: string | null
+          payment_intent_id: string | null
+          quantity: number
+          reader_id: string | null
+          status: string
+          unit_price_cents: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          checkout_url?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          id?: string
+          item_label?: string
+          method?: string
+          notes?: string | null
+          payment_intent_id?: string | null
+          quantity?: number
+          reader_id?: string | null
+          status?: string
+          unit_price_cents?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          checkout_url?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          id?: string
+          item_label?: string
+          method?: string
+          notes?: string | null
+          payment_intent_id?: string | null
+          quantity?: number
+          reader_id?: string | null
+          status?: string
+          unit_price_cents?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pos_transactions: {
         Row: {
           created_at: string
