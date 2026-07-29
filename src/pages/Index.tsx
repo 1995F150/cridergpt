@@ -222,6 +222,7 @@ export default function Index() {
       case 'metadata': return <MetadataPanel />;
       case 'music': return <MusicPanel />;
       case 'hatching': return <HatchingDashboardPanel />;
+      case 'pos': return <ChickPOSPanel />;
       default: return <ChatPanel />;
     }
   };
