@@ -36,7 +36,8 @@ import {
   Usb,
   AudioLines,
   Terminal,
-  Egg
+  Egg,
+  CreditCard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -80,6 +81,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { id: 'livestock', label: 'Livestock ID', icon: Beef },
       { id: 'hatching', label: 'Hatching', icon: Egg },
+      { id: 'pos', label: 'Chick POS', icon: CreditCard },
       { id: 'shared-spending', label: 'Shared Spending', icon: HandCoins },
       { id: 'ffa', label: 'FFA Center', icon: Wheat },
       { id: 'calendar', label: 'Calendar', icon: Calendar },
