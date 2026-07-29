@@ -110,7 +110,7 @@ const VALID_PANELS = new Set<string>([
   'projects','contact','profile','payment','updates','timeline','memorial','ffa',
   'ai-image','document-ai','plan','app-converter','cloud-gaming','3d-converter','studio',
   'zip-to-exe','code-editor','admin','guardian','livestock','livestockID','receipts',
-  'agent-swarm','voice-studio','shared-spending','usb-hub','rdr2-guide','sensors','frequency','textures','metadata','music','hatching'
+  'agent-swarm','voice-studio','shared-spending','usb-hub','rdr2-guide','sensors','frequency','textures','metadata','music','hatching','pos'
 ]);
 
 // Map URL slug → internal panel id
