@@ -280,6 +280,7 @@ export const useChat = () => {
         method: "POST",
         headers: await getAuthHeaders(),
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(190000),
       });
 
       if (!response.ok) {
@@ -311,6 +312,7 @@ export const useChat = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(190000),
       });
 
       if (!response.ok) {
