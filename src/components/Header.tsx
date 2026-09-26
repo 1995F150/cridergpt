@@ -12,6 +12,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { useTranslation } from "react-i18next";
+import { DesktopLanSettings } from "@/components/DesktopLanSettings";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
@@ -79,6 +80,7 @@ export function Header({ onMobileMenuClick, isMobile = false }: HeaderProps) {
 
         <div className="flex items-center space-x-2 md:space-x-4">
           <OfflineStatusBadge />
+          <DesktopLanSettings />
           
           {/* PWA Install Button */}
           {isInstallable && (

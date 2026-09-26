@@ -511,7 +511,8 @@ Make it detailed and actionable.`;
             selectedModel,
             imageUrl ? "vision_analysis" : "chat",
             imageUrl,
-            sensorContext || undefined
+            sensorContext || undefined,
+            conversationHistory,
           );
 
           const response = typeof result === "string" ? result : result.response;

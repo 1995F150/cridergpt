@@ -17,6 +17,17 @@ Loads the live `cridergpt.lovable.app` site so you can iterate without rebuildin
 npx electron electron/main.cjs
 ```
 
+## Desktop LAN Engine mode
+
+The packaged desktop app includes a LAN connection control in the top bar. Set
+the Engine address (the default is `http://10.42.0.1:8000`) and the Engine API
+key there, test the connection, and enable **Use LAN Engine for chat**. The key
+is encrypted with Windows secure storage and is used by Electron's main process;
+it is not stored in the web bundle or sent through Supabase.
+
+Normal text chat uses the LAN Engine when enabled. Image requests and any
+explicit cloud fallback continue to use the existing Supabase route.
+
 ## Build a real installer
 
 ### Windows (.exe)

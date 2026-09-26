@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getOpenAIResponse } from '@/utils/openai';
 import { useToast } from '@/hooks/use-toast';
 import { useAIMemory } from './useAIMemory';
+import { callDesktopLan, getDesktopLanProfile } from '@/utils/desktopLan';
 
 interface AIInteraction {
   id: string;
@@ -104,7 +105,8 @@ export function useAILearning() {
     selectedModel: string = 'gpt-4o-mini',
     category?: string,
     imageData?: string,
-    sensorContext?: string
+    sensorContext?: string,
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
   ): Promise<{ response: string; imageUrl?: string; source?: string }> => {
     // Handle demo mode for non-authenticated users
     if (!user) {
@@ -116,27 +118,58 @@ export function useAILearning() {
 
     setIsLoading(true);
     try {
-      // Use chat-with-ai function which now supports images
-      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
-        body: { 
-          message: input || "Analyze this image",
-          model: selectedModel,
-          imageData: imageData,
-          sensor_context: sensorContext || undefined
+      let response: string | undefined;
+      let responseSource: string | undefined;
+
+      // Packaged desktop builds can call the Engine directly over the LAN.
+      // The saved API key is never returned to the renderer; Electron's main
+      // process reads it from Windows secure storage and performs the request.
+      const desktopProfile = await getDesktopLanProfile();
+      if (desktopProfile?.enabled && !imageData) {
+        try {
+          const desktopResult = await callDesktopLan({
+            message: input || 'Analyze this image',
+            conversation_history: conversationHistory,
+            user_id: user.id,
+            model: selectedModel,
+            system_prompt: sensorContext ? `Sensor context:\n${sensorContext}` : undefined,
+          });
+          response = desktopResult.response;
+          responseSource = desktopResult.source;
+        } catch (lanError) {
+          if (!desktopProfile.fallbackToCloud) {
+            throw new Error(lanError instanceof Error ? lanError.message : 'Desktop LAN Engine request failed.');
+          }
+          console.warn('Desktop LAN Engine failed, falling back to Supabase:', lanError);
         }
-      });
-
-      if (error) throw new Error(error.message || 'Edge function call failed');
-
-      // Check if we hit the rate limit
-      if (data?.error && data?.usage) {
-        throw new Error(`${data.error} (Used: ${data.usage.used}/${data.usage.limit})`);
-      }
-      if (data?.error) {
-        throw new Error(data.error);
       }
 
-      const response = data?.response;
+      if (!response) {
+        // Use chat-with-ai function which now supports images.
+        const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+          body: {
+            message: input || 'Analyze this image',
+            model: selectedModel,
+            imageData,
+            sensor_context: sensorContext || undefined,
+            conversation_history: conversationHistory,
+          }
+        });
+
+        if (error) throw new Error(error.message || 'Edge function call failed');
+
+        // Check if we hit the rate limit.
+        if (data?.error && data?.usage) {
+          throw new Error(`${data.error} (Used: ${data.usage.used}/${data.usage.limit})`);
+        }
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
+        response = data?.response;
+        responseSource = data?.source;
+      }
+
       if (!response) {
         throw new Error('AI returned an empty response. Try again or switch models.');
       }
@@ -162,14 +195,14 @@ export function useAILearning() {
         }
       );
       
-      return { response, imageUrl: imageData, source: data?.source };
+      return { response, imageUrl: imageData, source: responseSource };
     } catch (error) {
       console.error('Error generating smart response:', error);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [user, storeInteraction]);
+  }, [user, storeInteraction, storeMemory]);
 
   const getKnowledgeStats = useCallback(async (): Promise<{
     totalInteractions: number;
