@@ -1029,6 +1029,137 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function sanitizeEndpoint(raw: string): string {
+  try {
+    const url = new URL(raw);
+    return `${url.origin}${url.pathname.replace(/\/+$/, '') || '/'}`;
+  } catch {
+    return '<invalid-engine-url>';
+  }
+}
+
+function buildEngineChatEndpoint(raw: string): string {
+  const base = raw.trim().replace(/\/+$/, '');
+  if (/(?:\/api)?\/chat(?:-with-ai)?$/.test(base)) return base;
+  return `${base}/chat`;
+}
+
+type EngineChatResult = {
+  ok: boolean;
+  response?: string;
+  model?: string;
+  status?: number;
+  latency_ms: number;
+  parse_result: 'json' | 'invalid_json' | 'empty';
+  error?: 'unreachable' | 'http_error' | 'invalid_json' | 'empty_response';
+};
+
+async function callCriderEngine(
+  endpoint: string,
+  apiKey: string,
+  payload: Record<string, unknown>,
+  requestId: string,
+): Promise<EngineChatResult> {
+  const startedAt = Date.now();
+  const safeEndpoint = sanitizeEndpoint(endpoint);
+  console.log('[chat-with-ai] engine request', JSON.stringify({
+    request_id: requestId,
+    selected_route: 'engine',
+    endpoint: safeEndpoint,
+    model: payload.model ?? null,
+  }));
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey,
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(120000),
+    });
+  } catch {
+    const latency_ms = Date.now() - startedAt;
+    console.error('[chat-with-ai] engine request failed', JSON.stringify({
+      request_id: requestId,
+      selected_route: 'engine',
+      endpoint: safeEndpoint,
+      status: null,
+      latency_ms,
+      error: 'unreachable',
+    }));
+    return { ok: false, latency_ms, parse_result: 'empty', error: 'unreachable' };
+  }
+
+  const latency_ms = Date.now() - startedAt;
+  if (!response.ok) {
+    console.error('[chat-with-ai] engine response failed', JSON.stringify({
+      request_id: requestId,
+      selected_route: 'engine',
+      endpoint: safeEndpoint,
+      status: response.status,
+      latency_ms,
+      error: 'http_error',
+    }));
+    return { ok: false, status: response.status, latency_ms, parse_result: 'empty', error: 'http_error' };
+  }
+
+  let data: {
+    response?: unknown;
+    reply?: unknown;
+    text?: unknown;
+    message?: unknown;
+    model?: unknown;
+  };
+  try {
+    data = await response.json();
+  } catch {
+    console.error('[chat-with-ai] engine response parse failed', JSON.stringify({
+      request_id: requestId,
+      selected_route: 'engine',
+      endpoint: safeEndpoint,
+      status: response.status,
+      latency_ms,
+      parse_result: 'invalid_json',
+    }));
+    return { ok: false, status: response.status, latency_ms, parse_result: 'invalid_json', error: 'invalid_json' };
+  }
+
+  const candidate = data?.response ?? data?.reply ?? data?.text ?? data?.message ?? '';
+  const text = typeof candidate === 'string' ? candidate : '';
+  if (typeof text !== 'string' || !text.trim()) {
+    console.error('[chat-with-ai] engine returned an empty response', JSON.stringify({
+      request_id: requestId,
+      selected_route: 'engine',
+      endpoint: safeEndpoint,
+      status: response.status,
+      latency_ms,
+      parse_result: 'empty',
+    }));
+    return { ok: false, status: response.status, latency_ms, parse_result: 'empty', error: 'empty_response' };
+  }
+
+  console.log('[chat-with-ai] engine response parsed', JSON.stringify({
+    request_id: requestId,
+    selected_route: 'engine',
+    endpoint: safeEndpoint,
+    status: response.status,
+    latency_ms,
+    parse_result: 'json',
+    model: data?.model ?? null,
+  }));
+  return {
+    ok: true,
+    response: text,
+    model: typeof data?.model === 'string' ? data.model : undefined,
+    status: response.status,
+    latency_ms,
+    parse_result: 'json',
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -1064,11 +1195,12 @@ serve(async (req) => {
       throw new Error('Message or image is required');
     }
 
-    console.log('[chat-with-ai] mode:', mode, 'message:', message?.substring(0, 100), 'has image:', !!(imageData || image_base64 || image_url));
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
+    const requestId = crypto.randomUUID();
+    console.log('[chat-with-ai] request', JSON.stringify({
+      request_id: requestId,
+      mode,
+      has_image: !!(imageData || image_base64 || image_url),
+    }));
 
     // =========================================================
     // MULTI-MODAL SHORT-CIRCUIT — routes image_generate and
@@ -1126,6 +1258,13 @@ serve(async (req) => {
       }
 
       // ---- 2) Cloud fallback via Lovable AI Gateway ----
+      if (!LOVABLE_API_KEY) {
+        return new Response(JSON.stringify({
+          error: 'No image fallback provider is configured.',
+          source: 'provider-missing',
+        }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
       if (mode === 'image_generate') {
         const promptText = image_prompt || message || '';
         const parts: any[] = [{ type: 'text', text: promptText }];
@@ -1146,9 +1285,8 @@ serve(async (req) => {
           }),
         });
         if (!genRes.ok) {
-          const errText = await genRes.text().catch(() => '');
           return new Response(
-            JSON.stringify({ error: `Image generation failed: ${genRes.status}`, detail: errText.slice(0, 500) }),
+            JSON.stringify({ error: `Image generation failed: ${genRes.status}` }),
             { status: genRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
@@ -1190,9 +1328,8 @@ serve(async (req) => {
           }),
         });
         if (!visRes.ok) {
-          const errText = await visRes.text().catch(() => '');
           return new Response(
-            JSON.stringify({ error: `Vision failed: ${visRes.status}`, detail: errText.slice(0, 500) }),
+            JSON.stringify({ error: `Vision failed: ${visRes.status}` }),
             { status: visRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
@@ -1529,72 +1666,210 @@ serve(async (req) => {
       responseSource = 'cridergpt-local';
       console.log('Serving response from LOCAL corpus');
     } else {
-      // === ENGINE-ONLY MODE ===
-      // All chat traffic routes to the CriderGPT Engine. No cloud fallback.
-      const ENGINE_URL = Deno.env.get('CRIDERGPT_ENGINE_URL');
-      const ENGINE_API_KEY = Deno.env.get('CRIDERGPT_ENGINE_API_KEY');
+      // The Engine is the production-first route. Keep the legacy hybrid/cloud
+      // path available for image handling, tool calling, and explicit fallback.
+      const engineBaseUrl = Deno.env.get('CRIDERGPT_ENGINE_URL')?.trim() || '';
+      const engineApiKey = Deno.env.get('CRIDERGPT_ENGINE_API_KEY')?.trim() || '';
+      const cloudFallbackEnabled = Deno.env.get('CRIDERGPT_ENGINE_CLOUD_FALLBACK') !== 'false';
+      const engineEndpoint = engineBaseUrl ? buildEngineChatEndpoint(engineBaseUrl) : '';
+      let engineResponse: string | null = null;
 
-      if (!ENGINE_URL) {
-        return new Response(JSON.stringify({
-          error: 'CriderGPT Engine is not configured. Set CRIDERGPT_ENGINE_URL secret.',
-          source: 'engine-missing',
-        }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (engineEndpoint && engineApiKey && !imageData) {
+        const enginePayload: Record<string, unknown> = {
+          message: message || '',
+          system_prompt: systemPrompt,
+          conversation_history: Array.isArray(conversation_history) ? conversation_history.slice(-20) : [],
+          user_id: userId ?? null,
+          conversation_id: (typeof (body as any)?.conversation_id === 'string' && (body as any).conversation_id) || null,
+          model: criderModel?.backend || (typeof model === 'string' ? model : null),
+          temperature: typeof criderModel?.temperature === 'number' ? criderModel.temperature : (infraSettings?.temperature ?? 0.7),
+          max_tokens: infraSettings?.max_tokens || 2000,
+        };
+        const engineResult = await callCriderEngine(engineEndpoint, engineApiKey, enginePayload, requestId);
+        if (engineResult.ok) {
+          engineResponse = engineResult.response || null;
+          responseSource = 'engine';
+        }
+      } else if (engineBaseUrl && !engineApiKey) {
+        console.error('[chat-with-ai] engine configuration incomplete', JSON.stringify({
+          request_id: requestId,
+          selected_route: 'engine',
+          endpoint: sanitizeEndpoint(engineBaseUrl),
+          error: 'missing_api_key',
+        }));
       }
 
-      const enginePayload: any = {
-        message: message || '',
-        system_prompt: systemPrompt,
-        conversation_history: Array.isArray(conversation_history) ? conversation_history.slice(-20) : [],
-        user_id: userId ?? null,
-        conversation_id: (typeof (body as any)?.conversation_id === 'string' && (body as any).conversation_id) || null,
-        model: criderModel?.backend || (typeof model === 'string' ? model : null),
-        temperature: typeof criderModel?.temperature === 'number' ? criderModel.temperature : (infraSettings?.temperature ?? 0.7),
-        max_tokens: infraSettings?.max_tokens || 2000,
-        image_url: imageData || null,
-      };
+      if (engineResponse) {
+        aiResponse = engineResponse;
+      } else {
+        if (engineEndpoint && !cloudFallbackEnabled) {
+          return new Response(JSON.stringify({
+            error: 'CriderGPT Engine did not return a response and cloud fallback is disabled.',
+            source: 'engine-unavailable',
+          }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
 
-      const startedAt = Date.now();
-      let engineRes: Response;
-      try {
-        engineRes = await fetch(`${ENGINE_URL.replace(/\/$/, '')}/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(ENGINE_API_KEY ? { 'X-API-Key': ENGINE_API_KEY } : {}),
-          },
-          body: JSON.stringify(enginePayload),
-          signal: AbortSignal.timeout(120000),
-        });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.error('[chat-with-ai] engine unreachable:', msg);
-        return new Response(JSON.stringify({
-          error: `CriderGPT Engine unreachable: ${msg}`,
-          source: 'engine-unreachable',
-        }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
+        // Legacy provider path retained for cloud fallback, product tools, and
+        // image requests that the text Engine does not accept.
+        const messages: any[] = [{ role: 'system', content: systemPrompt }];
+        if (conversation_history && Array.isArray(conversation_history)) {
+          messages.push(...conversation_history.slice(-20));
+        }
 
-      if (!engineRes.ok) {
-        const errText = await engineRes.text().catch(() => '');
-        console.error('[chat-with-ai] engine error:', engineRes.status, errText.substring(0, 500));
-        return new Response(JSON.stringify({
-          error: `CriderGPT Engine returned ${engineRes.status}`,
-          detail: errText.substring(0, 500),
-          source: 'engine-error',
-        }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
+        if (imageData) {
+          messages.push({
+            role: 'user',
+            content: [
+              { type: 'text', text: message || 'Analyze this image' },
+              { type: 'image_url', image_url: { url: imageData } },
+            ],
+          });
+        } else {
+          messages.push({ role: 'user', content: message });
+        }
 
-      const engineData = await engineRes.json().catch(() => ({} as any));
-      aiResponse = engineData.response ?? engineData.reply ?? engineData.text ?? engineData.message ?? '';
-      if (!aiResponse) {
-        return new Response(JSON.stringify({
-          error: 'CriderGPT Engine returned an empty response.',
-          source: 'engine-empty',
-        }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        const rawModel = typeof model === 'string' ? model.trim() : '';
+        const adminDefaultModel = infraSettings?.default_model || '';
+        const resolvedBackend = criderModel?.backend || rawModel || adminDefaultModel;
+        const prefersLovable = (resolvedBackend || '').startsWith('google/') || (resolvedBackend || '').startsWith('openai/');
+        const useOpenAI = !!OPENAI_API_KEY && !prefersLovable;
+        const apiUrl = useOpenAI
+          ? 'https://api.openai.com/v1/chat/completions'
+          : 'https://ai.gateway.lovable.dev/v1/chat/completions';
+        const apiKey = useOpenAI ? OPENAI_API_KEY : LOVABLE_API_KEY;
+        const defaultModel = resolvedBackend || (useOpenAI
+          ? (imageData ? 'gpt-4o' : 'gpt-4o-mini')
+          : (imageData ? 'openai/gpt-5' : 'openai/gpt-5-mini'));
+
+        if (!apiKey) {
+          return new Response(JSON.stringify({
+            error: 'No fallback AI provider is configured.',
+            source: 'provider-missing',
+          }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        const origin = req.headers.get('origin') || 'https://cridergpt.lovable.app';
+        let toolLoopData: any = null;
+        let toolIterations = 0;
+        const FREE_WILL_CAPS: Record<string, number> = { free: 2, plus: 5, pro: 10, lifetime: 25 };
+        const planKey = (userPlan || 'free').toLowerCase();
+        const MAX_TOOL_ITERATIONS = FREE_WILL_CAPS[planKey] ?? 4;
+        const effectiveTemperature = typeof criderModel?.temperature === 'number'
+          ? criderModel.temperature
+          : (typeof infraSettings?.temperature === 'number' ? infraSettings.temperature : 0.7);
+
+        // Preserve the existing user-configured local-first route when the
+        // production Engine is unavailable or intentionally bypassed.
+        let hybridSettings: HybridSettings | null = null;
+        if (userId) {
+          const { data: hs } = await supabase
+            .from('hybrid_router_settings')
+            .select('enabled, local_endpoint, local_model, prefer_local_for, cloud_fallback, max_local_latency_ms')
+            .eq('user_id', userId)
+            .maybeSingle();
+          if (hs) hybridSettings = hs as HybridSettings;
+        }
+
+        while (toolIterations < MAX_TOOL_ITERATIONS) {
+          const requestBody: any = {
+            model: defaultModel,
+            messages,
+            max_tokens: infraSettings?.max_tokens || 2000,
+            temperature: effectiveTemperature,
+          };
+          if (!imageData) {
+            requestBody.tools = PRODUCT_TOOLS_CHAT;
+            requestBody.tool_choice = 'auto';
+          }
+
+          let response: Response | null = null;
+          if (toolIterations === 0 && !imageData) {
+            const decision = decideRoute(
+              { message: typeof message === 'string' ? message : '', has_image: !!imageData },
+              hybridSettings,
+            );
+            if (decision.route === 'local' && decision.endpoint && decision.model) {
+              const localRes = await callLocalOllama(
+                decision.endpoint,
+                decision.model,
+                messages.map((m: any) => ({ role: m.role, content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) })),
+                { temperature: effectiveTemperature, max_tokens: requestBody.max_tokens, timeout_ms: hybridSettings?.max_local_latency_ms || 30000 },
+              );
+              if (localRes.ok) {
+                toolLoopData = localRes.data;
+                break;
+              }
+              if (hybridSettings && !hybridSettings.cloud_fallback) {
+                return new Response(JSON.stringify({
+                  error: 'Local AI failed and cloud fallback is disabled.',
+                  source: 'local-unavailable',
+                }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+              }
+            }
+          }
+
+          const cloudStartedAt = Date.now();
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+            signal: AbortSignal.timeout(120000),
+          });
+
+          if ((!response || !response.ok) && useOpenAI && LOVABLE_API_KEY) {
+            response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...requestBody, model: requestBody.model?.startsWith('openai/') ? requestBody.model : `openai/${requestBody.model || 'gpt-5-mini'}` }),
+              signal: AbortSignal.timeout(120000),
+            });
+          }
+
+          console.log('[chat-with-ai] fallback response', JSON.stringify({
+            request_id: requestId,
+            selected_route: useOpenAI ? 'cloud-openai' : 'cloud-gateway',
+            status: response?.status ?? null,
+            latency_ms: Date.now() - cloudStartedAt,
+          }));
+
+          if (!response || !response.ok) {
+            if (!response) throw new Error('No response from fallback AI provider');
+            if (response.status === 429) {
+              return new Response(JSON.stringify({ error: 'Rate limited. Please try again in a moment.' }), {
+                status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+            if (response.status === 402) {
+              return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add credits.' }), {
+                status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+            throw new Error(`Fallback AI provider error: ${response.status}`);
+          }
+
+          toolLoopData = await response.json();
+          const choice = toolLoopData.choices?.[0];
+          const toolCalls = choice?.message?.tool_calls;
+          if (!toolCalls || toolCalls.length === 0) break;
+
+          messages.push(choice.message);
+          for (const call of toolCalls) {
+            let parsedArgs: any = {};
+            try { parsedArgs = JSON.parse(call.function.arguments || '{}'); } catch { /* provider returned malformed args */ }
+            console.log('[chat-with-ai] tool call', JSON.stringify({ request_id: requestId, name: call.function.name }));
+            const result = await runProductTool(call.function.name, parsedArgs, userId ?? null, userEmail ?? null, origin);
+            messages.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify(result) });
+          }
+          toolIterations += 1;
+        }
+
+        aiResponse = toolLoopData?.choices?.[0]?.message?.content || 'No response generated';
+        responseSource = useOpenAI ? 'openai' : 'gateway';
       }
-      responseSource = 'engine';
-      console.log(`[chat-with-ai] engine reply in ${Date.now() - startedAt}ms (model=${engineData.model ?? 'unknown'})`);
-    } // end else (engine)
+    }
 
     // Store interaction in ai_memory
     if (userId) {

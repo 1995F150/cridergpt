@@ -9,6 +9,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "smoke:ai": "node scripts/smoke-test-ai.mjs",
     "preview": "vite preview",
     "electron:dev": "electron electron/main.cjs",
     "electron:build": "vite build && electron-packager . CriderGPT --overwrite --out=electron-release --ignore=\"^/src\" --ignore=\"^/public\" --ignore=\"^/electron-release\""
