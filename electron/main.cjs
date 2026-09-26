@@ -6,6 +6,22 @@ const path = require('path');
 const isDev = !app.isPackaged;
 const DEFAULT_LAN_URL = 'http://10.42.0.1:8000';
 
+function trustedDevelopmentOrigin() {
+  try {
+    return new URL(process.env.CRIDERGPT_DEV_URL || 'https://cridergpt.lovable.app').origin;
+  } catch {
+    return 'https://cridergpt.lovable.app';
+  }
+}
+
+function assertTrustedRenderer(event) {
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || '';
+  const trusted = app.isPackaged
+    ? senderUrl.startsWith('file://')
+    : senderUrl.startsWith(trustedDevelopmentOrigin());
+  if (!trusted) throw new Error('Desktop LAN requests are only available to the CriderGPT app.');
+}
+
 function lanConfigPath() {
   return path.join(app.getPath('userData'), 'lan-connection.json');
 }
@@ -192,11 +208,24 @@ async function sendLanChat(payload) {
   };
 }
 
-ipcMain.handle('desktop-lan:profile', async () => profileFromConfig(await readLanConfig()));
-ipcMain.handle('desktop-lan:save', async (_event, input) => saveLanConfig(input));
-ipcMain.handle('desktop-lan:test', async () => testLanConnection());
-ipcMain.handle('desktop-lan:chat', async (_event, payload) => sendLanChat(payload));
-ipcMain.handle('desktop-lan:clear', async () => {
+ipcMain.handle('desktop-lan:profile', async (event) => {
+  assertTrustedRenderer(event);
+  return profileFromConfig(await readLanConfig());
+});
+ipcMain.handle('desktop-lan:save', async (event, input) => {
+  assertTrustedRenderer(event);
+  return saveLanConfig(input);
+});
+ipcMain.handle('desktop-lan:test', async (event) => {
+  assertTrustedRenderer(event);
+  return testLanConnection();
+});
+ipcMain.handle('desktop-lan:chat', async (event, payload) => {
+  assertTrustedRenderer(event);
+  return sendLanChat(payload);
+});
+ipcMain.handle('desktop-lan:clear', async (event) => {
+  assertTrustedRenderer(event);
   try {
     await fs.unlink(lanConfigPath());
   } catch (error) {
@@ -223,8 +252,9 @@ function createWindow() {
   });
 
   if (isDev) {
-    // Hot-reload from the live preview during development
-    win.loadURL('https://cridergpt.lovable.app');
+    // Use a local Vite server when explicitly provided; otherwise keep the
+    // existing live preview behavior.
+    win.loadURL(process.env.CRIDERGPT_DEV_URL || 'https://cridergpt.lovable.app');
   } else {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }

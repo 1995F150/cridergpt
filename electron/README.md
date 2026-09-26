@@ -17,6 +17,15 @@ Loads the live `cridergpt.lovable.app` site so you can iterate without rebuildin
 npx electron electron/main.cjs
 ```
 
+To test local LAN changes during development, run Vite in one terminal and
+point Electron at it from another PowerShell terminal:
+
+```powershell
+npm run dev
+$env:CRIDERGPT_DEV_URL = 'http://localhost:8080'
+npm run electron:dev
+```
+
 ## Desktop LAN Engine mode
 
 The packaged desktop app includes a LAN connection control in the top bar. Set
