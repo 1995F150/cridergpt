@@ -17,6 +17,7 @@ import { OfflineBanner } from "@/components/OfflineIndicator";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { initGA } from './utils/analytics';
 import Index from "./pages/Index";
+import Info from "./pages/Info";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Success from "./pages/Success";
@@ -132,6 +133,7 @@ const App = () => {
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                     <Routes>
                       {/* Public routes */}
+                      <Route path="/info" element={<Info />} />
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/success" element={<Success />} />
                       <Route path="/cancel" element={<Cancel />} />
