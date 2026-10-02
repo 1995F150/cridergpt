@@ -1,0 +1,9 @@
+package com.cridergpt.nativeandroid.migrated.src.hooks
+
+/**
+ * Original web file: src/hooks/useAILearning.ts
+ * Mapping: hook/state logic to ViewModel-style helper converted into Kotlin/Jetpack Compose scaffold with equivalent responsibility.
+ */
+object UseailearningTS {
+    // TODO: Port business logic from src/hooks/useAILearning.ts into ViewModel/use-case classes.
+}
