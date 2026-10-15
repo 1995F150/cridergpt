@@ -18,6 +18,7 @@ import { MyReferencesLibrary } from "./MyReferencesLibrary";
 import { HybridRouterPanel } from "./HybridRouterPanel";
 import { PublicApiKeysPanel } from "./PublicApiKeysPanel";
 import { EngineStatusPanel } from "./EngineStatusPanel";
+import { UbuntuApiTestPanel } from "./UbuntuApiTestPanel";
 
 interface InfraSettings {
   id: string;
@@ -279,6 +280,7 @@ export function AIInfrastructure() {
       </div>
 
       <EngineStatusPanel />
+      <UbuntuApiTestPanel />
 
       {/* Kill switch */}
       <Card className={settings.kill_switch ? "border-destructive" : ""}>
