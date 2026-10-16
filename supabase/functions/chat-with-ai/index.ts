@@ -1579,6 +1579,59 @@ serve(async (req) => {
       aiResponse = localAnswer;
       responseSource = 'cridergpt-local';
       console.log('Serving response from LOCAL corpus');
+    } else if (infraSettings?.advanced_addons?.model_control?.chat_backend === 'ubuntu') {
+      // === UBUNTU API MODE (admin-controlled switch in AI Infrastructure → Model Control) ===
+      const mc = infraSettings.advanced_addons.model_control;
+      const map: Record<string, string> = (mc?.map && typeof mc.map === 'object') ? mc.map : {};
+      const serverModel = String(
+        (typeof model === 'string' && map[model]) || mc?.default_server_model || ''
+      ).trim();
+      const base = (Deno.env.get('CRIDERGPT_API_BASE_URL') ?? '').replace(/\/+$/, '');
+      const key = Deno.env.get('CRIDERGPT_API_KEY') ?? '';
+      if (!base || !key || !serverModel) {
+        return new Response(JSON.stringify({
+          error: !serverModel
+            ? 'No server model is assigned to this CriderGPT model. Set one in Admin → AI Infrastructure → Model Control.'
+            : 'CriderGPT server connection is not configured.',
+          source: 'ubuntu-missing',
+        }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const startedAt = Date.now();
+      let res: Response;
+      try {
+        res = await fetch(`${base}/v1/chat`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: serverModel, message: message || '' }),
+          signal: AbortSignal.timeout(90000),
+        });
+      } catch (e) {
+        const timeout = (e as Error).name === 'TimeoutError' || (e as Error).name === 'AbortError';
+        await recordEngineStatus({ online: false, status: 'offline', last_health_check: new Date().toISOString(), latency_ms: Date.now() - startedAt, last_error: timeout ? 'Ubuntu API timeout (90s)' : 'Ubuntu API unreachable' });
+        return new Response(JSON.stringify({
+          error: timeout ? 'CriderGPT server took longer than 90 seconds to answer. Try again.' : 'CriderGPT server is offline right now.',
+          source: timeout ? 'engine-timeout' : 'engine-unreachable',
+        }), { status: timeout ? 504 : 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { response: text }; }
+      if (!res.ok) {
+        await recordEngineStatus({ online: false, status: 'degraded', last_health_check: new Date().toISOString(), latency_ms: Date.now() - startedAt, last_error: `HTTP ${res.status}: ${text.substring(0, 300)}` });
+        return new Response(JSON.stringify({
+          error: `CriderGPT server returned ${res.status}`,
+          detail: text.substring(0, 500),
+          source: 'engine-error',
+        }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      aiResponse = data.response ?? data.reply ?? data.text ?? data.message ?? data.output ?? data.choices?.[0]?.message?.content ?? '';
+      if (!aiResponse) {
+        return new Response(JSON.stringify({ error: 'CriderGPT server returned an empty response.', source: 'engine-empty' }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      responseSource = 'engine';
+      await recordEngineStatus({ online: true, status: 'online', last_heartbeat: new Date().toISOString(), last_health_check: new Date().toISOString(), latency_ms: Date.now() - startedAt, active_model: data.model ?? serverModel, last_error: null });
+      console.log(`[chat-with-ai] ubuntu reply in ${Date.now() - startedAt}ms (model=${data.model ?? serverModel})`);
     } else {
       // === ENGINE-ONLY MODE ===
       // All chat traffic routes to the CriderGPT Engine. No cloud fallback.
