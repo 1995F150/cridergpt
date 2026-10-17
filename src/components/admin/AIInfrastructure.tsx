@@ -19,6 +19,8 @@ import { HybridRouterPanel } from "./HybridRouterPanel";
 import { PublicApiKeysPanel } from "./PublicApiKeysPanel";
 import { EngineStatusPanel } from "./EngineStatusPanel";
 import { UbuntuApiTestPanel } from "./UbuntuApiTestPanel";
+import { ModelControlPanel } from "./ModelControlPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface InfraSettings {
   id: string;
@@ -279,8 +281,17 @@ export function AIInfrastructure() {
         </div>
       </div>
 
-      <EngineStatusPanel />
+      <Tabs defaultValue="control">
+        <TabsList className="w-full justify-start overflow-x-auto no-scrollbar">
+          <TabsTrigger value="control">Model Control</TabsTrigger>
+          <TabsTrigger value="knowledge">Knowledge & Safety</TabsTrigger>
+          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+        </TabsList>
+
+      <TabsContent value="control" className="space-y-6 mt-4">
+      <ModelControlPanel />
       <UbuntuApiTestPanel />
+      <EngineStatusPanel />
 
       {/* Kill switch */}
       <Card className={settings.kill_switch ? "border-destructive" : ""}>
@@ -375,7 +386,9 @@ export function AIInfrastructure() {
           </div>
         </CardContent>
       </Card>
+      </TabsContent>
 
+      <TabsContent value="knowledge" className="space-y-6 mt-4">
       {/* RAG */}
       <Card>
         <CardHeader>
@@ -515,7 +528,9 @@ export function AIInfrastructure() {
           </Button>
         </CardContent>
       </Card>
+      </TabsContent>
 
+      <TabsContent value="advanced" className="space-y-6 mt-4">
       {/* ============================================================== */}
       {/* ADVANCED AI INFRASTRUCTURE ADD-ONS                              */}
       {/* ============================================================== */}
@@ -722,6 +737,8 @@ export function AIInfrastructure() {
 
       {/* Public API Keys for external clients */}
       <PublicApiKeysPanel />
+      </TabsContent>
+      </Tabs>
 
       {/* Notes */}
       <Card>
