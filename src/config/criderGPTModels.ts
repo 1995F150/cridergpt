@@ -4,6 +4,7 @@
 // the same registry server-side to apply personality + temperature.
 
 export type CriderModelId =
+  | `native:${string}`
   | 'cridergpt-4.1'
   | 'cridergpt-5.0'
   | 'cridergpt-5.0-pro'

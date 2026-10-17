@@ -1,3 +1,4 @@
+import { nativeConfig, startNativeChat, NativeAPIError } from '../_shared/native-api.ts';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
@@ -1064,7 +1065,7 @@ serve(async (req) => {
       throw new Error('Message or image is required');
     }
 
-    console.log('[chat-with-ai] mode:', mode, 'message:', message?.substring(0, 100), 'has image:', !!(imageData || image_base64 || image_url));
+    console.log('[chat-with-ai] mode:', mode, 'native:', typeof model === 'string' && model.startsWith('native:'));
 
     // Central AI Infrastructure control plane. The public URL is stored in
     // Supabase; the API key remains an Edge Function secret.
@@ -1101,6 +1102,40 @@ serve(async (req) => {
         });
       } catch (statusError) {
         console.warn('[chat-with-ai] engine status update skipped:', statusError);
+      }
+    }
+
+    // Exact native route precedes every cloud/corpus/multimodal shortcut.
+    if (typeof model === 'string' && model.startsWith('native:')) {
+      try {
+        const bearer = req.headers.get('Authorization') || '';
+        if (!bearer.startsWith('Bearer ')) return new Response(JSON.stringify({ error: 'Sign in to use native models.' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        const { data: auth, error: authError } = await supabase.auth.getUser(bearer.slice(7));
+        if (authError || !auth.user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        if (infraSettings?.kill_switch) throw new NativeAPIError('AI is temporarily disabled by admin.', 503);
+        const blocked = Array.isArray(infraSettings?.blocked_keywords) ? infraSettings.blocked_keywords : [];
+        if (infraSettings?.safety_level !== 'off' && blocked.some((word: unknown) => typeof word === 'string' && word && String(message || '').toLowerCase().includes(word.toLowerCase()))) throw new NativeAPIError('Message rejected by the configured safety filter.', 400);
+        const { count, error: rateError } = await supabase.from('chat_messages').select('id', { count: 'exact', head: true }).eq('user_id', auth.user.id).eq('role', 'user').gte('created_at', new Date(Date.now() - 60000).toISOString());
+        if (rateError) throw new NativeAPIError('Unable to verify request limits.', 503);
+        if ((count || 0) > 10) throw new NativeAPIError('Native chat allows ten requests per minute per account.', 429);
+        const { data: nativeUsage, error: usageError } = await supabase.from('ai_usage').select('id,tokens_used,user_plan,last_reset').eq('user_id', auth.user.id).maybeSingle();
+        if (usageError) throw new NativeAPIError('Unable to verify account usage.', 503);
+        const today = new Date().toISOString().slice(0, 10);
+        const used = nativeUsage?.last_reset?.slice(0, 10) === today ? Number(nativeUsage.tokens_used || 0) : 0;
+        const plan = nativeUsage?.user_plan || 'free';
+        const limit = MESSAGE_LIMITS[plan as keyof typeof MESSAGE_LIMITS] || MESSAGE_LIMITS.free;
+        if (used >= limit && plan !== 'lifetime') throw new NativeAPIError('Daily message limit reached. Try again tomorrow or upgrade your plan.', 429);
+        const config = nativeConfig(Deno.env.get('CRIDERGPT_API_BASE_URL') || '', Deno.env.get('CRIDERGPT_API_KEY') || '');
+        const result = await startNativeChat(config, auth.user.id, body);
+        const usageWrite = nativeUsage
+          ? await supabase.from('ai_usage').update({ tokens_used: used + 1, last_reset: new Date().toISOString() }).eq('id', nativeUsage.id).eq('user_id', auth.user.id)
+          : await supabase.from('ai_usage').insert({ user_id: auth.user.id, tokens_used: 1, user_plan: 'free', last_reset: new Date().toISOString() });
+        if (usageWrite.error) console.warn('[native-chat] usage persistence failed');
+        return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } catch (error) {
+        const status = error instanceof NativeAPIError ? error.status : /Timeout|Abort/.test(error?.name || '') ? 504 : 503;
+        const message = error instanceof NativeAPIError ? error.message : status === 504 ? 'Native model timed out; no fallback was used.' : 'Native server is unavailable; no fallback was used.';
+        return new Response(JSON.stringify({ error: message, source: 'native_error' }), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
 

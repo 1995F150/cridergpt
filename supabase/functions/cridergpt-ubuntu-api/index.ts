@@ -1,6 +1,7 @@
+import { nativeConfig, nativeModels, pollNativeImage, NativeAPIError } from '../_shared/native-api.ts';
 // Server-side bridge to the Ubuntu-hosted CriderGPT API (api.cridergpt.com).
-// The API key never leaves this function. Admin-only while in verification;
-// live chat still runs through chat-with-ai until this test path succeeds.
+// The API key never leaves this function. Catalog/image polling require sign-in;
+// diagnostic health/models/chat actions remain admin-only.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
@@ -26,7 +27,18 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } },
     );
     const { data: claims, error } = await supabase.auth.getClaims(authHeader.slice(7));
-    if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    if (error || !claims?.claims || typeof claims.claims.sub !== 'string' || !claims.claims.sub) return json({ error: 'Unauthorized' }, 401);
+    let incoming: any = {};
+    try { incoming = await req.json(); } catch { /* health defaults remain admin-only */ }
+    if (incoming.action === 'public_models' || incoming.action === 'native_image_job') {
+      try {
+        const config = nativeConfig(Deno.env.get('CRIDERGPT_API_BASE_URL') || '', Deno.env.get('CRIDERGPT_API_KEY') || '');
+        if (incoming.action === 'public_models') return json({ models: await nativeModels(config) });
+        return json(await pollNativeImage(config, String(claims.claims.sub), incoming.job_token));
+      } catch (error) {
+        return json({ error: error instanceof NativeAPIError ? error.message : 'Native server is unavailable.' }, error instanceof NativeAPIError ? error.status : 503);
+      }
+    }
     const { data: isAdmin } = await supabase.rpc('has_role', {
       _user_id: claims.claims.sub,
       _role: 'admin',
@@ -37,8 +49,7 @@ Deno.serve(async (req) => {
     const key = Deno.env.get('CRIDERGPT_API_KEY') ?? '';
     if (!base) return json({ error: 'CRIDERGPT_API_BASE_URL not configured' }, 500);
 
-    let body: { action?: string; model?: string; message?: string } = {};
-    try { body = await req.json(); } catch { /* default */ }
+    const body: { action?: string; model?: string; message?: string } = incoming;
     const action = (body.action ?? 'health') as Action;
     if (!(action in TIMEOUTS)) return json({ error: 'Unknown action' }, 400);
     if (action !== 'health' && !key) return json({ error: 'CRIDERGPT_API_KEY not configured' }, 500);
