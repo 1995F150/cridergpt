@@ -184,6 +184,8 @@ export function AIInfrastructure() {
       .map((s) => s.trim())
       .filter(Boolean);
     const { data: userData } = await supabase.auth.getUser();
+    const { data: fresh } = await (supabase as any)
+      .from("ai_infrastructure_settings").select("advanced_addons").eq("id", settings.id).maybeSingle();
     const { error } = await (supabase as any)
       .from("ai_infrastructure_settings")
       .update({
@@ -201,7 +203,7 @@ export function AIInfrastructure() {
         system_prompt_override: settings.system_prompt_override,
         fine_tune_enabled: settings.fine_tune_enabled,
         notes: settings.notes,
-        advanced_addons: addons,
+        advanced_addons: { ...addons, model_control: fresh?.advanced_addons?.model_control },
         updated_at: new Date().toISOString(),
         updated_by: userData.user?.id,
       })
