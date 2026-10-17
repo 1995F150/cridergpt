@@ -236,6 +236,7 @@ export const useChat = () => {
       role: "user" | "assistant" = "user",
       tokensUsed?: number,
       imageUrl?: string,
+      metadata?: Record<string, unknown>,
     ) => {
       if (!user) return null;
 
@@ -249,6 +250,8 @@ export const useChat = () => {
             content,
             tokens_used: tokensUsed || 0,
             image_url: imageUrl,
+            metadata,
+            client_message_id: typeof metadata?.request_id === "string" && /^[a-f0-9-]{36}$/i.test(metadata.request_id) ? metadata.request_id : crypto.randomUUID(),
           }),
         });
 
@@ -257,7 +260,7 @@ export const useChat = () => {
         const data = await response.json();
 
         if (conversationId === currentConversation) {
-          setMessages((prev) => [...prev, data.message]);
+          setMessages((prev) => prev.some(message => message.id === data.message.id) ? prev : [...prev, data.message]);
         }
 
         return data.message;

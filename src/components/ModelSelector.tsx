@@ -6,6 +6,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Lock, Zap, Brain, Sparkles, Eye, Settings, Cpu } from 'lucide-react';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
+import { useNativeModels } from '@/hooks/useNativeModels';
+import { useAuth } from '@/contexts/AuthContext';
 import { CRIDERGPT_MODELS } from '@/config/criderGPTModels';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
@@ -24,6 +26,9 @@ interface ModelSelectorProps {
 const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange }) => {
   const { plan: userPlan } = useSubscriptionStatus();
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+  const native = useNativeModels();
+  const models = [...(native.data || []), ...CRIDERGPT_MODELS];
 
   const hasAccess = (requiredPlan: string) => {
     const order: Record<string, number> = { free: 0, plus: 1, pro: 2, lifetime: 3 };
@@ -31,12 +36,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
   };
 
   const selected =
-    CRIDERGPT_MODELS.find(m => m.id === selectedModel) ||
+    models.find(m => m.id === selectedModel) ||
     CRIDERGPT_MODELS.find(m => m.id === 'cridergpt-5.0')!;
   const SelectedIcon = ICONS[selected.id] || Brain;
 
   const handleSelect = (id: string) => {
-    const m = CRIDERGPT_MODELS.find(x => x.id === id);
+    const m = models.find(x => x.id === id);
     if (m && hasAccess(m.requiredPlan)) {
       onModelChange(id);
       setIsOpen(false);
@@ -58,7 +63,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
           <SelectedIcon className="h-4 w-4" />
-          <span className="hidden sm:inline">{selected.name}</span>
+          <span className="hidden sm:inline">{selectedModel.startsWith('native:') ? models.find(m => m.id === selectedModel)?.name || 'Native model unavailable' : selected.name}</span>
           <Settings className="h-3 w-3" />
         </Button>
       </DialogTrigger>
@@ -72,8 +77,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         </DialogHeader>
 
         <div className="space-y-4">
+          {!user && <p className="text-sm text-muted-foreground">Sign in to use native Ubuntu models. The public demo is unchanged.</p>}
+          {native.isLoading && <p role="status">Loading native models…</p>}
+          {native.error && <p role="alert" className="text-sm text-destructive">{native.error.message}</p>}
+          {user && <Button variant="outline" size="sm" onClick={() => native.refetch()} disabled={native.isFetching}>Refresh native models</Button>}
           <RadioGroup value={selectedModel} onValueChange={handleSelect}>
-            {CRIDERGPT_MODELS.map(model => {
+            {models.map(model => {
               const Icon = ICONS[model.id] || Brain;
               const locked = !hasAccess(model.requiredPlan);
               return (
@@ -96,6 +105,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
                       <Label htmlFor={model.id} className="flex items-center gap-2 font-medium">
                         <Icon className="h-4 w-4" />
                         {model.name}
+                        <Badge variant="outline">{model.id.startsWith('native:') ? 'Native · experimental' : 'Existing configured model'}</Badge>
                         {locked && <Lock className="h-3 w-3 text-muted-foreground" />}
                       </Label>
                       <p className="text-xs italic text-muted-foreground">{model.tagline}</p>

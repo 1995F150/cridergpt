@@ -1,3 +1,4 @@
+import { nativeMessageMetadata } from '@/utils/nativeChat';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -177,7 +178,7 @@ export default function ChatPanel() {
 
     try {
       // CriderGPT Algorithm: Analyze patterns and detect tasks
-      if (user) {
+      if (user && !selectedModel.startsWith('native:')) {
         analyzeAndStorePatterns(message);
         analyzeAndCreateTask(message, message.substring(0, 50));
       }
@@ -191,6 +192,7 @@ export default function ChatPanel() {
         setCurrentConversation(convId);
       }
 
+      if (selectedModel.startsWith('native:') && files?.length) throw new Error('Native checkpoints currently support text prompts, not uploaded-image recognition.');
       // Handle file uploads - support ALL file types
       let imageUrl: string | undefined;
       let fileAttachments: string[] = [];
@@ -209,7 +211,24 @@ export default function ChatPanel() {
       }
 
       // Send user message
-      await sendMessage(convId, message, "user", undefined, imageUrl);
+      const storedUserMessage = await sendMessage(convId, message, "user", undefined, imageUrl);
+
+      // Exact native route bypasses owner-keyword, PDF, AGI and cloud shortcuts.
+      if (selectedModel.startsWith('native:')) {
+        if (!storedUserMessage) throw new Error('The user message could not be saved. Please check your connection.');
+        setIsStreaming(true); setStreamingMessage('Waiting for your native model…');
+        try {
+          const result = await generateSmartResponse(message, selectedModel, 'chat', undefined, undefined,
+            messages.filter(m => m.metadata?.answer_origin !== 'pipeline_error').map(m => ({ role: m.role, content: m.content })));
+          const saved = await sendMessage(convId, result.response, 'assistant', result.generated_tokens, result.imageUrl, nativeMessageMetadata(result));
+          if (!saved) throw new Error('The reply was generated but could not be saved. Refresh history before retrying.');
+          if (messages.length === 0) await updateConversationTitle(convId, message.slice(0, 40) || 'New chat');
+          if (result.incomplete) toast({ title: 'Incomplete native answer', description: 'The response is saved with its finish status. Retry or start a new chat.', variant: 'destructive' });
+        } catch (error) {
+          toast({ title: 'Native request failed', description: error instanceof Error ? error.message : 'No response was generated; no fallback was used.', variant: 'destructive' });
+        } finally { setIsStreaming(false); setStreamingMessage(''); }
+        return;
+      }
 
       // Keyword routing for Jessie-owner commands
       const isJessie = user?.email?.toLowerCase() === 'jessiecrider3@gmail.com';
@@ -797,6 +816,7 @@ Make it detailed and actionable.`;
                   content={msg.content}
                   timestamp={msg.created_at}
                   imageUrl={msg.image_url}
+                  metadata={msg.metadata}
                   userName={user?.email?.split("@")[0] || "You"}
                 />
               ))}

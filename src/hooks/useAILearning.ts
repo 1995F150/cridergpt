@@ -1,3 +1,4 @@
+import { generateNativeResponse, type NativeChatResult } from '@/utils/nativeChat';
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,8 +105,15 @@ export function useAILearning() {
     selectedModel: string = 'gpt-4o-mini',
     category?: string,
     imageData?: string,
-    sensorContext?: string
-  ): Promise<{ response: string; imageUrl?: string; source?: string }> => {
+    sensorContext?: string,
+    conversationHistory: Array<{ role: string; content: string }> = []
+  ): Promise<NativeChatResult> => {
+    if (selectedModel.startsWith('native:')) {
+      if (!user) throw new Error('Sign in to use native models.');
+      setIsLoading(true);
+      try { return await generateNativeResponse(input, selectedModel, conversationHistory, imageData); }
+      finally { setIsLoading(false); }
+    }
     // Handle demo mode for non-authenticated users
     if (!user) {
       if (imageData) {

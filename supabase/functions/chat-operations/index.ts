@@ -12,6 +12,8 @@ interface ChatMessage {
   content: string;
   tokens_used?: number;
   image_url?: string;
+  metadata?: Record<string, unknown>;
+  client_message_id?: string;
 }
 
 interface NewConversation {
@@ -174,7 +176,10 @@ serve(async (req) => {
         }
 
         if (action === 'send_message') {
-          const { conversation_id, role, content, tokens_used, image_url }: ChatMessage = body;
+          const { conversation_id, role, content, tokens_used, image_url, metadata, client_message_id }: ChatMessage = body;
+          if (!['user', 'assistant'].includes(role)) return new Response(JSON.stringify({ error: 'Invalid role' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          if (metadata && (typeof metadata !== 'object' || Array.isArray(metadata) || JSON.stringify(metadata).length > 16000)) return new Response(JSON.stringify({ error: 'Invalid message metadata' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          if (client_message_id && !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(client_message_id)) return new Response(JSON.stringify({ error: 'Invalid message ID' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
           
           if (!conversation_id || !role || (!content && !image_url)) {
             return new Response(
@@ -208,16 +213,23 @@ serve(async (req) => {
           const { data: message, error } = await supabaseClient
             .from('chat_messages')
             .insert({
+              ...(client_message_id ? { id: client_message_id } : {}),
               conversation_id,
               user_id: user.id,
               role,
               content,
+              metadata: metadata || null,
               tokens_used: tokens_used || 0,
               image_url: image_url || null
             })
             .select()
             .single();
 
+          if (error?.code === '23505' && client_message_id) {
+            const { data: existing } = await supabaseClient.from('chat_messages').select('*').eq('id', client_message_id).eq('user_id', user.id).eq('conversation_id', conversation_id).maybeSingle();
+            if (existing && existing.content === content && existing.role === role && (existing.image_url || null) === (image_url || null)) return new Response(JSON.stringify({ message: existing, deduplicated: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+            return new Response(JSON.stringify({ error: 'Message ID conflict' }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
           if (error) throw error;
 
           return new Response(
