@@ -1,0 +1,46 @@
+/* Scoped to the public AI workspace: the rest of the platform keeps its branding. */
+.public-chat-workspace, .public-chat-model-dialog {
+  --background: 225 18% 7%; --foreground: 220 18% 91%;
+  --card: 225 17% 9%; --card-foreground: 220 18% 91%;
+  --muted: 225 15% 15%; --muted-foreground: 220 10% 62%;
+  --border: 225 14% 22%; --input: 225 14% 22%;
+  --primary: 215 75% 72%; --primary-foreground: 225 25% 10%;
+  --accent: 225 15% 18%; --accent-foreground: 220 18% 91%;
+  color: hsl(var(--foreground)); background: hsl(var(--background));
+  color-scheme: dark;
+}
+.public-chat-main { overflow: hidden; }
+.public-chat-header { flex-shrink: 0; background: #111319; }
+.public-chat-eyebrow { margin-top: 2px; font-size: 10px; letter-spacing: .2em; color: #9298aa; }
+.public-chat-scroll { overscroll-behavior: contain; }
+.public-chat-transcript { padding-block: 18px 28px; }
+.public-chat-workspace .public-chat-assistant .public-chat-message-content { background: transparent; padding: 6px 0; border-radius: 0; line-height: 1.8; }
+.public-chat-workspace .public-chat-user .public-chat-message-content { background: #252934; color: #e4e6ed; border: 1px solid #363c49; border-radius: 22px 22px 6px 22px; }
+.public-chat-user .public-chat-avatar { display: none; }
+.public-chat-workspace .chat-composer { flex-shrink: 0; width: calc(100% - 32px); max-width: 880px; margin: 0 auto; padding: 16px; border: 1px solid #3c4251; border-radius: 22px; background: #1c1f29; box-shadow: 0 8px 32px #0002; }
+.public-chat-workspace .chat-composer textarea { background: transparent; border: 0; box-shadow: none; min-height: 64px; color: #e4e6ed; resize: none; }
+.public-chat-composer-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.public-chat-composer-footer > span { font-size: 10px; color: #959baa; }
+.public-chat-workspace .chat-model-selector { border-radius: 24px; background: #292e3b; font-size: 12px; }
+.public-chat-workspace .chat-model-selector > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.public-chat-disclaimer { margin: 10px 16px 14px; text-align: center; font-size: 11px; color: #9298aa; }
+.public-chat-message-content pre { max-width: 100%; overflow-x: auto; }
+.public-chat-message-content { overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .public-chat-workspace .chat-composer { width: calc(100% - 16px); padding: 10px; border-radius: 18px; }
+  .public-chat-composer-footer { justify-content: flex-end; }
+  .public-chat-composer-footer > span { display: none; }
+  .public-chat-composer-footer .chat-model-selector { max-width: 100%; }
+  .public-chat-disclaimer { margin-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .public-chat-message-body { max-width: 90%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-chat-workspace * { transition-duration: 0s !important; }
+}
+.public-chat-composer-footer .chat-model-selector > span { display: inline; }
+@media (max-width: 640px) {
+  .public-chat-workspace .chat-input-controls { flex-wrap: wrap; }
+  .public-chat-workspace .chat-message-field { order: -1; flex: 0 0 100%; }
+  .public-chat-workspace .chat-message-field textarea { font-size: 16px; }
+  .public-chat-workspace .chat-input-controls > button:last-child { margin-left: auto; }
+}

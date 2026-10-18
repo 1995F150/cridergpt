@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +62,7 @@ interface ChatInputProps {
   onSend: (message: string, files?: FilePreview[]) => void;
   isLoading?: boolean;
   placeholder?: string;
+  footer?: ReactNode;
 }
 
 // Helper to convert data URL to File
@@ -77,7 +78,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
   return new File([u8arr], filename, { type: mime });
 }
 
-export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
+export function ChatInput({ onSend, isLoading, placeholder, footer }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [agentMode, setAgentMode] = useState(false);
   const [files, setFiles] = useState<FilePreview[]>([]);
@@ -335,7 +336,7 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
 
       <div
         className={cn(
-          "border-t border-border bg-card p-4",
+          "chat-composer border-t border-border bg-card p-4",
           isDragging && "bg-primary/5 border-primary"
         )}
         onDragOver={(e) => {
@@ -386,7 +387,7 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
         )}
 
         {/* Input Area */}
-        <div className="flex items-end gap-2">
+        <div className="chat-input-controls flex items-end gap-2">
           {/* Attachment Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -494,7 +495,7 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
 
 
           {/* Text Input */}
-          <div className="flex-1 relative">
+          <div className="chat-message-field flex-1 relative">
             <Textarea
               ref={textareaRef}
               value={message}
@@ -554,6 +555,7 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
 
           {/* Send Button */}
           <Button
+            aria-label="Send message"
             onClick={handleSend}
             disabled={isLoading || (!message.trim() && files.length === 0)}
             className="shrink-0 bg-primary hover:bg-primary/90"
@@ -566,6 +568,7 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
           </Button>
         </div>
 
+        {footer}
         {isDragging && (
           <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
             <p className="text-primary font-medium">Drop files here</p>

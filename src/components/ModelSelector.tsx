@@ -20,10 +20,12 @@ const ICONS: Record<string, React.ComponentType<any>> = {
 
 interface ModelSelectorProps {
   selectedModel: string;
+  disabled?: boolean;
+  localStyle?: boolean;
   onModelChange: (modelId: string) => void;
 }
 
-const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange }) => {
+const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange, disabled = false, localStyle = false }) => {
   const { plan: userPlan } = useSubscriptionStatus();
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
@@ -61,14 +63,14 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button disabled={disabled} aria-label="Choose chat model" variant="outline" className="chat-model-selector flex min-w-0 max-w-full items-center gap-2">
           <SelectedIcon className="h-4 w-4" />
           <span className="hidden sm:inline">{selectedModel.startsWith('native:') ? models.find(m => m.id === selectedModel)?.name || 'Native model unavailable' : selected.name}</span>
           <Settings className="h-3 w-3" />
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className={`sm:max-w-md max-h-[85vh] overflow-y-auto ${localStyle ? "public-chat-model-dialog dark" : ""}`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5" />

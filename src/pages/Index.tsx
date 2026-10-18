@@ -230,7 +230,7 @@ export default function Index() {
   return (
     <>
       <SEO page={activePanel} />
-      <div className="flex h-screen bg-background">
+      <div className="flex h-dvh bg-background">
         {/* Desktop Navigation Sidebar - hidden on mobile */}
         {!isMobile && (
           <NavigationSidebar
@@ -255,7 +255,7 @@ export default function Index() {
             isMobile={isMobile}
           />
           
-          <main className="flex-1 overflow-auto bg-background">
+          <main className={`flex-1 min-h-0 bg-background ${activePanel === 'chat' && user ? 'overflow-hidden' : 'overflow-auto'}`}>
             <div className="h-full">
               <Suspense fallback={<PanelLoadingFallback />}>
                 {renderPanel()}
@@ -305,7 +305,7 @@ export default function Index() {
             )}
           </main>
           
-          <Footer />
+          {activePanel !== 'chat' && <Footer />}
         </div>
         
         <NotificationPermissionModal
