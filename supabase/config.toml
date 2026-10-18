@@ -81,3 +81,7 @@ project_id = "udpldrrpebdyuiqdtqnq"
     verify_jwt = false
 
 
+
+# Backend-to-backend history export uses its existing master-key check.
+[functions.history-sync]
+verify_jwt = false

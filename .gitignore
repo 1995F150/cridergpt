@@ -23,3 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Local history-sync installation artifacts and credentials
+supabase/.temp/
+server/history_sync/__pycache__/
+server/history_sync/stage/
+server/history_sync/local-manifest.json
+server/history_sync/gateway-manifest.json
