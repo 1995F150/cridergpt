@@ -1,3 +1,7 @@
+import { withChatDeadline } from '@/utils/chatRequest';
+import { ConversationReplay } from '@/components/chat/ConversationReplay';
+import { useChatViewport } from '@/hooks/useChatViewport';
+import { recordedModel } from '@/utils/chatHistory';
 import { nativeMessageMetadata } from '@/utils/nativeChat';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -63,6 +67,8 @@ export default function ChatPanel() {
     messages,
     isLoading: isChatLoading,
     isLoadingConversations,
+    isLoadingMessages, historyError, nextMessageCursor, nextConversationOffset,
+    loadOlderMessages, loadMoreConversations, setConversationQuery, loadMessages,
     createConversation,
     sendMessage,
     updateConversationTitle,
@@ -143,14 +149,34 @@ export default function ChatPanel() {
     })();
   }, []);
 
-  // Auto-scroll to bottom on new messages
+  const shellRef = useRef<HTMLDivElement>(null);
+  useChatViewport(shellRef);
+  const [replaying, setReplaying] = useState(false);
+  const [guestMessages, setGuestMessages] = useState<ChatMessageType[]>([]);
+  const visibleMessages = user ? messages : guestMessages;
+  const sendLock = useRef(false);
+  const sessionOwner = useRef(user?.id); sessionOwner.current = user?.id;
+  const [sending, setSending] = useState(false);
+  const keepAtBottom = useRef(true);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [unsavedReply, setUnsavedReply] = useState<{ conversation: string; response: string; metadata: Record<string, unknown>; tokens?: number; image?: string; id: string } | null>(null);
+  const [contextConfirmed, setContextConfirmed] = useState(false);
+  useEffect(() => { setUnsavedReply(null); setRequestError(null); setGuestMessages([]); }, [user?.id]);
+  useEffect(() => { setReplaying(false); setContextConfirmed(false); keepAtBottom.current = true; }, [currentConversation]);
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, streamingMessage]);
+    const viewport = scrollRef.current?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
+    if (viewport && keepAtBottom.current && (messages.length || guestMessages.length || isStreaming)) viewport.scrollTop = viewport.scrollHeight;
+  }, [messages, guestMessages, streamingMessage, isStreaming]);
+  const loadOlder = async () => {
+    const viewport = scrollRef.current?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
+    const height = viewport?.scrollHeight || 0; const top = viewport?.scrollTop || 0;
+    keepAtBottom.current = false;
+    await loadOlderMessages();
+    requestAnimationFrame(() => { if (viewport) viewport.scrollTop = top + viewport.scrollHeight - height; });
+  };
 
   const handleNewChat = useCallback(async () => {
+    if (!user) { setGuestMessages([]); return; }
     const conv = await createConversation("New Chat");
     if (conv) {
       setCurrentConversation(conv.id);
@@ -158,7 +184,7 @@ export default function ChatPanel() {
         setMobileSidebarOpen(false);
       }
     }
-  }, [createConversation, setCurrentConversation, isMobile]);
+  }, [user, createConversation, setCurrentConversation, isMobile]);
 
   const handleSelectConversation = useCallback((id: string) => {
     setCurrentConversation(id);
@@ -168,6 +194,9 @@ export default function ChatPanel() {
   }, [setCurrentConversation, isMobile]);
 
   const handleSendMessage = useCallback(async (message: string, files?: FilePreview[]) => {
+    if (sendLock.current || isLoadingMessages || historyError || unsavedReply) return;
+    sendLock.current = true; setSending(true); setRequestError(null); keepAtBottom.current = true;
+    try {
     // Check demo limits for non-authenticated users
     if (!user) {
       if (!canSendMessage()) {
@@ -183,6 +212,23 @@ export default function ChatPanel() {
         analyzeAndCreateTask(message, message.substring(0, 50));
       }
 
+      // Guests have an ephemeral demo transcript, never a fake persisted account.
+      if (!user) {
+        if (selectedModel.startsWith('native:')) throw new Error('Sign in to use native models.');
+        if (files?.length) throw new Error('Sign in to upload files.');
+        const guestMessage: ChatMessageType = { id: crypto.randomUUID(), conversation_id: 'demo', role: 'user', content: message, created_at: new Date().toISOString() };
+        setGuestMessages(previous => [...previous, guestMessage]);
+        setIsStreaming(true); setStreamingMessage('Waiting for a response…');
+        try {
+          const { data, error } = await withChatDeadline(supabase.functions.invoke('demo-chat', { body: { message, sessionId: demoUsage.sessionId } }));
+          if (error || data?.error || typeof data?.response !== 'string') throw new Error('Demo response unavailable. Try again later or sign in.');
+          if (sessionOwner.current !== undefined) return;
+          setGuestMessages(previous => [...previous, { ...guestMessage, id: crypto.randomUUID(), role: 'assistant', content: data.response, created_at: new Date().toISOString(), metadata: recordedModel(data) }]);
+          incrementDemoUsage();
+        } finally { setIsStreaming(false); setStreamingMessage(''); }
+        return;
+      }
+
       // Create conversation if none exists
       let convId = currentConversation;
       if (!convId) {
@@ -195,7 +241,7 @@ export default function ChatPanel() {
       if (selectedModel.startsWith('native:') && files?.length) throw new Error('Native checkpoints currently support text prompts, not uploaded-image recognition.');
       // Handle file uploads - support ALL file types
       let imageUrl: string | undefined;
-      let fileAttachments: string[] = [];
+      const fileAttachments: string[] = [];
       
       if (files?.length) {
         for (const filePreview of files) {
@@ -213,6 +259,8 @@ export default function ChatPanel() {
       // Send user message
       const storedUserMessage = await sendMessage(convId, message, "user", undefined, imageUrl);
 
+      if (!storedUserMessage) throw new Error('Your message was not saved. Reload history before retrying.');
+
       // Exact native route bypasses owner-keyword, PDF, AGI and cloud shortcuts.
       if (selectedModel.startsWith('native:')) {
         if (!storedUserMessage) throw new Error('The user message could not be saved. Please check your connection.');
@@ -220,11 +268,14 @@ export default function ChatPanel() {
         try {
           const result = await generateSmartResponse(message, selectedModel, 'chat', undefined, undefined,
             messages.filter(m => m.metadata?.answer_origin !== 'pipeline_error').map(m => ({ role: m.role, content: m.content })));
-          const saved = await sendMessage(convId, result.response, 'assistant', result.generated_tokens, result.imageUrl, nativeMessageMetadata(result));
-          if (!saved) throw new Error('The reply was generated but could not be saved. Refresh history before retrying.');
+          if (sessionOwner.current !== user?.id) return;
+          const pending = { conversation: convId, response: result.response, metadata: nativeMessageMetadata(result), tokens: result.generated_tokens, image: result.imageUrl, id: crypto.randomUUID() };
+          const saved = await sendMessage(convId, pending.response, 'assistant', pending.tokens, pending.image, pending.metadata, pending.id);
+          if (!saved) { setUnsavedReply(pending); throw new Error('Reply generated but not saved. Use Save reply again; do not regenerate.'); }
           if (messages.length === 0) await updateConversationTitle(convId, message.slice(0, 40) || 'New chat');
           if (result.incomplete) toast({ title: 'Incomplete native answer', description: 'The response is saved with its finish status. Retry or start a new chat.', variant: 'destructive' });
         } catch (error) {
+          setRequestError(error instanceof Error ? error.message : 'Native generation failed.');
           toast({ title: 'Native request failed', description: error instanceof Error ? error.message : 'No response was generated; no fallback was used.', variant: 'destructive' });
         } finally { setIsStreaming(false); setStreamingMessage(''); }
         return;
@@ -288,6 +339,7 @@ export default function ChatPanel() {
         setStreamingMessage("📄 Exporting chat to PDF...");
         
         try {
+          if (nextMessageCursor) throw new Error('Load all older messages before exporting the complete conversation.');
           const pdfMessages = messages.map(m => ({
             role: m.role,
             content: m.content,
@@ -344,7 +396,7 @@ Make it detailed and actionable.`;
           
           // Send the document content as a message
           const responseText = typeof result === 'string' ? result : result.response;
-          await sendMessage(convId, responseText, "assistant");
+          await sendMessage(convId, responseText, "assistant", undefined, undefined, recordedModel(result));
           
           // Inform user they can export it
           await sendMessage(convId, `📄 Your document is ready above! If you'd like to export it as a PDF, just say "export this chat as PDF".`, "assistant");
@@ -456,7 +508,7 @@ Make it detailed and actionable.`;
           }
 
           const response = data?.response || "I couldn't generate a response. Please try again.";
-          await sendMessage(convId, response, "assistant");
+          await sendMessage(convId, response, "assistant", undefined, undefined, recordedModel(data));
 
           // Send browser notification if user is not on the page
           if (document.hidden && canSendNotifications) {
@@ -530,14 +582,18 @@ Make it detailed and actionable.`;
             selectedModel,
             imageUrl ? "vision_analysis" : "chat",
             imageUrl,
-            sensorContext || undefined
+            sensorContext || undefined,
+            conversationHistory
           );
 
           const response = typeof result === "string" ? result : result.response;
           const tokensUsed = typeof result === "object" && result !== null && "tokens_used" in result 
             ? (result as { tokens_used?: number }).tokens_used 
             : undefined;
-          await sendMessage(convId, response, "assistant", tokensUsed);
+          if (sessionOwner.current !== user?.id) return;
+          const pending = { conversation: convId, response, metadata: recordedModel(result), tokens: tokensUsed, image: result.imageUrl, id: crypto.randomUUID() };
+          const saved = await sendMessage(convId, response, "assistant", tokensUsed, pending.image, pending.metadata, pending.id);
+          if (!saved) { setUnsavedReply(pending); throw new Error('Reply generated but not saved. Use Save reply again; do not regenerate.'); }
 
           // Send browser notification if user is not on the page
           if (document.hidden && canSendNotifications) {
@@ -553,6 +609,7 @@ Make it detailed and actionable.`;
         } catch (error: any) {
           console.error("AI response error:", error);
           const raw = error?.message || error?.error?.message || String(error || "");
+          setRequestError(raw || 'Generation failed. Reload history before retrying.');
           if (raw.includes("(Used:")) {
             toast({
               title: "Token Limit Reached",
@@ -590,19 +647,23 @@ Make it detailed and actionable.`;
       }
 
     } catch (error) {
-      console.error("Send message error:", error);
+      console.error("Send message failed");
+      setRequestError(error instanceof Error ? error.message : 'Message could not be sent.');
       toast({
         title: "Error",
         description: "Failed to send message",
         variant: "destructive",
       });
     }
+    } finally { sendLock.current = false; setSending(false); }
   }, [
+    isLoadingMessages, historyError, unsavedReply, nextMessageCursor,
     user, currentConversation, messages, selectedModel, conversations,
     canSendMessage, incrementDemoUsage, demoUsage,
     createConversation, setCurrentConversation, sendMessage,
     uploadImage, generateSmartResponse, updateConversationTitle, toast,
-    analyzeAndStorePatterns, analyzeAndCreateTask
+    analyzeAndStorePatterns, analyzeAndCreateTask, apiKeywords, canSendNotifications, isAGIMode,
+    sendAIResponseNotification, sendImageNotification, sensorContext, uploadFile
   ]);
 
   // Connection error state
@@ -632,11 +693,16 @@ Make it detailed and actionable.`;
       onDeleteConversation={deleteConversation}
       onOpenGallery={() => setGalleryOpen(true)}
       isLoading={isLoadingConversations}
+      onSearch={setConversationQuery}
+      hasMore={nextConversationOffset !== null}
+      onLoadMore={loadMoreConversations}
+      onReplay={() => { setReplaying(true); setMobileSidebarOpen(false); }}
+      replayDisabled={!currentConversation || isLoading || sending}
     />
   );
 
   return (
-    <div className="h-full flex">
+    <div ref={shellRef} className="chat-workspace flex h-full min-h-0 overflow-hidden" style={{ maxHeight: "var(--chat-visible-height, 100dvh)" }}>
       {/* Desktop Sidebar */}
       {!isMobile && (
         <div
@@ -664,7 +730,7 @@ Make it detailed and actionable.`;
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background">
+      <div className="flex-1 flex min-h-0 flex-col min-w-0 bg-background">
         {/* Header */}
         <div className="flex items-center justify-between px-2 md:px-4 py-2 md:py-3 border-b border-border bg-card">
           <div className="flex items-center gap-2 md:gap-3">
@@ -758,8 +824,12 @@ Make it detailed and actionable.`;
         )}
 
         {/* Messages Area */}
-        <ScrollArea ref={scrollRef} className="flex-1 p-2 md:p-4">
-          {messages.length === 0 && !currentConversation ? (
+        <ScrollArea ref={scrollRef} className="min-h-0 flex-1 p-2 md:p-4" onScrollCapture={event => { const viewport = event.target as HTMLElement; keepAtBottom.current = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 120; }}>
+          {historyError && <div role="alert" className="p-3 text-sm text-destructive">{historyError}<Button variant="outline" disabled={isLoadingMessages} onClick={() => currentConversation && loadMessages(currentConversation)}>Retry history</Button></div>}
+          {isLoadingMessages && <p role="status" className="p-3 text-sm">Loading saved messages…</p>}
+          {replaying ? <ConversationReplay messages={messages} hasOlder={!!nextMessageCursor} loading={isLoadingMessages} onLoadOlder={loadOlder} onClose={() => setReplaying(false)} /> : <>
+          {nextMessageCursor && <div className="space-y-2 p-2 text-sm"><Button variant="outline" disabled={isLoadingMessages} onClick={loadOlder}>Load older messages</Button><p>Only loaded messages are sent as context. Load earlier pages if needed.</p><label><input type="checkbox" checked={contextConfirmed} onChange={event => setContextConfirmed(event.target.checked)} /> Use only the loaded context for the next message</label></div>}
+          {visibleMessages.length === 0 && !currentConversation ? (
             !user ? (
               <GuestWelcomeHero 
                 onSuggestionClick={handleSendMessage} 
@@ -809,7 +879,7 @@ Make it detailed and actionable.`;
             )
           ) : (
             <div className="space-y-1">
-              {messages.map((msg) => (
+              {visibleMessages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
                   role={msg.role}
@@ -851,7 +921,7 @@ Make it detailed and actionable.`;
 
               {/* Streaming indicator (non-AGI) */}
               {isStreaming && !isAGIMode && (
-                <div className="flex items-center gap-3 py-4 px-2 md:px-4">
+                <div role="status" aria-live="polite" className="flex items-center gap-3 py-4 px-2 md:px-4">
                   <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center overflow-hidden">
                     <img 
                       src="/cridergpt-logo.png" 
@@ -867,12 +937,14 @@ Make it detailed and actionable.`;
               )}
             </div>
           )}
+          </>}
         </ScrollArea>
-
+        {requestError && <div role="alert" className="flex flex-wrap gap-2 border-t border-amber-500/30 p-3 text-sm text-amber-700 dark:text-amber-300"><p>{requestError}</p>{unsavedReply ? <Button disabled={sending} variant="outline" onClick={async () => { setSending(true); try { const p = unsavedReply; const saved = await sendMessage(p.conversation, p.response, 'assistant', p.tokens, p.image, p.metadata, p.id); if (saved) { setUnsavedReply(null); setRequestError(null); } } finally { setSending(false); } }}>Save reply again</Button> : <Button variant="outline" onClick={() => { setRequestError(null); if (currentConversation) void loadMessages(currentConversation); }}>Reload saved history</Button>}</div>}
+        {unsavedReply && <details className="max-h-40 overflow-auto p-3"><summary>Generated reply waiting to be saved</summary><pre className="whitespace-pre-wrap">{unsavedReply.response}</pre></details>}
         {/* Input Area */}
         <ChatInput
           onSend={handleSendMessage}
-          isLoading={isLoading}
+          isLoading={isLoading || sending || isLoadingMessages || !!historyError || !!unsavedReply || replaying || (!!nextMessageCursor && !contextConfirmed)}
           placeholder={
             user
               ? isMobile 

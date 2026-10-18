@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { historyFetch } from '@/utils/chatRequest';
+import { mergeMessages, selectionKey, recordedModel } from '@/utils/chatHistory';
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -10,7 +12,7 @@ export interface ChatMessage {
   content: string;
   created_at: string;
   tokens_used?: number;
-  metadata?: any;
+  metadata?: { model?: string; provider?: string; answer_origin?: string; [key: string]: unknown };
   image_url?: string;
 }
 
@@ -59,12 +61,23 @@ const LOCAL_CHAT_URL = import.meta.env.VITE_LOCAL_CHAT_URL ?? "";
 
 export const useChat = () => {
   const { user } = useAuth();
+  const ownerId = user?.id;
   const { toast } = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+
+  const [conversationQuery, setConversationQuery] = useState('');
+  const [nextConversationOffset, setNextConversationOffset] = useState<number | null>(null);
+  const [nextMessageCursor, setNextMessageCursor] = useState<{ created_at: string; id: string } | null>(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const selectedRef = useRef(currentConversation); selectedRef.current = currentConversation;
+  const userRef = useRef(user?.id); userRef.current = user?.id;
+  const messageGeneration = useRef(0);
+  const conversationGeneration = useRef(0);
 
   const getAccessToken = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -80,67 +93,49 @@ export const useChat = () => {
     };
   }, [getAccessToken]);
 
-  const loadConversations = useCallback(async () => {
+  const loadConversations = useCallback(async (offset = 0) => {
     if (!user) return;
-
+    const generation = ++conversationGeneration.current;
+    const owner = user.id;
     setIsLoadingConversations(true);
     try {
-      const response = await fetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=conversations`, {
-        method: "GET",
-        headers: await getAuthHeaders(),
-      });
-
-      if (!response.ok) throw new Error("Failed to load conversations");
-
+      const params = new URLSearchParams({ action: 'conversations', limit: '40', offset: String(offset), q: conversationQuery });
+      const response = await historyFetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?${params}`, { headers: await getAuthHeaders() });
+      if (!response.ok) throw new Error('Could not load conversation history.');
       const data = await response.json();
-      setConversations(data.conversations || []);
-    } catch (error) {
-      console.error("Error loading conversations:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load conversations",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingConversations(false);
-    }
-  }, [user, toast, getAuthHeaders]);
+      if (generation !== conversationGeneration.current || userRef.current !== owner) return;
+      setConversations(previous => offset ? [...new Map([...previous, ...(data.conversations || [])].map(c => [c.id, c])).values()] : data.conversations || []);
+      setNextConversationOffset(data.next_offset ?? null);
+    } catch {
+      if (generation === conversationGeneration.current && userRef.current === owner) toast({ title: 'History unavailable', description: 'Could not load conversations. Try refreshing history.', variant: 'destructive' });
+    } finally { if (generation === conversationGeneration.current) setIsLoadingConversations(false); }
+  }, [user, conversationQuery, getAuthHeaders, toast]);
 
-  const loadMessages = useCallback(
-    async (conversationId: string) => {
-      if (!user) return;
-
-      try {
-        const response = await fetch(
-          `${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=messages&conversation_id=${conversationId}`,
-          {
-            method: "GET",
-            headers: await getAuthHeaders(),
-          },
-        );
-
-        if (!response.ok) throw new Error("Failed to load messages");
-
-        const data = await response.json();
-        setMessages(data.messages || []);
-      } catch (error) {
-        console.error("Error loading messages:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load messages",
-          variant: "destructive",
-        });
-      }
-    },
-    [user, toast, getAuthHeaders],
-  );
+  const loadMessages = useCallback(async (conversationId: string, before?: { created_at: string; id: string }) => {
+    if (!user) return;
+    const generation = ++messageGeneration.current;
+    const owner = user.id;
+    setIsLoadingMessages(true); setHistoryError(null);
+    try {
+      const params = new URLSearchParams({ action: 'messages', conversation_id: conversationId, limit: '60' });
+      if (before) params.set('before', JSON.stringify(before));
+      const response = await historyFetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?${params}`, { headers: await getAuthHeaders() });
+      if (!response.ok) throw new Error('Could not load this conversation.');
+      const data = await response.json();
+      if (generation !== messageGeneration.current || userRef.current !== owner || selectedRef.current !== conversationId) return;
+      setMessages(previous => mergeMessages(data.messages || [], previous));
+      setNextMessageCursor(data.next_before ?? null);
+    } catch {
+      if (generation === messageGeneration.current && userRef.current === owner && selectedRef.current === conversationId) setHistoryError('Messages could not be loaded. Retry before sending another message.');
+    } finally { if (generation === messageGeneration.current) setIsLoadingMessages(false); }
+  }, [user, getAuthHeaders]);
 
   const createConversation = useCallback(
     async (title: string = "New Chat", participantUserId?: string) => {
       if (!user) return null;
 
       try {
-        const response = await fetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=create_conversation`, {
+        const response = await historyFetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=create_conversation`, {
           method: "POST",
           headers: await getAuthHeaders(),
           body: JSON.stringify({ title, participant_user_id: participantUserId }),
@@ -237,11 +232,12 @@ export const useChat = () => {
       tokensUsed?: number,
       imageUrl?: string,
       metadata?: Record<string, unknown>,
+      clientMessageId?: string,
     ) => {
-      if (!user) return null;
+      if (!user || userRef.current !== user.id) return null;
 
       try {
-        const response = await fetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=send_message`, {
+        const response = await historyFetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=send_message`, {
           method: "POST",
           headers: await getAuthHeaders(),
           body: JSON.stringify({
@@ -251,7 +247,7 @@ export const useChat = () => {
             tokens_used: tokensUsed || 0,
             image_url: imageUrl,
             metadata,
-            client_message_id: typeof metadata?.request_id === "string" && /^[a-f0-9-]{36}$/i.test(metadata.request_id) ? metadata.request_id : crypto.randomUUID(),
+            client_message_id: clientMessageId || (typeof metadata?.request_id === "string" && /^[a-f0-9-]{36}$/i.test(metadata.request_id) ? metadata.request_id : crypto.randomUUID()),
           }),
         });
 
@@ -259,8 +255,8 @@ export const useChat = () => {
 
         const data = await response.json();
 
-        if (conversationId === currentConversation) {
-          setMessages((prev) => prev.some(message => message.id === data.message.id) ? prev : [...prev, data.message]);
+        if (userRef.current === user.id && conversationId === selectedRef.current) {
+          setMessages((prev) => mergeMessages(prev, [data.message]));
         }
 
         return data.message;
@@ -274,12 +270,12 @@ export const useChat = () => {
         return null;
       }
     },
-    [user, toast, currentConversation, getAuthHeaders],
+    [user, toast, getAuthHeaders],
   );
 
   const callCloudAI = useCallback(
     async (body: AiRequestBody): Promise<AiResponseShape> => {
-      const response = await fetch(`${SUPABASE_FUNCTIONS_BASE}/chat-with-ai`, {
+      const response = await historyFetch(`${SUPABASE_FUNCTIONS_BASE}/chat-with-ai`, {
         method: "POST",
         headers: await getAuthHeaders(),
         body: JSON.stringify(body),
@@ -307,7 +303,7 @@ export const useChat = () => {
 
       const token = await getAccessToken();
 
-      const response = await fetch(LOCAL_CHAT_URL, {
+      const response = await historyFetch(LOCAL_CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -385,7 +381,7 @@ export const useChat = () => {
           throw new Error(aiData?.error || "AI returned no response");
         }
 
-        await sendMessage(conversationId, aiData.response, "assistant", aiData.tokens_used);
+        await sendMessage(conversationId, aiData.response, "assistant", aiData.tokens_used, undefined, recordedModel(aiData));
 
         return aiData;
       } catch (error) {
@@ -408,7 +404,7 @@ export const useChat = () => {
       if (!user) return;
 
       try {
-        const response = await fetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=update_conversation`, {
+        const response = await historyFetch(`${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=update_conversation`, {
           method: "PUT",
           headers: await getAuthHeaders(),
           body: JSON.stringify({
@@ -442,7 +438,7 @@ export const useChat = () => {
       if (!user) return;
 
       try {
-        const response = await fetch(
+        const response = await historyFetch(
           `${SUPABASE_FUNCTIONS_BASE}/chat-operations?action=delete_conversation&conversation_id=${conversationId}`,
           {
             method: "DELETE",
@@ -493,7 +489,7 @@ export const useChat = () => {
           if (newMessage.conversation_id === currentConversation) {
             setMessages((prev) => {
               if (prev.some((m) => m.id === newMessage.id)) return prev;
-              return [...prev, newMessage];
+              return mergeMessages(prev, [newMessage]);
             });
           }
         },
@@ -523,21 +519,33 @@ export const useChat = () => {
   }, [user, currentConversation, loadConversations]);
 
   useEffect(() => {
-    if (user) {
-      loadConversations();
-    }
-  }, [user, loadConversations]);
+    messageGeneration.current++; conversationGeneration.current++;
+    setConversations([]); setMessages([]); setNextMessageCursor(null); setNextConversationOffset(null); setHistoryError(null);
+    let saved: string | null = null;
+    try { if (ownerId) saved = localStorage.getItem(selectionKey(ownerId)); } catch { /* storage may be disabled */ }
+    setCurrentConversation(saved); selectedRef.current = saved;
+  }, [ownerId]);
+
+  useEffect(() => { const timer = setTimeout(() => { if (user) void loadConversations(); }, 250); return () => clearTimeout(timer); }, [user, loadConversations]);
 
   useEffect(() => {
-    if (currentConversation) {
-      loadMessages(currentConversation);
-    } else {
-      setMessages([]);
-    }
-  }, [currentConversation, loadMessages]);
+    setMessages([]); setNextMessageCursor(null); setHistoryError(null);
+    messageGeneration.current++;
+    if (currentConversation && ownerId) void loadMessages(currentConversation);
+    try {
+      if (ownerId) {
+        if (currentConversation) localStorage.setItem(selectionKey(ownerId), currentConversation);
+        else localStorage.removeItem(selectionKey(ownerId));
+      }
+    } catch { /* chat works without local storage */ }
+  }, [currentConversation, ownerId, loadMessages]);
 
   return {
     conversations,
+    conversationQuery, setConversationQuery,
+    nextConversationOffset, nextMessageCursor, isLoadingMessages, historyError,
+    loadMoreConversations: () => nextConversationOffset !== null && loadConversations(nextConversationOffset),
+    loadOlderMessages: () => currentConversation && nextMessageCursor && loadMessages(currentConversation, nextMessageCursor),
     currentConversation,
     setCurrentConversation,
     messages,
