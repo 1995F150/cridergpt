@@ -26,7 +26,7 @@ def main():
  key=secrets.token_urlsafe(48)
  try:
   DEST.mkdir(mode=0o755)
-  for name in ['replica.py','worker.py','local_routes.py','review.py']:put(P/name,DEST/name,owner.pw_uid,owner.pw_gid)
+  for name in ['replica.py','worker.py','local_routes.py','review.py','conversation_context.py']:put(P/name,DEST/name,owner.pw_uid,owner.pw_gid)
   (DEST/'__init__.py').touch();os.chown(DEST/'__init__.py',owner.pw_uid,owner.pw_gid)
   config={'endpoint':'https://udpldrrpebdyuiqdtqnq.supabase.co/functions/v1/history-sync','database':str(ENGINE/'data/local_chat.sqlite3'),'key_file':str(SECRETS.with_suffix('.key')),'links':{account:args.local_user},'api_links':{str(uuid.UUID(k)):args.local_user for k in args.api_source}}
   for path,text in [(CONFIG,json.dumps(config,indent=2)),(SECRETS,'CRIDERGPT_HISTORY_SYNC_KEY='+key+'\nCRIDERGPT_HISTORY_SYNC_USER_IDS='+account+'\n'),(Path(config['key_file']),key+'\n')]:

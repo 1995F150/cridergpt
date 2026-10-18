@@ -6,6 +6,9 @@ manifest={}
 for name,rel in [('engine_routes.py','engine_routes.py'),('store.py','store.py'),('platform.js','assets/platform.js')]:
  original=(ROOT/rel).read_text();text=original
  if name=='engine_routes.py':
+  start=text.index('  # Retain complete exchanges only.')
+  end=text.index('  search_result=None',start)
+  text=text[:start]+"  # Build model-independent context without replaying known failed/image replies.\n  from native_chat_integration.history_sync.conversation_context import text_context\n  messages=text_context(past,body.message)\n"+text[end:]
   for function in ['send','measured_send']:
    marker=f'def {function}(body:Send,user=Depends(auth)):\n'
    if marker in text and marker+" if body.conversation_id.startswith('sync:')" not in text:text=text.replace(marker,marker+" if body.conversation_id.startswith('sync:'):raise HTTPException(409,'Synced history is read-only here; continue on the source platform')\n",1)
