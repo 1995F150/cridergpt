@@ -1,0 +1,24 @@
+[Unit]
+Description=CriderGPT owner-scoped Supabase history replication
+After=network-online.target cridergpt-engine.service
+Wants=network-online.target
+[Service]
+User=cridergpt
+Group=cridergpt
+WorkingDirectory=/opt/cridergpt-engine/native_chat_integration/history_sync
+ExecStart=/opt/cridergpt-engine/venv/bin/python worker.py --config /etc/cridergpt-history-sync.json
+Restart=on-failure
+RestartSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/cridergpt-engine/data
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=128M
+CPUQuota=10%
+TasksMax=16
+Nice=15
+[Install]
+WantedBy=multi-user.target
