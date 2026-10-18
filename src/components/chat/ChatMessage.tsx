@@ -135,7 +135,7 @@ export function ChatMessage({
           </>
         ) : (
           <>
-            <AvatarImage src="/cridergpt-logo.png" alt="CriderGPT" />
+            <AvatarImage src="/cridergpt-logo-mono.png" alt="CriderGPT" className="assistant-reply-logo object-contain" />
             <AvatarFallback className="bg-accent text-accent-foreground text-xs font-bold">
               C
             </AvatarFallback>

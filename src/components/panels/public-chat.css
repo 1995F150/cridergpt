@@ -44,3 +44,6 @@
   .public-chat-workspace .chat-message-field textarea { font-size: 16px; }
   .public-chat-workspace .chat-input-controls > button:last-child { margin-left: auto; }
 }
+/* Reuse the verified alpha-transparent brand asset; no opaque avatar tile. */
+.public-chat-assistant .public-chat-avatar { border-radius: 0; background: transparent; }
+.public-chat-assistant .assistant-reply-logo { filter: invert(1); }

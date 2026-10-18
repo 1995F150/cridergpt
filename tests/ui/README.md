@@ -7,3 +7,5 @@ The Playwright check uses mocked guest Supabase responses, checks desktop 1440px
 The public chat workspace uses scoped dark Local Chat colors, bounded transcript width, plain assistant replies, rounded user messages, a rounded composer, and an always visible model label. The platform header/navigation and non-chat pages retain their existing branding. The large footer is omitted only on the chat route; other pages keep it. No operational dashboard, API credentials or administrative controls are exposed to public users.
 
 Review desktop/mobile screenshots and authenticated behavior before production deployment. Build warnings about large bundles and old Browserslist data predate this change. Targeted lint comparison reports the same 17 pre-existing errors and two hook warnings in the four edited components; this is not a clean lint baseline.
+
+Assistant reply avatars use the existing `cridergpt-logo-mono.png` asset, whose alpha channel was inspected and confirmed transparent. Scoped CSS inverts its black artwork for the dark workspace without adding a square tile or changing other brand assets.
