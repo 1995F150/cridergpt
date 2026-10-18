@@ -83,14 +83,17 @@ export async function startNativeChat(config: NativeConfig, userId: string, body
   const models = await nativeModels(config, fetcher);
   if (!models.some(model => model.id === id)) throw new NativeAPIError('Selected native checkpoint is unavailable; no fallback was used.', 422);
   if (body.imageData || body.image_url || body.image_base64 || body.mode === 'image_recognize') throw new NativeAPIError('These native text checkpoints do not support image recognition.', 422);
-  const { status, data } = await nativeRequest(config, '/v1/chat', { model: id, messages: nativeMessages(body.message, body.conversation_history), routing: body.mode === 'image_generate' ? 'image' : 'auto', web_fallback: 'source_summary' }, fetcher);
+  const retainedMessages = nativeMessages(body.message, body.conversation_history);
+  const historyReceived = Array.isArray(body.conversation_history) ? body.conversation_history.length : 0;
+  const historyUsed = retainedMessages.length - 1;
+  const { status, data } = await nativeRequest(config, '/v1/chat', { model: id, messages: retainedMessages, routing: body.mode === 'image_generate' ? 'image' : 'auto', web_fallback: 'source_summary' }, fetcher);
   if (status === 202) {
     if (data.type !== 'image_job' || data.model !== 'stable-diffusion-1.5') throw new NativeAPIError('Unexpected native job response.');
     return { type: 'image_job', model: data.model, requested_model: id, source: 'native_image', request_id: data.request_id, job_token: await signImageJob(config.key, userId, data.id) };
   }
   if (data.model !== id || typeof data.response !== 'string' || !data.response.trim()) throw new NativeAPIError('Selected native checkpoint identity or response could not be verified.');
   // Return documented, non-secret fields only. Preserve pipeline/source-summary identity.
-  return { type: 'text', response: data.response, model: data.model, requested_model: id, source: data.source, answer_origin: data.answer_origin || 'selected_model', experimental: true, request_id: data.request_id, inference_request_id: data.inference_request_id, sources: Array.isArray(data.sources) ? data.sources.slice(0, 3) : [], finish_reason: data.finish_reason, model_finish_reason: data.model_finish_reason, incomplete: data.incomplete === true, generated_tokens: data.generated_tokens, input_tokens: data.input_tokens, latency_ms: data.latency_ms, streaming_status: 'not_enabled' };
+  return { type: 'text', context_history_received: historyReceived, context_history_used: historyUsed, context_trimmed: historyUsed < historyReceived, response: data.response, model: data.model, requested_model: id, source: data.source, answer_origin: data.answer_origin || 'selected_model', experimental: true, request_id: data.request_id, inference_request_id: data.inference_request_id, sources: Array.isArray(data.sources) ? data.sources.slice(0, 3) : [], finish_reason: data.finish_reason, model_finish_reason: data.model_finish_reason, incomplete: data.incomplete === true, generated_tokens: data.generated_tokens, input_tokens: data.input_tokens, latency_ms: data.latency_ms, streaming_status: 'not_enabled' };
 }
 export async function pollNativeImage(config: NativeConfig, userId: string, token: unknown, fetcher: typeof fetch = fetch) {
   const id = await verifyImageJob(config.key, userId, token);

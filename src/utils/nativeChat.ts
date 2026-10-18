@@ -1,3 +1,4 @@
+import { withChatDeadline } from '@/utils/chatRequest';
 import { supabase } from '@/integrations/supabase/client';
 export type NativeChatResult = {
   response: string; imageUrl?: string; source?: string; generated_tokens?: number;
@@ -6,7 +7,7 @@ export type NativeChatResult = {
   [key: string]: unknown;
 };
 async function invoke(name: string, body: unknown) {
-  const { data, error } = await supabase.functions.invoke(name, { body });
+  const { data, error } = await withChatDeadline(supabase.functions.invoke(name, { body }), name === 'chat-with-ai' ? 105000 : 20000);
   if (error) {
     let message = 'Native request failed; no other model was substituted.';
     if ('context' in error && error.context instanceof Response) {
@@ -32,6 +33,6 @@ export async function generateNativeResponse(message: string, model: string, his
   throw new Error('Image generation did not complete in time. No replacement model was used.');
 }
 export function nativeMessageMetadata(result: NativeChatResult) {
-  const fields = ['model','requested_model','source','answer_origin','request_id','inference_request_id','finish_reason','model_finish_reason','incomplete','generated_tokens','input_tokens','latency_ms','streaming_status','experimental'];
+  const fields = ['model','requested_model','source','answer_origin','request_id','inference_request_id','finish_reason','model_finish_reason','incomplete','generated_tokens','input_tokens','latency_ms','streaming_status','experimental','context_history_received','context_history_used','context_trimmed'];
   return Object.fromEntries([['provider', 'cridergpt_native'], ...fields.map(key => [key, result[key]]), ['sources', result.sources || []]].filter(([,value]) => value !== undefined));
 }

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import { buildSync } from 'esbuild';import { createRequire } from 'node:module';import React from 'react';import { renderToStaticMarkup } from 'react-dom/server';
-const output=buildSync({entryPoints:['src/components/chat/ChatMessage.tsx'],bundle:true,jsx:'automatic',write:false,platform:'node',format:'cjs',external:['react','react-dom'],alias:{'@':process.cwd()+'/src'}}).outputFiles[0].text;
+const output=buildSync({entryPoints:['src/components/chat/ChatMessage.tsx'],bundle:true,loader:{'.css':'empty'},jsx:'automatic',write:false,platform:'node',format:'cjs',external:['react','react-dom'],alias:{'@':process.cwd()+'/src'}}).outputFiles[0].text;
 const module={exports:{}};new Function('require','module','exports',output)(createRequire(process.cwd()+'/package.json'),module,module.exports);const {ChatMessage}=module.exports;
 const draw=(content,metadata)=>renderToStaticMarkup(React.createElement(ChatMessage,{role:'assistant',content,timestamp:'2026-10-16T00:00:00Z',metadata:{provider:'cridergpt_native',...metadata}}));
 test('native answers preserve Markdown, citations and copyable code without raw HTML',()=>{

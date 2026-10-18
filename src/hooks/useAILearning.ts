@@ -1,3 +1,4 @@
+import { withChatDeadline } from '@/utils/chatRequest';
 import { generateNativeResponse, type NativeChatResult } from '@/utils/nativeChat';
 
 import { useState, useCallback } from 'react';
@@ -125,14 +126,15 @@ export function useAILearning() {
     setIsLoading(true);
     try {
       // Use chat-with-ai function which now supports images
-      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+      const { data, error } = await withChatDeadline(supabase.functions.invoke('chat-with-ai', {
         body: { 
           message: input || "Analyze this image",
           model: selectedModel,
           imageData: imageData,
+          conversation_history: conversationHistory,
           sensor_context: sensorContext || undefined
         }
-      });
+      }));
 
       if (error) throw new Error(error.message || 'Edge function call failed');
 
@@ -170,7 +172,7 @@ export function useAILearning() {
         }
       );
       
-      return { response, imageUrl: imageData, source: data?.source };
+      return { ...data, response, imageUrl: imageData, source: data?.source };
     } catch (error) {
       console.error('Error generating smart response:', error);
       throw error;

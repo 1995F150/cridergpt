@@ -1,3 +1,4 @@
+import { pageOptions, messageCursor } from '../_shared/chat-history.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
@@ -55,19 +56,16 @@ serve(async (req) => {
     switch (req.method) {
       case 'GET':
         if (action === 'conversations') {
-          // Get all conversations for user
-          const { data: conversations, error } = await supabaseClient
-            .from('chat_conversations')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('updated_at', { ascending: false });
-
+          let options;
+          try { options = pageOptions(url.searchParams); } catch { return new Response(JSON.stringify({ error: 'Invalid pagination' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
+          const { limit, offset, search } = options;
+          let query = supabaseClient.from('chat_conversations').select('*').eq('user_id', user.id)
+            .order('updated_at', { ascending: false }).order('id', { ascending: false });
+          if (search) query = query.ilike('title', '%' + search.replace(/[\\%_]/g, '\\$&') + '%');
+          const { data, error } = await query.range(offset, offset + limit);
           if (error) throw error;
-
-          return new Response(
-            JSON.stringify({ conversations }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          const conversations = (data || []).slice(0, limit);
+          return new Response(JSON.stringify({ conversations, next_offset: (data || []).length > limit ? offset + limit : null }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
 
         if (action === 'get_users') {
@@ -107,20 +105,19 @@ serve(async (req) => {
             );
           }
 
-          // Get messages for specific conversation
-          const { data: messages, error } = await supabaseClient
-            .from('chat_messages')
-            .select('*')
-            .eq('conversation_id', conversationId)
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: true });
-
+          let options, cursor;
+          try { options = pageOptions(url.searchParams); cursor = messageCursor(url.searchParams.get('before')); } catch { return new Response(JSON.stringify({ error: 'Invalid pagination' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
+          const { data: owned, error: ownershipError } = await supabaseClient.from('chat_conversations').select('id').eq('id', conversationId).eq('user_id', user.id).maybeSingle();
+          if (ownershipError) throw ownershipError;
+          if (!owned) return new Response(JSON.stringify({ error: 'Conversation not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          let query = supabaseClient.from('chat_messages').select('*').eq('conversation_id', conversationId).eq('user_id', user.id)
+            .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(options.limit + 1);
+          if (cursor) query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`);
+          const { data, error } = await query;
           if (error) throw error;
-
-          return new Response(
-            JSON.stringify({ messages }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          const page = (data || []).slice(0, options.limit);
+          const last = page.at(-1);
+          return new Response(JSON.stringify({ messages: page.reverse(), next_before: (data || []).length > options.limit && last ? { created_at: last.created_at, id: last.id } : null }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
 
         // Default GET response - return conversations
@@ -128,7 +125,7 @@ serve(async (req) => {
           .from('chat_conversations')
           .select('*')
           .eq('user_id', user.id)
-          .order('updated_at', { ascending: false });
+          .order('updated_at', { ascending: false }).limit(100);
 
         if (error) throw error;
 
@@ -162,7 +159,7 @@ serve(async (req) => {
             .from('chat_conversations')
             .insert({
               user_id: user.id,
-              title: title || 'New Chat'
+              title: typeof title === 'string' && title.trim() ? title.trim().slice(0, 200) : 'New Chat'
             })
             .select()
             .single();
@@ -177,6 +174,7 @@ serve(async (req) => {
 
         if (action === 'send_message') {
           const { conversation_id, role, content, tokens_used, image_url, metadata, client_message_id }: ChatMessage = body;
+          if (typeof content !== 'string' || content.length > 200000) return new Response(JSON.stringify({ error: 'Message content must be text of at most 200000 characters' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
           if (!['user', 'assistant'].includes(role)) return new Response(JSON.stringify({ error: 'Invalid role' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
           if (metadata && (typeof metadata !== 'object' || Array.isArray(metadata) || JSON.stringify(metadata).length > 16000)) return new Response(JSON.stringify({ error: 'Invalid message metadata' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
           if (client_message_id && !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(client_message_id)) return new Response(JSON.stringify({ error: 'Invalid message ID' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -254,10 +252,11 @@ serve(async (req) => {
             );
           }
 
+          if (typeof title !== 'string' || !title.trim() || title.length > 200) return new Response(JSON.stringify({ error: 'Title must contain 1–200 characters' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
           // Update conversation
           const { data: conversation, error } = await supabaseClient
             .from('chat_conversations')
-            .update({ title })
+            .update({ title: title.trim(), updated_at: new Date().toISOString() })
             .eq('id', conversation_id)
             .eq('user_id', user.id)
             .select()
@@ -323,9 +322,9 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in chat-operations:', error);
+    console.error('chat-operations failed', { category: error instanceof Error ? error.name : 'UnknownError' });
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ error: 'Chat storage request failed. Retry or reload history before sending again.' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

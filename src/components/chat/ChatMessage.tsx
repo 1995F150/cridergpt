@@ -1,11 +1,11 @@
-import { NativeAnswer, safeSourceURL, type NativeSource } from './NativeAnswer';
-import { useState } from "react";
+import { safeSourceURL } from '@/utils/sourceURL';
+import { NativeAnswer, type NativeSource } from './NativeAnswer';
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Code, Download, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { Download, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { parseTextWithLinks, TextPart } from "@/utils/linkParser";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
@@ -14,10 +14,10 @@ interface ChatMessageProps {
   imageUrl?: string;
   userName?: string;
   userAvatar?: string;
-  metadata?: { provider?: string; model?: string; requested_model?: string; source?: string; answer_origin?: string; incomplete?: boolean; finish_reason?: string; sources?: NativeSource[]; request_id?: string };
+  metadata?: { provider?: string; model?: string; requested_model?: string; source?: string; answer_origin?: string; incomplete?: boolean; finish_reason?: string; sources?: NativeSource[]; request_id?: string; experimental?: boolean; context_trimmed?: boolean; context_history_used?: number; context_history_received?: number };
 }
 
-export function ChatMessage({
+export const ChatMessage = memo(function ChatMessage({
   role,
   content,
   timestamp,
@@ -26,96 +26,9 @@ export function ChatMessage({
   userAvatar,
   metadata,
 }: ChatMessageProps) {
-  const [copiedCode, setCopiedCode] = useState<number | null>(null);
-  const [copiedLink, setCopiedLink] = useState<string | null>(null);
-
-  const isUser = role === "user";
+  const isUser = role === 'user';
   const nativeMetadata = metadata?.provider === 'cridergpt_native' ? metadata : undefined;
   const nativeSources = Array.isArray(nativeMetadata?.sources) ? nativeMetadata.sources.filter(source => source && typeof source.title === 'string' && typeof source.url === 'string' && Number.isInteger(source.id)) : [];
-
-  // Parse code blocks from content
-  const parseContent = (text: string) => {
-    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-    const parts: Array<{ type: "text" | "code"; content: string; language?: string }> = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = codeBlockRegex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({ type: "text", content: text.slice(lastIndex, match.index) });
-      }
-      parts.push({
-        type: "code",
-        language: match[1] || "plaintext",
-        content: match[2].trim(),
-      });
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push({ type: "text", content: text.slice(lastIndex) });
-    }
-
-    return parts.length > 0 ? parts : [{ type: "text" as const, content: text }];
-  };
-
-  const handleCopyCode = async (code: string, index: number) => {
-    await navigator.clipboard.writeText(code);
-    setCopiedCode(index);
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-
-  const handleCopyLink = async (url: string) => {
-    await navigator.clipboard.writeText(url);
-    setCopiedLink(url);
-    setTimeout(() => setCopiedLink(null), 2000);
-  };
-
-  // Render text with clickable links
-  const renderTextWithLinks = (text: string) => {
-    const parts = parseTextWithLinks(text);
-    
-    return parts.map((part: TextPart, index: number) => {
-      if (part.type === 'link' && part.url) {
-        return (
-          <span key={index} className="inline-flex items-center gap-1">
-            <a
-              href={part.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                "inline-flex items-center gap-1 text-primary hover:underline font-medium",
-                isUser && "text-primary-foreground/90 hover:text-primary-foreground"
-              )}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <LinkIcon className="h-3 w-3 inline shrink-0" />
-              <span className="break-all">{part.content}</span>
-              <ExternalLink className="h-3 w-3 inline shrink-0 opacity-70" />
-            </a>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 inline-flex opacity-60 hover:opacity-100"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCopyLink(part.url!);
-              }}
-            >
-              {copiedLink === part.url ? (
-                <Check className="h-3 w-3 text-green-500" />
-              ) : (
-                <Copy className="h-3 w-3" />
-              )}
-            </Button>
-          </span>
-        );
-      }
-      return <span key={index}>{part.content}</span>;
-    });
-  };
-
-  const parts = parseContent(content);
 
   return (
     <div
@@ -145,7 +58,7 @@ export function ChatMessage({
       {/* Message Content */}
       <div
         className={cn(
-          "flex flex-col max-w-[80%] space-y-2",
+          "flex min-w-0 flex-col max-w-[calc(100%-2.75rem)] sm:max-w-[85%] space-y-2",
           isUser ? "items-end" : "items-start"
         )}
       >
@@ -159,9 +72,10 @@ export function ChatMessage({
           </span>
         </div>
 
-        {!isUser && nativeMetadata?.model && <Badge variant="outline">{nativeMetadata.model} · experimental</Badge>}
+        {!isUser && <Badge variant="outline" className="max-w-full break-all whitespace-normal">{typeof metadata?.model === 'string' && metadata.model ? metadata.model : 'Model not recorded'}{nativeMetadata && metadata?.experimental !== false ? ' · experimental' : ''}</Badge>}
         {!isUser && nativeMetadata?.incomplete && <p role="status" className="text-sm text-amber-600 dark:text-amber-300">Incomplete answer · {nativeMetadata.finish_reason || 'completion unverified'}</p>}
         {!isUser && nativeMetadata?.answer_origin === 'deterministic_source_summary' && <p className="text-xs text-muted-foreground">Deterministic source summary · not generated by the selected text model</p>}
+        {!isUser && metadata?.context_trimmed && <p className="text-xs text-muted-foreground">Context limited: {metadata.context_history_used} of {metadata.context_history_received} prior messages included by the server.</p>}
         {/* Image if present */}
         {imageUrl && (
           <div className="relative group">
@@ -203,54 +117,16 @@ export function ChatMessage({
         {/* Text Content */}
         <div
           className={cn(
-            "rounded-2xl px-4 py-3",
+            "min-w-0 w-full rounded-2xl px-3 py-3 sm:px-4",
             isUser
               ? "bg-primary text-primary-foreground rounded-tr-sm"
               : "bg-muted rounded-tl-sm"
           )}
         >
-          {!isUser && nativeMetadata?.model ? <NativeAnswer content={content} sources={nativeSources} /> : parts.map((part, index) =>
-            part.type === "code" ? (
-              <div key={index} className="my-2">
-                <div className="flex items-center justify-between bg-background/50 rounded-t-lg px-3 py-2 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <Code className="h-3 w-3" />
-                    <Badge variant="outline" className="text-xs">
-                      {part.language}
-                    </Badge>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs"
-                    onClick={() => handleCopyCode(part.content, index)}
-                  >
-                    {copiedCode === index ? (
-                      <>
-                        <Check className="h-3 w-3 mr-1" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3 mr-1" />
-                        Copy
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <pre className="bg-background/50 rounded-b-lg p-3 overflow-x-auto text-sm">
-                  <code>{part.content}</code>
-                </pre>
-              </div>
-            ) : (
-              <p key={index} className="text-sm whitespace-pre-wrap leading-relaxed">
-                {renderTextWithLinks(part.content)}
-              </p>
-            )
-          )}
+          {isUser ? <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{content}</p> : <NativeAnswer content={content} sources={nativeSources} />}
         </div>
         {!isUser && nativeSources.length > 0 && <details className="w-full text-xs"><summary className="cursor-pointer">Retrieved sources</summary><ol className="list-decimal space-y-1 pl-5">{nativeSources.map(source => { const url = safeSourceURL(source.url); return url ? <li key={source.id}><a className="break-words text-primary underline" href={url} target="_blank" rel="noopener noreferrer">{source.title || url}</a></li> : null; })}</ol></details>}
       </div>
     </div>
   );
-}
+});

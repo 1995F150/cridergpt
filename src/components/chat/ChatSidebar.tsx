@@ -2,13 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Search,
   MessageSquare,
   Image,
-  Archive,
   Trash2,
   Edit2,
   Pin,
@@ -34,6 +32,11 @@ interface ChatSidebarProps {
   onDeleteConversation: (id: string) => void;
   onOpenGallery: () => void;
   isLoading?: boolean;
+  onSearch?: (query: string) => void;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  onReplay?: () => void;
+  replayDisabled?: boolean;
 }
 
 export function ChatSidebar({
@@ -44,7 +47,7 @@ export function ChatSidebar({
   onRenameConversation,
   onDeleteConversation,
   onOpenGallery,
-  isLoading,
+  isLoading, onSearch, hasMore, onLoadMore, onReplay, replayDisabled,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -95,9 +98,9 @@ export function ChatSidebar({
             <Image className="h-3 w-3 mr-1" />
             Gallery
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 text-xs">
+          <Button variant="outline" size="sm" className="flex-1 text-xs min-h-11" disabled={replayDisabled} onClick={onReplay}>
             <Pin className="h-3 w-3 mr-1" />
-            Pinned
+            Replay
           </Button>
         </div>
 
@@ -107,7 +110,8 @@ export function ChatSidebar({
           <Input
             placeholder="Search chats..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search conversations"
+            onChange={(e) => { setSearchQuery(e.target.value); onSearch?.(e.target.value); }}
             className="pl-9 bg-muted/50"
           />
         </div>
@@ -116,7 +120,7 @@ export function ChatSidebar({
       {/* Conversations List */}
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
-          {isLoading ? (
+          {isLoading && !conversations.length ? (
             <div className="p-4 text-center text-muted-foreground text-sm">
               Loading chats...
             </div>
@@ -128,6 +132,8 @@ export function ChatSidebar({
             filteredConversations.map((conv) => (
               <div
                 key={conv.id}
+                role="button" tabIndex={0} aria-current={currentConversation === conv.id ? "true" : undefined}
+                onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onSelectConversation(conv.id); } }}
                 className={cn(
                   "group flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors",
                   currentConversation === conv.id
@@ -188,7 +194,8 @@ export function ChatSidebar({
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                          aria-label={`Actions for ${conv.title}`}
+                          className="h-11 w-11 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <MoreVertical className="h-3 w-3" />
@@ -199,17 +206,9 @@ export function ChatSidebar({
                           <Edit2 className="h-3 w-3 mr-2" />
                           Rename
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Pin className="h-3 w-3 mr-2" />
-                          Pin
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Archive className="h-3 w-3 mr-2" />
-                          Archive
-                        </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => onDeleteConversation(conv.id)}
+                          onClick={() => { if (confirm(`Delete “${conv.title}” and its messages?`)) onDeleteConversation(conv.id); }}
                         >
                           <Trash2 className="h-3 w-3 mr-2" />
                           Delete
@@ -221,6 +220,7 @@ export function ChatSidebar({
               </div>
             ))
           )}
+          {hasMore && <Button variant="outline" disabled={isLoading} className="w-full min-h-11" onClick={onLoadMore}>{isLoading ? "Loading…" : "Load more conversations"}</Button>}
         </div>
       </ScrollArea>
     </div>

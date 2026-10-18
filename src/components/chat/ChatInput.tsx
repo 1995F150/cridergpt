@@ -94,6 +94,11 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
   const isMobileDevice = typeof navigator !== "undefined" &&
     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
+  useEffect(() => {
+    const input = textareaRef.current;
+    if (input) { input.style.height = 'auto'; input.style.height = Math.min(180, Math.max(44, input.scrollHeight)) + 'px'; }
+  }, [message]);
+
   // Initialize speech recognition
   const startListening = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -335,7 +340,7 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
 
       <div
         className={cn(
-          "border-t border-border bg-card p-4",
+          "shrink-0 border-t border-border bg-card p-2 sm:p-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]",
           isDragging && "bg-primary/5 border-primary"
         )}
         onDragOver={(e) => {
@@ -386,11 +391,11 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
         )}
 
         {/* Input Area */}
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2 sm:flex-nowrap">
           {/* Attachment Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0">
+              <Button variant="outline" size="icon" aria-label="Add attachment" className="min-h-11 min-w-11 shrink-0">
                 <Paperclip className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -459,6 +464,7 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
                       ? "bg-[#D8B142] text-[#081F35] hover:bg-[#D8B142]/90 shadow-[0_0_12px_rgba(216,177,66,0.4)]"
                       : "text-muted-foreground"
                   )}
+                  aria-label="Toggle agent mode"
                   onClick={toggleAgentMode}
                 >
                   <Bot className="h-4 w-4" />
@@ -494,17 +500,18 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
 
 
           {/* Text Input */}
-          <div className="flex-1 relative">
+          <div className="relative order-first basis-full sm:order-none sm:flex-1 sm:basis-auto">
             <Textarea
               ref={textareaRef}
+              aria-label="Message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={event => { if (!event.nativeEvent.isComposing) handleKeyDown(event); }}
               onPaste={handlePaste}
               placeholder={processingPaste ? "Processing image..." : (isListening ? "Listening..." : (placeholder || "Type a message... (Shift+Enter for new line)"))}
               disabled={processingPaste}
               className={cn(
-                "min-h-[44px] max-h-[200px] resize-none pr-12 bg-muted/50",
+                "min-h-[44px] max-h-[200px] resize-none pr-12 bg-muted/50 text-base sm:text-sm",
                 isListening && "border-red-500 animate-pulse"
               )}
               rows={1}
@@ -555,8 +562,9 @@ export function ChatInput({ onSend, isLoading, placeholder }: ChatInputProps) {
           {/* Send Button */}
           <Button
             onClick={handleSend}
+            aria-label="Send message"
             disabled={isLoading || (!message.trim() && files.length === 0)}
-            className="shrink-0 bg-primary hover:bg-primary/90"
+            className="ml-auto min-h-11 min-w-11 shrink-0 bg-primary hover:bg-primary/90 sm:ml-0"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
