@@ -1,0 +1,72 @@
+--- /opt/cridergpt-engine/native_chat_integration/engine_routes.py
++++ /opt/cridergpt-engine/native_chat_integration/engine_routes.py
+@@ -145,6 +145,10 @@
+  web_fallback:str="none"
+  client_request_id:str|None=Field(default=None,pattern=r"^[a-f0-9-]{36}$")
+  message:str=Field(min_length=1,max_length=20000);conversation_id:str;model:str;external_consent:bool=False;web_search:bool|None=None;routing:str="auto";search_query:str|None=Field(default=None,max_length=300)
++def request_fingerprint(body):
++ # Bind retry IDs to every validated request field (including model and routing).
++ payload=body.model_dump(exclude={'client_request_id'})
++ return hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+ send_lock=threading.Lock()
+ def send(body:Send,user=Depends(auth)):
+  if not send_lock.acquire(blocking=False):raise HTTPException(429,'Another reply is being generated; wait and try again')
+@@ -164,13 +168,15 @@
+     if saved['role']=='assistant':
+      try:meta=json.loads(saved.get('metadata_json','{}'))
+      except ValueError:continue
+-     if meta.get('client_request_id')==body.client_request_id:return {**meta,'response':saved['content'],'model':saved['model'],'message_id':saved['id'],'deduplicated':True}
++     if meta.get('client_request_id')==body.client_request_id:
++      if meta.get('request_fingerprint')!=request_fingerprint(body):raise HTTPException(409,'Retry ID belongs to a different or legacy request; use a new request ID')
++      return {**meta,'response':saved['content'],'model':saved['model'],'message_id':saved['id'],'deduplicated':True}
+   db().append(user,body.conversation_id,'user',body.message,body.model)
+   if plan['action']=='image':
+    result=generate_local_image(plan['image_prompt'],body.conversation_id)
+    result.update(routing=public_plan(plan),requested_model=body.model)
+    result['message_id']=db().append(user,body.conversation_id,'assistant',result['response'],result['model'])
+-   if body.client_request_id:db().annotate_message(user,body.conversation_id,result['message_id'],{'client_request_id':body.client_request_id,'images':result.get('images',[])})
++   if body.client_request_id:db().annotate_message(user,body.conversation_id,result['message_id'],{'request_fingerprint':request_fingerprint(body),'client_request_id':body.client_request_id,'images':result.get('images',[])})
+    return result
+   # Retain complete exchanges only. Failed orphan requests remain in history,
+   # but cannot create consecutive user turns or an assistant-first prompt.
+@@ -201,7 +207,7 @@
+   result.update(type='text',routing=public_plan(plan))
+   if search_result:result=finalize(result,search_result,body.message,body.web_fallback)
+   result['message_id']=db().append(user,body.conversation_id,'assistant',result['response'],body.model)
+-  if body.client_request_id:db().annotate_message(user,body.conversation_id,result['message_id'],{'client_request_id':body.client_request_id})
++  if body.client_request_id:db().annotate_message(user,body.conversation_id,result['message_id'],{'request_fingerprint':request_fingerprint(body),'client_request_id':body.client_request_id})
+   return result
+  finally:send_lock.release()
+ 
+@@ -244,7 +250,7 @@
+ from datetime import datetime,timezone
+ import uuid
+ send_limits=defaultdict(deque)
+-SAFE_METRICS={'finish_reason','incomplete','streaming','streaming_status','max_new_tokens','tokens_per_second','retrieved_source_count','context_source_count','citation_validation','answer_origin','model_finish_reason','source_summary_fallback','model_output_incomplete','generated_tokens','input_tokens','generation_seconds','prefill_forward_seconds','tokens_per_second','context_limit','checkpoint','sha256','weights_sha256','source','output_limit_reached','latency_ms','provider_model','provider_request_id'}
++SAFE_METRICS={'finish_reason','incomplete','streaming','streaming_status','max_new_tokens','tokens_per_second','retrieved_source_count','context_source_count','citation_validation','answer_origin','model_finish_reason','source_summary_fallback','model_output_incomplete','generated_tokens','input_tokens','generation_seconds','prefill_forward_seconds','tokens_per_second','context_limit','checkpoint','sha256','weights_sha256','source','output_limit_reached','latency_ms','provider_model','provider_request_id','prompt_sha256','response_sha256','adapter_request_id','input_ids_sha256'}
+ @router.post('/local-chat/send')
+ def measured_send(body:Send,user=Depends(auth)):
+  request_id=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')+'-'+str(uuid.uuid4())
+@@ -259,10 +265,12 @@
+    if len(attempts)>=20:raise HTTPException(429,'Local Chat request limit reached; retry after one minute',headers={'Retry-After':'60'})
+    attempts.append(now)
+   result=send(body,user)
++  result['prompt_sha256']=request_fingerprint(body)
++  result['response_sha256']=hashlib.sha256(result['response'].encode()).hexdigest()
+   metadata={k:v for k,v in result.items() if k in SAFE_METRICS and isinstance(v,(str,int,float,bool,type(None)))}
+   metadata['inference_request_id']=result.get('request_id')
+   metadata['request_id']=request_id
+-  if body.client_request_id:metadata['client_request_id']=body.client_request_id
++  if body.client_request_id:metadata.update(client_request_id=body.client_request_id,request_fingerprint=request_fingerprint(body))
+   if result.get('incomplete'):status='incomplete'
+   if result.get('citation_errors'):metadata['citation_errors']=result['citation_errors']
+   metadata['routing']=result.get('routing')
+@@ -276,7 +284,7 @@
+  except Exception:
+   status='failure';category='internal_error';raise HTTPException(500,'Request failed; your saved history is preserved')
+  finally:
+-  db().record_request({'id':request_id,'user_id':user,'conversation_id':body.conversation_id,'model':(result or {}).get('model',body.model),'provider':'local_image' if (result or {}).get('type')=='image' else 'ollama' if body.model.startswith('ollama:') else 'openai' if body.model.startswith('openai:') else 'native','status':status,'error_category':category,'started_at':started_at,'latency_ms':round((time.monotonic()-started)*1000,2),'metadata':{k:v for k,v in (result or {}).items() if k in SAFE_METRICS and isinstance(v,(str,int,float,bool,type(None)))}})
++  db().record_request({'id':request_id,'user_id':user,'conversation_id':body.conversation_id,'model':(result or {}).get('model',body.model),'provider':'local_image' if (result or {}).get('type')=='image' else 'ollama' if body.model.startswith('ollama:') else 'openai' if body.model.startswith('openai:') else 'native','status':status,'error_category':category,'started_at':started_at,'latency_ms':round((time.monotonic()-started)*1000,2),'metadata':{'request_id':request_id,**{k:v for k,v in (result or {}).items() if k in SAFE_METRICS and isinstance(v,(str,int,float,bool,type(None)))}}})
+ 
+ @router.get('/local-chat/logs')
+ def logs(q:str=Query('',max_length=200),role:str='',model:str='',conversation_id:str='',after:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),start:str='',end:str='',user=Depends(auth)):

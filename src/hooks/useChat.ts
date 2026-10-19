@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -61,9 +61,21 @@ export const useChat = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentConversation, setCurrentConversation] = useState<string | null>(null);
+  const [currentConversation, setCurrentConversationState] = useState<string | null>(null);
+  // Async callbacks must check the active conversation, not a captured render.
+  const activeConversation = useRef<string | null>(null);
+  const historyEpoch = useRef(0);
+  const setCurrentConversation = useCallback((id: string | null) => {
+    if (activeConversation.current === id) return;
+    activeConversation.current = id;
+    historyEpoch.current += 1;
+    setMessages([]);
+    setIsLoadingMessages(id !== null);
+    setCurrentConversationState(id);
+  }, []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
 
   const getAccessToken = useCallback(async () => {
@@ -108,7 +120,9 @@ export const useChat = () => {
 
   const loadMessages = useCallback(
     async (conversationId: string) => {
-      if (!user) return;
+      if (!user || activeConversation.current !== conversationId) return;
+      const epoch = ++historyEpoch.current;
+      setIsLoadingMessages(true);
 
       try {
         const response = await fetch(
@@ -122,7 +136,13 @@ export const useChat = () => {
         if (!response.ok) throw new Error("Failed to load messages");
 
         const data = await response.json();
-        setMessages(data.messages || []);
+        if (activeConversation.current === conversationId && historyEpoch.current === epoch) {
+          setMessages((current) => {
+            const snapshot: ChatMessage[] = data.messages || [];
+            const ids = new Set(snapshot.map(message => message.id));
+            return [...snapshot, ...current.filter(message => !ids.has(message.id))];
+          });
+        }
       } catch (error) {
         console.error("Error loading messages:", error);
         toast({
@@ -130,6 +150,10 @@ export const useChat = () => {
           description: "Failed to load messages",
           variant: "destructive",
         });
+      } finally {
+        if (activeConversation.current === conversationId && historyEpoch.current === epoch) {
+          setIsLoadingMessages(false);
+        }
       }
     },
     [user, toast, getAuthHeaders],
@@ -258,8 +282,11 @@ export const useChat = () => {
         if (!response.ok) throw new Error("Failed to send message");
 
         const data = await response.json();
+        if (!data.message || data.message.conversation_id !== conversationId || data.message.role !== role) {
+          throw new Error("Saved message does not match the requested conversation and role");
+        }
 
-        if (conversationId === currentConversation) {
+        if (conversationId === activeConversation.current) {
           setMessages((prev) => prev.some(message => message.id === data.message.id) ? prev : [...prev, data.message]);
         }
 
@@ -452,7 +479,7 @@ export const useChat = () => {
 
         if (!response.ok) throw new Error("Failed to delete conversation");
 
-        if (currentConversation === conversationId) {
+        if (activeConversation.current === conversationId) {
           setCurrentConversation(null);
           setMessages([]);
         }
@@ -490,7 +517,7 @@ export const useChat = () => {
         },
         (payload) => {
           const newMessage = payload.new as ChatMessage;
-          if (newMessage.conversation_id === currentConversation) {
+          if (newMessage.conversation_id === activeConversation.current) {
             setMessages((prev) => {
               if (prev.some((m) => m.id === newMessage.id)) return prev;
               return [...prev, newMessage];
@@ -541,7 +568,7 @@ export const useChat = () => {
     currentConversation,
     setCurrentConversation,
     messages,
-    isLoading,
+    isLoading: isLoading || isLoadingMessages,
     isLoadingConversations,
     aiBackendMode: AI_BACKEND_MODE,
     createConversation,

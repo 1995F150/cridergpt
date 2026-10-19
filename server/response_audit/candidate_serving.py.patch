@@ -1,0 +1,52 @@
+--- /home/cridergpt2026/cridergpt-engine-verified/validation-tools/candidate_serving.py
++++ /home/cridergpt2026/cridergpt-engine-verified/validation-tools/candidate_serving.py
+@@ -1,7 +1,9 @@
+ """Offline serving adapter for release candidates; no fallback or network listener."""
+-import gc, hashlib, json, threading, time
++import gc, hashlib, json, threading, time, logging, uuid
+ from generation_policy import classify_finish,finish_metadata
+ from pathlib import Path
++
++logging.getLogger('cridergpt.request_audit').setLevel(logging.INFO)
+ 
+ class CandidateServing:
+     def __init__(self, reports):
+@@ -15,6 +17,20 @@
+         self.tokenizer=None
+ 
+     def generate(self, name, messages, max_new_tokens=64, *, persona=False, personalization_context=""):
++        request_id = uuid.uuid4().hex
++        prompt_hash = hashlib.sha256(json.dumps(messages, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
++        started = time.monotonic()
++        try:
++            result = self._generate(name, messages, max_new_tokens, persona=persona, personalization_context=personalization_context)
++        except Exception as error:
++            logging.getLogger('cridergpt.request_audit').warning(json.dumps({'event':'candidate_generation','request_id':request_id,'model':name,'checkpoint':self.registry.get(name,{}).get('output_checkpoint'),'weights_sha256':self.registry.get(name,{}).get('weights_sha256'),'prompt_sha256':prompt_hash,'error_type':type(error).__name__,'status':'failure'}))
++            raise
++        response_hash = hashlib.sha256(result['response'].encode()).hexdigest()
++        result.update(adapter_request_id=request_id, prompt_sha256=prompt_hash, response_sha256=response_hash)
++        logging.getLogger('cridergpt.request_audit').info(json.dumps({'event':'candidate_generation','request_id':request_id,'model':name,'checkpoint':result.get('checkpoint'),'weights_sha256':result.get('weights_sha256'),'prompt_sha256':prompt_hash,'input_ids_sha256':result.get('input_ids_sha256'),'response_sha256':response_hash,'finish_reason':result.get('finish_reason'),'input_tokens':result.get('input_tokens'),'output_tokens':result.get('generated_tokens'),'duration_ms':round((time.monotonic()-started)*1000),'status':'success'}))
++        return result
++
++    def _generate(self, name, messages, max_new_tokens=64, *, persona=False, personalization_context=""):
+         request_started=time.monotonic()
+         import torch
+         from transformers import AutoModelForCausalLM, AutoTokenizer
+@@ -55,7 +71,10 @@
+             def encode(items):
+                 if native:
+                     return self.tokenizer(serialize_messages(items,add_generation_prompt=True),return_tensors='pt',add_special_tokens=False)['input_ids']
+-                return self.tokenizer.apply_chat_template(items,tokenize=True,add_generation_prompt=True,return_tensors='pt')
++                encoded = self.tokenizer.apply_chat_template(items, tokenize=True, add_generation_prompt=True, return_tensors='pt', return_dict=True)
++                # Transformers versions differ in their default return type.
++                # Explicitly extract this request's token tensor; never reuse prior IDs.
++                return encoded['input_ids']
+             ids=encode(messages)
+             if not native and context>512:
+                 systems=[m for m in messages if m['role']=='system']
+@@ -107,4 +126,4 @@
+             source='native_nova' if native else ('smollm2_pretrained_baseline' if entry.get('upstream_baseline') else 'smollm2_finetune')
+             generated_tokens=output.shape[1]-ids.shape[1]
+             finish=classify_finish(output[0,ids.shape[1]:].tolist(),eos_ids,max_new_tokens,generation_seconds,deadline)
+-            return {**finish_metadata(finish),'max_new_tokens':max_new_tokens,'tokens_per_second':generated_tokens/generation_seconds,'response':text.strip(),'model':name,'checkpoint':entry['output_checkpoint'],'weights_sha256':entry['weights_sha256'],'generated_tokens':generated_tokens,'generation_seconds':generation_seconds,'tokens_per_second_including_prefill':generated_tokens/generation_seconds,'prefill_forward_seconds':timings['first_forward_seconds'],'end_to_end_adapter_seconds':time.monotonic()-request_started,'source':source,'system_persona_applied':persona,'history_trimmed':trimmed,'input_tokens':ids.shape[1],'context_limit':context}
++            return {'input_ids_sha256':hashlib.sha256(ids.detach().cpu().contiguous().numpy().tobytes()).hexdigest(),**finish_metadata(finish),'max_new_tokens':max_new_tokens,'tokens_per_second':generated_tokens/generation_seconds,'response':text.strip(),'model':name,'checkpoint':entry['output_checkpoint'],'weights_sha256':entry['weights_sha256'],'generated_tokens':generated_tokens,'generation_seconds':generation_seconds,'tokens_per_second_including_prefill':generated_tokens/generation_seconds,'prefill_forward_seconds':timings['first_forward_seconds'],'end_to_end_adapter_seconds':time.monotonic()-request_started,'source':source,'system_persona_applied':persona,'history_trimmed':trimmed,'input_tokens':ids.shape[1],'context_limit':context}

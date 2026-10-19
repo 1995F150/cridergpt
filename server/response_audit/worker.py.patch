@@ -1,0 +1,20 @@
+--- /home/cridergpt2026/cridergpt-engine-verified/native-chat-integration/worker.py
++++ /home/cridergpt2026/cridergpt-engine-verified/native-chat-integration/worker.py
+@@ -1,5 +1,5 @@
+ """Authenticated loopback-only native inference worker; no browser endpoints."""
+-import hmac,json,os,sys,time,uuid,logging
++import hashlib,hmac,json,os,sys,time,uuid,logging
+ from http.server import BaseHTTPRequestHandler,HTTPServer
+ from pathlib import Path
+ sys.path.insert(0,str(Path(__file__).resolve().parent));sys.path.insert(0,'/home/cridergpt2026/cridergpt-engine-verified')
+@@ -18,7 +18,9 @@
+    error_type=type(error).__name__;finish_reason='context_length_exceeded' if isinstance(error,ValueError) and 'context' in str(error).lower() else 'internal_inference_error';result={'error':'Selected native model could not generate a response. No fallback was used.'};code=422 if finish_reason=='context_length_exceeded' else 503
+    result.update(finish_reason=finish_reason,incomplete=True,streaming=False,streaming_status='not_enabled')
+   result['request_id']=request_id
+-  logging.warning(json.dumps({'event':'native_inference','request_id':request_id,'status':code,'model':result.get('model'),'weights_sha256':result.get('weights_sha256'),'input_tokens':result.get('input_tokens'),'generated_tokens':result.get('generated_tokens'),'duration_ms':round((time.monotonic()-started)*1000),'context_recovery':result.get('context_recovery'),'error_type':error_type,'finish_reason':result.get('finish_reason'),'tokens_per_second':result.get('tokens_per_second'),'streaming_status':'not_enabled'}))
++  result['prompt_sha256']=hashlib.sha256(json.dumps(body.get('messages',[]),sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
++  if isinstance(result.get('response'),str):result['response_sha256']=hashlib.sha256(result['response'].encode()).hexdigest()
++  logging.warning(json.dumps({'event':'native_inference','request_id':request_id,'status':code,'model':result.get('model',body.get('model')),'checkpoint':result.get('checkpoint'),'adapter_request_id':result.get('adapter_request_id'),'prompt_sha256':result['prompt_sha256'],'response_sha256':result.get('response_sha256'),'weights_sha256':result.get('weights_sha256'),'input_tokens':result.get('input_tokens'),'generated_tokens':result.get('generated_tokens'),'duration_ms':round((time.monotonic()-started)*1000),'context_recovery':result.get('context_recovery'),'error_type':error_type,'finish_reason':result.get('finish_reason'),'tokens_per_second':result.get('tokens_per_second'),'streaming_status':'not_enabled'}))
+   data=json.dumps(result).encode();self.send_response(code);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.end_headers()
+   try:self.wfile.write(data)
+   except (BrokenPipeError,ConnectionResetError):logging.warning(json.dumps({'event':'native_delivery','request_id':request_id,'finish_reason':'transport_interruption','inference_finish_reason':result.get('finish_reason')}))

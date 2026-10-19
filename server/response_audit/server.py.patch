@@ -1,0 +1,36 @@
+--- /home/cridergpt2026/cridergpt-chat-api/server.py
++++ /home/cridergpt2026/cridergpt-chat-api/server.py
+@@ -1,5 +1,5 @@
+ """Authenticated server-to-server chat API. No prompt/credential logging or fallback."""
+-import os,hmac,json,logging,socket,threading,time,uuid,urllib.request,urllib.error
++import hashlib,os,hmac,json,logging,socket,threading,time,uuid,urllib.request,urllib.error
+ from pathlib import Path
+ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
+ from engine_keys import validate_engine_key,EngineUnavailable
+@@ -9,6 +9,7 @@
+ ROOT=Path(os.environ.get('CRIDERGPT_API_ROOT',str(Path(__file__).resolve().parent)))
+ ENGINE=Path('/home/cridergpt2026/cridergpt-engine-verified')
+ REGISTRY=ROOT/'model-catalog.json'
++logging.getLogger('cridergpt.request_audit').setLevel(logging.INFO)
+ class API(ThreadingHTTPServer):
+  daemon_threads=True
+  def __init__(self,address,key,generate=None,image_generate=None,search=None,key_validator=None):
+@@ -43,6 +44,8 @@
+  server_version='CriderGPTAPI/1'
+  def log_message(self,*args):pass
+  def reply(self,status,body):
++  if self.path=='/v1/chat':
++   logging.getLogger('cridergpt.request_audit').info(json.dumps({'event':'api_chat','request_id':self.rid,'inference_request_id':body.get('inference_request_id'),'model':body.get('model',getattr(self,'requested_model',None)),'checkpoint_sha256':getattr(self,'checkpoint_sha256',None),'prompt_sha256':getattr(self,'prompt_sha256',None),'response_sha256':hashlib.sha256(body['response'].encode()).hexdigest() if isinstance(body.get('response'),str) else None,'status':status}))
+   data=json.dumps(body).encode();self.send_response(status)
+   for k,v in {'Content-Type':'application/json','Content-Length':str(len(data)),'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Request-ID':self.rid,'Connection':'close'}.items():self.send_header(k,v)
+   if status==429:self.send_header('Retry-After','60')
+@@ -134,6 +137,9 @@
+     if 'search_query' in body and (plan['action']!='web' or not isinstance(body['search_query'],str) or not 1<=len(body['search_query'].strip())<=300):raise ValueError()
+     if plan['action']=='web' and model!='andromeda-3.0-360m-100':return self.error(422,'web_model_unsupported','This message needs web search, which currently requires Andromeda 3.0. Select it or use routing text; selected model was not changed')
+    except (ValueError,KeyError,TypeError):return self.error(400,'invalid_request','Provide a model and either a message or user/assistant messages')
++   self.requested_model=model
++   self.checkpoint_sha256=models()[model]['sha256']
++   self.prompt_sha256=hashlib.sha256(json.dumps(messages,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
+    if plan['action']=='image':
+     if not self.server.images.generate:return self.error(503,'image_not_configured','Image generation is unavailable; no text reply was substituted')
+     with self.server.rate_lock:
