@@ -77,6 +77,15 @@ class DiagnosticsTests(unittest.TestCase):
         self.assertNotIn('private unique',str(logs.output))
         for row in logs.records:
             event=json.loads(row.getMessage());self.assertEqual(event['checkpoint'],'fixture-100');self.assertEqual(event['weights_sha256'],'fixture-sha')
+    def test_info_events_emit_without_root_logging_configuration(self):
+        import subprocess
+        code = "import sys;sys.path[:0]=" + repr(sys.path[:3]) + ";from candidate_serving import CandidateServing;CandidateServing._generate=lambda *a,**k:dict(response='private answer',checkpoint='fixture',weights_sha256='fixture');CandidateServing([]).generate('fixture',[dict(role='user',content='private input')])"
+        result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, check=True)
+        event = json.loads(result.stderr.strip())
+        self.assertEqual(event['event'], 'candidate_generation')
+        self.assertTrue(event['prompt_sha256'] and event['response_sha256'])
+        self.assertNotIn('private', result.stderr)
+
     def test_failure_is_content_free_and_raised(self):
         with patch.object(CandidateServing,'_generate',side_effect=RuntimeError('private secret')),self.assertLogs('cridergpt.request_audit') as logs:
             with self.assertRaises(RuntimeError):CandidateServing([]).generate('fixture',[dict(role='user',content='private question')])

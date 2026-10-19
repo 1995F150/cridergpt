@@ -26,7 +26,7 @@ new="""                encoded = self.tokenizer.apply_chat_template(items, token
                 return encoded['input_ids']"""
 assert old in s;s=s.replace(old,new,1)
 s=s.replace("return {**finish_metadata(finish),", "return {'input_ids_sha256':hashlib.sha256(ids.detach().cpu().contiguous().numpy().tobytes()).hexdigest(),**finish_metadata(finish),",1)
-s=s.replace('class CandidateServing:', "logging.getLogger('cridergpt.request_audit').setLevel(logging.INFO)\n\nclass CandidateServing:",1)
+s=s.replace('class CandidateServing:', "_audit_logger = logging.getLogger('cridergpt.request_audit')\n_audit_logger.setLevel(logging.INFO)\nif not _audit_logger.handlers:\n    _audit_logger.addHandler(logging.StreamHandler())\n_audit_logger.propagate = False\n\nclass CandidateServing:",1)
 stage=P/'stage';stage.mkdir(exist_ok=True);(stage/'candidate_serving.py').write_text(s)
 (P/'manifest.json').write_text(json.dumps({'target':str(SOURCE),'before':hashlib.sha256(before.encode()).hexdigest(),'after':hashlib.sha256(s.encode()).hexdigest()},indent=2))
 print('Runtime fix and content-free diagnostics staged; live files unchanged.')

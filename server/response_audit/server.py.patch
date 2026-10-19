@@ -7,15 +7,19 @@
  from pathlib import Path
  from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
  from engine_keys import validate_engine_key,EngineUnavailable
-@@ -9,6 +9,7 @@
+@@ -9,6 +9,11 @@
  ROOT=Path(os.environ.get('CRIDERGPT_API_ROOT',str(Path(__file__).resolve().parent)))
  ENGINE=Path('/home/cridergpt2026/cridergpt-engine-verified')
  REGISTRY=ROOT/'model-catalog.json'
-+logging.getLogger('cridergpt.request_audit').setLevel(logging.INFO)
++_audit_logger = logging.getLogger('cridergpt.request_audit')
++_audit_logger.setLevel(logging.INFO)
++if not _audit_logger.handlers:
++    _audit_logger.addHandler(logging.StreamHandler())
++_audit_logger.propagate = False
  class API(ThreadingHTTPServer):
   daemon_threads=True
   def __init__(self,address,key,generate=None,image_generate=None,search=None,key_validator=None):
-@@ -43,6 +44,8 @@
+@@ -43,6 +48,8 @@
   server_version='CriderGPTAPI/1'
   def log_message(self,*args):pass
   def reply(self,status,body):
@@ -24,7 +28,7 @@
    data=json.dumps(body).encode();self.send_response(status)
    for k,v in {'Content-Type':'application/json','Content-Length':str(len(data)),'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Request-ID':self.rid,'Connection':'close'}.items():self.send_header(k,v)
    if status==429:self.send_header('Retry-After','60')
-@@ -134,6 +137,9 @@
+@@ -134,6 +141,9 @@
      if 'search_query' in body and (plan['action']!='web' or not isinstance(body['search_query'],str) or not 1<=len(body['search_query'].strip())<=300):raise ValueError()
      if plan['action']=='web' and model!='andromeda-3.0-360m-100':return self.error(422,'web_model_unsupported','This message needs web search, which currently requires Andromeda 3.0. Select it or use routing text; selected model was not changed')
     except (ValueError,KeyError,TypeError):return self.error(400,'invalid_request','Provide a model and either a message or user/assistant messages')

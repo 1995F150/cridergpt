@@ -87,3 +87,11 @@ Publish the frontend through the project's normal reviewed GitHub/Lovable workfl
 For rollback, use the timestamped `backups/…/manifest.json` to map each numbered original file back to its exact `target`; restore its contents without changing permissions, then restart only the same three services. Revert the frontend commit through the normal workflow. Checkpoint rollback is unnecessary: no weights changed.
 
 After activation, send greeting, sky, math, and an unrelated coding question in a fresh chat, then switch models within that conversation and repeat. Confirm exact backend model IDs, distinct request IDs, correct saved conversation IDs after refresh, and complete hashes/checkpoint identifiers in restricted diagnostics. Retry an identical request ID/payload (one saved answer), then the same ID with changed prompt/model (409). If the phrase returns, capture request IDs and hashes plus the selected model from diagnostics; inspect original history only through authorized access. Do not replace that answer with a canned greeting.
+
+## Deployment update — 2026-10-19
+
+PR #13 was merged as `3b9265ba7f5abe492cf9656b1fd8a5a4bb2281ec`. The three user-owned adapter/worker/gateway files were installed with checksum checks and originals saved in `backups/user-deploy-20261019T180614Z`. Native worker and gateway services were restarted. Live synthetic greeting, sky and math requests completed with EOS and distinct IDs. Explicit dedicated log handlers were added after verification showed a bare named logger's INFO events were not reaching the gateway journal.
+
+The installer now recognizes exact already-installed hashes, so a later administrator invocation installs only the protected Engine file. That remaining retry-binding patch has not been installed: `sudo -n` requires a password. Production model weights remain unchanged.
+
+Lovable synchronized the merged frontend commit. Two supported publication attempts (existing project ID, then with its documented `cridergpt` slug) returned `INVALID_ARGUMENT`; the frontend's new production publication is unconfirmed. Use the existing project's Publish control to finish; do not create a replacement project or change domains.
