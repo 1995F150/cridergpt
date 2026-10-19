@@ -23,10 +23,11 @@ jobs:
       - name: Generate Xcode app project
         working-directory: ios_app
         run: xcodegen generate --spec project.yml
-      - name: Build unsigned simulator app
+      - name: Build and test unsigned simulator app
         working-directory: ios_app
-        run: >-
-          xcodebuild -project CriderGPT.xcodeproj -scheme CriderGPT
-          -configuration Debug -sdk iphonesimulator
-          -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+        run: |
+          simulator_id=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x.get("isAvailable") and x["name"].startswith("iPhone")))')
+          xcodebuild -project CriderGPT.xcodeproj -scheme CriderGPT \
+            -configuration Debug -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$simulator_id" \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO test

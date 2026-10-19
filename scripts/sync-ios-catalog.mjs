@@ -1,0 +1,11 @@
+import { buildSync } from 'esbuild';
+import { readFileSync, writeFileSync } from 'node:fs';
+const compiled = buildSync({entryPoints:['src/config/criderGPTModels.ts'],bundle:true,write:false,format:'esm',platform:'node'}).outputFiles[0].text;
+const { CRIDERGPT_MODELS } = await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'));
+writeFileSync('ios_app/CriderGPT/Resources/WebModels.json',JSON.stringify(CRIDERGPT_MODELS.map(({id,name,requiredPlan})=>({id,name,requiredPlan})),null,2)+'\n');
+const page = readFileSync('src/pages/Index.tsx','utf8');
+const section = page.match(/const VALID_PANELS = new Set<string>\(\[([\s\S]*?)\]\)/)[1];
+const excluded=new Set(['chat','calendar','livestock','livestockID','profile','payment','admin','3d-converter']);
+const destinations=[...section.matchAll(/'([^']+)'/g)].map(m=>m[1]).filter(id=>!excluded.has(id)).map(id=>({id,name:id.split('-').map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(' ')}));
+writeFileSync('ios_app/CriderGPT/Resources/WebDestinations.json',JSON.stringify(destinations,null,2)+'\n');
+console.log('Synced',CRIDERGPT_MODELS.length,'web models and',destinations.length,'website tool destinations.');

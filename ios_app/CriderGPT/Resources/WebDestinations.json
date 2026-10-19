@@ -1,0 +1,142 @@
+[
+  {
+    "id": "vision-memory",
+    "name": "Vision Memory"
+  },
+  {
+    "id": "calculators",
+    "name": "Calculators"
+  },
+  {
+    "id": "files",
+    "name": "Files"
+  },
+  {
+    "id": "gallery",
+    "name": "Gallery"
+  },
+  {
+    "id": "code",
+    "name": "Code"
+  },
+  {
+    "id": "maps",
+    "name": "Maps"
+  },
+  {
+    "id": "media",
+    "name": "Media"
+  },
+  {
+    "id": "projects",
+    "name": "Projects"
+  },
+  {
+    "id": "contact",
+    "name": "Contact"
+  },
+  {
+    "id": "updates",
+    "name": "Updates"
+  },
+  {
+    "id": "timeline",
+    "name": "Timeline"
+  },
+  {
+    "id": "memorial",
+    "name": "Memorial"
+  },
+  {
+    "id": "ffa",
+    "name": "Ffa"
+  },
+  {
+    "id": "ai-image",
+    "name": "Ai Image"
+  },
+  {
+    "id": "document-ai",
+    "name": "Document Ai"
+  },
+  {
+    "id": "plan",
+    "name": "Plan"
+  },
+  {
+    "id": "app-converter",
+    "name": "App Converter"
+  },
+  {
+    "id": "cloud-gaming",
+    "name": "Cloud Gaming"
+  },
+  {
+    "id": "studio",
+    "name": "Studio"
+  },
+  {
+    "id": "zip-to-exe",
+    "name": "Zip To Exe"
+  },
+  {
+    "id": "code-editor",
+    "name": "Code Editor"
+  },
+  {
+    "id": "guardian",
+    "name": "Guardian"
+  },
+  {
+    "id": "receipts",
+    "name": "Receipts"
+  },
+  {
+    "id": "agent-swarm",
+    "name": "Agent Swarm"
+  },
+  {
+    "id": "voice-studio",
+    "name": "Voice Studio"
+  },
+  {
+    "id": "shared-spending",
+    "name": "Shared Spending"
+  },
+  {
+    "id": "usb-hub",
+    "name": "Usb Hub"
+  },
+  {
+    "id": "rdr2-guide",
+    "name": "Rdr2 Guide"
+  },
+  {
+    "id": "sensors",
+    "name": "Sensors"
+  },
+  {
+    "id": "frequency",
+    "name": "Frequency"
+  },
+  {
+    "id": "textures",
+    "name": "Textures"
+  },
+  {
+    "id": "metadata",
+    "name": "Metadata"
+  },
+  {
+    "id": "music",
+    "name": "Music"
+  },
+  {
+    "id": "hatching",
+    "name": "Hatching"
+  },
+  {
+    "id": "pos",
+    "name": "Pos"
+  }
+]

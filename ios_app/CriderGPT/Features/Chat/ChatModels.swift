@@ -1,52 +1,73 @@
 import Foundation
 
-enum ChatRole: String, Codable {
-    case user
-    case assistant
-    case system
+enum ChatRole: String, Codable { case user, assistant, system }
+struct ChatSource: Codable, Equatable, Identifiable {
+    let id: Int
+    let title: String
+    let url: String
+    var safeURL: URL? {
+        guard let value = URL(string: url), value.scheme == "https" || value.scheme == "http", value.user == nil, value.password == nil else { return nil }
+        return value
+    }
 }
-
+struct ChatMetadata: Codable, Equatable {
+    var provider: String? = nil
+    var model: String? = nil
+    var requested_model: String? = nil
+    var source: String? = nil
+    var answer_origin: String? = nil
+    var incomplete: Bool? = nil
+    var finish_reason: String? = nil
+    var request_id: String? = nil
+    var sources: [ChatSource]? = nil
+}
 struct ChatMessage: Identifiable, Codable, Equatable {
     let id: UUID
     var role: ChatRole
     var content: String
-    var createdAt: Date
-
-    init(id: UUID = UUID(), role: ChatRole, content: String, createdAt: Date = Date()) {
-        self.id = id
-        self.role = role
-        self.content = content
-        self.createdAt = createdAt
+    var createdAt: Date = Date()
+    var metadata: ChatMetadata? = nil
+    var image_url: String? = nil
+    var created_at: String? = nil
+    init(id: UUID = UUID(), role: ChatRole, content: String, createdAt: Date = Date(), metadata: ChatMetadata? = nil) {
+        self.id = id; self.role = role; self.content = content; self.createdAt = createdAt; self.metadata = metadata
     }
+    enum CodingKeys: String, CodingKey { case id, role, content, metadata, image_url, created_at }
 }
-
-/// Request body for the `chat-with-ai` edge function.
-/// Mirrors the contract in supabase/functions/chat-with-ai/index.ts:
-/// `{ message, conversation_history?, model? }`.
+struct ChatConversation: Decodable, Identifiable {
+    let id: UUID
+    let title: String
+    let updated_at: String?
+}
+struct ChatModelOption: Decodable, Identifiable {
+    let id: String
+    let name: String
+    var requiredPlan: String? = nil
+}
 struct ChatRequest: Encodable {
     let message: String
     let conversation_history: [WireMessage]
     let model: String
-
-    struct WireMessage: Encodable {
-        let role: String
-        let content: String
-    }
+    struct WireMessage: Encodable { let role: String; let content: String }
 }
-
 struct ChatResponse: Decodable {
-    let response: String
+    let response: String?
+    let error: String?
+    let type: String?
+    let model: String?
+    let requested_model: String?
     let source: String?
-    let usage: Usage?
-
-    struct Usage: Decodable {
-        let used: Int?
-        let limit: Int?
-        let plan: String?
-        let remaining: Int?
+    let answer_origin: String?
+    let incomplete: Bool?
+    let finish_reason: String?
+    let sources: [ChatSource]?
+    let request_id: String?
+    let generated_tokens: Int?
+    let job_token: String?
+    let status: String?
+    let image_url: String?
+    var metadata: ChatMetadata {
+        ChatMetadata(provider: model == nil ? nil : "cridergpt_native", model: model, requested_model: requested_model, source: source, answer_origin: answer_origin, incomplete: incomplete, finish_reason: finish_reason, request_id: request_id, sources: sources)
     }
 }
-
-struct ChatErrorResponse: Decodable {
-    let error: String
-}
+struct ChatErrorResponse: Decodable { let error: String }

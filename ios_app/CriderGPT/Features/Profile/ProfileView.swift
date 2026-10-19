@@ -48,11 +48,12 @@ struct ProfileView: View {
                 Text("Subscriptions unavailable. Check your App Store connection.")
                     .font(.caption).foregroundStyle(Theme.textSecondary)
             } else {
+                if !IAPManager.purchasingEnabled { Text("Purchases are temporarily unavailable pending server verification testing.").font(.caption).foregroundStyle(Theme.warning) }
                 ForEach(iap.products, id: \.id) { product in
                     PlanRow(product: product,
                             owned: iap.purchasedProductIDs.contains(product.id)) {
                         Task { await iap.purchase(product) }
-                    }
+                    }.disabled(!IAPManager.purchasingEnabled)
                 }
             }
             Button("Restore Purchases") { Task { await iap.restore() } }

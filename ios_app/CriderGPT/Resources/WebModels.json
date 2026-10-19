@@ -1,0 +1,27 @@
+[
+  {
+    "id": "cridergpt-4.1",
+    "name": "CriderGPT 4.1",
+    "requiredPlan": "free"
+  },
+  {
+    "id": "cridergpt-5.0",
+    "name": "CriderGPT 5.0",
+    "requiredPlan": "free"
+  },
+  {
+    "id": "cridergpt-5.0-pro",
+    "name": "CriderGPT 5.0 Pro",
+    "requiredPlan": "plus"
+  },
+  {
+    "id": "cridergpt-5.0-vision",
+    "name": "CriderGPT 5.0 Vision",
+    "requiredPlan": "plus"
+  },
+  {
+    "id": "cridergpt-5.0-reasoning",
+    "name": "CriderGPT 5.0 Reasoning",
+    "requiredPlan": "pro"
+  }
+]

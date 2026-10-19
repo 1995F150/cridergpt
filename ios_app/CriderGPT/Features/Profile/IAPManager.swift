@@ -10,6 +10,8 @@ import StoreKit
 @MainActor
 final class IAPManager: ObservableObject {
     static let shared = IAPManager()
+    // Release gate: the existing backend verifier must be repaired and sandbox-tested.
+    static let purchasingEnabled = false
 
     static let productIDs: [String] = [
         "cridergpt_plus_monthly",
@@ -46,6 +48,10 @@ final class IAPManager: ObservableObject {
     }
 
     func purchase(_ product: Product) async {
+        guard Self.purchasingEnabled else {
+            lastError = "In-app purchasing is unavailable while server verification is being upgraded."
+            return
+        }
         do {
             let result = try await product.purchase()
             switch result {
@@ -72,7 +78,7 @@ final class IAPManager: ObservableObject {
     func refreshEntitlements() async {
         var owned: Set<String> = []
         for await result in Transaction.currentEntitlements {
-            if case .verified(let tx) = result { owned.insert(tx.productID) }
+            if case .verified(let tx) = result, Self.productIDs.contains(tx.productID), tx.revocationDate == nil, (tx.expirationDate ?? .distantPast) > Date(), !tx.isUpgraded { owned.insert(tx.productID) }
         }
         self.purchasedProductIDs = owned
     }
@@ -81,7 +87,8 @@ final class IAPManager: ObservableObject {
         switch transactionResult {
         case .verified(let tx):
             // Send the JWS receipt to verify-iap so the backend marks the user premium.
-            await reportToBackend(jws: transactionResult.jwsRepresentation)
+            guard Self.purchasingEnabled else { return }
+            guard await reportToBackend(jws: transactionResult.jwsRepresentation) else { return }
             await tx.finish()
             await refreshEntitlements()
         case .unverified:
@@ -91,16 +98,20 @@ final class IAPManager: ObservableObject {
 
     /// Forwards the StoreKit 2 JWS receipt to the verify-iap edge function.
     /// Backend contract: { platform: "apple", receipt: <jws-string> }
-    private func reportToBackend(jws: String) async {
+    private func reportToBackend(jws: String) async -> Bool {
         struct Body: Encodable { let platform: String; let receipt: String }
         do {
-            _ = try await SB.client.functions.invoke(
+            struct Acknowledgement: Decodable { let success: Bool }
+            let result: Acknowledgement = try await SB.client.functions.invoke(
                 "verify-iap",
                 options: .init(body: Body(platform: "apple", receipt: jws))
             )
+            guard result.success else { return false }
+            return true
         } catch {
             // Non-fatal: StoreKit still considers it owned; we just couldn't sync.
             self.lastError = "Couldn't sync to server. \(error.localizedDescription)"
+            return false
         }
     }
 

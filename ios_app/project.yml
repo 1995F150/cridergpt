@@ -35,11 +35,26 @@ targets:
         product: GoogleSignIn
       - package: GoogleSignIn
         product: GoogleSignInSwift
+  CriderGPTTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: app.cridergpt.ios.tests
+    dependencies:
+      - target: CriderGPT
 schemes:
   CriderGPT:
     build:
       targets:
         CriderGPT: all
+    test:
+      config: Debug
+      targets:
+        - CriderGPTTests
     run:
       config: Debug
     archive:

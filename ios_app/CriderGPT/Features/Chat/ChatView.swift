@@ -6,6 +6,7 @@ import SwiftUI
 /// - last 20 messages of context sent to chat-with-ai edge function
 struct ChatView: View {
     @StateObject private var vm = ChatViewModel()
+    @State private var showHistory = false
     @FocusState private var inputFocused: Bool
 
     var body: some View {
@@ -41,9 +42,21 @@ struct ChatView: View {
                     .padding(.bottom, 6)
             }
 
+            if vm.hasUnsavedReply {
+                Button("Retry saving reply") { Task { await vm.retrySave() } }.disabled(vm.isSending)
+            }
+            if let catalogError = vm.catalogError {
+                Text(catalogError).font(.caption).foregroundStyle(Theme.warning).padding(.horizontal)
+            }
+            HStack {
+                Text("Model").font(.caption).foregroundStyle(Theme.textSecondary)
+                Picker("Chat model", selection: $vm.model) {
+                    ForEach(vm.models) { option in Text(option.name).tag(option.id) }
+                }.disabled(vm.isSending || vm.hasUnsavedReply)
+            }
             Composer(
                 text: $vm.input,
-                isSending: vm.isSending,
+                isSending: vm.isSending || vm.hasUnsavedReply,
                 focused: $inputFocused,
                 onSend: { Task { await vm.send() } }
             )
@@ -55,20 +68,21 @@ struct ChatView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Picker("Model", selection: $vm.model) {
-                        Text("CriderGPT 4.1 (fast)").tag("cridergpt-4.1")
-                        Text("CriderGPT 5.0").tag("cridergpt-5.0")
-                        Text("CriderGPT 5.0 Pro").tag("cridergpt-5.0-pro")
-                        Text("CriderGPT 5.0 Reasoning").tag("cridergpt-5.0-reasoning")
-                    }
+                        ForEach(vm.models) { option in Text(option.name).tag(option.id) }
+                    }.disabled(vm.isSending)
+                    Button("Refresh models and history") { Task { await vm.refresh() } }
+                    Button("Conversations") { showHistory = true }
                     Divider()
-                    Button(role: .destructive) { vm.clear() } label: {
-                        Label("Clear conversation", systemImage: "trash")
+                    Button { vm.clear() } label: {
+                        Label("New conversation", systemImage: "plus")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
             }
         }
+        .task { await vm.refresh() }
+        .sheet(isPresented: $showHistory) { ConversationHistoryView(vm: vm) }
         .onAppear { inputFocused = true }
     }
 }
@@ -101,12 +115,34 @@ private struct MessageBubble: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 if message.role == .assistant {
-                    Text("CriderGPT")
+                    HStack {
+                        Image("ReplyLogo").resizable().scaledToFit().frame(width: 28, height: 28).colorInvert().accessibilityHidden(true)
+                        Text("CriderGPT")
+                    }
                         .font(.caption2)
                         .foregroundStyle(Theme.textSecondary)
                 }
                 renderedContent
                     .textSelection(.enabled)
+                if message.role == .assistant {
+                    if let model = message.metadata?.model {
+                        Text(model).font(.caption2).foregroundStyle(Theme.textSecondary)
+                    } else if let requested = message.metadata?.requested_model {
+                        Text("Requested: " + requested + " · actual model not recorded").font(.caption2)
+                    }
+                    if message.metadata?.incomplete == true {
+                        Text("Incomplete response · " + (message.metadata?.finish_reason ?? "unverified completion")).font(.caption).foregroundStyle(Theme.warning)
+                    }
+                    if message.metadata?.answer_origin == "deterministic_source_summary" {
+                        Text("Source summary fallback").font(.caption).foregroundStyle(Theme.textSecondary)
+                    }
+                    ForEach(message.metadata?.sources ?? []) { source in
+                        if let url = source.safeURL { Link("[\(source.id)] \(source.title)", destination: url).font(.caption) }
+                    }
+                    if let image = message.image_url { ChatReplyImage(value: image) }
+                    if let timestamp = message.created_at { Text(timestamp).font(.caption2).foregroundStyle(Theme.textMuted) }
+                    Button { UIPasteboard.general.string = message.content } label: { Label("Copy", systemImage: "doc.on.doc") }.font(.caption)
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -120,15 +156,8 @@ private struct MessageBubble: View {
 
     @ViewBuilder
     private var renderedContent: some View {
-        if message.role == .assistant,
-           let attributed = try? AttributedString(
-               markdown: message.content,
-               options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-           ) {
-            Text(attributed)
-        } else {
-            Text(message.content)
-        }
+        if message.role == .assistant { ChatResponseContent(content: message.content) }
+        else { Text(message.content) }
     }
 
     private var bubbleBackground: Color {
@@ -177,7 +206,7 @@ private struct Composer: View {
                 .onSubmit(onSend)
 
             Button(action: onSend) {
-                Image(systemName: isSending ? "stop.fill" : "arrow.up")
+                Image(systemName: isSending ? "hourglass" : "arrow.up")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
@@ -193,5 +222,38 @@ private struct Composer: View {
 
     private var canSend: Bool {
         !isSending && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
+
+private struct ConversationHistoryView: View {
+    @ObservedObject var vm: ChatViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var search = ""
+    @State private var editing: ChatConversation?
+    @State private var title = ""
+    @State private var deleting: ChatConversation?
+    var body: some View {
+        NavigationStack {
+            List(vm.conversations.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) }) { conversation in
+                Button(conversation.title) { Task { await vm.open(conversation.id); dismiss() } }
+                    .swipeActions {
+                        Button("Delete", role: .destructive) { deleting = conversation }
+                        Button("Rename") { editing = conversation; title = conversation.title }.tint(.blue)
+                    }
+            }
+            .searchable(text: $search)
+            .navigationTitle("Conversations")
+            .toolbar { Button("Done") { dismiss() } }
+            .refreshable { await vm.refresh() }
+            .alert("Rename conversation", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
+                TextField("Title", text: $title)
+                Button("Save") { if let id = editing?.id { Task { await vm.rename(id, title: title) } }; editing = nil }
+                Button("Cancel", role: .cancel) { editing = nil }
+            }
+            .confirmationDialog("Delete this conversation?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
+                Button("Delete", role: .destructive) { if let id = deleting?.id { Task { await vm.delete(id) } }; deleting = nil }
+            }
+        }
     }
 }
