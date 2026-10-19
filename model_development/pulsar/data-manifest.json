@@ -1,0 +1,28 @@
+{
+  "version": "pulsar-seed-v1",
+  "reviewed": false,
+  "training_ready": false,
+  "examples": 99,
+  "splits": {
+    "train": 82,
+    "validation": 17
+  },
+  "categories": [
+    "arithmetic",
+    "context",
+    "conversation",
+    "exact_format",
+    "json",
+    "knowledge",
+    "python",
+    "uncertainty"
+  ],
+  "private_logs_used": false,
+  "evaluation_rows_imported": false,
+  "license_note": "Project-authored synthetic examples; project owner must review before training or redistribution.",
+  "sha256": {
+    "train": "91ddb16561ac1a0ef7ec50b1fb4bf2439bd4bc4f80709402f9ac389651faec21",
+    "validation": "d5dd4e93716a1e32d0dba39871f380af69a59efbdea67efd14f4eaeefba9eaf6"
+  },
+  "eval_sha256": "0ebd06e31b418380017cee17795947a3b3c198521d0700144b28a0a3a3dc4b76"
+}

@@ -1,0 +1,11 @@
+[
+ {"id":"greeting","kind":"greeting","messages":[{"role":"user","content":"Hey there"}]},
+ {"id":"sky","kind":"contains","expected":"blue","messages":[{"role":"user","content":"What color is the sky on a clear day?"}]},
+ {"id":"math","kind":"exact","expected":"17","messages":[{"role":"user","content":"What is 8 + 9? Answer with only the number."}]},
+ {"id":"format","kind":"exact","expected":"TEAL\nCOPPER","messages":[{"role":"user","content":"Reply with exactly two lines: TEAL then COPPER."}]},
+ {"id":"json","kind":"json","expected":{"color":"blue"},"messages":[{"role":"user","content":"Return only JSON with one key color and value blue."}]},
+ {"id":"python","kind":"python_list","expected":["eggs","milk","butter"],"messages":[{"role":"user","content":"Write a Python list containing eggs, milk, and butter. Code only."}]},
+ {"id":"memory","kind":"contains","expected":"LIMA","messages":[{"role":"user","content":"My sticker says LIMA."},{"role":"assistant","content":"Your sticker says LIMA."},{"role":"user","content":"What does my sticker say?"}]},
+ {"id":"uncertainty","kind":"uncertainty","messages":[{"role":"user","content":"What is the birthday of CriderGPT's creator?"}]},
+ {"id":"stale_reply","kind":"contains","expected":"blue","messages":[{"role":"user","content":"Are you a monkey?"},{"role":"assistant","content":"No, I'm not a monkey."},{"role":"user","content":"What color is the sky on a clear day?"}]}
+]
