@@ -1,0 +1,11 @@
+{
+  "response": "Image analyzed with SmolVLM-256M (experimental helper).\n\nThe visible logo is a stylized \"C\" with a \"R\" in the middle.",
+  "model": "andromeda-3.0-360m-100",
+  "vision_assisted": true,
+  "vision_helper": "HuggingFaceTB/SmolVLM-256M-Instruct",
+  "vision_revision": "7e3e67edbbed1bf9888184d9df282b700a323964",
+  "vision_latency_ms": 8317,
+  "finish_reason": "eos",
+  "incomplete": false,
+  "end_to_end_seconds": 17.55
+}

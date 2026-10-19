@@ -1,0 +1,233 @@
+{
+  "checked_at": "2026-10-19T18:54:51.327881+00:00",
+  "queries": [
+    {
+      "transport": "udp",
+      "host": "cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "18.204.152.241"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "tcp",
+      "host": "cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "104.21.1.210",
+        "172.67.129.238"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "https",
+      "host": "cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "104.21.1.210",
+        "172.67.129.238"
+      ],
+      "dns_status": 0
+    },
+    {
+      "transport": "udp",
+      "host": "cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "::"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "tcp",
+      "host": "cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "2606:4700:3032::ac43:81ee",
+        "2606:4700:3036::6815:1d2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "https",
+      "host": "cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "2606:4700:3032::ac43:81ee",
+        "2606:4700:3036::6815:1d2"
+      ],
+      "dns_status": 0
+    },
+    {
+      "transport": "udp",
+      "host": "www.cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "18.204.152.241"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "tcp",
+      "host": "www.cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "104.21.1.210",
+        "172.67.129.238"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "https",
+      "host": "www.cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "104.21.1.210",
+        "172.67.129.238"
+      ],
+      "dns_status": 0
+    },
+    {
+      "transport": "udp",
+      "host": "www.cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "::"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "tcp",
+      "host": "www.cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "2606:4700:3032::ac43:81ee",
+        "2606:4700:3036::6815:1d2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "https",
+      "host": "www.cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "2606:4700:3032::ac43:81ee",
+        "2606:4700:3036::6815:1d2"
+      ],
+      "dns_status": 0
+    },
+    {
+      "transport": "udp",
+      "host": "api.cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "18.204.152.241"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "tcp",
+      "host": "api.cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "104.21.1.210",
+        "172.67.129.238"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "https",
+      "host": "api.cridergpt.com",
+      "type": "A",
+      "addresses": [
+        "104.21.1.210",
+        "172.67.129.238"
+      ],
+      "dns_status": 0
+    },
+    {
+      "transport": "udp",
+      "host": "api.cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "::"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "tcp",
+      "host": "api.cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "2606:4700:3032::ac43:81ee",
+        "2606:4700:3036::6815:1d2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "transport": "https",
+      "host": "api.cridergpt.com",
+      "type": "AAAA",
+      "addresses": [
+        "2606:4700:3032::ac43:81ee",
+        "2606:4700:3036::6815:1d2"
+      ],
+      "dns_status": 0
+    }
+  ],
+  "findings": [
+    {
+      "host": "cridergpt.com",
+      "type": "A",
+      "finding": "UDP DNS differs from encrypted DNS",
+      "tcp_agrees_with_https": true
+    },
+    {
+      "host": "cridergpt.com",
+      "type": "AAAA",
+      "finding": "UDP DNS differs from encrypted DNS",
+      "tcp_agrees_with_https": true
+    },
+    {
+      "host": "cridergpt.com",
+      "type": "AAAA",
+      "finding": "Unusable unspecified IPv6 address returned"
+    },
+    {
+      "host": "www.cridergpt.com",
+      "type": "A",
+      "finding": "UDP DNS differs from encrypted DNS",
+      "tcp_agrees_with_https": true
+    },
+    {
+      "host": "www.cridergpt.com",
+      "type": "AAAA",
+      "finding": "UDP DNS differs from encrypted DNS",
+      "tcp_agrees_with_https": true
+    },
+    {
+      "host": "www.cridergpt.com",
+      "type": "AAAA",
+      "finding": "Unusable unspecified IPv6 address returned"
+    },
+    {
+      "host": "api.cridergpt.com",
+      "type": "A",
+      "finding": "UDP DNS differs from encrypted DNS",
+      "tcp_agrees_with_https": true
+    },
+    {
+      "host": "api.cridergpt.com",
+      "type": "AAAA",
+      "finding": "UDP DNS differs from encrypted DNS",
+      "tcp_agrees_with_https": true
+    },
+    {
+      "host": "api.cridergpt.com",
+      "type": "AAAA",
+      "finding": "Unusable unspecified IPv6 address returned"
+    }
+  ],
+  "read_only": true
+}
