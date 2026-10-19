@@ -14,3 +14,6 @@ Package.resolved
 
 ## macOS
 .DS_Store
+
+# Generated from project.yml; regenerate in macOS CI.
+CriderGPT.xcodeproj/

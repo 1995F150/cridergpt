@@ -1,0 +1,28 @@
+name: iOS simulator build check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ios-build-check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate registered identifiers
+        run: python3 ios_app/scripts/validate_config.py
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Generate Xcode app project
+        working-directory: ios_app
+        run: xcodegen generate --spec project.yml
+      - name: Build unsigned simulator app
+        working-directory: ios_app
+        run: >-
+          xcodebuild -project CriderGPT.xcodeproj -scheme CriderGPT
+          -configuration Debug -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
