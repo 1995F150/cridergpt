@@ -48,7 +48,7 @@ s=s.replace("   if plan['action']=='image':", """   self.requested_model=model
    self.checkpoint_sha256=models()[model]['sha256']
    self.prompt_sha256=hashlib.sha256(json.dumps(messages,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
    if plan['action']=='image':""",1)
-s=s.replace("REGISTRY=ROOT/'model-catalog.json'", "REGISTRY=ROOT/'model-catalog.json'\nlogging.getLogger('cridergpt.request_audit').setLevel(logging.INFO)",1)
+s=s.replace("REGISTRY=ROOT/'model-catalog.json'", "REGISTRY=ROOT/'model-catalog.json'\n_audit_logger = logging.getLogger('cridergpt.request_audit')\n_audit_logger.setLevel(logging.INFO)\nif not _audit_logger.handlers:\n    _audit_logger.addHandler(logging.StreamHandler())\n_audit_logger.propagate = False",1)
 save(source,original,s,'server.py')
 (P/'edges-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Three boundary patches staged; no live files changed.')

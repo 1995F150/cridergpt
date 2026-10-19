@@ -1,17 +1,21 @@
 --- /home/cridergpt2026/cridergpt-engine-verified/validation-tools/candidate_serving.py
 +++ /home/cridergpt2026/cridergpt-engine-verified/validation-tools/candidate_serving.py
-@@ -1,7 +1,9 @@
+@@ -1,7 +1,13 @@
  """Offline serving adapter for release candidates; no fallback or network listener."""
 -import gc, hashlib, json, threading, time
 +import gc, hashlib, json, threading, time, logging, uuid
  from generation_policy import classify_finish,finish_metadata
  from pathlib import Path
 +
-+logging.getLogger('cridergpt.request_audit').setLevel(logging.INFO)
++_audit_logger = logging.getLogger('cridergpt.request_audit')
++_audit_logger.setLevel(logging.INFO)
++if not _audit_logger.handlers:
++    _audit_logger.addHandler(logging.StreamHandler())
++_audit_logger.propagate = False
  
  class CandidateServing:
      def __init__(self, reports):
-@@ -15,6 +17,20 @@
+@@ -15,6 +21,20 @@
          self.tokenizer=None
  
      def generate(self, name, messages, max_new_tokens=64, *, persona=False, personalization_context=""):
@@ -32,7 +36,7 @@
          request_started=time.monotonic()
          import torch
          from transformers import AutoModelForCausalLM, AutoTokenizer
-@@ -55,7 +71,10 @@
+@@ -55,7 +75,10 @@
              def encode(items):
                  if native:
                      return self.tokenizer(serialize_messages(items,add_generation_prompt=True),return_tensors='pt',add_special_tokens=False)['input_ids']
@@ -44,7 +48,7 @@
              ids=encode(messages)
              if not native and context>512:
                  systems=[m for m in messages if m['role']=='system']
-@@ -107,4 +126,4 @@
+@@ -107,4 +130,4 @@
              source='native_nova' if native else ('smollm2_pretrained_baseline' if entry.get('upstream_baseline') else 'smollm2_finetune')
              generated_tokens=output.shape[1]-ids.shape[1]
              finish=classify_finish(output[0,ids.shape[1]:].tolist(),eos_ids,max_new_tokens,generation_seconds,deadline)
