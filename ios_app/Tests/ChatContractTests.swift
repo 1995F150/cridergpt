@@ -29,6 +29,13 @@ final class ChatContractTests: XCTestCase {
         XCTAssertNil(response.metadata.model)
         XCTAssertEqual(response.metadata.requested_model, "native:nebula-2.5-1000")
     }
+    func testContextKeepsMixedModelsAndSkipsIncompletePairs() {
+        let first = ChatMessage(role: .user, content: "First")
+        let reply = ChatMessage(role: .assistant, content: "Reply", metadata: ChatMetadata(model: "model-A"))
+        let second = ChatMessage(role: .user, content: "Second")
+        let failed = ChatMessage(role: .assistant, content: "Partial", metadata: ChatMetadata(model: "model-B", incomplete: true))
+        XCTAssertEqual(ChatContext.turns([first, reply, second, failed]), [first, reply])
+    }
     func testPaymentsRemainGatedUntilServerVerificationIsReady() async {
         let enabled = await IAPManager.purchasingEnabled
         XCTAssertFalse(enabled)

@@ -20,6 +20,7 @@ struct ChatMetadata: Codable, Equatable {
     var finish_reason: String? = nil
     var request_id: String? = nil
     var sources: [ChatSource]? = nil
+    var generated_tokens: Int? = nil
 }
 struct ChatMessage: Identifiable, Codable, Equatable {
     let id: UUID
@@ -67,7 +68,20 @@ struct ChatResponse: Decodable {
     let status: String?
     let image_url: String?
     var metadata: ChatMetadata {
-        ChatMetadata(provider: model == nil ? nil : "cridergpt_native", model: model, requested_model: requested_model, source: source, answer_origin: answer_origin, incomplete: incomplete, finish_reason: finish_reason, request_id: request_id, sources: sources)
+        ChatMetadata(provider: model == nil ? nil : "cridergpt_native", model: model, requested_model: requested_model, source: source, answer_origin: answer_origin, incomplete: incomplete, finish_reason: finish_reason, request_id: request_id, sources: sources, generated_tokens: generated_tokens)
     }
 }
 struct ChatErrorResponse: Decodable { let error: String }
+
+
+enum ChatContext {
+    static func turns(_ messages: [ChatMessage]) -> [ChatMessage] {
+        var pairs: [[ChatMessage]] = []
+        for (first, second) in zip(messages, messages.dropFirst()) {
+            if first.role == .user && second.role == .assistant && second.metadata?.incomplete != true && second.metadata?.answer_origin != "pipeline_error" && second.metadata?.answer_origin != "image_model" && second.image_url == nil {
+                pairs.append([first, second])
+            }
+        }
+        return pairs.suffix(10).flatMap { $0 }
+    }
+}

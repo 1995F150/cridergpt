@@ -78,7 +78,7 @@ final class ChatViewModel: ObservableObject {
                 conversations.insert(created.conversation, at: 0)
             }
             guard let conversation = currentConversation else { return }
-            let history = messages.suffix(20).filter { $0.metadata?.incomplete != true && $0.metadata?.answer_origin != "pipeline_error" && $0.image_url == nil }.map { ["role": $0.role.rawValue, "content": $0.content] }
+            let history = ChatContext.turns(messages).map { ["role": $0.role.rawValue, "content": $0.content] }
             let user = try await ChatService.save(conversation, role: "user", text: trimmed, clientID: UUID())
             messages.append(user); input = ""
             var result: ChatResponse = try await ChatService.request("chat-with-ai", body: ["message": trimmed, "model": selected, "conversation_history": history])
@@ -96,7 +96,8 @@ final class ChatViewModel: ObservableObject {
             guard let text = result.response, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw NSError(domain: "CriderGPT", code: 1, userInfo: [NSLocalizedDescriptionKey: "No completed reply was received."]) }
             if selected.hasPrefix("native:"), result.type != "image", result.model != String(selected.dropFirst(7)) { throw NSError(domain: "CriderGPT", code: 1, userInfo: [NSLocalizedDescriptionKey: "Model identity mismatch. No response substituted."]) }
             var metadata = result.metadata
-            if metadata.model == nil { metadata.requested_model = selected }
+            metadata.provider = selected.hasPrefix("native:") ? "cridergpt_native" : nil
+            if metadata.requested_model == nil { metadata.requested_model = selected }
             let replyID = UUID()
             pendingReply = (conversation, text, replyID, metadata, result.image_url)
             do {
