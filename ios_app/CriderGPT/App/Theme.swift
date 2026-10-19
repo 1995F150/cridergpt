@@ -7,6 +7,7 @@ enum Theme {
     static let background  = Color(hex: 0x0B0F14)
     static let surface     = Color(hex: 0x121821)
     static let surfaceAlt  = Color(hex: 0x1A2230)
+    static let surfaceElevated = surfaceAlt
     static let border      = Color(hex: 0x243042)
 
     // Text

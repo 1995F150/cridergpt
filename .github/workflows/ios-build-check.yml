@@ -1,5 +1,9 @@
 name: iOS simulator build check
 on:
+  pull_request:
+    paths:
+      - 'ios_app/**'
+      - '.github/workflows/ios-build-check.yml'
   workflow_dispatch:
 permissions:
   contents: read
