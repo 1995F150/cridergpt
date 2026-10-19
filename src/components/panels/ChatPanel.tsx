@@ -1,3 +1,4 @@
+import './public-chat.css';
 import { nativeMessageMetadata } from '@/utils/nativeChat';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -636,7 +637,7 @@ Make it detailed and actionable.`;
   );
 
   return (
-    <div className="h-full flex">
+    <div className="public-chat-workspace dark h-full min-h-0 flex">
       {/* Desktop Sidebar */}
       {!isMobile && (
         <div
@@ -664,15 +665,17 @@ Make it detailed and actionable.`;
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background">
+      <div className="public-chat-main flex-1 flex flex-col min-h-0 min-w-0 bg-background">
         {/* Header */}
-        <div className="flex items-center justify-between px-2 md:px-4 py-2 md:py-3 border-b border-border bg-card">
+        <div className="public-chat-header flex items-center justify-between px-3 md:px-6 py-3 border-b border-border bg-card">
           <div className="flex items-center gap-2 md:gap-3">
             {/* Desktop sidebar toggle */}
             {!isMobile && (
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={sidebarOpen ? "Hide conversations" : "Show conversations"}
+                aria-expanded={sidebarOpen}
                 onClick={() => setSidebarOpen(!sidebarOpen)}
               >
                 {sidebarOpen ? (
@@ -688,6 +691,7 @@ Make it detailed and actionable.`;
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Open conversations"
                 onClick={() => setMobileSidebarOpen(true)}
               >
                 <History className="h-5 w-5" />
@@ -700,7 +704,7 @@ Make it detailed and actionable.`;
                 alt="CriderGPT" 
                 className="h-5 w-5 md:h-6 md:w-6 object-contain"
               />
-              <h1 className="font-semibold text-base md:text-lg">CriderGPT</h1>
+              <div><h1 className="font-semibold text-base md:text-lg">CriderGPT</h1><p className="public-chat-eyebrow">AI CHAT</p></div>
               {!user && (
                 <Badge variant="outline" className="text-xs hidden sm:flex">
                   Demo Mode
@@ -725,10 +729,7 @@ Make it detailed and actionable.`;
                 <span className="hidden sm:inline">AGI</span>
               </Button>
             )}
-            <ModelSelector
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
-            />
+
           </div>
         </div>
 
@@ -758,7 +759,7 @@ Make it detailed and actionable.`;
         )}
 
         {/* Messages Area */}
-        <ScrollArea ref={scrollRef} className="flex-1 p-2 md:p-4">
+        <ScrollArea ref={scrollRef} className="public-chat-scroll flex-1 min-h-0 p-2 md:p-4">
           {messages.length === 0 && !currentConversation ? (
             !user ? (
               <GuestWelcomeHero 
@@ -808,7 +809,7 @@ Make it detailed and actionable.`;
               </div>
             )
           ) : (
-            <div className="space-y-1">
+            <div className="public-chat-transcript mx-auto w-full max-w-4xl space-y-3">
               {messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -871,18 +872,12 @@ Make it detailed and actionable.`;
 
         {/* Input Area */}
         <ChatInput
+          footer={<div className="public-chat-composer-footer"><span>Enter to send · Shift + Enter for a new line</span><ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} disabled={isLoading} localStyle /></div>}
           onSend={handleSendMessage}
           isLoading={isLoading}
-          placeholder={
-            user
-              ? isMobile 
-                ? "Ask anything..." 
-                : "Ask anything about farming, mechanics, or generate images..."
-              : isMobile
-                ? "Try the demo..."
-                : "Try the demo: Ask about farming or welding..."
-          }
+          placeholder={user ? "Message CriderGPT…" : "Try CriderGPT…"}
         />
+        <p className="public-chat-disclaimer">AI can make mistakes. Check important information.</p>
       </div>
 
       {/* Gallery Modal */}

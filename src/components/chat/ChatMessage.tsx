@@ -120,12 +120,12 @@ export function ChatMessage({
   return (
     <div
       className={cn(
-        "flex gap-3 py-4 px-4",
-        isUser ? "flex-row-reverse" : "flex-row"
+        "public-chat-message flex min-w-0 gap-3 py-4 px-2 md:px-4",
+        isUser ? "public-chat-user flex-row-reverse" : "public-chat-assistant flex-row"
       )}
     >
       {/* Avatar */}
-      <Avatar className="h-8 w-8 shrink-0">
+      <Avatar className="public-chat-avatar h-8 w-8 shrink-0">
         {isUser ? (
           <>
             <AvatarImage src={userAvatar} />
@@ -135,6 +135,7 @@ export function ChatMessage({
           </>
         ) : (
           <>
+            <AvatarImage src="/cridergpt-logo-mono.png" alt="CriderGPT" className="assistant-reply-logo object-contain" />
             <AvatarFallback className="bg-accent text-accent-foreground text-xs font-bold">
               C
             </AvatarFallback>
@@ -145,7 +146,7 @@ export function ChatMessage({
       {/* Message Content */}
       <div
         className={cn(
-          "flex flex-col max-w-[80%] space-y-2",
+          "public-chat-message-body flex min-w-0 flex-col max-w-[88%] space-y-2",
           isUser ? "items-end" : "items-start"
         )}
       >
@@ -203,7 +204,7 @@ export function ChatMessage({
         {/* Text Content */}
         <div
           className={cn(
-            "rounded-2xl px-4 py-3",
+            "public-chat-message-content min-w-0 max-w-full rounded-2xl px-4 py-3",
             isUser
               ? "bg-primary text-primary-foreground rounded-tr-sm"
               : "bg-muted rounded-tl-sm"
