@@ -1,3 +1,4 @@
+import { prepareNativeImage } from '@/utils/nativeImage';
 import './public-chat.css';
 import { nativeMessageMetadata } from '@/utils/nativeChat';
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -193,7 +194,8 @@ export default function ChatPanel() {
         setCurrentConversation(convId);
       }
 
-      if (selectedModel.startsWith('native:') && files?.length) throw new Error('Native checkpoints currently support text prompts, not uploaded-image recognition.');
+      if (selectedModel.startsWith('native:') && files?.length && (files.length !== 1 || files[0].type !== 'image')) throw new Error('Native vision assistance supports one image at a time.');
+      let nativeImageData: string | undefined;
       // Handle file uploads - support ALL file types
       let imageUrl: string | undefined;
       let fileAttachments: string[] = [];
@@ -201,6 +203,9 @@ export default function ChatPanel() {
       if (files?.length) {
         for (const filePreview of files) {
           if (filePreview.type === "image") {
+            if (selectedModel.startsWith('native:')) {
+              nativeImageData = await prepareNativeImage(filePreview.file);
+            }
             const url = await uploadImage(filePreview.file);
             if (url) imageUrl = url;
           } else {
@@ -211,15 +216,18 @@ export default function ChatPanel() {
         }
       }
 
+      // Image-only messages still need an explicit question for the text checkpoint.
+      const nativePrompt = message.trim() || (nativeImageData ? 'Describe this image.' : message);
+      if (nativeImageData && nativePrompt.length > 500) throw new Error('Use an image question of at most 500 characters.');
       // Send user message
-      const storedUserMessage = await sendMessage(convId, message, "user", undefined, imageUrl);
+      const storedUserMessage = await sendMessage(convId, selectedModel.startsWith('native:') ? nativePrompt : message, "user", undefined, imageUrl);
 
       // Exact native route bypasses owner-keyword, PDF, AGI and cloud shortcuts.
       if (selectedModel.startsWith('native:')) {
         if (!storedUserMessage) throw new Error('The user message could not be saved. Please check your connection.');
         setIsStreaming(true); setStreamingMessage('Waiting for your native model…');
         try {
-          const result = await generateSmartResponse(message, selectedModel, 'chat', undefined, undefined,
+          const result = await generateSmartResponse(nativePrompt, selectedModel, 'chat', nativeImageData, undefined,
             messages.filter(m => m.metadata?.answer_origin !== 'pipeline_error').map(m => ({ role: m.role, content: m.content })));
           const saved = await sendMessage(convId, result.response, 'assistant', result.generated_tokens, result.imageUrl, nativeMessageMetadata(result));
           if (!saved) throw new Error('The reply was generated but could not be saved. Refresh history before retrying.');

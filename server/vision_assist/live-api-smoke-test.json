@@ -1,0 +1,12 @@
+{
+  "model": "andromeda-3.0-360m-100",
+  "response": "Image analyzed with SmolVLM-256M (experimental helper).\n\nThis logo appears to be a stylized representation of the CriderGPT logo, which is a stylized version of the CriderGPT name.",
+  "vision_assisted": true,
+  "vision_helper": "HuggingFaceTB/SmolVLM-256M-Instruct",
+  "vision_revision": "7e3e67edbbed1bf9888184d9df282b700a323964",
+  "finish_reason": "eos",
+  "incomplete": false,
+  "vision_latency_ms": 9394,
+  "request_id": "06c01b6b-ce59-46f9-b8c0-fcb39b4691b9",
+  "elapsed_seconds": 19.75
+}

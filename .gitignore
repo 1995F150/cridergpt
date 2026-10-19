@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 .env
+server/vision_assist/stage/
+server/vision_assist/manifest.json
+server/vision_assist/__pycache__/
+server/vision_assist/local-manifest.json
+server/vision_assist/deployment-backups/
+scripts/network/__pycache__/

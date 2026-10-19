@@ -1,0 +1,26 @@
+[Unit]
+Description=CriderGPT private CPU vision helper
+[Service]
+WorkingDirectory=/home/cridergpt2026/cridergpt-vision-assist/code
+ExecStart=/usr/bin/python3 /home/cridergpt2026/cridergpt-vision-assist/code/service.py
+RuntimeDirectory=cridergpt-vision-assist
+RuntimeDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+InaccessiblePaths=-/dev/dri -/dev/nvidia0 -/dev/nvidiactl -/dev/nvidia-uvm
+Environment=CUDA_VISIBLE_DEVICES=-1
+RestrictAddressFamilies=AF_UNIX
+ReadWritePaths=%t/cridergpt-vision-assist
+MemoryMax=2300M
+MemorySwapMax=0
+CPUQuota=150%
+TasksMax=64
+Nice=10
+KillMode=control-group
+[Install]
+WantedBy=default.target

@@ -3,7 +3,7 @@ export class NativeAPIError extends Error {
   constructor(message: string, public status = 502) { super(message); }
 }
 export type NativeConfig = { base: string; key: string };
-export type NativeModel = { id: string; name: string; type: string; experimental: boolean; web_search_supported?: boolean };
+export type NativeModel = { id: string; name: string; type: string; experimental: boolean; web_search_supported?: boolean; vision_assist_supported?: boolean };
 export function nativeConfig(base: string, key: string): NativeConfig {
   const url = new URL(base);
   if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || !key) {
@@ -43,7 +43,7 @@ export async function nativeModels(config: NativeConfig, fetcher: typeof fetch =
   if (!Array.isArray(data.models)) throw new NativeAPIError('Native model catalog is invalid.');
   return data.models.filter((model: any) => model?.type === 'text' && model.available !== false &&
     typeof model.id === 'string' && /^[\w.-]{1,160}$/.test(model.id) && typeof model.name === 'string')
-    .map((model: any) => ({ id: model.id, name: model.name.slice(0, 160), type: 'text', experimental: model.experimental !== false, web_search_supported: model.web_search_supported === true }));
+    .map((model: any) => ({ id: model.id, name: model.name.slice(0, 160), type: 'text', experimental: model.experimental !== false, web_search_supported: model.web_search_supported === true, vision_assist_supported: model.vision_assist_supported === true }));
 }
 export function nativeMessages(message: unknown, history: unknown = []) {
   if (typeof message !== 'string' || !message.trim() || message.length > 6000) throw new NativeAPIError('Native messages must contain 1–6000 characters.', 400);
@@ -82,15 +82,24 @@ export async function startNativeChat(config: NativeConfig, userId: string, body
   const id = String(body.model || '').replace(/^native:/, '');
   const models = await nativeModels(config, fetcher);
   if (!models.some(model => model.id === id)) throw new NativeAPIError('Selected native checkpoint is unavailable; no fallback was used.', 422);
-  if (body.imageData || body.image_url || body.image_base64 || body.mode === 'image_recognize') throw new NativeAPIError('These native text checkpoints do not support image recognition.', 422);
-  const { status, data } = await nativeRequest(config, '/v1/chat', { model: id, messages: nativeMessages(body.message, body.conversation_history), routing: body.mode === 'image_generate' ? 'image' : 'auto', web_fallback: 'source_summary' }, fetcher);
+  if (body.imageData !== undefined && body.image_base64 !== undefined) throw new NativeAPIError('Provide one image field.', 400);
+  const image = body.imageData ?? body.image_base64;
+  const hasImage = image !== undefined && image !== null;
+  const message = hasImage && (body.message === undefined || (typeof body.message === 'string' && !body.message.trim())) ? 'Describe this image.' : body.message;
+  if (body.image_url) throw new NativeAPIError('Upload image bytes; remote image URLs are not fetched by the local helper.', 422);
+  if (hasImage || body.mode === 'image_recognize') {
+    if (!models.find(model => model.id === id)?.vision_assist_supported) throw new NativeAPIError('Local vision assistance is not enabled on this server.', 503);
+    if (typeof image !== 'string' || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(image) || image.length > 4194404) throw new NativeAPIError('Upload one PNG, JPEG or WebP image, at most 3 MiB.', 400);
+    if (typeof message !== 'string' || message.length > 500) throw new NativeAPIError('Use an image question of at most 500 characters.', 400);
+  }
+  const { status, data } = await nativeRequest(config, '/v1/chat', { model: id, messages: nativeMessages(message, body.conversation_history), ...(image ? {image_base64:image} : {}), routing: image ? 'text' : body.mode === 'image_generate' ? 'image' : 'auto', web_fallback: 'source_summary' }, fetcher);
   if (status === 202) {
     if (data.type !== 'image_job' || data.model !== 'stable-diffusion-1.5') throw new NativeAPIError('Unexpected native job response.');
     return { type: 'image_job', model: data.model, requested_model: id, source: 'native_image', request_id: data.request_id, job_token: await signImageJob(config.key, userId, data.id) };
   }
   if (data.model !== id || typeof data.response !== 'string' || !data.response.trim()) throw new NativeAPIError('Selected native checkpoint identity or response could not be verified.');
   // Return documented, non-secret fields only. Preserve pipeline/source-summary identity.
-  return { type: 'text', response: data.response, model: data.model, requested_model: id, source: data.source, answer_origin: data.answer_origin || 'selected_model', experimental: true, request_id: data.request_id, inference_request_id: data.inference_request_id, sources: Array.isArray(data.sources) ? data.sources.slice(0, 3) : [], finish_reason: data.finish_reason, model_finish_reason: data.model_finish_reason, incomplete: data.incomplete === true, generated_tokens: data.generated_tokens, input_tokens: data.input_tokens, latency_ms: data.latency_ms, streaming_status: 'not_enabled' };
+  return { type: 'text', response: data.response, model: data.model, requested_model: id, source: data.source, answer_origin: data.answer_origin || 'selected_model', experimental: true, request_id: data.request_id, inference_request_id: data.inference_request_id, sources: Array.isArray(data.sources) ? data.sources.slice(0, 3) : [], finish_reason: data.finish_reason, model_finish_reason: data.model_finish_reason, incomplete: data.incomplete === true, vision_assisted: data.vision_assisted === true, vision_helper: data.vision_helper, vision_revision: data.vision_revision, vision_latency_ms: data.vision_latency_ms, generated_tokens: data.generated_tokens, input_tokens: data.input_tokens, latency_ms: data.latency_ms, streaming_status: 'not_enabled' };
 }
 export async function pollNativeImage(config: NativeConfig, userId: string, token: unknown, fetcher: typeof fetch = fetch) {
   const id = await verifyImageJob(config.key, userId, token);
