@@ -32,6 +32,6 @@ export async function generateNativeResponse(message: string, model: string, his
   throw new Error('Image generation did not complete in time. No replacement model was used.');
 }
 export function nativeMessageMetadata(result: NativeChatResult) {
-  const fields = ['model','requested_model','source','answer_origin','request_id','inference_request_id','finish_reason','model_finish_reason','incomplete','generated_tokens','input_tokens','latency_ms','streaming_status','experimental'];
+  const fields = ['model','requested_model','source','answer_origin','request_id','inference_request_id','finish_reason','model_finish_reason','incomplete','generated_tokens','input_tokens','latency_ms','streaming_status','experimental','vision_assisted','vision_helper','vision_revision','vision_latency_ms'];
   return Object.fromEntries([['provider', 'cridergpt_native'], ...fields.map(key => [key, result[key]]), ['sources', result.sources || []]].filter(([,value]) => value !== undefined));
 }

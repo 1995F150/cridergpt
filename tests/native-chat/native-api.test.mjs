@@ -49,3 +49,16 @@ test('HTTP error, interrupted JSON and oversized body fail visibly', async () =>
   await assert.rejects(api.nativeRequest(config, '/v1/chat', {}, async () => new Response('{"truncated"')), /unreadable|interrupted/);
   await assert.rejects(api.nativeRequest(config, '/v1/chat', {}, async () => new Response('x'.repeat(3200001))), /size limit/);
 });
+test('vision assistance uses same selected checkpoint and preserves helper identity', async () => {
+  const r = await api.startNativeChat(config, 'owner', {model:'native:'+model,message:'Describe this image',imageData:'data:image/png;base64,aGVsbG8='},async (url,options)=>{
+    if(url.endsWith('/v1/models'))return reply({models:[{...catalog[0],vision_assist_supported:true}]});
+    const body=JSON.parse(options.body);assert.equal(body.model,model);assert.equal(body.routing,'text');assert.equal(body.image_base64,'data:image/png;base64,aGVsbG8=');
+    return reply({model,response:'Image analyzed with a helper. A square.',vision_assisted:true,vision_helper:'fixture-vision'});
+  });assert.equal(r.model,model);assert.equal(r.vision_helper,'fixture-vision');assert.equal(r.vision_assisted,true);
+});
+test('unconfigured vision fails before generation rather than calling a cloud provider', async()=>{
+  let generated=false;await assert.rejects(api.startNativeChat(config,'owner',{model,message:'Describe',imageData:'data:image/png;base64,aGVsbG8='},async url=>{if(url.endsWith('/v1/models'))return reply({models:catalog});generated=true;return reply({});}),/not enabled/);assert.equal(generated,false);
+});
+test('remote image URLs are rejected', async()=>{
+  await assert.rejects(api.startNativeChat(config,'owner',{model,message:'Describe',image_url:'http://127.0.0.1/private'},async()=>reply({models:catalog})),/remote image URLs/);
+});

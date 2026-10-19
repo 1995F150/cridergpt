@@ -193,7 +193,8 @@ export default function ChatPanel() {
         setCurrentConversation(convId);
       }
 
-      if (selectedModel.startsWith('native:') && files?.length) throw new Error('Native checkpoints currently support text prompts, not uploaded-image recognition.');
+      if (selectedModel.startsWith('native:') && files?.length && (files.length !== 1 || files[0].type !== 'image')) throw new Error('Native vision assistance supports one image at a time.');
+      let nativeImageData: string | undefined;
       // Handle file uploads - support ALL file types
       let imageUrl: string | undefined;
       let fileAttachments: string[] = [];
@@ -201,6 +202,13 @@ export default function ChatPanel() {
       if (files?.length) {
         for (const filePreview of files) {
           if (filePreview.type === "image") {
+            if (selectedModel.startsWith('native:')) {
+              if (filePreview.file.size > 3 * 1024 * 1024) throw new Error('Use an image smaller than 3 MiB.');
+              nativeImageData = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader(); reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(new Error('Image could not be read.')); reader.readAsDataURL(filePreview.file);
+              });
+            }
             const url = await uploadImage(filePreview.file);
             if (url) imageUrl = url;
           } else {
@@ -219,7 +227,7 @@ export default function ChatPanel() {
         if (!storedUserMessage) throw new Error('The user message could not be saved. Please check your connection.');
         setIsStreaming(true); setStreamingMessage('Waiting for your native model…');
         try {
-          const result = await generateSmartResponse(message, selectedModel, 'chat', undefined, undefined,
+          const result = await generateSmartResponse(message, selectedModel, 'chat', nativeImageData, undefined,
             messages.filter(m => m.metadata?.answer_origin !== 'pipeline_error').map(m => ({ role: m.role, content: m.content })));
           const saved = await sendMessage(convId, result.response, 'assistant', result.generated_tokens, result.imageUrl, nativeMessageMetadata(result));
           if (!saved) throw new Error('The reply was generated but could not be saved. Refresh history before retrying.');

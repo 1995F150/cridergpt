@@ -1,0 +1,1 @@
+{"model": "andromeda-3.0-360m-100", "response": "Image analyzed with SmolVLM-256M (experimental helper).\n\nThe image shows a logo or a graphic design that appears to be related to a technology or a technology-related product or service.", "vision_assisted": true, "vision_helper": "HuggingFaceTB/SmolVLM-256M-Instruct", "vision_latency_ms": 10840, "finish_reason": "eos"}
