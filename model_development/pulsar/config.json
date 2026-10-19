@@ -17,7 +17,43 @@
     "path": "/home/cridergpt2026/cridergpt-engine-verified/artifacts/cridergpt-3.0-andromeda-20261012-142146/checkpoint-100",
     "weights_sha256": "df7a516547a0960c2bd910a5109aaf9a4679743e3fc144ab3f259ebd3d96159c"
   },
-  "inference": {"device": "cpu", "dtype": "float32", "threads": 2, "max_new_tokens": 64, "max_time_seconds": 15, "context_budget": 512, "do_sample": false},
-  "pilot_proposal": {"method": "LoRA", "target_modules": ["q_proj", "v_proj"], "rank": 8, "alpha": 16, "dropout": 0, "learning_rate": 0.0001, "microbatch_size": 1, "gradient_accumulation_steps": 4, "max_sequence_tokens": 256, "max_optimizer_steps": 50, "gradient_clip_norm": 1.0, "seed": 611, "training_wall_time_limit_seconds": 900, "dataset_reviewed": false, "automatic_start": false},
-  "release_policy": {"minimum_throughput_ratio_vs_andromeda": 1.25, "minimum_smoke_score": 0.85, "maximum_smoke_regression_vs_andromeda": 0.05, "require_no_cross_request_reuse": true, "require_human_review": true, "automatic_promotion": false}
+  "inference": {
+    "device": "cpu",
+    "dtype": "float32",
+    "threads": 2,
+    "max_new_tokens": 64,
+    "max_time_seconds": 15,
+    "context_budget": 512,
+    "do_sample": false
+  },
+  "pilot_proposal": {
+    "method": "LoRA",
+    "target_modules": [
+      "q_proj",
+      "v_proj"
+    ],
+    "rank": 8,
+    "alpha": 16,
+    "dropout": 0,
+    "learning_rate": 0.0001,
+    "microbatch_size": 1,
+    "gradient_accumulation_steps": 4,
+    "max_sequence_tokens": 256,
+    "max_optimizer_steps": 50,
+    "gradient_clip_norm": 1.0,
+    "seed": 611,
+    "training_wall_time_limit_seconds": 900,
+    "dataset_reviewed": false,
+    "automatic_start": false
+  },
+  "release_policy": {
+    "minimum_throughput_ratio_vs_andromeda": 1.25,
+    "minimum_smoke_score": 1.0,
+    "maximum_smoke_regression_vs_andromeda": 0.05,
+    "require_no_cross_request_reuse": true,
+    "require_human_review": true,
+    "automatic_promotion": false,
+    "require_independent_generalization_evaluation": true
+  },
+  "scope": "unmodified_base_candidate; see pilot-candidate.json for the separate trained adapter"
 }

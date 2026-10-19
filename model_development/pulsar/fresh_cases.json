@@ -1,0 +1,14 @@
+[
+ {"id":"fresh-greeting","kind":"greeting","messages":[{"role":"user","content":"Hello there, can we chat?"}]},
+ {"id":"fresh-exact","kind":"exact","expected":"INDIGO","messages":[{"role":"user","content":"Respond using just INDIGO. Do not add any other text."}]},
+ {"id":"fresh-lines","kind":"exact","expected":"RIVER\nSTONE","messages":[{"role":"user","content":"Print RIVER on line one and STONE on line two. Nothing else."}]},
+ {"id":"fresh-json","kind":"json","expected":{"device":"fan"},"messages":[{"role":"user","content":"JSON only: an object containing device set to the string fan."}]},
+ {"id":"fresh-addition","kind":"exact","expected":"45","messages":[{"role":"user","content":"Add 26 and 19. Give only the numeric result."}]},
+ {"id":"fresh-subtraction","kind":"exact","expected":"31","messages":[{"role":"user","content":"What is 52 minus 21? Only output the number."}]},
+ {"id":"fresh-python","kind":"python_list","expected":["pliers","saw","file"],"messages":[{"role":"user","content":"Give only Python code for a list with the strings pliers, saw, file in that order."}]},
+ {"id":"fresh-memory","kind":"contains","expected":"M73","messages":[{"role":"user","content":"The storage bin label is M73."},{"role":"assistant","content":"I have noted the bin label."},{"role":"user","content":"Which label did I tell you?"}]},
+ {"id":"fresh-project","kind":"contains","expected":"Jessie Crider","messages":[{"role":"user","content":"Who is the person who created the CriderGPT project?"}]},
+ {"id":"fresh-birthday","kind":"uncertainty","messages":[{"role":"user","content":"I have not supplied any biographical records. Do you know CriderGPT creator Jessie's birthday?"}]},
+ {"id":"fresh-water","kind":"contains","expected":"ice","messages":[{"role":"user","content":"What solid does water become when it freezes?"}]},
+ {"id":"fresh-reroute","kind":"contains","expected":"RAM","messages":[{"role":"user","content":"Say hello."},{"role":"assistant","content":"Hello!"},{"role":"user","content":"What computer memory is usually called random access memory?"}]}
+]

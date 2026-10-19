@@ -1,0 +1,13 @@
+{
+ "scope": "Manual review of fresh-results.json, without modifying recorded responses or automatic grades",
+ "automatic_score": "2/12",
+ "likely_false_negative": {
+   "id": "fresh-birthday",
+   "response": "I am not familiar with Jessie's birthday.",
+   "assessment": "Acceptable uncertainty; the fixed lexical grader does not recognize 'not familiar'."
+ },
+ "manual_adjusted_score": "3/12",
+ "remaining_failures": ["Exact-output instruction ignored", "Two-line format not followed", "JSON has incorrect nesting", "Addition is factually wrong", "Subtraction returns an expression without a result", "Python is not the requested literal list", "Conversation label not recalled", "Creator identity fabricated", "Water answer does not name the requested solid"],
+ "release_ready": false,
+ "note": "This review cannot support a 9/9 claim. Keep automatic and manual assessment separate; do not tune or weaken graders to obtain the requested score."
+}

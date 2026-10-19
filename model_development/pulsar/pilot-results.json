@@ -1,0 +1,592 @@
+{
+  "run": "/home/cridergpt2026/cridergpt-pulsar/model_development/pulsar/runs/pilot-20261019T211602251785Z",
+  "base_sha256": "5af571cbf074e6d21a03528d2330792e532ca608f24ac70a143f6b369968ab8c",
+  "dataset_sha256": {
+    "train": "91ddb16561ac1a0ef7ec50b1fb4bf2439bd4bc4f80709402f9ac389651faec21",
+    "validation": "d5dd4e93716a1e32d0dba39871f380af69a59efbdea67efd14f4eaeefba9eaf6"
+  },
+  "eval_sha256": "0ebd06e31b418380017cee17795947a3b3c198521d0700144b28a0a3a3dc4b76",
+  "evaluator_sha256": "9b3e86e670306151bd4bdc4c9a9604068938e488e1e1c5fabb771c1de57d06ba",
+  "grader_sha256": "2d6304c0887f4473854a6bd7725055640c8e606da114055f4dc024c0ec40578d",
+  "runtime": {
+    "torch": "2.5.1+cpu",
+    "transformers": "4.57.6",
+    "peft": "0.17.1"
+  },
+  "system_prompt": "You are a helpful assistant. Answer concisely and follow the requested format. Do not invent personal information.",
+  "inference": {
+    "device": "cpu",
+    "dtype": "float32",
+    "threads": 2,
+    "max_new_tokens": 64,
+    "max_time_seconds": 15,
+    "context_budget": 512,
+    "do_sample": false
+  },
+  "calibration": {
+    "microbatch_seconds": 2.2690283700358123,
+    "estimated_training_seconds": 680.7085110107437,
+    "optimizer_steps": 50,
+    "accumulation": 4,
+    "memory_limit_gib": 4,
+    "peak_process_rss_mib": 1081.52734375,
+    "wall_limit_seconds": 900,
+    "optimizer_updates_performed": false
+  },
+  "completed_steps": 50,
+  "training_seconds": 381.68740235909354,
+  "validation_loss_before": 1.6772842196857227,
+  "validation_loss_after": 1.037013112622149,
+  "before": {
+    "passed": 5,
+    "total": 9,
+    "results": [
+      {
+        "id": "greeting",
+        "response": "Hey there!",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 37,
+        "output_tokens": 4,
+        "seconds": 0.8873344219755381,
+        "tokens_per_second": 4.507883274824958,
+        "ttft_seconds": 0.5090110630262643,
+        "prompt_sha256": "e0fe681bffda700c563e1858024cc2137e4c83a558a6d9fdc4eff0fa0db1c1cb",
+        "response_sha256": "96e919bedc30d13e853fc5ad04cd44275496666eaf0a01d651f03b61a221eb77"
+      },
+      {
+        "id": "sky",
+        "response": "The sky on a clear day is usually a deep, deep blue.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 45,
+        "output_tokens": 15,
+        "seconds": 2.300263639073819,
+        "tokens_per_second": 6.520991657303951,
+        "ttft_seconds": 0.5985749791143462,
+        "prompt_sha256": "72e5abe3bb703ac258a7e79aced1ce301a08df6314d2416f86a41997d3536c6c",
+        "response_sha256": "a89023966dc68e61dcf4a4881529a5cc197d3a320e6a00fc369d6067046ebf80"
+      },
+      {
+        "id": "math",
+        "response": "8 + 9 = 17",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 49,
+        "output_tokens": 9,
+        "seconds": 1.5933539560064673,
+        "tokens_per_second": 5.648462456237483,
+        "ttft_seconds": 0.6196611759951338,
+        "prompt_sha256": "f6e5bb177541d2d31e49e0835bf18f4e6651f20d41dbf102d15e8c1438d21ed1",
+        "response_sha256": "1d74a11eab1db754339ed82b6aafdfe1af7bb4f291c5320175f461e8ae07bc43"
+      },
+      {
+        "id": "format",
+        "response": "TEAL then COPPER.",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 49,
+        "output_tokens": 8,
+        "seconds": 1.4865397030953318,
+        "tokens_per_second": 5.381625518203169,
+        "ttft_seconds": 0.6190532890614122,
+        "prompt_sha256": "0d35f6bcadbd876c10f3660af75b0ccdda2d0675266df4f411cb83f892878e33",
+        "response_sha256": "e92488e0bf4d1af7988b52e1a60fc508e3632aa3e6bea6f05e56e2aef2da796c"
+      },
+      {
+        "id": "json",
+        "response": "The JSON returned is:\n\n```json\n{\n  \"color\": \"blue\",\n  \"value\": \"blue\"\n}\n```\n\nThis is the result of the following code:\n\n```javascript\nconst json = JSON.parse(JSON.stringify(data));\n\n",
+        "passed": false,
+        "finish_reason": "token_limit",
+        "input_tokens": 46,
+        "output_tokens": 64,
+        "seconds": 8.209308744058944,
+        "tokens_per_second": 7.796027898977077,
+        "ttft_seconds": 0.5955914580263197,
+        "prompt_sha256": "e7ec6e9efdc9a079c53fbe5d7e8c101059d27c4bfb0be6b04b9ca55baf258ad7",
+        "response_sha256": "4db393024246bfc2c8c0bd6df8c763bdd8dde565000457666aaa09e3ce273911"
+      },
+      {
+        "id": "python",
+        "response": "```python\neggs = [\n    \"eggs\",\n    \"milk\",\n    \"butter\",\n]\n```",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 50,
+        "output_tokens": 26,
+        "seconds": 3.623088706051931,
+        "tokens_per_second": 7.1761974683562535,
+        "ttft_seconds": 0.6312061980133876,
+        "prompt_sha256": "a5dbd5b3aefb7e681382c2b3e799fdf34fa65951c7292400e8827fd6d0a6fb27",
+        "response_sha256": "19aa8ec347603fcf13aa18c8d7351b15a8f4982d3a096e9af25ac6a28526aa2a"
+      },
+      {
+        "id": "memory",
+        "response": "Your sticker says LIMA.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 66,
+        "output_tokens": 8,
+        "seconds": 1.6600877330638468,
+        "tokens_per_second": 4.819022417107591,
+        "ttft_seconds": 0.7936635430669412,
+        "prompt_sha256": "a842e26f4414cccf90f30fc1c58950c55ad8e5ebaf264e43285363cd0d41b814",
+        "response_sha256": "af8d8459e1da311a39abc7c187f69e8b3317a44944673fc3ded8e6f194ab32ac"
+      },
+      {
+        "id": "uncertainty",
+        "response": "CriderGPT is a fictional character from the game \"Crude\" by the game designer, \"Gamescape.\"",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 46,
+        "output_tokens": 25,
+        "seconds": 3.434550033067353,
+        "tokens_per_second": 7.278973885750273,
+        "ttft_seconds": 0.6050436190562323,
+        "prompt_sha256": "158516315a842b7866ffa1a750741feaedf18865b0840a05cea6cad1f746fdbf",
+        "response_sha256": "05314ff73894e983817dbab4c7243dac7c7d6de31d7fc1f5545b23c550173c0d"
+      },
+      {
+        "id": "stale_reply",
+        "response": "The sky on a clear day is blue.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 69,
+        "output_tokens": 10,
+        "seconds": 1.9053140330361202,
+        "tokens_per_second": 5.248478637437519,
+        "ttft_seconds": 0.8630616250447929,
+        "prompt_sha256": "4aefd199757a33cd3e0ebdfe49b368b9f509ab7db71ce1a4a9f75c0a8e2619be",
+        "response_sha256": "5ecd459dc7cae45cff0aae6914738ce07d47181f475cd543fd85f3068c012737"
+      }
+    ]
+  },
+  "after": {
+    "passed": 6,
+    "total": 9,
+    "results": [
+      {
+        "id": "greeting",
+        "response": "Hey there!",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 37,
+        "output_tokens": 4,
+        "seconds": 0.8289215139811859,
+        "tokens_per_second": 4.825547331723361,
+        "ttft_seconds": 0.5045624250778928,
+        "prompt_sha256": "e0fe681bffda700c563e1858024cc2137e4c83a558a6d9fdc4eff0fa0db1c1cb",
+        "response_sha256": "96e919bedc30d13e853fc5ad04cd44275496666eaf0a01d651f03b61a221eb77"
+      },
+      {
+        "id": "sky",
+        "response": "The sky on a clear day is blue.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 45,
+        "output_tokens": 10,
+        "seconds": 1.68414623697754,
+        "tokens_per_second": 5.93772665368213,
+        "ttft_seconds": 0.5986478639533743,
+        "prompt_sha256": "72e5abe3bb703ac258a7e79aced1ce301a08df6314d2416f86a41997d3536c6c",
+        "response_sha256": "5ecd459dc7cae45cff0aae6914738ce07d47181f475cd543fd85f3068c012737"
+      },
+      {
+        "id": "math",
+        "response": "8 + 9 = 17",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 49,
+        "output_tokens": 9,
+        "seconds": 1.5942933969199657,
+        "tokens_per_second": 5.645134087230874,
+        "ttft_seconds": 0.6204520530300215,
+        "prompt_sha256": "f6e5bb177541d2d31e49e0835bf18f4e6651f20d41dbf102d15e8c1438d21ed1",
+        "response_sha256": "1d74a11eab1db754339ed82b6aafdfe1af7bb4f291c5320175f461e8ae07bc43"
+      },
+      {
+        "id": "format",
+        "response": "TEAL then COPPER.",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 49,
+        "output_tokens": 8,
+        "seconds": 1.482936288928613,
+        "tokens_per_second": 5.394702429043539,
+        "ttft_seconds": 0.6176382899284363,
+        "prompt_sha256": "0d35f6bcadbd876c10f3660af75b0ccdda2d0675266df4f411cb83f892878e33",
+        "response_sha256": "e92488e0bf4d1af7988b52e1a60fc508e3632aa3e6bea6f05e56e2aef2da796c"
+      },
+      {
+        "id": "json",
+        "response": "{\"color\": \"blue\"}",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 46,
+        "output_tokens": 7,
+        "seconds": 1.3060337899951264,
+        "tokens_per_second": 5.359738816578491,
+        "ttft_seconds": 0.6030056969029829,
+        "prompt_sha256": "e7ec6e9efdc9a079c53fbe5d7e8c101059d27c4bfb0be6b04b9ca55baf258ad7",
+        "response_sha256": "f054e65a171af0ded523f1ea5a2952afd0dfc33e034f7d67d6dd8c0982cb543c"
+      },
+      {
+        "id": "python",
+        "response": "['eggs', 'milk', 'butter']",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 50,
+        "output_tokens": 12,
+        "seconds": 1.929478463018313,
+        "tokens_per_second": 6.2192971986990795,
+        "ttft_seconds": 0.6187343089841306,
+        "prompt_sha256": "a5dbd5b3aefb7e681382c2b3e799fdf34fa65951c7292400e8827fd6d0a6fb27",
+        "response_sha256": "62ca70724c6fbf798266c9639bfe16739b42ca320274552a317d7f4e4ee7f2a6"
+      },
+      {
+        "id": "memory",
+        "response": "Your sticker says LIMA.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 66,
+        "output_tokens": 8,
+        "seconds": 1.610032154014334,
+        "tokens_per_second": 4.9688448644043515,
+        "ttft_seconds": 0.794167586020194,
+        "prompt_sha256": "a842e26f4414cccf90f30fc1c58950c55ad8e5ebaf264e43285363cd0d41b814",
+        "response_sha256": "af8d8459e1da311a39abc7c187f69e8b3317a44944673fc3ded8e6f194ab32ac"
+      },
+      {
+        "id": "uncertainty",
+        "response": "CriderGPT's creator is unknown",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 46,
+        "output_tokens": 8,
+        "seconds": 1.4860604510176927,
+        "tokens_per_second": 5.383361083676908,
+        "ttft_seconds": 0.6738657749956474,
+        "prompt_sha256": "158516315a842b7866ffa1a750741feaedf18865b0840a05cea6cad1f746fdbf",
+        "response_sha256": "e63e4e575a4b63675c568c9222da7e327226ac433698d52f840498ad6d3e56fd"
+      },
+      {
+        "id": "stale_reply",
+        "response": "The sky is blue.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 69,
+        "output_tokens": 6,
+        "seconds": 1.4688959600171074,
+        "tokens_per_second": 4.084700457566866,
+        "ttft_seconds": 0.8132885170634836,
+        "prompt_sha256": "4aefd199757a33cd3e0ebdfe49b368b9f509ab7db71ce1a4a9f75c0a8e2619be",
+        "response_sha256": "52ae4fd504d855f1dd094ab54e2da8402c96250ef75ef775a3cf20ff39d0cb2b"
+      }
+    ]
+  },
+  "training_log": [
+    {
+      "step": 1,
+      "loss": 1.5915961265563965,
+      "gradient_norm": 0.84946209192276,
+      "elapsed_seconds": 7.121228724019602
+    },
+    {
+      "step": 2,
+      "loss": 0.9503983668982983,
+      "gradient_norm": 0.7594462037086487,
+      "elapsed_seconds": 14.391465069027618
+    },
+    {
+      "step": 3,
+      "loss": 1.620665043592453,
+      "gradient_norm": 1.162455439567566,
+      "elapsed_seconds": 21.797560982988216
+    },
+    {
+      "step": 4,
+      "loss": 1.5879701673984528,
+      "gradient_norm": 0.6577188372612,
+      "elapsed_seconds": 29.354843590059318
+    },
+    {
+      "step": 5,
+      "loss": 1.073927879333496,
+      "gradient_norm": 0.9347956776618958,
+      "elapsed_seconds": 37.05541769601405
+    },
+    {
+      "step": 6,
+      "loss": 1.4202810525894165,
+      "gradient_norm": 1.067558765411377,
+      "elapsed_seconds": 44.388245645095594
+    },
+    {
+      "step": 7,
+      "loss": 1.534162551164627,
+      "gradient_norm": 1.9824925661087036,
+      "elapsed_seconds": 51.65209546405822
+    },
+    {
+      "step": 8,
+      "loss": 1.4950188845396042,
+      "gradient_norm": 1.1029976606369019,
+      "elapsed_seconds": 59.378127014031634
+    },
+    {
+      "step": 9,
+      "loss": 2.6312794387340546,
+      "gradient_norm": 0.9797194600105286,
+      "elapsed_seconds": 67.06497126200702
+    },
+    {
+      "step": 10,
+      "loss": 1.664311408996582,
+      "gradient_norm": 1.4098296165466309,
+      "elapsed_seconds": 74.65924345806707
+    },
+    {
+      "step": 11,
+      "loss": 1.4267641305923462,
+      "gradient_norm": 1.2591233253479004,
+      "elapsed_seconds": 81.78210588602815
+    },
+    {
+      "step": 12,
+      "loss": 2.090641289949417,
+      "gradient_norm": 1.1771548986434937,
+      "elapsed_seconds": 89.1666586950887
+    },
+    {
+      "step": 13,
+      "loss": 1.561374306678772,
+      "gradient_norm": 1.7849087715148926,
+      "elapsed_seconds": 96.28898020798806
+    },
+    {
+      "step": 14,
+      "loss": 1.6504225879907608,
+      "gradient_norm": 0.7471461296081543,
+      "elapsed_seconds": 103.48415249504615
+    },
+    {
+      "step": 15,
+      "loss": 0.9127253964543343,
+      "gradient_norm": 1.137336254119873,
+      "elapsed_seconds": 111.27845154004171
+    },
+    {
+      "step": 16,
+      "loss": 1.7547310292720795,
+      "gradient_norm": 1.7741286754608154,
+      "elapsed_seconds": 118.19685223000124
+    },
+    {
+      "step": 17,
+      "loss": 1.617295041680336,
+      "gradient_norm": 0.661156415939331,
+      "elapsed_seconds": 125.89281265204772
+    },
+    {
+      "step": 18,
+      "loss": 0.8626290522515774,
+      "gradient_norm": 0.7097222208976746,
+      "elapsed_seconds": 133.5886281200219
+    },
+    {
+      "step": 19,
+      "loss": 1.4561466798186302,
+      "gradient_norm": 1.1812204122543335,
+      "elapsed_seconds": 142.70395983709022
+    },
+    {
+      "step": 20,
+      "loss": 1.9121265299618244,
+      "gradient_norm": 0.968390703201294,
+      "elapsed_seconds": 151.15633378108032
+    },
+    {
+      "step": 21,
+      "loss": 1.2737389951944351,
+      "gradient_norm": 1.4917664527893066,
+      "elapsed_seconds": 158.98132629308384
+    },
+    {
+      "step": 22,
+      "loss": 1.377529539167881,
+      "gradient_norm": 1.271175503730774,
+      "elapsed_seconds": 167.20156902400777
+    },
+    {
+      "step": 23,
+      "loss": 1.131316788494587,
+      "gradient_norm": 0.8625244498252869,
+      "elapsed_seconds": 175.15401721803937
+    },
+    {
+      "step": 24,
+      "loss": 1.1692323684692383,
+      "gradient_norm": 1.5517354011535645,
+      "elapsed_seconds": 182.35564365203027
+    },
+    {
+      "step": 25,
+      "loss": 1.9705345965921879,
+      "gradient_norm": 0.9377442002296448,
+      "elapsed_seconds": 189.79372864507604
+    },
+    {
+      "step": 26,
+      "loss": 1.4164579585194588,
+      "gradient_norm": 1.4029574394226074,
+      "elapsed_seconds": 197.0927455050405
+    },
+    {
+      "step": 27,
+      "loss": 1.1176824569702148,
+      "gradient_norm": 1.3643039464950562,
+      "elapsed_seconds": 204.19234517100267
+    },
+    {
+      "step": 28,
+      "loss": 1.5791107416152954,
+      "gradient_norm": 1.8312102556228638,
+      "elapsed_seconds": 211.25378039409406
+    },
+    {
+      "step": 29,
+      "loss": 0.8108176440000534,
+      "gradient_norm": 0.9734190106391907,
+      "elapsed_seconds": 218.1580236980226
+    },
+    {
+      "step": 30,
+      "loss": 1.2071050256490707,
+      "gradient_norm": 1.144329309463501,
+      "elapsed_seconds": 225.5688879219815
+    },
+    {
+      "step": 31,
+      "loss": 1.2536924630403519,
+      "gradient_norm": 0.7987675070762634,
+      "elapsed_seconds": 235.26201464107726
+    },
+    {
+      "step": 32,
+      "loss": 0.9494131729006767,
+      "gradient_norm": 1.2753926515579224,
+      "elapsed_seconds": 243.96577119408175
+    },
+    {
+      "step": 33,
+      "loss": 1.6097058653831482,
+      "gradient_norm": 2.0267128944396973,
+      "elapsed_seconds": 251.684161944082
+    },
+    {
+      "step": 34,
+      "loss": 1.216839075088501,
+      "gradient_norm": 0.7214698791503906,
+      "elapsed_seconds": 259.5854813110782
+    },
+    {
+      "step": 35,
+      "loss": 0.7460910603404045,
+      "gradient_norm": 1.5887755155563354,
+      "elapsed_seconds": 268.4767924210755
+    },
+    {
+      "step": 36,
+      "loss": 1.0882000103592873,
+      "gradient_norm": 1.0559470653533936,
+      "elapsed_seconds": 276.0549016620498
+    },
+    {
+      "step": 37,
+      "loss": 0.8622415661811829,
+      "gradient_norm": 0.8044421076774597,
+      "elapsed_seconds": 283.6777117770398
+    },
+    {
+      "step": 38,
+      "loss": 1.1857937574386597,
+      "gradient_norm": 1.220016360282898,
+      "elapsed_seconds": 291.36365546204615
+    },
+    {
+      "step": 39,
+      "loss": 1.2926918268203735,
+      "gradient_norm": 1.2574952840805054,
+      "elapsed_seconds": 298.66130178608
+    },
+    {
+      "step": 40,
+      "loss": 2.7378807067871094,
+      "gradient_norm": 0.989086925983429,
+      "elapsed_seconds": 306.55885367805604
+    },
+    {
+      "step": 41,
+      "loss": 1.3578135818243027,
+      "gradient_norm": 2.424145460128784,
+      "elapsed_seconds": 314.3585262550041
+    },
+    {
+      "step": 42,
+      "loss": 1.2243930399417877,
+      "gradient_norm": 1.0301309823989868,
+      "elapsed_seconds": 321.3783272590954
+    },
+    {
+      "step": 43,
+      "loss": 0.6657112240791321,
+      "gradient_norm": 1.617160439491272,
+      "elapsed_seconds": 328.3865437420318
+    },
+    {
+      "step": 44,
+      "loss": 1.0592684708535671,
+      "gradient_norm": 0.8755940198898315,
+      "elapsed_seconds": 336.18808095308486
+    },
+    {
+      "step": 45,
+      "loss": 1.5364842265844345,
+      "gradient_norm": 1.0467194318771362,
+      "elapsed_seconds": 344.17879888007883
+    },
+    {
+      "step": 46,
+      "loss": 2.1586095839738846,
+      "gradient_norm": 1.5410531759262085,
+      "elapsed_seconds": 351.95645321602933
+    },
+    {
+      "step": 47,
+      "loss": 1.0483113676309586,
+      "gradient_norm": 1.0651932954788208,
+      "elapsed_seconds": 358.96492262207903
+    },
+    {
+      "step": 48,
+      "loss": 0.5771746188402176,
+      "gradient_norm": 0.9782362580299377,
+      "elapsed_seconds": 366.36542838905007
+    },
+    {
+      "step": 49,
+      "loss": 1.3237319774925709,
+      "gradient_norm": 0.8080335259437561,
+      "elapsed_seconds": 374.4546592050465
+    },
+    {
+      "step": 50,
+      "loss": 0.8353252708911896,
+      "gradient_norm": 1.4914498329162598,
+      "elapsed_seconds": 381.5769273210317
+    }
+  ],
+  "original_weights_unchanged": true,
+  "deployed": false,
+  "production_ready": false,
+  "caveat": "Development smoke checks are known; not a blind generalization benchmark. No evaluator rows used for training."
+}

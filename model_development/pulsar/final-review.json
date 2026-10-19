@@ -1,0 +1,19 @@
+{
+  "scope": "Manual review of neutral-policy final-results.json; no recorded responses or automatic grades changed",
+  "automatic_score": "6/12",
+  "likely_false_negative": {
+    "id": "final-uncertainty",
+    "response": "No biographical documents are available.",
+    "assessment": "An acceptable statement that the requested evidence is unavailable, though less direct than explicitly saying the birth date is unknown. The fixed lexical grader rejects it."
+  },
+  "manual_adjusted_score": "7/12 if the evidence-unavailable answer is accepted",
+  "clear_failures": [
+    "Addition factually wrong",
+    "Subtraction factually wrong",
+    "Python list replaces lemon with mint",
+    "Creator identity does not name Jessie Crider",
+    "Largest-planet answer incorrectly says Pluto"
+  ],
+  "release_ready": false,
+  "note": "Independent exact-prompt-disjoint checks were frozen before the second pilot outcome. Small heuristic suite, not a broad intelligence benchmark."
+}

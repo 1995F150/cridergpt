@@ -24,6 +24,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
     micError,
     voice,
     setVoice,
+    callModel,
     startCall,
     endCall,
     toggleMute,
@@ -48,6 +49,9 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
             <SelectItem value="shimmer">Shimmer (soft female)</SelectItem>
           </SelectContent>
         </Select>
+        <p className="text-xs text-muted-foreground text-center max-w-sm">
+          Uses your selected chat model. Transcription and speech currently use external services; these voices are not local clones.
+        </p>
         <Button
           onClick={startCall}
           size="lg"
@@ -78,6 +82,8 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
           <div className="text-3xl font-mono font-bold">
             {formatDuration()}
           </div>
+          <p className="text-xs text-muted-foreground break-all">Chat model: {callModel}</p>
+          {micError && <p role="alert" className="text-sm text-destructive">{micError}</p>}
         </div>
 
         {/* Voice Indicator with CriderGPT Logo */}
@@ -215,6 +221,8 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
                       } rounded-lg p-2 inline-block max-w-[90%]`}>
                         {entry.text}
                       </p>
+                      {entry.model && <p className="text-xs text-muted-foreground break-all">{entry.model}</p>}
+                      {entry.incomplete && <p role="alert" className="text-xs text-amber-500">Incomplete answer — retry this question.</p>}
                       <p className="text-xs text-muted-foreground mt-1">
                         {entry.timestamp.toLocaleTimeString()}
                       </p>
@@ -264,7 +272,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
         {/* Call Instructions */}
         <div className="text-center text-xs text-muted-foreground space-y-1">
           <p>🎙️ Speak naturally to interact with CriderGPT AI</p>
-          <p>🔇 AI will pause your mic while responding</p>
+          <p>🔇 Recording pauses while AI responds</p>
         </div>
       </CardContent>
     </Card>

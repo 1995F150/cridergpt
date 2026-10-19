@@ -1,0 +1,14 @@
+[
+ {"id":"final-greeting","kind":"greeting","messages":[{"role":"user","content":"Hi, could you help me today?"}]},
+ {"id":"final-exact","kind":"exact","expected":"QUARTZ","messages":[{"role":"user","content":"Say only QUARTZ with no punctuation or explanation."}]},
+ {"id":"final-lines","kind":"exact","expected":"SWIFT\nPOND","messages":[{"role":"user","content":"I need two lines only. First line SWIFT. Second line POND."}]},
+ {"id":"final-json","kind":"json","expected":{"mode":"quiet"},"messages":[{"role":"user","content":"Respond with just a JSON object. Its only key is mode and its value is quiet."}]},
+ {"id":"final-add","kind":"exact","expected":"45","messages":[{"role":"user","content":"Calculate 18 + 27 and output only the answer number."}]},
+ {"id":"final-subtract","kind":"exact","expected":"36","messages":[{"role":"user","content":"Subtract 34 from 70. Answer with a number and nothing else."}]},
+ {"id":"final-python","kind":"python_list","expected":["orange","lime","lemon"],"messages":[{"role":"user","content":"Write only a Python literal list of strings: orange followed by lime followed by lemon."}]},
+ {"id":"final-memory","kind":"contains","expected":"Q81","messages":[{"role":"user","content":"My belt's product code is Q81."},{"role":"assistant","content":"I have noted your product code."},{"role":"user","content":"Repeat the product code I gave you."}]},
+ {"id":"final-creator","kind":"contains","expected":"Jessie Crider","messages":[{"role":"user","content":"Who originally developed the project named CriderGPT?"}]},
+ {"id":"final-uncertainty","kind":"uncertainty","messages":[{"role":"user","content":"What birth date does CriderGPT creator Jessie have? No biographical documents are available."}]},
+ {"id":"final-knowledge","kind":"contains","expected":"Jupiter","messages":[{"role":"user","content":"Name the largest planet in our solar system."}]},
+ {"id":"final-spanish","kind":"contains","expected":"hola","messages":[{"role":"user","content":"Translate the greeting hello into Spanish."}]}
+]

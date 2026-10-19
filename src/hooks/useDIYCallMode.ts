@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CallTurn, type CallCaption } from '@/lib/call-turn';
 
-export type TranscriptEntry = { speaker: 'user' | 'ai'; text: string; timestamp: Date };
-
+export type TranscriptEntry = CallCaption;
 const SILENCE_MS = 900;
 const RMS_THRESHOLD = 0.012;
 const MIN_SPEECH_MS = 400;
+const MAX_UTTERANCE_MS = 20000;
 
 export function useDIYCallMode() {
   const { toast } = useToast();
@@ -19,231 +20,226 @@ export function useDIYCallMode() {
   const [showCC, setShowCC] = useState(true);
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   const [micError, setMicError] = useState<string | null>(null);
-  const [voice, setVoice] = useState<string>('onyx');
-
+  const [voice, setVoice] = useState('onyx');
+  const [callModel, setCallModel] = useState('');
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const speechStartRef = useRef<number>(0);
-  const lastVoiceAtRef = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
-  const isSpeakingRef = useRef(false);
-  const aiPlayingRef = useRef(false);
-  const mutedRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const activeRef = useRef(false);
-  const audioQueueRef = useRef<HTMLAudioElement[]>([]);
-  const timerRef = useRef<number | null>(null);
-  const historyRef = useRef<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const connectingRef = useRef(false);
+  const generationRef = useRef(0);
+  const mutedRef = useRef(false);
+  const volumeRef = useRef(volume);
+  const voiceRef = useRef(voice);
+  const modelRef = useRef('');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const finishPlaybackRef = useRef<(() => void) | null>(null);
+  const turnRef = useRef<CallTurn | null>(null);
+  const speakStartRef = useRef(0);
+  const lastVoiceRef = useRef(0);
+  const cycleStartRef = useRef(0);
+  const restartRef = useRef<() => void>(() => {});
+  volumeRef.current = volume;
+  voiceRef.current = voice;
 
-  useEffect(() => { mutedRef.current = isMuted; }, [isMuted]);
-
-  const addTranscript = (e: TranscriptEntry) => setTranscripts((p) => [...p, e]);
-
-  const blobToBase64 = (blob: Blob) => new Promise<string>((res, rej) => {
-    const r = new FileReader();
-    r.onloadend = () => {
-      const s = (r.result as string).split(',')[1] || '';
-      res(s);
-    };
-    r.onerror = rej;
-    r.readAsDataURL(blob);
-  });
-
-  const playNext = useCallback(() => {
-    const next = audioQueueRef.current.shift();
-    if (!next) {
-      aiPlayingRef.current = false;
-      setAiSpeaking(false);
-      return;
-    }
-    aiPlayingRef.current = true;
-    setAiSpeaking(true);
-    next.volume = volume;
-    next.onended = () => playNext();
-    next.onerror = () => playNext();
-    next.play().catch(() => playNext());
-  }, [volume]);
-
-  const speak = useCallback(async (text: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text, voice },
-      });
-      if (error || !data?.audioContent) return;
-      const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
-      audioQueueRef.current.push(audio);
-      if (!aiPlayingRef.current) playNext();
-    } catch (e) {
-      console.error('TTS failed', e);
-    }
-  }, [voice, playNext]);
-
-  const handleUtterance = useCallback(async (blob: Blob) => {
-    try {
-      const base64 = await blobToBase64(blob);
-      const { data: sttData, error: sttErr } = await supabase.functions.invoke('speech-to-text', {
-        body: { audio: base64, mimeType: blob.type },
-      });
-      if (sttErr || !sttData?.text) return;
-      const userText = sttData.text.trim();
-      if (!userText) return;
-      addTranscript({ speaker: 'user', text: userText, timestamp: new Date() });
-      historyRef.current.push({ role: 'user', content: userText });
-
-      const { data: chatData, error: chatErr } = await supabase.functions.invoke('chat-with-ai', {
-        body: {
-          message: userText,
-          model: 'cridergpt-4.1',
-          conversationHistory: historyRef.current.slice(-10),
-          mode: 'call',
-        },
-      });
-      if (chatErr) throw chatErr;
-      const aiText: string = chatData?.response || '';
-      if (!aiText) return;
-      addTranscript({ speaker: 'ai', text: aiText, timestamp: new Date() });
-      historyRef.current.push({ role: 'assistant', content: aiText });
-
-      // Split into sentences for streamed playback
-      const sentences = aiText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [aiText];
-      for (const s of sentences) {
-        const t = s.trim();
-        if (t) await speak(t);
-      }
-    } catch (e) {
-      console.error('Utterance pipeline error', e);
-      toast({ title: 'Call error', description: (e as Error).message, variant: 'destructive' });
-    }
-  }, [speak, toast]);
-
-  const finalizeUtterance = useCallback(() => {
-    const rec = recorderRef.current;
-    if (!rec || rec.state === 'inactive') return;
-    const collected = chunksRef.current.slice();
-    chunksRef.current = [];
-    rec.stop();
-  }, []);
-
-  const startRecorderCycle = useCallback(() => {
-    if (!streamRef.current || !activeRef.current) return;
-    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm');
-    const rec = new MediaRecorder(streamRef.current, { mimeType: mime });
-    chunksRef.current = [];
-    rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-    rec.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type: mime });
-      chunksRef.current = [];
-      if (blob.size > 2000) {
-        handleUtterance(blob);
-      }
-      if (activeRef.current) startRecorderCycle();
-    };
-    recorderRef.current = rec;
-    rec.start();
-  }, [handleUtterance]);
-
-  const monitorLoop = useCallback(() => {
-    const analyser = analyserRef.current;
-    if (!analyser || !activeRef.current) return;
-    const buf = new Float32Array(analyser.fftSize);
-    analyser.getFloatTimeDomainData(buf);
-    let sum = 0;
-    for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
-    const rms = Math.sqrt(sum / buf.length);
-    const now = performance.now();
-
-    if (!aiPlayingRef.current && !mutedRef.current) {
-      if (rms > RMS_THRESHOLD) {
-        if (!isSpeakingRef.current) {
-          isSpeakingRef.current = true;
-          speechStartRef.current = now;
-        }
-        lastVoiceAtRef.current = now;
-      } else if (isSpeakingRef.current) {
-        if (now - lastVoiceAtRef.current > SILENCE_MS &&
-            now - speechStartRef.current > MIN_SPEECH_MS) {
-          isSpeakingRef.current = false;
-          finalizeUtterance();
+  if (!turnRef.current) {
+    turnRef.current = new CallTurn(async (name, body) => {
+      const { data, error } = await supabase.functions.invoke(name, { body });
+      if (error) throw new Error('Voice service request failed. Please retry.');
+      return data ?? {};
+    }, entry => setTranscripts(previous => [...previous, entry]), async content => {
+      if (!activeRef.current) return;
+      const audio = new Audio(`data:audio/mpeg;base64,${content}`);
+      audioRef.current = audio;
+      audio.volume = volumeRef.current;
+      setAiSpeaking(true);
+      try {
+        await new Promise<void>((resolve, reject) => {
+          finishPlaybackRef.current = resolve;
+          audio.onended = () => resolve();
+          audio.onerror = () => reject(new Error('Audio playback failed. Your answer remains in the captions.'));
+          audio.play().catch(() => reject(new Error('Browser blocked audio. Please restart the call and allow playback.')));
+        });
+      } finally {
+        audio.pause();
+        audio.onended = null;
+        audio.onerror = null;
+        if (audioRef.current === audio) {
+          audioRef.current = null;
+          finishPlaybackRef.current = null;
+          setAiSpeaking(false);
         }
       }
-    }
-    rafRef.current = requestAnimationFrame(monitorLoop);
-  }, [finalizeUtterance]);
-
-  const startCall = useCallback(async () => {
-    if (isCallActive || isConnecting) return;
-    setIsConnecting(true);
-    setMicError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
-      streamRef.current = stream;
-      const ctx = new AudioContext();
-      audioCtxRef.current = ctx;
-      const src = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 1024;
-      src.connect(analyser);
-      analyserRef.current = analyser;
-
-      activeRef.current = true;
-      setIsCallActive(true);
-      setCallDuration(0);
-      timerRef.current = window.setInterval(() => setCallDuration((d) => d + 1), 1000);
-
-      startRecorderCycle();
-      rafRef.current = requestAnimationFrame(monitorLoop);
-
-      // Greeting
-      const greet = "Hey, you're on call mode. What's up?";
-      addTranscript({ speaker: 'ai', text: greet, timestamp: new Date() });
-      historyRef.current.push({ role: 'assistant', content: greet });
-      speak(greet);
-    } catch (e) {
-      setMicError((e as Error).message || 'Microphone error');
-      activeRef.current = false;
-      setIsCallActive(false);
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [isCallActive, isConnecting, monitorLoop, startRecorderCycle, speak]);
+    });
+  }
 
   const endCall = useCallback(() => {
     activeRef.current = false;
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
-      try { recorderRef.current.stop(); } catch (_) {}
-    }
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    audioCtxRef.current?.close().catch(() => {});
-    audioQueueRef.current.forEach((a) => { try { a.pause(); } catch (_) {} });
-    audioQueueRef.current = [];
-    aiPlayingRef.current = false;
+    connectingRef.current = false;
+    generationRef.current++;
+    turnRef.current?.stop();
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    if (timerRef.current !== null) clearInterval(timerRef.current);
+    rafRef.current = null;
+    timerRef.current = null;
+    const recorder = recorderRef.current;
+    recorderRef.current = null;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+    void audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+    analyserRef.current = null;
+    audioRef.current?.pause();
+    audioRef.current = null;
+    finishPlaybackRef.current?.();
+    finishPlaybackRef.current = null;
     setAiSpeaking(false);
     setIsCallActive(false);
+    setIsConnecting(false);
   }, []);
 
-  const toggleMute = useCallback(() => setIsMuted((m) => !m), []);
-  const adjustVolume = useCallback((v: number) => setVolume(v), []);
-  const toggleCC = useCallback(() => setShowCC((s) => !s), []);
+  const startRecorderCycle = useCallback(() => {
+    if (!streamRef.current || !activeRef.current || turnRef.current?.processing) return;
+    const epoch = generationRef.current;
+    const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find(type => MediaRecorder.isTypeSupported(type));
+    if (!mime) { setMicError('This browser does not support call recording.'); endCall(); return; }
+    const recorder = new MediaRecorder(streamRef.current, { mimeType: mime });
+    const chunks: Blob[] = [];
+    const deadline = setTimeout(() => {
+      if (recorder.state === 'recording') recorder.stop();
+    }, MAX_UTTERANCE_MS);
+    let hadSpeech = false;
+    cycleStartRef.current = performance.now();
+    speakStartRef.current = 0;
+    lastVoiceRef.current = 0;
+    recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+    recorder.onerror = () => {
+      clearTimeout(deadline);
+      if (activeRef.current && epoch === generationRef.current) {
+        endCall();
+        setMicError('Microphone recording failed. Check the device and restart the call.');
+      }
+    };
+    recorder.onstop = async () => {
+      clearTimeout(deadline);
+      hadSpeech = speakStartRef.current > 0;
+      if (!activeRef.current || epoch !== generationRef.current) return;
+      const blob = new Blob(chunks, { type: recorder.mimeType || mime });
+      try {
+        if (hadSpeech && blob.size > 2 * 1024 * 1024) throw new Error('The recording is too large. Please try a shorter utterance.');
+        if (hadSpeech && !mutedRef.current && blob.size > 0 && blob.size <= 2 * 1024 * 1024) {
+          const audio = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+            reader.onerror = () => reject(new Error('Could not read microphone audio.'));
+            reader.readAsDataURL(blob);
+          });
+          if (activeRef.current && epoch === generationRef.current) {
+            setMicError(null);
+            await turnRef.current?.run(audio, blob.type, modelRef.current, voiceRef.current);
+          }
+        }
+      } catch (error) {
+        if (activeRef.current && epoch === generationRef.current) {
+          audioRef.current?.pause();
+          finishPlaybackRef.current?.();
+          const message = error instanceof Error ? error.message : 'Voice turn failed. Please retry.';
+          setMicError(message);
+          toast({ title: 'Call error', description: message, variant: 'destructive' });
+        }
+      } finally {
+        if (activeRef.current && epoch === generationRef.current) restartRef.current();
+      }
+    };
+    recorderRef.current = recorder;
+    recorder.start();
+  }, [endCall, toast]);
+  restartRef.current = startRecorderCycle;
 
-  const formatDuration = useCallback(() => {
-    const m = Math.floor(callDuration / 60).toString().padStart(2, '0');
-    const s = (callDuration % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  }, [callDuration]);
+  const monitorLoop = useCallback(function monitor() {
+    const analyser = analyserRef.current;
+    if (!analyser || !activeRef.current) return;
+    const recorder = recorderRef.current;
+    if (recorder?.state === 'recording') {
+      const buffer = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(buffer);
+      const rms = Math.sqrt(buffer.reduce((sum, value) => sum + value * value, 0) / buffer.length);
+      const now = performance.now();
+      if (!mutedRef.current && rms > RMS_THRESHOLD) {
+        if (!speakStartRef.current) speakStartRef.current = now;
+        lastVoiceRef.current = now;
+      }
+      const ended = speakStartRef.current > 0 && now - lastVoiceRef.current > SILENCE_MS && now - speakStartRef.current > MIN_SPEECH_MS;
+      if (ended || now - cycleStartRef.current >= MAX_UTTERANCE_MS) recorder.stop();
+    }
+    rafRef.current = requestAnimationFrame(monitor);
+  }, []);
 
+  const startCall = useCallback(async () => {
+    if (activeRef.current || connectingRef.current) return;
+    connectingRef.current = true;
+    const epoch = ++generationRef.current;
+    setIsConnecting(true);
+    setMicError(null);
+    try {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') throw new Error('Calls require HTTPS and a browser with microphone recording support.');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (epoch !== generationRef.current) return;
+      if (!session) throw new Error('Sign in before starting a call.');
+      const model = localStorage.getItem('crider-gpt-selected-model') || 'cridergpt-5.0';
+      modelRef.current = model;
+      setCallModel(model);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      if (epoch !== generationRef.current) { stream.getTracks().forEach(track => track.stop()); return; }
+      streamRef.current = stream;
+      stream.getAudioTracks().forEach(track => { track.enabled = !mutedRef.current; });
+      const context = new AudioContext();
+      audioCtxRef.current = context;
+      await context.resume();
+      if (epoch !== generationRef.current) return;
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 1024;
+      context.createMediaStreamSource(stream).connect(analyser);
+      analyserRef.current = analyser;
+      activeRef.current = true;
+      turnRef.current?.start();
+      setTranscripts([]);
+      setIsCallActive(true);
+      setCallDuration(0);
+      timerRef.current = setInterval(() => setCallDuration(duration => duration + 1), 1000);
+      restartRef.current();
+      rafRef.current = requestAnimationFrame(monitorLoop);
+    } catch (error) {
+      if (epoch === generationRef.current) {
+        endCall();
+        setMicError(error instanceof Error ? error.message : 'Microphone error');
+      }
+    } finally {
+      if (epoch === generationRef.current) { connectingRef.current = false; setIsConnecting(false); }
+    }
+  }, [endCall, monitorLoop]);
+
+  const toggleMute = useCallback(() => {
+    mutedRef.current = !mutedRef.current;
+    setIsMuted(mutedRef.current);
+    streamRef.current?.getAudioTracks().forEach(track => { track.enabled = !mutedRef.current; });
+    speakStartRef.current = 0;
+    lastVoiceRef.current = 0;
+    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
+  }, []);
+  const adjustVolume = useCallback((value: number) => {
+    const bounded = Math.max(0, Math.min(1, value));
+    volumeRef.current = bounded;
+    setVolume(bounded);
+    if (audioRef.current) audioRef.current.volume = bounded;
+  }, []);
+  const toggleCC = useCallback(() => setShowCC(previous => !previous), []);
+  const formatDuration = useCallback(() => `${Math.floor(callDuration / 60).toString().padStart(2, '0')}:${(callDuration % 60).toString().padStart(2, '0')}`, [callDuration]);
   useEffect(() => () => endCall(), [endCall]);
-
-  return {
-    isCallActive, isConnecting, isMuted, aiSpeaking, callDuration, volume, showCC,
-    transcripts, micError, voice, setVoice,
-    startCall, endCall, toggleMute, adjustVolume, toggleCC, formatDuration,
-  };
+  return { isCallActive, isConnecting, isMuted, aiSpeaking, callDuration, volume, showCC,
+    transcripts, micError, voice, setVoice, callModel, startCall, endCall, toggleMute, adjustVolume, toggleCC, formatDuration };
 }
