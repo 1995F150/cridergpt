@@ -1,0 +1,7 @@
+stage/
+__pycache__/
+manifest.json
+edges-manifest.json
+*.fixture-report.json
+frontend-test.html
+backups/

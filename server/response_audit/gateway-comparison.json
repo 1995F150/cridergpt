@@ -1,0 +1,26 @@
+[
+  {
+    "prompt": "Hey there",
+    "model": "andromeda-3.0-360m-100",
+    "response": "Hello there",
+    "request_id": "13323898-82b3-46da-a1c6-efc52acffc5f",
+    "inference_request_id": "30cdb3a9a17048b39b8f419f9387fc26",
+    "finish_reason": "eos"
+  },
+  {
+    "prompt": "What color is the sky on a clear day?",
+    "model": "andromeda-3.0-360m-100",
+    "response": "The sky on a clear day is a deep shade of blue.",
+    "request_id": "425961c8-d7fd-4311-8781-a1b3105d8bf4",
+    "inference_request_id": "ff40801eb29d4708a3f1fc51b6d7618b",
+    "finish_reason": "eos"
+  },
+  {
+    "prompt": "What is 2 + 2?",
+    "model": "andromeda-3.0-360m-100",
+    "response": "4",
+    "request_id": "6db87bcb-f2d6-4b3b-b7e6-8f40c32bb58b",
+    "inference_request_id": "475d0d3e4b4f4b6c8e262120ec9eb710",
+    "finish_reason": "eos"
+  }
+]
