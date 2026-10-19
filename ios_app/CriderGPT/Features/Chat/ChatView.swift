@@ -51,7 +51,7 @@ struct ChatView: View {
             HStack {
                 Text("Model").font(.caption).foregroundStyle(Theme.textSecondary)
                 Picker("Chat model", selection: $vm.model) {
-                    ForEach(vm.models) { option in Text(option.name).tag(option.id) }
+                    ForEach(vm.models) { option in Text(option.name + (vm.canUse(option) ? "" : " · plan required")).tag(option.id).disabled(!vm.canUse(option)) }
                 }.disabled(vm.isSending || vm.hasUnsavedReply)
             }
             Composer(
@@ -68,7 +68,7 @@ struct ChatView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Picker("Model", selection: $vm.model) {
-                        ForEach(vm.models) { option in Text(option.name).tag(option.id) }
+                        ForEach(vm.models) { option in Text(option.name + (vm.canUse(option) ? "" : " · plan required")).tag(option.id).disabled(!vm.canUse(option)) }
                     }.disabled(vm.isSending)
                     Button("Refresh models and history") { Task { await vm.refresh() } }
                     Button("Conversations") { showHistory = true }

@@ -85,3 +85,11 @@ enum ChatContext {
         return pairs.suffix(10).flatMap { $0 }
     }
 }
+
+
+struct ServerEntitlement: Decodable {
+    let plan: String
+    let isActive: Bool
+    let source: String?
+    let expiresAt: String?
+}

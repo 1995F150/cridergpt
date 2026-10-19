@@ -4,6 +4,8 @@ import StoreKit
 struct ProfileView: View {
     @EnvironmentObject var auth: AuthService
     @StateObject private var iap = IAPManager.shared
+    @State private var serverEntitlement: ServerEntitlement?
+    @State private var entitlementError: String?
 
     var body: some View {
         ZStack {
@@ -19,7 +21,11 @@ struct ProfileView: View {
             }
         }
         .navigationTitle("Profile")
-        .task { await iap.loadProducts() }
+        .task {
+            await iap.loadProducts()
+            do { serverEntitlement = try await ChatService.request("get-entitlement"); entitlementError = nil }
+            catch { entitlementError = "Account plan could not be verified. Retry when connected." }
+        }
     }
 
     private var header: some View {
@@ -30,7 +36,7 @@ struct ProfileView: View {
             }
             Text(auth.profile?.fullName ?? auth.profile?.username ?? "Signed in")
                 .font(.headline).foregroundStyle(Theme.textPrimary)
-            Text(iap.tierName + " plan")
+            Text(serverEntitlement.map { ($0.isActive ? $0.plan.capitalized : "Free") + " account plan" } ?? "Account plan unverified")
                 .font(.caption).padding(.horizontal, 10).padding(.vertical, 3)
                 .background(Theme.accent.opacity(0.15)).clipShape(Capsule())
                 .foregroundStyle(Theme.accent)
@@ -42,6 +48,8 @@ struct ProfileView: View {
     private var subscriptionCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Subscription").font(.headline).foregroundStyle(Theme.textPrimary)
+            Text("App Store: " + iap.tierName).font(.caption).foregroundStyle(Theme.textSecondary)
+            if let entitlementError { Text(entitlementError).font(.caption).foregroundStyle(Theme.warning) }
             if iap.loading && iap.products.isEmpty {
                 ProgressView().tint(Theme.accent)
             } else if iap.products.isEmpty {

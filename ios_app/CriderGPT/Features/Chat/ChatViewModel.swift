@@ -12,6 +12,7 @@ final class ChatViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var model = "cridergpt-5.0"
     @Published var catalogError: String?
+    @Published var entitlement: ServerEntitlement?
     private var pendingReply: (UUID, String, UUID, ChatMetadata, String?)?
 
     func refresh() async {
@@ -23,6 +24,8 @@ final class ChatViewModel: ObservableObject {
         } catch { errorMessage = error.localizedDescription }
     }
     func loadModels() async {
+        do { entitlement = try await ChatService.request("get-entitlement") }
+        catch { entitlement = nil }
         if let url = Bundle.main.url(forResource: "WebModels", withExtension: "json"), let data = try? Data(contentsOf: url), let bundled = try? JSONDecoder().decode([ChatModelOption].self, from: data) { models = bundled }
         do {
             let catalog: ChatService.Models = try await ChatService.request("cridergpt-ubuntu-api", body: ["action": "public_models"])
@@ -63,12 +66,18 @@ final class ChatViewModel: ObservableObject {
         } catch { errorMessage = "Reply is still unsaved. Retry saving before leaving this chat." }
     }
     var hasUnsavedReply: Bool { pendingReply != nil }
+    func canUse(_ option: ChatModelOption) -> Bool {
+        if option.requiredPlan == nil || option.requiredPlan == "free" { return true }
+        guard let entitlement, entitlement.isActive else { return false }
+        let levels = ["free": 0, "plus": 1, "pro": 2, "lifetime": 3]
+        return (levels[entitlement.plan] ?? 0) >= (levels[option.requiredPlan ?? "free"] ?? 0)
+    }
 
     func send() async {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isSending, pendingReply == nil else { return }
         let selected = model
-        guard models.contains(where: { $0.id == selected }) else { errorMessage = "Selected model unavailable. Refresh the model catalog."; return }
+        guard models.contains(where: { $0.id == selected && canUse($0) }) else { errorMessage = "Selected model unavailable. Refresh the model catalog."; return }
         isSending = true; errorMessage = nil
         defer { isSending = false }
         do {
