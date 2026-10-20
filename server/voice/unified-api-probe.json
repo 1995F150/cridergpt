@@ -1,0 +1,10 @@
+{
+  "catalog_voices": 1,
+  "same_api_paths": true,
+  "actual_local_speech": true,
+  "speech_model": "piper-ljspeech-medium",
+  "cross_owner_result_status": 404,
+  "public_gateway_changed": false,
+  "human_voice_used": false,
+  "new_public_url": false
+}

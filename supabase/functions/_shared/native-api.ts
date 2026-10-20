@@ -11,10 +11,10 @@ export function nativeConfig(base: string, key: string): NativeConfig {
   }
   return { base: url.href.replace(/\/+$/, ''), key };
 }
-export async function nativeRequest(config: NativeConfig, path: string, body?: unknown, fetcher: typeof fetch = fetch) {
+export async function nativeRequest(config: NativeConfig, path: string, body?: unknown, fetcher: typeof fetch = fetch, verifiedUser?: string) {
   const response = await fetcher(config.base + path, {
     method: body === undefined ? 'GET' : 'POST', redirect: 'error',
-    headers: { Authorization: `Bearer ${config.key}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+    headers: { Authorization: `Bearer ${config.key}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(verifiedUser ? { 'X-CriderGPT-User': verifiedUser } : {}) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(path === '/v1/chat' ? 115000 : 15000),
   });

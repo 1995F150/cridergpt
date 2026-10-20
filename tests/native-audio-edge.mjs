@@ -1,0 +1,21 @@
+import {build} from 'esbuild';
+import assert from 'node:assert/strict';
+const result=await build({entryPoints:['supabase/functions/cridergpt-ubuntu-api/index.ts'],bundle:true,write:false,format:'esm',platform:'node',plugins:[{name:'auth-fixture',setup(b){
+ b.onResolve({filter:/^npm:@supabase/},a=>({path:a.path,namespace:'fixture'}));
+ b.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:a.path.endsWith('/cors')?'export const corsHeaders={};':`export const createClient=()=>({auth:{getClaims:async()=>({data:{claims:{sub:globalThis.claimUser}},error:null}),getUser:async()=>({data:{user:globalThis.actualUser},error:null})},rpc:async()=>({data:false})});`,loader:'js'}));
+}}]});
+const user='11111111-1111-4111-8111-111111111111';
+globalThis.claimUser=user;globalThis.actualUser={id:user};globalThis.Deno={env:{get:name=>name==='CRIDERGPT_API_BASE_URL'?'https://existing-api.test':'server-key'},serve:fn=>globalThis.audioHandler=fn};
+const requests=[];globalThis.fetch=async(url,init)=>{requests.push({url,init});return new Response(JSON.stringify({voices:[{id:'stock',name:'Backend voice'}],transcription:{available:true}}),{status:200})};
+await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
+const request=(body,auth=true)=>new Request('https://edge.test',{method:'POST',headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer session'}:{})},body:JSON.stringify(body)});
+assert.equal((await audioHandler(request({action:'native_audio',operation:'catalog'},false))).status,401);assert.equal(requests.length,0);
+globalThis.actualUser=null;assert.equal((await audioHandler(request({action:'native_audio',operation:'catalog'}))).status,401);assert.equal(requests.length,0);
+globalThis.actualUser={id:user};
+const response=await audioHandler(request({action:'native_audio',operation:'catalog',owner:'attacker'}));assert.equal(response.status,200);
+assert.equal(requests[0].url,'https://existing-api.test/v1/audio/voices');assert.equal(requests[0].init.headers['X-CriderGPT-User'],user);
+assert.equal(requests[0].init.headers.Authorization,'Bearer server-key');assert.equal(JSON.stringify(await response.json()).includes('server-key'),false);
+assert.equal((await audioHandler(request({action:'native_audio',operation:'job',id:'../../secrets'}))).status,400);assert.equal(requests.length,1);
+const sent=await audioHandler(request({action:'native_audio',operation:'speech',voice_id:'stock',text:'Hello',owner:'attacker'}));assert.equal(sent.status,200);
+assert.deepEqual(JSON.parse(requests[1].init.body),{operation:'speech',voice_id:'stock',text:'Hello'});
+console.log('PASS: actual audio Edge handler authenticates before upstream access, forwards verified identity, uses existing API base/key, rejects invalid IDs and strips body ownership.');

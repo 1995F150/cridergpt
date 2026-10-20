@@ -1,7 +1,7 @@
 // Transport-independent call state. No API keys, providers, or audio devices here.
 export type CallMessage = { role: 'user' | 'assistant'; content: string };
 export type CallCaption = { speaker: 'user' | 'ai'; text: string; timestamp: Date; model?: string; incomplete?: boolean };
-type Reply = { text?: string; response?: string; audioContent?: string; model?: string; incomplete?: boolean; output_limit_reached?: boolean; finish_reason?: string; error?: string };
+type Reply = { text?: string; response?: string; audioContent?: string; audioParts?: Array<{ audio: string; mime: string }>; model?: string; incomplete?: boolean; output_limit_reached?: boolean; finish_reason?: string; error?: string };
 type Invoke = (name: string, body: Record<string, unknown>) => Promise<Reply>;
 
 export class CallTurn {
@@ -11,10 +11,11 @@ export class CallTurn {
   private history: CallMessage[] = [];
   private cancelPending?: () => void;
   constructor(private invoke: Invoke, private emit: (entry: CallCaption) => void,
-              private play: (audio: string) => Promise<void>, private timeoutMs = 60000) {}
+              private play: (audio: string, mime?: string) => Promise<void>, private timeoutMs = 60000,
+              private cancelTransport: () => void = () => {}) {}
 
   start() { this.stop(); this.active = true; this.history = []; }
-  stop() { this.active = false; this.epoch++; this.busy = false; this.cancelPending?.(); }
+  stop() { this.active = false; this.epoch++; this.busy = false; this.cancelPending?.(); this.cancelTransport(); }
   get processing() { return this.busy; }
   private current(epoch: number) { return this.active && this.epoch === epoch; }
 
@@ -49,14 +50,20 @@ export class CallTurn {
       // One speech request per response: sentence splitting consumed multiple usage credits.
       const speech = await this.invoke('text-to-speech', { text: reply.response, voice });
       if (!valid()) return false;
-      if (speech.error || !speech.audioContent) throw new Error('Speech playback is unavailable. Your answer remains in the captions.');
-      await this.play(speech.audioContent);
+      if (speech.error) throw new Error('Speech playback is unavailable. Your answer remains in the captions.');
+      if (speech.audioParts?.length) {
+        for (const part of speech.audioParts) {
+          if (!valid()) return false;
+          await this.play(part.audio, part.mime);
+        }
+      } else if (speech.audioContent) await this.play(speech.audioContent);
+      else throw new Error('Speech playback is unavailable. Your answer remains in the captions.');
       return valid();
     };
     try {
       return await Promise.race([work(), new Promise<boolean>((resolve, reject) => {
         this.cancelPending = () => { expired = true; resolve(false); };
-        timer = setTimeout(() => { expired = true; reject(new Error('Voice turn timed out. Please retry.')); }, this.timeoutMs);
+        timer = setTimeout(() => { expired = true; this.cancelTransport(); reject(new Error('Voice turn timed out. Please retry.')); }, this.timeoutMs);
       })]);
     } finally {
       clearTimeout(timer);

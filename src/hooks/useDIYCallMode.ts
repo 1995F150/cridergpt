@@ -2,6 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CallTurn, type CallCaption } from '@/lib/call-turn';
+import { NativeVoiceTransport, loadVoiceCatalog, type VoiceOption } from '@/lib/native-voice';
+
+async function invokeBackend(name: string, body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke(name, { body });
+  if (error || data?.error) throw new Error('Backend voice request failed. Refresh voices or retry.');
+  return data ?? {};
+}
 
 export type TranscriptEntry = CallCaption;
 const SILENCE_MS = 900;
@@ -20,7 +27,11 @@ export function useDIYCallMode() {
   const [showCC, setShowCC] = useState(true);
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   const [micError, setMicError] = useState<string | null>(null);
-  const [voice, setVoice] = useState('onyx');
+  const [voice, setVoice] = useState('');
+  const [voices, setVoices] = useState<VoiceOption[]>([]);
+  const [voicesLoading, setVoicesLoading] = useState(true);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const catalogEpoch = useRef(0);
   const [callModel, setCallModel] = useState('');
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -38,6 +49,7 @@ export function useDIYCallMode() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const finishPlaybackRef = useRef<(() => void) | null>(null);
   const turnRef = useRef<CallTurn | null>(null);
+  const voiceTransportRef = useRef<NativeVoiceTransport | null>(null);
   const speakStartRef = useRef(0);
   const lastVoiceRef = useRef(0);
   const cycleStartRef = useRef(0);
@@ -45,14 +57,11 @@ export function useDIYCallMode() {
   volumeRef.current = volume;
   voiceRef.current = voice;
 
+  if (!voiceTransportRef.current) voiceTransportRef.current = new NativeVoiceTransport(invokeBackend);
   if (!turnRef.current) {
-    turnRef.current = new CallTurn(async (name, body) => {
-      const { data, error } = await supabase.functions.invoke(name, { body });
-      if (error) throw new Error('Voice service request failed. Please retry.');
-      return data ?? {};
-    }, entry => setTranscripts(previous => [...previous, entry]), async content => {
+    turnRef.current = new CallTurn((name, body) => voiceTransportRef.current!.request(name, body), entry => setTranscripts(previous => [...previous, entry]), async (content, mime = 'audio/mpeg') => {
       if (!activeRef.current) return;
-      const audio = new Audio(`data:audio/mpeg;base64,${content}`);
+      const audio = new Audio(`data:${mime === 'audio/wav' ? 'audio/wav' : 'audio/mpeg'};base64,${content}`);
       audioRef.current = audio;
       audio.volume = volumeRef.current;
       setAiSpeaking(true);
@@ -73,8 +82,23 @@ export function useDIYCallMode() {
           setAiSpeaking(false);
         }
       }
-    });
+    }, 60000, () => voiceTransportRef.current?.cancel());
   }
+
+  const refreshVoices = useCallback(async () => {
+    const epoch = ++catalogEpoch.current;
+    setVoicesLoading(true); setVoiceError(null);
+    try {
+      const catalog = await loadVoiceCatalog(invokeBackend);
+      if (catalogEpoch.current !== epoch) return;
+      setVoices(catalog);
+      setVoice(previous => previous || catalog[0]?.id || '');
+      if (!catalog.length) setVoiceError('No local voices are available on the backend.');
+    } catch {
+      if (catalogEpoch.current === epoch) { setVoices([]); setVoiceError('Backend voices unavailable. Refresh after the audio gateway is enabled.'); }
+    } finally { if (catalogEpoch.current === epoch) setVoicesLoading(false); }
+  }, []);
+  useEffect(() => { const counter = catalogEpoch; void refreshVoices(); return () => { counter.current++; }; }, [refreshVoices]);
 
   const endCall = useCallback(() => {
     activeRef.current = false;
@@ -190,6 +214,9 @@ export function useDIYCallMode() {
       const { data: { session } } = await supabase.auth.getSession();
       if (epoch !== generationRef.current) return;
       if (!session) throw new Error('Sign in before starting a call.');
+      const available = await loadVoiceCatalog(invokeBackend);
+      if (epoch !== generationRef.current) return;
+      if (!available.some(option => option.id === voiceRef.current)) throw new Error('The selected backend voice is unavailable. Refresh voices and select one.');
       const model = localStorage.getItem('crider-gpt-selected-model') || 'cridergpt-5.0';
       modelRef.current = model;
       setCallModel(model);
@@ -241,5 +268,5 @@ export function useDIYCallMode() {
   const formatDuration = useCallback(() => `${Math.floor(callDuration / 60).toString().padStart(2, '0')}:${(callDuration % 60).toString().padStart(2, '0')}`, [callDuration]);
   useEffect(() => () => endCall(), [endCall]);
   return { isCallActive, isConnecting, isMuted, aiSpeaking, callDuration, volume, showCC,
-    transcripts, micError, voice, setVoice, callModel, startCall, endCall, toggleMute, adjustVolume, toggleCC, formatDuration };
+    transcripts, micError, voice, setVoice, voices, voicesLoading, voiceError, refreshVoices, callModel, startCall, endCall, toggleMute, adjustVolume, toggleCC, formatDuration };
 }

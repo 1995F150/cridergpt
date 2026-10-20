@@ -165,7 +165,7 @@ def create_app(manager=None,state_root=None):
  @app.get('/v1/status')
  async def status(request:Request):
   actor(request,'status')
-  return {'ready':engine.ready,'busy':bool(engine.active),'models':['whisper-tiny.en','piper-ljspeech-medium','openvoice-v2'],'cloning_requires_enrolled_reference':True,'external_fallback':False,'public_chat_connected':False,'production_ready':False}
+  return {'ready':engine.ready,'busy':bool(engine.active),'models':['whisper-tiny.en','piper-ljspeech-medium','openvoice-v2'],'stock_voices':[{'id':'stock','name':'LJ Speech — local standard voice','provider':'local','model':'piper-ljspeech-medium','kind':'stock','available':True}],'cloning_requires_enrolled_reference':True,'external_fallback':False,'public_chat_connected':False,'production_ready':False}
  @app.post('/v1/jobs',status_code=202)
  async def start(request:Request):
   # Auth before parsing potentially large audio bodies.

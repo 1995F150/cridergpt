@@ -2,9 +2,9 @@
 
 Status: **private local speech and reference-conversion service installed and running** as `cridergpt-voice.service`. The public chat/call routes have not been switched over. Existing chat/native/image/vision services, public URLs, production keys and speech functions remain unchanged. No human recording was used or sent to a provider. The initial audit below is retained; current operation and access instructions follow it.
 
-## What the current call actually does
+## Deployed legacy call path at initial inspection
 
-The visible `CallModeInterface` imports `useDIYCallMode`. Its microphone/VAD recorder invokes three Supabase functions, sequentially:
+The initially inspected `CallModeInterface` imports `useDIYCallMode`. Its deployed legacy microphone/VAD recorder invokes three Supabase functions, sequentially:
 
 1. `speech-to-text`: authenticated OpenAI `whisper-1` transcription of base64 browser audio.
 2. `chat-with-ai`: CriderGPT model routing. Native IDs use the authenticated server proxy; other named models can resolve to configured external backends. Choosing native text does **not** make current STT/TTS local.
@@ -178,3 +178,7 @@ The installer refuses to overwrite an existing unit/code/key, preserves state on
 ## Native call bridge addition
 
 The installed local operator bridge now connects private speech jobs to existing registered native text models without external speech APIs or a new public URL. Real Andromeda and Nebula speech turns passed; Nova remains text-only because the legacy runtime omits termination metadata. Public phone-button integration still requires an authenticated session coordinator. See [NATIVE_CALL_INTEGRATION.md](NATIVE_CALL_INTEGRATION.md) for commands, test evidence and remaining boundaries. Your own voice still needs explicit reference enrollment and quality evaluation.
+
+## Backend-driven voice catalog and same-API audio routes
+
+The draft public call frontend now fetches voices from the backend and uses authenticated local audio jobs through the existing API configuration. The additive gateway and Edge changes are staged, not deployed. See [UNIFIED_API.md](UNIFIED_API.md) for ownership boundaries, the coordinated rollout, tests and rollback. Only installed stock voices and caller-owned references are advertised; no additional pretrained voice was downloaded.

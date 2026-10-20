@@ -24,6 +24,10 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
     micError,
     voice,
     setVoice,
+    voices,
+    voicesLoading,
+    voiceError,
+    refreshVoices,
     callModel,
     startCall,
     endCall,
@@ -36,27 +40,24 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
   if (!isCallActive) {
     return (
       <div className="flex flex-col justify-center items-center gap-3 p-4">
-        <Select value={voice} onValueChange={setVoice}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Voice" />
+        <Select value={voice} onValueChange={setVoice} disabled={voicesLoading || isConnecting || !voices.length}>
+          <SelectTrigger className="w-full max-w-sm" aria-label="Backend voice">
+            <SelectValue placeholder={voicesLoading ? 'Loading backend voices…' : 'Choose a backend voice'} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="onyx">Onyx (deep male)</SelectItem>
-            <SelectItem value="alloy">Alloy (neutral)</SelectItem>
-            <SelectItem value="echo">Echo (warm male)</SelectItem>
-            <SelectItem value="fable">Fable (British)</SelectItem>
-            <SelectItem value="nova">Nova (female)</SelectItem>
-            <SelectItem value="shimmer">Shimmer (soft female)</SelectItem>
+            {voices.map(option => <SelectItem key={option.id} value={option.id}>{option.name} · {option.kind === 'owned_reference' ? 'Your reference' : 'Local'}</SelectItem>)}
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground text-center max-w-sm">
-          Uses your selected chat model. Transcription and speech currently use external services; these voices are not local clones.
+          Uses your selected chat model with backend-provided local speech. A reference voice changes the sound, independently of the text model.
         </p>
+        <Button variant="outline" size="sm" onClick={() => void refreshVoices()} disabled={voicesLoading || isConnecting}>Refresh voices</Button>
+        {voiceError && <p role="alert" className="text-sm text-destructive text-center max-w-sm">{voiceError}</p>}
         <Button
           onClick={startCall}
           size="lg"
           className="gap-2"
-          disabled={isConnecting}
+          disabled={isConnecting || voicesLoading || !voices.some(option => option.id === voice)}
         >
           <Phone className="h-5 w-5" />
           {isConnecting ? 'Connecting…' : 'Start Call Mode'}
@@ -83,6 +84,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
             {formatDuration()}
           </div>
           <p className="text-xs text-muted-foreground break-all">Chat model: {callModel}</p>
+          <p className="text-xs text-muted-foreground">Voice: {voices.find(option => option.id === voice)?.name ?? voice}</p>
           {micError && <p role="alert" className="text-sm text-destructive">{micError}</p>}
         </div>
 

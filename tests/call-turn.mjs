@@ -79,4 +79,16 @@ let checks=0;
  await assert.rejects(f.turn.run('a','audio/webm','native:a','onyx'),/incomplete/);
  assert.equal(f.played.length,0);checks++;
 }
+{
+ const f=fixture({'text-to-speech':async()=>({audioParts:[{audio:'first',mime:'audio/wav'},{audio:'second',mime:'audio/wav'}]})});
+ assert.equal(await f.turn.run('a','audio/webm','native:a','stock'),true);
+ assert.deepEqual(f.played,['first','second']);checks++;
+}
+{
+ let cancelled=0;
+ const turn=new CallTurn(async()=>await new Promise(()=>{}),()=>{},async()=>{},5,()=>cancelled++);
+ turn.start();const before=cancelled;
+ await assert.rejects(turn.run('a','audio/webm','native:a','stock'),/timed out/);
+ assert.equal(cancelled,before+1);checks++;
+}
 console.log(`PASS: ${checks} call-turn checks (routing, history, overlap, hang-up, timeout, retry, incomplete replies, audio failures, session isolation).`);
