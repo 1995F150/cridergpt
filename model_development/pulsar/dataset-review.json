@@ -1,0 +1,11 @@
+{
+  "scope": "99 existing synthetic seed examples, reviewed for a bounded local development pilot",
+  "reviewer": "coding agent",
+  "human_review_completed": false,
+  "user_instruction": "Make it 9/9",
+  "authorization_interpretation": "Permits a resource-capped local fine-tuning experiment after presenting its estimate; does not authorize public release or unlimited training.",
+  "checks": ["Inspected the complete data generator and explicit examples", "Arithmetic references independently computable and correct", "JSON and Python examples are static literals or simple functions", "No private chat logs, audio or user biography imported", "Project creator attribution comes from the owner-provided project context", "Exact evaluation prompts excluded", "All prompt tokens masked; same neutral system prompt used for pilot training and evaluation"],
+  "limits": ["Tiny repetitive synthetic corpus", "Template-related train/validation rows are not a fully independent generalization measure", "Uncertainty examples are generic and may not transfer reliably", "No evaluation rows, responses or expected answers are used as training targets"],
+  "production_approval": false,
+  "automatic_promotion": false
+}

@@ -24,6 +24,11 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
     micError,
     voice,
     setVoice,
+    voices,
+    voicesLoading,
+    voiceError,
+    refreshVoices,
+    callModel,
     startCall,
     endCall,
     toggleMute,
@@ -35,24 +40,24 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
   if (!isCallActive) {
     return (
       <div className="flex flex-col justify-center items-center gap-3 p-4">
-        <Select value={voice} onValueChange={setVoice}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Voice" />
+        <Select value={voice} onValueChange={setVoice} disabled={voicesLoading || isConnecting || !voices.length}>
+          <SelectTrigger className="w-full max-w-sm" aria-label="Backend voice">
+            <SelectValue placeholder={voicesLoading ? 'Loading backend voices…' : 'Choose a backend voice'} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="onyx">Onyx (deep male)</SelectItem>
-            <SelectItem value="alloy">Alloy (neutral)</SelectItem>
-            <SelectItem value="echo">Echo (warm male)</SelectItem>
-            <SelectItem value="fable">Fable (British)</SelectItem>
-            <SelectItem value="nova">Nova (female)</SelectItem>
-            <SelectItem value="shimmer">Shimmer (soft female)</SelectItem>
+            {voices.map(option => <SelectItem key={option.id} value={option.id}>{option.name} · {option.kind === 'owned_reference' ? 'Your reference' : 'Local'}</SelectItem>)}
           </SelectContent>
         </Select>
+        <p className="text-xs text-muted-foreground text-center max-w-sm">
+          Uses your selected chat model with backend-provided local speech. A reference voice changes the sound, independently of the text model.
+        </p>
+        <Button variant="outline" size="sm" onClick={() => void refreshVoices()} disabled={voicesLoading || isConnecting}>Refresh voices</Button>
+        {voiceError && <p role="alert" className="text-sm text-destructive text-center max-w-sm">{voiceError}</p>}
         <Button
           onClick={startCall}
           size="lg"
           className="gap-2"
-          disabled={isConnecting}
+          disabled={isConnecting || voicesLoading || !voices.some(option => option.id === voice)}
         >
           <Phone className="h-5 w-5" />
           {isConnecting ? 'Connecting…' : 'Start Call Mode'}
@@ -78,6 +83,9 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
           <div className="text-3xl font-mono font-bold">
             {formatDuration()}
           </div>
+          <p className="text-xs text-muted-foreground break-all">Chat model: {callModel}</p>
+          <p className="text-xs text-muted-foreground">Voice: {voices.find(option => option.id === voice)?.name ?? voice}</p>
+          {micError && <p role="alert" className="text-sm text-destructive">{micError}</p>}
         </div>
 
         {/* Voice Indicator with CriderGPT Logo */}
@@ -215,6 +223,8 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
                       } rounded-lg p-2 inline-block max-w-[90%]`}>
                         {entry.text}
                       </p>
+                      {entry.model && <p className="text-xs text-muted-foreground break-all">{entry.model}</p>}
+                      {entry.incomplete && <p role="alert" className="text-xs text-amber-500">Incomplete answer — retry this question.</p>}
                       <p className="text-xs text-muted-foreground mt-1">
                         {entry.timestamp.toLocaleTimeString()}
                       </p>
@@ -264,7 +274,7 @@ export function CallModeInterface({ onClose }: CallModeInterfaceProps) {
         {/* Call Instructions */}
         <div className="text-center text-xs text-muted-foreground space-y-1">
           <p>🎙️ Speak naturally to interact with CriderGPT AI</p>
-          <p>🔇 AI will pause your mic while responding</p>
+          <p>🔇 Recording pauses while AI responds</p>
         </div>
       </CardContent>
     </Card>

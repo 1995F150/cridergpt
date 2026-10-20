@@ -12,7 +12,12 @@
     "preview": "vite preview",
     "electron:dev": "electron electron/main.cjs",
     "electron:build": "vite build && electron-packager . CriderGPT --overwrite --out=electron-release --ignore=\"^/src\" --ignore=\"^/public\" --ignore=\"^/electron-release\"",
-    "test:chat-routing": "node tests/chat-routing.mjs"
+    "test:chat-routing": "node tests/chat-routing.mjs",
+    "test:call-mode": "node tests/call-turn.mjs && node tests/call-hook.mjs && node tests/voice-auth.mjs",
+    "test:pulsar-data": "python3 -m unittest discover -s model_development/pulsar -p 'test_*.py' -v",
+    "test:voice-references": "python3 -m unittest discover -s server/voice -p 'test_enrollment.py' -v",
+    "test:voice-service": "python3 -m unittest discover -s server/voice -p 'test_*.py' -v",
+    "test:native-voice": "node tests/native-voice.mjs && node tests/native-audio-edge.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

@@ -1,0 +1,42 @@
+{
+  "candidate": "pulsar-1.0-135m-candidate1",
+  "status": "review_required",
+  "training_started": false,
+  "base_weight_parameters": 134515008,
+  "estimated_lora_trainable_parameters": 460800,
+  "proposed_optimizer_steps": 10,
+  "gradient_accumulation": 4,
+  "maximum_training_tokens_per_microbatch": 256,
+  "model_float32_mib": 513.13,
+  "adapter_weights_float32_mib": 1.76,
+  "adapter_plus_grad_and_adam_states_mib": 7.03,
+  "planning_process_memory_gib": [
+    2,
+    4
+  ],
+  "extra_disk_budget_mib": 256,
+  "duration_estimate": "2\u201315 minutes for the proposed 10-step CPU feasibility pilot; uncalibrated estimate, not a measured training benchmark.",
+  "training_wall_time_limit_seconds": 900,
+  "training_estimate_confidence": "low: calibrate one forward/backward microbatch before approving a run",
+  "cpu_threads": 2,
+  "paid_api_cost": 0,
+  "external_training_service": false,
+  "requires_review": [
+    "all 99 seed examples",
+    "base-model and dataset provenance",
+    "baseline quality and speed",
+    "one-microbatch calibration before a run"
+  ],
+  "token_lengths": {
+    "train": {
+      "min": 41,
+      "max": 68
+    },
+    "validation": {
+      "min": 45,
+      "max": 68
+    }
+  },
+  "training_ready": false,
+  "reason": "Seed data and pilot are proposals. No run is authorized by creating this plan; no trainer or automatic promotion is invoked."
+}

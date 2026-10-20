@@ -1,4 +1,5 @@
 import { nativeConfig, nativeModels, pollNativeImage, NativeAPIError } from '../_shared/native-api.ts';
+import { nativeAudio } from '../_shared/native-audio.ts';
 // Server-side bridge to the Ubuntu-hosted CriderGPT API (api.cridergpt.com).
 // The API key never leaves this function. Catalog/image polling require sign-in;
 // diagnostic health/models/chat actions remain admin-only.
@@ -30,6 +31,16 @@ Deno.serve(async (req) => {
     if (error || !claims?.claims || typeof claims.claims.sub !== 'string' || !claims.claims.sub) return json({ error: 'Unauthorized' }, 401);
     let incoming: any = {};
     try { incoming = await req.json(); } catch { /* health defaults remain admin-only */ }
+    if (incoming.action === 'native_audio') {
+      const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.slice(7));
+      if (userError || !user?.id) return json({ error: 'Unauthorized' }, 401);
+      try {
+        const config = nativeConfig(Deno.env.get('CRIDERGPT_API_BASE_URL') || '', Deno.env.get('CRIDERGPT_API_KEY') || '');
+        return json(await nativeAudio(config, user.id, incoming));
+      } catch (error) {
+        return json({ error: error instanceof NativeAPIError ? error.message : 'Local voice service unavailable.' }, error instanceof NativeAPIError ? error.status : 503);
+      }
+    }
     if (incoming.action === 'public_models' || incoming.action === 'native_image_job') {
       try {
         const config = nativeConfig(Deno.env.get('CRIDERGPT_API_BASE_URL') || '', Deno.env.get('CRIDERGPT_API_KEY') || '');

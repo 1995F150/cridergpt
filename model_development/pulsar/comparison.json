@@ -1,0 +1,25 @@
+{
+  "candidate": "pulsar-1.0-135m-candidate1",
+  "median_throughput_ratio": 2.381,
+  "base_smoke_passed": 5,
+  "andromeda_smoke_passed": 5,
+  "cases": 9,
+  "speed_target_met": true,
+  "quality_target_met": false,
+  "failed_case_ids": [
+    "math",
+    "format",
+    "json",
+    "uncertainty"
+  ],
+  "release_ready": false,
+  "training_started": false,
+  "deployed": false,
+  "reason": "A faster baseline is not a trained/released Pulsar. Smoke tests require human review and cannot establish broad quality; no automatic promotion.",
+  "limitations": [
+    "Nine synthetic cases, heuristic graders and a single sample per case.",
+    "Both runs are capped to one CPU core-equivalent with two Torch threads.",
+    "Outputs vary in length; throughput and latency are descriptive, not identical-token controlled trials.",
+    "Neutral shared prompt differs from current production persona, so this is not production endpoint latency."
+  ]
+}

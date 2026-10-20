@@ -1,0 +1,16 @@
+{
+  "candidate_id": "pulsar-1.0-135m-lora-pilot1",
+  "status": "rejected_for_release",
+  "trained": true,
+  "deployed": false,
+  "production_ready": false,
+  "adapter_path": "/home/cridergpt2026/cridergpt-pulsar/model_development/pulsar/runs/pilot-20261019T211602251785Z/adapter-step-50",
+  "adapter_sha256": "8f32526282e64040402efa515b8b7ada72498f06b09beb30995bec156c7bc089",
+  "base_sha256": "5af571cbf074e6d21a03528d2330792e532ca608f24ac70a143f6b369968ab8c",
+  "steps": 50,
+  "smoke_score": "6/9",
+  "fresh_automatic_score": "2/12",
+  "human_review_completed": false,
+  "report": "pilot-results.json",
+  "reason": "Fails both the requested 9/9 development target and independent quality checks."
+}

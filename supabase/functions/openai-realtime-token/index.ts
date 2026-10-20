@@ -137,12 +137,22 @@ serve(async (req) => {
     let username: string | null = null;
 
     const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Authentication required for voice calls.' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     if (authHeader) {
       try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           global: { headers: { Authorization: authHeader } },
         });
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          return new Response(JSON.stringify({ error: 'Invalid voice call session.' }), {
+            status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
         if (user) {
           email = user.email ?? null;
           isOwner = email?.toLowerCase() === OWNER_EMAIL;
@@ -151,7 +161,10 @@ serve(async (req) => {
           username = meta.preferred_username || meta.user_name || null;
         }
       } catch (err) {
-        console.warn('Could not resolve user from JWT:', err);
+        console.warn('Voice session authentication failed');
+        return new Response(JSON.stringify({ error: 'Voice authentication is unavailable.' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
@@ -159,11 +172,11 @@ serve(async (req) => {
       auth: { persistSession: false },
     });
 
-    const { data: writingSamplesData } = await adminSupabase
+    const { data: writingSamplesData } = isOwner ? await adminSupabase
       .from('writing_samples')
       .select('title, content')
       .order('created_at', { ascending: true })
-      .limit(6);
+      .limit(6) : { data: null };
 
     const writingStyleContext = writingSamplesData?.length
       ? `\n\n✍️ JESSIE WRITING SAMPLE STYLE:\nUse this as the speaking style source of truth. Match the vocabulary, rhythm, sentence restarts, filler words, and casual thought-flow — do not sound polished or corporate.\n${writingSamplesData
@@ -177,7 +190,7 @@ serve(async (req) => {
     const offerSdp = typeof body.offerSdp === 'string' ? body.offerSdp : null;
 
     const instructions = buildPersonalizedInstructions({ isOwner, displayName, email, username }) + writingStyleContext;
-    console.log('[realtime-token] caller:', { email, isOwner, displayName, username, writingSamples: writingSamplesData?.length || 0 });
+    console.log('[realtime-token] session request', { writingSamples: writingSamplesData?.length || 0 });
 
     const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
       method: 'POST',

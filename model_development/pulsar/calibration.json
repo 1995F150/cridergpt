@@ -1,0 +1,10 @@
+{
+  "microbatch_seconds": 2.3135418199235573,
+  "estimated_training_seconds": 694.0625459770672,
+  "optimizer_steps": 50,
+  "accumulation": 4,
+  "memory_limit_gib": 4,
+  "peak_process_rss_mib": 1079.9921875,
+  "wall_limit_seconds": 900,
+  "optimizer_updates_performed": false
+}

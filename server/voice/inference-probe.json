@@ -1,0 +1,29 @@
+{
+  "loaded_models": [
+    "whisper-tiny.en",
+    "piper-ljspeech-medium",
+    "openvoice-v2"
+  ],
+  "load_seconds": 9.526563956052996,
+  "tts_inference_seconds": 1.3093059670645744,
+  "tts_audio_seconds": 7.859954648526077,
+  "tts_real_time_factor": 0.16657932845835177,
+  "stt_inference_seconds": 2.9439243709202856,
+  "generated_reference_text": "The local voice service is running on the server. This is a generated test recording, not a recording of a person who owns this application.",
+  "transcription": {
+    "text": "The local voice service is running on the server. This is a generated test recording, not a recording of a person who owns this application.",
+    "finish_reason": "eos",
+    "incomplete": false,
+    "seconds": 7.86,
+    "model": "whisper-tiny.en",
+    "latency_ms": 2942
+  },
+  "conversion_inference_seconds": 7.857348263030872,
+  "converted_audio_seconds": 2.9373242630385485,
+  "conversion_executed": true,
+  "human_voice_used": false,
+  "speaker_similarity_measured": false,
+  "silence_test_passed": true,
+  "public_chat_connected": false,
+  "production_ready": false
+}

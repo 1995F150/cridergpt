@@ -1,0 +1,595 @@
+{
+  "run": "/home/cridergpt2026/cridergpt-pulsar/model_development/pulsar/runs/pilot-20261019T212822291663Z",
+  "base_sha256": "5af571cbf074e6d21a03528d2330792e532ca608f24ac70a143f6b369968ab8c",
+  "dataset_sha256": {
+    "train": "f425f35fa9bcd0363055355810c9079f4f999ce601cec8351c84b65c1737a8bc",
+    "validation": "d5dd4e93716a1e32d0dba39871f380af69a59efbdea67efd14f4eaeefba9eaf6"
+  },
+  "eval_sha256": "0ebd06e31b418380017cee17795947a3b3c198521d0700144b28a0a3a3dc4b76",
+  "evaluator_sha256": "49984e4a3ff0b853b554daf91add7d48faab600955b107c55eae2e3bb3c0de0c",
+  "grader_sha256": "2d6304c0887f4473854a6bd7725055640c8e606da114055f4dc024c0ec40578d",
+  "initial_adapter_sha256": "8f32526282e64040402efa515b8b7ada72498f06b09beb30995bec156c7bc089",
+  "learning_rate": 0.0003,
+  "dataset_directory": "/home/cridergpt2026/cridergpt-pulsar/model_development/pulsar/varied-seed-v2",
+  "runtime": {
+    "torch": "2.5.1+cpu",
+    "transformers": "4.57.6",
+    "peft": "0.17.1"
+  },
+  "system_prompt": "You are a helpful assistant. Answer concisely and follow the requested format. Do not invent personal information.",
+  "inference": {
+    "device": "cpu",
+    "dtype": "float32",
+    "threads": 2,
+    "max_new_tokens": 64,
+    "max_time_seconds": 15,
+    "context_budget": 512,
+    "do_sample": false
+  },
+  "calibration": {
+    "microbatch_seconds": 2.2489273130195215,
+    "estimated_training_seconds": 674.6781939058565,
+    "optimizer_steps": 50,
+    "accumulation": 4,
+    "memory_limit_gib": 4,
+    "peak_process_rss_mib": 1082.484375,
+    "wall_limit_seconds": 900,
+    "optimizer_updates_performed": false
+  },
+  "completed_steps": 50,
+  "training_seconds": 376.78977928403765,
+  "validation_loss_before": 1.037013112622149,
+  "validation_loss_after": 0.55934787245796,
+  "before": {
+    "passed": 6,
+    "total": 9,
+    "results": [
+      {
+        "id": "greeting",
+        "response": "Hey there!",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 37,
+        "output_tokens": 4,
+        "seconds": 0.9948830559151247,
+        "tokens_per_second": 4.020573047473077,
+        "ttft_seconds": 0.6025327040115371,
+        "prompt_sha256": "e0fe681bffda700c563e1858024cc2137e4c83a558a6d9fdc4eff0fa0db1c1cb",
+        "response_sha256": "96e919bedc30d13e853fc5ad04cd44275496666eaf0a01d651f03b61a221eb77"
+      },
+      {
+        "id": "sky",
+        "response": "The sky on a clear day is blue.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 45,
+        "output_tokens": 10,
+        "seconds": 1.890717030968517,
+        "tokens_per_second": 5.288998742914752,
+        "ttft_seconds": 0.7105332310311496,
+        "prompt_sha256": "72e5abe3bb703ac258a7e79aced1ce301a08df6314d2416f86a41997d3536c6c",
+        "response_sha256": "5ecd459dc7cae45cff0aae6914738ce07d47181f475cd543fd85f3068c012737"
+      },
+      {
+        "id": "math",
+        "response": "8 + 9 = 17",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 49,
+        "output_tokens": 9,
+        "seconds": 1.6889710219111294,
+        "tokens_per_second": 5.328688226880404,
+        "ttft_seconds": 0.7080047279596329,
+        "prompt_sha256": "f6e5bb177541d2d31e49e0835bf18f4e6651f20d41dbf102d15e8c1438d21ed1",
+        "response_sha256": "1d74a11eab1db754339ed82b6aafdfe1af7bb4f291c5320175f461e8ae07bc43"
+      },
+      {
+        "id": "format",
+        "response": "TEAL then COPPER.",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 49,
+        "output_tokens": 8,
+        "seconds": 1.4384022830054164,
+        "tokens_per_second": 5.5617264339185395,
+        "ttft_seconds": 0.6209351429715753,
+        "prompt_sha256": "0d35f6bcadbd876c10f3660af75b0ccdda2d0675266df4f411cb83f892878e33",
+        "response_sha256": "e92488e0bf4d1af7988b52e1a60fc508e3632aa3e6bea6f05e56e2aef2da796c"
+      },
+      {
+        "id": "json",
+        "response": "{\"color\": \"blue\"}",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 46,
+        "output_tokens": 7,
+        "seconds": 1.3038400170626119,
+        "tokens_per_second": 5.368756832429582,
+        "ttft_seconds": 0.5988826190587133,
+        "prompt_sha256": "e7ec6e9efdc9a079c53fbe5d7e8c101059d27c4bfb0be6b04b9ca55baf258ad7",
+        "response_sha256": "f054e65a171af0ded523f1ea5a2952afd0dfc33e034f7d67d6dd8c0982cb543c"
+      },
+      {
+        "id": "python",
+        "response": "['eggs', 'milk', 'butter']",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 50,
+        "output_tokens": 12,
+        "seconds": 1.9714169199578464,
+        "tokens_per_second": 6.086992496877113,
+        "ttft_seconds": 0.6711912219179794,
+        "prompt_sha256": "a5dbd5b3aefb7e681382c2b3e799fdf34fa65951c7292400e8827fd6d0a6fb27",
+        "response_sha256": "62ca70724c6fbf798266c9639bfe16739b42ca320274552a317d7f4e4ee7f2a6"
+      },
+      {
+        "id": "memory",
+        "response": "Your sticker says LIMA.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 66,
+        "output_tokens": 8,
+        "seconds": 1.616220950963907,
+        "tokens_per_second": 4.949818275297592,
+        "ttft_seconds": 0.7964906439883634,
+        "prompt_sha256": "a842e26f4414cccf90f30fc1c58950c55ad8e5ebaf264e43285363cd0d41b814",
+        "response_sha256": "af8d8459e1da311a39abc7c187f69e8b3317a44944673fc3ded8e6f194ab32ac"
+      },
+      {
+        "id": "uncertainty",
+        "response": "CriderGPT's creator is unknown",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 46,
+        "output_tokens": 8,
+        "seconds": 1.4098813800374046,
+        "tokens_per_second": 5.674236225311208,
+        "ttft_seconds": 0.597941869054921,
+        "prompt_sha256": "158516315a842b7866ffa1a750741feaedf18865b0840a05cea6cad1f746fdbf",
+        "response_sha256": "e63e4e575a4b63675c568c9222da7e327226ac433698d52f840498ad6d3e56fd"
+      },
+      {
+        "id": "stale_reply",
+        "response": "The sky is blue.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 69,
+        "output_tokens": 6,
+        "seconds": 1.4616215239511803,
+        "tokens_per_second": 4.105029860110631,
+        "ttft_seconds": 0.8624565019272268,
+        "prompt_sha256": "4aefd199757a33cd3e0ebdfe49b368b9f509ab7db71ce1a4a9f75c0a8e2619be",
+        "response_sha256": "52ae4fd504d855f1dd094ab54e2da8402c96250ef75ef775a3cf20ff39d0cb2b"
+      }
+    ]
+  },
+  "after": {
+    "passed": 7,
+    "total": 9,
+    "results": [
+      {
+        "id": "greeting",
+        "response": "Hey there",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 37,
+        "output_tokens": 3,
+        "seconds": 0.7927785270148888,
+        "tokens_per_second": 3.784159002509989,
+        "ttft_seconds": 0.5672995429486036,
+        "prompt_sha256": "e0fe681bffda700c563e1858024cc2137e4c83a558a6d9fdc4eff0fa0db1c1cb",
+        "response_sha256": "08f81c0efb12aba092c0e212bd539fb636ded6502c51781b5e135da4f85a615d"
+      },
+      {
+        "id": "sky",
+        "response": "The sky is blue.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 45,
+        "output_tokens": 6,
+        "seconds": 1.275346125010401,
+        "tokens_per_second": 4.704605190964192,
+        "ttft_seconds": 0.6646495449822396,
+        "prompt_sha256": "72e5abe3bb703ac258a7e79aced1ce301a08df6314d2416f86a41997d3536c6c",
+        "response_sha256": "52ae4fd504d855f1dd094ab54e2da8402c96250ef75ef775a3cf20ff39d0cb2b"
+      },
+      {
+        "id": "math",
+        "response": "17",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 49,
+        "output_tokens": 3,
+        "seconds": 0.9094390029786155,
+        "tokens_per_second": 3.29873690283167,
+        "ttft_seconds": 0.6254413370043039,
+        "prompt_sha256": "f6e5bb177541d2d31e49e0835bf18f4e6651f20d41dbf102d15e8c1438d21ed1",
+        "response_sha256": "4523540f1504cd17100c4835e85b7eefd49911580f8efff0599a8f283be6b9e3"
+      },
+      {
+        "id": "format",
+        "response": "TEAL COPPER",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 49,
+        "output_tokens": 6,
+        "seconds": 1.3070939790923148,
+        "tokens_per_second": 4.590335581047187,
+        "ttft_seconds": 0.6801644060760736,
+        "prompt_sha256": "0d35f6bcadbd876c10f3660af75b0ccdda2d0675266df4f411cb83f892878e33",
+        "response_sha256": "1b601459ecc021659a09ebe30037ceac76a221901672126c7c9c46b3c6894cbd"
+      },
+      {
+        "id": "json",
+        "response": "{\"color\":\"blue\"}",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 46,
+        "output_tokens": 6,
+        "seconds": 1.2964951050234959,
+        "tokens_per_second": 4.627861668549273,
+        "ttft_seconds": 0.6679198310011998,
+        "prompt_sha256": "e7ec6e9efdc9a079c53fbe5d7e8c101059d27c4bfb0be6b04b9ca55baf258ad7",
+        "response_sha256": "f234cb93c08ad64e15e04f6bfce153d704a2da911fb50a45fd45c81064b62617"
+      },
+      {
+        "id": "python",
+        "response": "['eggs', 'milk', 'butter']",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 50,
+        "output_tokens": 12,
+        "seconds": 2.1966850960161537,
+        "tokens_per_second": 5.462776627274826,
+        "ttft_seconds": 0.6906018370063975,
+        "prompt_sha256": "a5dbd5b3aefb7e681382c2b3e799fdf34fa65951c7292400e8827fd6d0a6fb27",
+        "response_sha256": "62ca70724c6fbf798266c9639bfe16739b42ca320274552a317d7f4e4ee7f2a6"
+      },
+      {
+        "id": "memory",
+        "response": "LIMA",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 66,
+        "output_tokens": 4,
+        "seconds": 1.2713761510094628,
+        "tokens_per_second": 3.146197132000652,
+        "ttft_seconds": 0.8678939280798659,
+        "prompt_sha256": "a842e26f4414cccf90f30fc1c58950c55ad8e5ebaf264e43285363cd0d41b814",
+        "response_sha256": "d6c21b948958417ca98b682a573eb8aa1084b292d32f760f253ef53da13e5589"
+      },
+      {
+        "id": "uncertainty",
+        "response": "CriderGPT's creator is unknown",
+        "passed": false,
+        "finish_reason": "eos",
+        "input_tokens": 46,
+        "output_tokens": 8,
+        "seconds": 1.5459144919877872,
+        "tokens_per_second": 5.174930464435546,
+        "ttft_seconds": 0.623740549897775,
+        "prompt_sha256": "158516315a842b7866ffa1a750741feaedf18865b0840a05cea6cad1f746fdbf",
+        "response_sha256": "e63e4e575a4b63675c568c9222da7e327226ac433698d52f840498ad6d3e56fd"
+      },
+      {
+        "id": "stale_reply",
+        "response": "The sky is blue.",
+        "passed": true,
+        "finish_reason": "eos",
+        "input_tokens": 69,
+        "output_tokens": 6,
+        "seconds": 1.6330598139902577,
+        "tokens_per_second": 3.6740846529922595,
+        "ttft_seconds": 0.9459417070029303,
+        "prompt_sha256": "4aefd199757a33cd3e0ebdfe49b368b9f509ab7db71ce1a4a9f75c0a8e2619be",
+        "response_sha256": "52ae4fd504d855f1dd094ab54e2da8402c96250ef75ef775a3cf20ff39d0cb2b"
+      }
+    ]
+  },
+  "training_log": [
+    {
+      "step": 1,
+      "loss": 1.1697850301861763,
+      "gradient_norm": 1.762465238571167,
+      "elapsed_seconds": 7.041774493060075
+    },
+    {
+      "step": 2,
+      "loss": 1.6822537779808044,
+      "gradient_norm": 1.4916331768035889,
+      "elapsed_seconds": 14.43370719498489
+    },
+    {
+      "step": 3,
+      "loss": 1.2747844755649567,
+      "gradient_norm": 1.1086516380310059,
+      "elapsed_seconds": 21.703474809997715
+    },
+    {
+      "step": 4,
+      "loss": 1.1719080209732056,
+      "gradient_norm": 2.265681266784668,
+      "elapsed_seconds": 28.719761029002257
+    },
+    {
+      "step": 5,
+      "loss": 1.483816534280777,
+      "gradient_norm": 1.181561827659607,
+      "elapsed_seconds": 36.210727529018186
+    },
+    {
+      "step": 6,
+      "loss": 1.6946047842502594,
+      "gradient_norm": 3.192523241043091,
+      "elapsed_seconds": 43.027325247065164
+    },
+    {
+      "step": 7,
+      "loss": 1.206801675260067,
+      "gradient_norm": 2.7656283378601074,
+      "elapsed_seconds": 50.42745013907552
+    },
+    {
+      "step": 8,
+      "loss": 1.1405607461929321,
+      "gradient_norm": 3.4500699043273926,
+      "elapsed_seconds": 57.735823453986086
+    },
+    {
+      "step": 9,
+      "loss": 0.5905967876315117,
+      "gradient_norm": 1.5942305326461792,
+      "elapsed_seconds": 65.29379306198098
+    },
+    {
+      "step": 10,
+      "loss": 1.070635225623846,
+      "gradient_norm": 1.4421358108520508,
+      "elapsed_seconds": 72.40149544004817
+    },
+    {
+      "step": 11,
+      "loss": 1.5025843977928162,
+      "gradient_norm": 3.4929659366607666,
+      "elapsed_seconds": 79.92285060102586
+    },
+    {
+      "step": 12,
+      "loss": 0.8860693722963333,
+      "gradient_norm": 1.7785240411758423,
+      "elapsed_seconds": 87.11767543002497
+    },
+    {
+      "step": 13,
+      "loss": 0.4404458422213793,
+      "gradient_norm": 1.2723348140716553,
+      "elapsed_seconds": 94.91456719802227
+    },
+    {
+      "step": 14,
+      "loss": 1.1188035383820534,
+      "gradient_norm": 3.3146519660949707,
+      "elapsed_seconds": 102.03216313105077
+    },
+    {
+      "step": 15,
+      "loss": 1.5292514488101006,
+      "gradient_norm": 1.23228919506073,
+      "elapsed_seconds": 109.93547670799308
+    },
+    {
+      "step": 16,
+      "loss": 1.444099485874176,
+      "gradient_norm": 2.940891742706299,
+      "elapsed_seconds": 117.49621425499208
+    },
+    {
+      "step": 17,
+      "loss": 0.7256224937736988,
+      "gradient_norm": 1.4706447124481201,
+      "elapsed_seconds": 124.6203119980637
+    },
+    {
+      "step": 18,
+      "loss": 1.1443261504173279,
+      "gradient_norm": 1.645040512084961,
+      "elapsed_seconds": 132.10831496398896
+    },
+    {
+      "step": 19,
+      "loss": 1.2792493999004364,
+      "gradient_norm": 1.6707993745803833,
+      "elapsed_seconds": 139.53451293404214
+    },
+    {
+      "step": 20,
+      "loss": 0.3839213401079178,
+      "gradient_norm": 1.0166484117507935,
+      "elapsed_seconds": 146.72761408204678
+    },
+    {
+      "step": 21,
+      "loss": 0.6093874722719193,
+      "gradient_norm": 1.7477952241897583,
+      "elapsed_seconds": 153.92948537506163
+    },
+    {
+      "step": 22,
+      "loss": 0.37073027808219194,
+      "gradient_norm": 1.0803589820861816,
+      "elapsed_seconds": 161.50250067806337
+    },
+    {
+      "step": 23,
+      "loss": 0.34136438742280006,
+      "gradient_norm": 0.9490141272544861,
+      "elapsed_seconds": 169.3374438349856
+    },
+    {
+      "step": 24,
+      "loss": 0.9755608700215816,
+      "gradient_norm": 1.2989997863769531,
+      "elapsed_seconds": 178.42010082898196
+    },
+    {
+      "step": 25,
+      "loss": 0.523138340562582,
+      "gradient_norm": 1.137068271636963,
+      "elapsed_seconds": 186.62401010107715
+    },
+    {
+      "step": 26,
+      "loss": 0.9073663502931595,
+      "gradient_norm": 1.4271240234375,
+      "elapsed_seconds": 194.7029055870371
+    },
+    {
+      "step": 27,
+      "loss": 0.8708404712378979,
+      "gradient_norm": 1.3069500923156738,
+      "elapsed_seconds": 202.7921308130026
+    },
+    {
+      "step": 28,
+      "loss": 0.9998212307691574,
+      "gradient_norm": 2.79399037361145,
+      "elapsed_seconds": 210.0208079990698
+    },
+    {
+      "step": 29,
+      "loss": 0.6355200596153736,
+      "gradient_norm": 1.0528939962387085,
+      "elapsed_seconds": 217.03793073398992
+    },
+    {
+      "step": 30,
+      "loss": 0.4117324911057949,
+      "gradient_norm": 1.7218717336654663,
+      "elapsed_seconds": 224.6141930980375
+    },
+    {
+      "step": 31,
+      "loss": 0.656567707657814,
+      "gradient_norm": 1.6741881370544434,
+      "elapsed_seconds": 231.79012147604953
+    },
+    {
+      "step": 32,
+      "loss": 0.6823392510414124,
+      "gradient_norm": 1.4304901361465454,
+      "elapsed_seconds": 239.10879692004528
+    },
+    {
+      "step": 33,
+      "loss": 0.23754640482366085,
+      "gradient_norm": 1.3013452291488647,
+      "elapsed_seconds": 246.1980045690434
+    },
+    {
+      "step": 34,
+      "loss": 1.13966666162014,
+      "gradient_norm": 1.7863889932632446,
+      "elapsed_seconds": 253.73789143108297
+    },
+    {
+      "step": 35,
+      "loss": 0.6670908918604255,
+      "gradient_norm": 1.178276538848877,
+      "elapsed_seconds": 261.22079386305995
+    },
+    {
+      "step": 36,
+      "loss": 0.12219124753028154,
+      "gradient_norm": 0.823392927646637,
+      "elapsed_seconds": 268.39283399807755
+    },
+    {
+      "step": 37,
+      "loss": 0.36974719911813736,
+      "gradient_norm": 1.2522063255310059,
+      "elapsed_seconds": 277.0269130159868
+    },
+    {
+      "step": 38,
+      "loss": 0.7800049744546413,
+      "gradient_norm": 1.1450453996658325,
+      "elapsed_seconds": 286.0936098960228
+    },
+    {
+      "step": 39,
+      "loss": 0.19871320854872465,
+      "gradient_norm": 0.7445975542068481,
+      "elapsed_seconds": 294.2310843310552
+    },
+    {
+      "step": 40,
+      "loss": 0.5727173453196883,
+      "gradient_norm": 1.4823362827301025,
+      "elapsed_seconds": 302.0961761419894
+    },
+    {
+      "step": 41,
+      "loss": 0.32958290819078684,
+      "gradient_norm": 1.1420302391052246,
+      "elapsed_seconds": 310.7964665980544
+    },
+    {
+      "step": 42,
+      "loss": 0.6163673866540194,
+      "gradient_norm": 1.07292640209198,
+      "elapsed_seconds": 318.2237708789762
+    },
+    {
+      "step": 43,
+      "loss": 0.05596867483109236,
+      "gradient_norm": 0.6569725871086121,
+      "elapsed_seconds": 325.88977870403323
+    },
+    {
+      "step": 44,
+      "loss": 0.2295351973734796,
+      "gradient_norm": 0.9946334362030029,
+      "elapsed_seconds": 332.72911756904796
+    },
+    {
+      "step": 45,
+      "loss": 0.054053602274507284,
+      "gradient_norm": 0.51352858543396,
+      "elapsed_seconds": 339.63942383998074
+    },
+    {
+      "step": 46,
+      "loss": 0.6802808062639087,
+      "gradient_norm": 0.9692670702934265,
+      "elapsed_seconds": 346.9169971829979
+    },
+    {
+      "step": 47,
+      "loss": 1.6327306041494012,
+      "gradient_norm": 2.146519422531128,
+      "elapsed_seconds": 354.103267990984
+    },
+    {
+      "step": 48,
+      "loss": 1.1501566916704178,
+      "gradient_norm": 3.96602725982666,
+      "elapsed_seconds": 361.435795395053
+    },
+    {
+      "step": 49,
+      "loss": 0.7509636739268899,
+      "gradient_norm": 1.0444225072860718,
+      "elapsed_seconds": 369.39636033400893
+    },
+    {
+      "step": 50,
+      "loss": 0.45503024430945516,
+      "gradient_norm": 3.7933225631713867,
+      "elapsed_seconds": 376.6936578670284
+    }
+  ],
+  "original_weights_unchanged": true,
+  "deployed": false,
+  "production_ready": false,
+  "caveat": "Development smoke checks are known; not a blind generalization benchmark. No evaluator rows used for training."
+}

@@ -1,0 +1,33 @@
+{
+  "candidate_id": "pulsar-1.0-135m-lora-pilot2",
+  "status": "rejected_for_release",
+  "trained": true,
+  "deployed": false,
+  "production_ready": false,
+  "total_optimizer_updates": 100,
+  "second_pilot_updates": 50,
+  "adapter_path": "/home/cridergpt2026/cridergpt-pulsar/model_development/pulsar/runs/pilot-20261019T212822291663Z/adapter-step-50",
+  "adapter_sha256": "f19df5f9fd3aa31c72a1436cb1d633e61040a0289894cf0dc5479868126d408f",
+  "base_sha256": "5af571cbf074e6d21a03528d2330792e532ca608f24ac70a143f6b369968ab8c",
+  "original_smoke_complete_passes": 7,
+  "original_smoke_cases": 9,
+  "requested_9_of_9_achieved": false,
+  "neutral_final_complete_passes": 6,
+  "neutral_final_cases": 12,
+  "policy_original_complete_passes": 7,
+  "policy_final_content_passes": 5,
+  "policy_final_complete_passes": 4,
+  "human_review_completed": false,
+  "known_regressions": [
+    "Largest-planet answer changes from correct Jupiter in base control to incorrect Pluto after fine-tuning.",
+    "Instruction-policy final Spanish translation repeats Hola to the token limit; lexical content grading alone incorrectly counts that as a pass."
+  ],
+  "remaining_failures": [
+    "Original two-line output not followed",
+    "Original creator uncertainty incorrect",
+    "New arithmetic and Python literals incorrect",
+    "Creator identity incorrect"
+  ],
+  "more_training_queued": false,
+  "reason": "Fails requested 9/9, independent quality and regression gates. Do not register, deploy, merge as a release, or represent as production-ready."
+}

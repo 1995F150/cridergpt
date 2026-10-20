@@ -1,0 +1,21 @@
+{
+  "version": "pulsar-varied-v2",
+  "reviewed": false,
+  "human_review_completed": false,
+  "training_ready": false,
+  "development_review": "Agent reviewed generation rules: static verified references, arithmetic, valid JSON, no evaluation answers consumed. User requested bounded quality development; no production approval.",
+  "private_logs_used": false,
+  "evaluation_rows_imported": false,
+  "examples": 273,
+  "splits": {
+    "train": 256,
+    "validation": 17
+  },
+  "sha256": {
+    "train": "f425f35fa9bcd0363055355810c9079f4f999ce601cec8351c84b65c1737a8bc",
+    "validation": "d5dd4e93716a1e32d0dba39871f380af69a59efbdea67efd14f4eaeefba9eaf6"
+  },
+  "eval_sha256": "0ebd06e31b418380017cee17795947a3b3c198521d0700144b28a0a3a3dc4b76",
+  "fresh_eval_sha256": "11f849620cb6092455d0d211b9e26d6a02989973a256520da238121b6c64c05b",
+  "warning": "Templates were broadened after development failure analysis; original nine cases are not a blind evaluation. No original or fresh exact prompts imported."
+}
