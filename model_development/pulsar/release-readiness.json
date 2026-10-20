@@ -1,0 +1,22 @@
+{
+  "eligible_for_release_candidate": false,
+  "production_ready": false,
+  "deployed": false,
+  "original_complete_passes": 7,
+  "independent_complete_passes": 6,
+  "regressions": [
+    "final-knowledge"
+  ],
+  "blocking_reasons": [
+    "Original nine development checks are not all correct and complete",
+    "Independent complete-response score is below 90%",
+    "Independent regression cases: final-knowledge",
+    "Missing verified review: human_quality_review",
+    "Missing verified review: safety_review",
+    "Missing verified review: authenticated_api_isolation",
+    "Missing verified review: load_and_recovery",
+    "Missing verified review: rollback_verified",
+    "Missing verified review: dataset_provenance_review"
+  ],
+  "note": "Passing this gate permits release-candidate review only; it never constitutes production promotion."
+}

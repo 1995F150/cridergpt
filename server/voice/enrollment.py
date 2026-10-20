@@ -95,6 +95,20 @@ class VoiceRegistry:
         self.db.commit()
         (self.root/(identifier+'.wav')).unlink(missing_ok=True)
 
+    def reference(self, owner, identifier):
+        if not isinstance(identifier, str) or str(uuid.UUID(identifier)) != identifier:
+            raise ValueError('Invalid voice identifier')
+        row = self.db.execute('SELECT metadata FROM voices WHERE owner=? AND id=? AND revoked IS NULL', (owner, identifier)).fetchone()
+        if not row:
+            raise KeyError('Voice not found')
+        path = self.root/(identifier+'.wav')
+        if path.is_symlink() or not path.is_file():
+            raise KeyError('Reference not available')
+        with path.open('rb') as stream:
+            if hashlib.file_digest(stream, 'sha256').hexdigest() != json.loads(row[0])['sha256']:
+                raise ValueError('Reference checksum mismatch')
+        return path
+
     def close(self):
         self.db.close()
 

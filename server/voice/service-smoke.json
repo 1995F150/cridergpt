@@ -1,0 +1,20 @@
+{
+  "unauthorized_rejected": true,
+  "stock_speech_completed": true,
+  "transcription": {
+    "text": "The local voice service is running on the server. This generated recording checks private speech processing without using a human reference.",
+    "finish_reason": "eos",
+    "incomplete": false,
+    "seconds": 8.3824375,
+    "model": "whisper-tiny.en",
+    "latency_ms": 2825
+  },
+  "reference_conversion_completed": true,
+  "cancellation_completed": true,
+  "recovery_completed": true,
+  "test_reference_deleted": true,
+  "human_reference_used": false,
+  "public_chat_connected": false,
+  "production_ready": false,
+  "last_model": "piper-ljspeech-medium"
+}

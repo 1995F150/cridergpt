@@ -1,0 +1,31 @@
+[Unit]
+Description=CriderGPT private local speech and owned-voice preview
+[Service]
+WorkingDirectory=/home/cridergpt2026/cridergpt-voice/code
+ExecStart=/home/cridergpt2026/cridergpt-voice/venv/bin/python /home/cridergpt2026/cridergpt-voice/code/service.py
+Environment=CRIDER_VOICE_ROOT=/home/cridergpt2026/cridergpt-voice
+Environment=NUMBA_CACHE_DIR=/home/cridergpt2026/cridergpt-voice/state/cache
+Environment=CUDA_VISIBLE_DEVICES=-1
+RuntimeDirectory=cridergpt-voice
+RuntimeDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=120
+TimeoutStopSec=10
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/cridergpt2026/cridergpt-voice
+InaccessiblePaths=-/dev/dri -/dev/nvidia0 -/dev/nvidiactl -/dev/nvidia-uvm
+RestrictAddressFamilies=AF_UNIX
+ReadWritePaths=%t/cridergpt-voice /home/cridergpt2026/cridergpt-voice/state
+CPUQuota=100%
+MemoryMax=3G
+MemorySwapMax=0
+TasksMax=64
+Nice=10
+[Install]
+WantedBy=default.target
