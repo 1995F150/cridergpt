@@ -1,0 +1,67 @@
+{
+  "benchmark_version": "agent-phase1-v1",
+  "benchmark_sha256": "abfad8072f43a0e427e7a7c49568369530d0c225d55f2a95a3a38bfdc822d584",
+  "models": [
+    {
+      "model": {
+        "id": "andromeda-3.0-pilot-10",
+        "kind": "full_weights",
+        "path": "/home/cridergpt2026/cridergpt-engine-verified/artifacts/cridergpt-3.0-andromeda-pilot-20261012-134203/checkpoint-pilot",
+        "sha256": "aae6c2cc4e45cd9f044055a82d5ceb5ae7b7d843db48c9b7dfe6180eda501385",
+        "context_budget": 1280,
+        "artifact_sha256": {
+          "config.json": "ee0c3c1cf5231659653aff6a870a20e265a79c1c38b65aca40d99ca900518d10",
+          "generation_config.json": "4371a906cb4fb6ff3fdc71124a5e3566d034c7d074e7783be28e515e8a0dc954",
+          "tokenizer_config.json": "5dbff37e2d5899f5f69d86116f80733e11a790f703fd59855e2aef5717533ac5",
+          "tokenizer.json": "7d27c493c729a66ecefc837280b05d948b1ed50d130eebdbf911b1b36cf38ed7",
+          "chat_template.jinja": "872be49dbb638044ad01b60388f48d469ff2980e5f0dccdc22ec907db54d0788"
+        }
+      },
+      "complete_eos": 12,
+      "validated_plans": 0,
+      "rubric_passed": 0,
+      "total": 12,
+      "repetitive_cases": 3,
+      "possible_execution_claim_cases": 0,
+      "identical_answer_groups_across_different_tasks": 0,
+      "generation_calls": 12,
+      "peak_process_rss_mib": 1914.1,
+      "median_generation_seconds": 16.81655
+    },
+    {
+      "model": {
+        "id": "andromeda-3.0-360m-100",
+        "kind": "full_weights",
+        "path": "/home/cridergpt2026/cridergpt-engine-verified/artifacts/cridergpt-3.0-andromeda-20261012-142146/checkpoint-100",
+        "sha256": "df7a516547a0960c2bd910a5109aaf9a4679743e3fc144ab3f259ebd3d96159c",
+        "context_budget": 1280,
+        "artifact_sha256": {
+          "config.json": "ee0c3c1cf5231659653aff6a870a20e265a79c1c38b65aca40d99ca900518d10",
+          "generation_config.json": "4371a906cb4fb6ff3fdc71124a5e3566d034c7d074e7783be28e515e8a0dc954",
+          "tokenizer_config.json": "5dbff37e2d5899f5f69d86116f80733e11a790f703fd59855e2aef5717533ac5",
+          "tokenizer.json": "7d27c493c729a66ecefc837280b05d948b1ed50d130eebdbf911b1b36cf38ed7",
+          "chat_template.jinja": "872be49dbb638044ad01b60388f48d469ff2980e5f0dccdc22ec907db54d0788"
+        }
+      },
+      "complete_eos": 12,
+      "validated_plans": 0,
+      "rubric_passed": 0,
+      "total": 12,
+      "repetitive_cases": 0,
+      "possible_execution_claim_cases": 0,
+      "identical_answer_groups_across_different_tasks": 0,
+      "generation_calls": 12,
+      "peak_process_rss_mib": 1909.2,
+      "median_generation_seconds": 12.5761
+    }
+  ],
+  "model_3_2_evaluated": false,
+  "training_performed": false,
+  "deployment_changes": false,
+  "agent_ready": false,
+  "evaluation_service_runtime_seconds": 398.944,
+  "cpu_quota": "one core equivalent",
+  "memory_limit_gib": 4,
+  "private_network_namespace": true,
+  "review_required": true
+}

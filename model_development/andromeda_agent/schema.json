@@ -1,0 +1,265 @@
+{
+  "$defs": {
+    "Missing": {
+      "additionalProperties": false,
+      "properties": {
+        "question": {
+          "maxLength": 600,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Question",
+          "type": "string"
+        },
+        "blocking": {
+          "title": "Blocking",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "question",
+        "blocking"
+      ],
+      "title": "Missing",
+      "type": "object"
+    },
+    "ProposedCapability": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "reasoning",
+            "clarification",
+            "filesystem_read",
+            "filesystem_write",
+            "shell",
+            "web_search",
+            "http_request",
+            "code_review",
+            "testing",
+            "vision",
+            "audio",
+            "database",
+            "deployment",
+            "communication"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 600,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "reason"
+      ],
+      "title": "ProposedCapability",
+      "type": "object"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^s[1-8]$",
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 600,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Description",
+          "type": "string"
+        },
+        "depends_on": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 7,
+          "title": "Depends On",
+          "type": "array"
+        },
+        "capabilities": {
+          "items": {
+            "enum": [
+              "reasoning",
+              "clarification",
+              "filesystem_read",
+              "filesystem_write",
+              "shell",
+              "web_search",
+              "http_request",
+              "code_review",
+              "testing",
+              "vision",
+              "audio",
+              "database",
+              "deployment",
+              "communication"
+            ],
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "verification": {
+          "maxLength": 600,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Verification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "depends_on",
+        "capabilities",
+        "verification"
+      ],
+      "title": "Step",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": "1",
+      "title": "Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "planning_only",
+      "title": "Mode",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "needs_clarification",
+        "refused"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "intent": {
+      "maxLength": 600,
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Intent",
+      "type": "string"
+    },
+    "outcome": {
+      "maxLength": 600,
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Outcome",
+      "type": "string"
+    },
+    "constraints": {
+      "items": {
+        "maxLength": 600,
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "maxItems": 12,
+      "title": "Constraints",
+      "type": "array"
+    },
+    "preferences": {
+      "items": {
+        "maxLength": 600,
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "maxItems": 12,
+      "title": "Preferences",
+      "type": "array"
+    },
+    "missing_information": {
+      "items": {
+        "$ref": "#/$defs/Missing"
+      },
+      "maxItems": 6,
+      "title": "Missing Information",
+      "type": "array"
+    },
+    "capabilities": {
+      "items": {
+        "$ref": "#/$defs/ProposedCapability"
+      },
+      "maxItems": 10,
+      "title": "Capabilities",
+      "type": "array"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/Step"
+      },
+      "maxItems": 8,
+      "title": "Steps",
+      "type": "array"
+    },
+    "success_criteria": {
+      "items": {
+        "maxLength": 600,
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Success Criteria",
+      "type": "array"
+    },
+    "assumptions": {
+      "items": {
+        "maxLength": 600,
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "refusal_reason": {
+      "anyOf": [
+        {
+          "maxLength": 600,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Refusal Reason"
+    }
+  },
+  "required": [
+    "version",
+    "mode",
+    "status",
+    "intent",
+    "outcome",
+    "constraints",
+    "preferences",
+    "missing_information",
+    "capabilities",
+    "steps",
+    "success_criteria",
+    "assumptions",
+    "refusal_reason"
+  ],
+  "title": "TaskPlan",
+  "type": "object"
+}

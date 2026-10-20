@@ -1,0 +1,20 @@
+{
+  "mode": "planning_only",
+  "execution_enabled": false,
+  "plan": null,
+  "validation_errors": [
+    "contract_or_dependency_violation"
+  ],
+  "semantic_review_required": true,
+  "agent_ready": false,
+  "status": "invalid_plan",
+  "diagnostics": {
+    "model": "andromeda-3.0-360m-100",
+    "checkpoint_sha256": "df7a516547a0960c2bd910a5109aaf9a4679743e3fc144ab3f259ebd3d96159c",
+    "prompt_sha256": "7762b1b6daf14ddc0cb972d0703c0c86b95a620dd064ece24e7820af16ad691f",
+    "response_sha256": "ed235904caa3881a9a6e35dddba0f8877b252a4a0c07c645243b173bf46ae3b1",
+    "finish_reason": "eos",
+    "input_tokens": 349,
+    "output_tokens": 18
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "tokenizer_checkpoint_sha256": "df7a516547a0960c2bd910a5109aaf9a4679743e3fc144ab3f259ebd3d96159c",
+  "seed_sha256": "54567a2c2625a09cadac69dc9512ba59e4bd4160a11f1b3acd33ff5c98f68206",
+  "records": [
+    {
+      "id": "seed-001",
+      "total_tokens": 582,
+      "assistant_target_tokens": 228
+    },
+    {
+      "id": "seed-002",
+      "total_tokens": 494,
+      "assistant_target_tokens": 147
+    },
+    {
+      "id": "seed-003",
+      "total_tokens": 565,
+      "assistant_target_tokens": 211
+    },
+    {
+      "id": "seed-004",
+      "total_tokens": 483,
+      "assistant_target_tokens": 139
+    },
+    {
+      "id": "seed-005",
+      "total_tokens": 487,
+      "assistant_target_tokens": 143
+    },
+    {
+      "id": "seed-006",
+      "total_tokens": 583,
+      "assistant_target_tokens": 228
+    }
+  ],
+  "maximum_tokens": 583,
+  "median_tokens": 529.5,
+  "accepted_at_256": 0,
+  "accepted_at_512": 3,
+  "accepted_at_1024": 6,
+  "assistant_prefix_boundary_checks_passed": true,
+  "training_performed": false,
+  "artifact_verification": [
+    {
+      "id": "andromeda-3.0-pilot-10",
+      "configuration_and_tokenizer_hashes_verified": true
+    },
+    {
+      "id": "andromeda-3.0-360m-100",
+      "configuration_and_tokenizer_hashes_verified": true
+    },
+    {
+      "id": "andromeda-curriculum-adapter-20",
+      "configuration_and_tokenizer_hashes_verified": true
+    }
+  ]
+}
