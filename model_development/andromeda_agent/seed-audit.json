@@ -1,0 +1,64 @@
+{
+  "records": [
+    {
+      "id": "seed-001",
+      "eligible": false,
+      "errors": [
+        "rights_review_pending",
+        "quality_review_pending",
+        "candidate_not_approved_for_training"
+      ]
+    },
+    {
+      "id": "seed-002",
+      "eligible": false,
+      "errors": [
+        "rights_review_pending",
+        "quality_review_pending",
+        "candidate_not_approved_for_training"
+      ]
+    },
+    {
+      "id": "seed-003",
+      "eligible": false,
+      "errors": [
+        "rights_review_pending",
+        "quality_review_pending",
+        "candidate_not_approved_for_training"
+      ]
+    },
+    {
+      "id": "seed-004",
+      "eligible": false,
+      "errors": [
+        "rights_review_pending",
+        "quality_review_pending",
+        "candidate_not_approved_for_training"
+      ]
+    },
+    {
+      "id": "seed-005",
+      "eligible": false,
+      "errors": [
+        "rights_review_pending",
+        "quality_review_pending",
+        "candidate_not_approved_for_training"
+      ]
+    },
+    {
+      "id": "seed-006",
+      "eligible": false,
+      "errors": [
+        "rights_review_pending",
+        "quality_review_pending",
+        "candidate_not_approved_for_training"
+      ]
+    }
+  ],
+  "total": 6,
+  "eligible": 0,
+  "training_ready": false,
+  "human_provenance_and_semantic_review_required": true,
+  "training_started": false,
+  "sha256": "54567a2c2625a09cadac69dc9512ba59e4bd4160a11f1b3acd33ff5c98f68206"
+}
