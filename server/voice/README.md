@@ -174,3 +174,7 @@ The installer refuses to overwrite an existing unit/code/key, preserves state on
 ## Moving beyond the experimental text model
 
 `model_development/pulsar/readiness_gate.py` is a read-only gate over actual results. It requires all nine original checks complete/correct, at least 90% on an independent set, no baseline regressions, and recorded human quality/safety, API isolation, load/recovery, rollback and dataset-provenance reviews before release-candidate eligibility. Even eligibility is not automatic production deployment. Its tests reject a cosmetic 9/9 when independent checks fail or generation hits a limit. Current Pulsar still fails (7/9, 6/12, a factual regression); `release-readiness.json` records the blockers. The working speech service does not upgrade Pulsar's reasoning capabilities or justify relabeling its weights as production-ready.
+
+## Native call bridge addition
+
+The installed local operator bridge now connects private speech jobs to existing registered native text models without external speech APIs or a new public URL. Real Andromeda and Nebula speech turns passed; Nova remains text-only because the legacy runtime omits termination metadata. Public phone-button integration still requires an authenticated session coordinator. See [NATIVE_CALL_INTEGRATION.md](NATIVE_CALL_INTEGRATION.md) for commands, test evidence and remaining boundaries. Your own voice still needs explicit reference enrollment and quality evaluation.

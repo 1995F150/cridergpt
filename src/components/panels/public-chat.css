@@ -47,3 +47,13 @@
 /* Reuse the verified alpha-transparent brand asset; no opaque avatar tile. */
 .public-chat-assistant .public-chat-avatar { border-radius: 0; background: transparent; }
 .public-chat-assistant .assistant-reply-logo { filter: invert(1); }
+
+/* Static hints are not editable fields. Keep selection/copying in actual messages. */
+.public-chat-disclaimer,
+.public-chat-composer-footer > span,
+.public-chat-eyebrow {
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+  caret-color: transparent;
+}

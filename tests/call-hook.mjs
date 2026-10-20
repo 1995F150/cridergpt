@@ -34,7 +34,7 @@ try{
  await page.waitForFunction(()=>window.requests.some(r=>r.name==='chat-with-ai'));
  const body=await page.evaluate(()=>window.requests.find(r=>r.name==='chat-with-ai').body);
  assert.equal(body.model,'native:pulsar-test');assert.deepEqual(body.conversation_history,[]);assert.equal(body.message,'current question');
- await answer('chat-with-ai',{response:'An answer.',model:'pulsar-test',incomplete:false});await answer('text-to-speech',{audioContent:'fixture'});
+ await answer('chat-with-ai',{response:'An answer.',model:'pulsar-test',incomplete:false,finish_reason:'eos'});await answer('text-to-speech',{audioContent:'fixture'});
  await page.waitForFunction(()=>window.call.aiSpeaking);
  await page.evaluate(()=>window.call.adjustVolume(.3));assert.equal(await page.evaluate(()=>window.audios.at(-1).volume),.3);
  await page.evaluate(()=>window.call.endCall());assert.equal(await page.evaluate(()=>window.audios.at(-1).paused),true);

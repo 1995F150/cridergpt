@@ -28,7 +28,7 @@ def main():
  code=ROOT/'code';state=ROOT/'state'
  if code.exists():raise SystemExit('Voice code already exists; no overwrite')
  code.mkdir(mode=0o700);state.mkdir(mode=0o700,exist_ok=True);(state/'cache').mkdir(mode=0o700,exist_ok=True)
- for name in ['service.py','worker.py','auth.py','enrollment.py','web.html']:shutil.copy2(P/name,code/name)
+ for name in ['service.py','worker.py','auth.py','enrollment.py','web.html','call_bridge.py']:shutil.copy2(P/name,code/name)
  import sys
  sys.path.insert(0,str(P))
  from auth import AuthStore,SCOPES
@@ -39,7 +39,7 @@ def main():
  fd=os.open(key,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
  with os.fdopen(fd,'w') as stream:stream.write(token+'\n')
  auth.close()
- manifest={'source_revision':revision,'code_sha256':{name:hashlib.sha256((code/name).read_bytes()).hexdigest() for name in ['service.py','worker.py','auth.py','enrollment.py','web.html']},'root':str(ROOT),'public_chat_connected':False,'operator_key_expires_days':90}
+ manifest={'source_revision':revision,'code_sha256':{name:hashlib.sha256((code/name).read_bytes()).hexdigest() for name in ['service.py','worker.py','auth.py','enrollment.py','web.html','call_bridge.py']},'root':str(ROOT),'public_chat_connected':False,'operator_key_expires_days':90}
  (ROOT/'installation.json').write_text(json.dumps(manifest,indent=2)+'\n')
  unit.parent.mkdir(parents=True,exist_ok=True)
  contents=(P/'cridergpt-voice.service').read_text().replace('/home/cridergpt2026/cridergpt-voice',str(ROOT))

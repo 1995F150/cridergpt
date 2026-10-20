@@ -1,6 +1,6 @@
 # Local vision assistance for existing text checkpoints
 
-Implementation integrated into the current main-based worktree; activation state is recorded below. Images are analyzed by **HuggingFaceTB/SmolVLM-256M-Instruct**, revision `7e3e67edbbed1bf9888184d9df282b700a323964` (Apache-2.0). Observations are then supplied as untrusted user-turn evidence to the exact selected CriderGPT text checkpoint. Neither the selected checkpoint nor its weights are replaced. Responses explicitly label the experimental vision helper, with helper/revision/latency metadata. Text-only requests follow the original path.
+Implementation integrated into the current main-based worktree; activation state is recorded below. Images are analyzed by **HuggingFaceTB/SmolVLM-256M-Instruct**, revision `7e3e67edbbed1bf9888184d9df282b700a323964` (Apache-2.0). Observations are then supplied as untrusted user-turn evidence to the exact selected CriderGPT text checkpoint. Neither the selected checkpoint nor its weights are replaced. The development bridge now says “Image analyzed with CriderGPT (local vision assistance)” in the visible answer; actual helper/revision/latency remain in diagnostics. This wording change is not yet activated in existing gateway processes. The helper remains experimental; branding does not mean the text checkpoint itself gained vision. Text-only requests follow the original path.
 
 ## Verified environment and boundaries
 

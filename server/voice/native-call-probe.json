@@ -1,0 +1,41 @@
+[
+  {
+    "requested_model": "andromeda-3.0-360m-100",
+    "returned_model": "andromeda-3.0-360m-100",
+    "status": "completed",
+    "finish_reason": "eos",
+    "audio_parts": 1,
+    "duration_seconds": 5.03,
+    "native_request_id": "c60a1696-0f84-4ee9-adff-da17e537ca8a",
+    "voice_id": "stock",
+    "human_voice_used": false,
+    "response_quality_scored": false,
+    "external_fallback": false
+  },
+  {
+    "requested_model": "nebula-2.5-1000",
+    "returned_model": "nebula-2.5-1000",
+    "status": "completed",
+    "finish_reason": "eos",
+    "audio_parts": 1,
+    "duration_seconds": 3.85,
+    "native_request_id": "48ae782a-fc49-44d0-9476-bd1c96da0962",
+    "voice_id": "stock",
+    "human_voice_used": false,
+    "response_quality_scored": false,
+    "external_fallback": false
+  },
+  {
+    "requested_model": "nova-candidate3",
+    "returned_model": "nova-candidate3",
+    "status": "text_only",
+    "finish_reason": null,
+    "audio_parts": 0,
+    "duration_seconds": 3.22,
+    "native_request_id": "deb90a3c-ee38-4e99-a349-43aee1ef8a96",
+    "voice_id": "stock",
+    "human_voice_used": false,
+    "response_quality_scored": false,
+    "external_fallback": false
+  }
+]

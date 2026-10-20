@@ -6,7 +6,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
 const tick=()=>new Promise(r=>setTimeout(r,0));
 function fixture(overrides={},timeout=1000){
  const requests=[],captions=[],played=[];
- const turn=new CallTurn(async(name,body)=>{requests.push({name,body});return overrides[name] ? await overrides[name](body) : name==='speech-to-text'?{text:'question '+requests.length}:name==='chat-with-ai'?{response:'answer',model:body.model.replace(/^native:/,'')}:{audioContent:'fixture-audio'}},entry=>captions.push(entry),async audio=>played.push(audio),timeout);
+ const turn=new CallTurn(async(name,body)=>{requests.push({name,body});return overrides[name] ? await overrides[name](body) : name==='speech-to-text'?{text:'question '+requests.length}:name==='chat-with-ai'?{response:'answer',model:body.model.replace(/^native:/,''),finish_reason:'eos'}:{audioContent:'fixture-audio'}},entry=>captions.push(entry),async audio=>played.push(audio),timeout);
  turn.start();return {turn,requests,captions,played};
 }
 let checks=0;
@@ -68,5 +68,15 @@ let checks=0;
  const f=fixture({'chat-with-ai':async()=>({response:'wrong checkpoint',model:'wrong'})});
  await assert.rejects(f.turn.run('a','audio/webm','native:a','onyx'),/different model/);
  assert.equal(f.played.length,0);assert.equal(f.captions.filter(c=>c.speaker==='ai').length,0);checks++;
+}
+{
+ const f=fixture({'chat-with-ai':async()=>({response:'Unverified legacy answer',model:'a'})});
+ await assert.rejects(f.turn.run('a','audio/webm','native:a','onyx'),/unverified/);
+ assert.equal(f.played.length,0);assert.equal(f.captions.at(-1).incomplete,true);checks++;
+}
+{
+ const f=fixture({'chat-with-ai':async()=>({response:'limited',model:'a',finish_reason:'eos',output_limit_reached:true})});
+ await assert.rejects(f.turn.run('a','audio/webm','native:a','onyx'),/incomplete/);
+ assert.equal(f.played.length,0);checks++;
 }
 console.log(`PASS: ${checks} call-turn checks (routing, history, overlap, hang-up, timeout, retry, incomplete replies, audio failures, session isolation).`);

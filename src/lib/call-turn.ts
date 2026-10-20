@@ -1,7 +1,7 @@
 // Transport-independent call state. No API keys, providers, or audio devices here.
 export type CallMessage = { role: 'user' | 'assistant'; content: string };
 export type CallCaption = { speaker: 'user' | 'ai'; text: string; timestamp: Date; model?: string; incomplete?: boolean };
-type Reply = { text?: string; response?: string; audioContent?: string; model?: string; incomplete?: boolean; error?: string };
+type Reply = { text?: string; response?: string; audioContent?: string; model?: string; incomplete?: boolean; output_limit_reached?: boolean; finish_reason?: string; error?: string };
 type Invoke = (name: string, body: Record<string, unknown>) => Promise<Reply>;
 
 export class CallTurn {
@@ -41,8 +41,10 @@ export class CallTurn {
       if (model.startsWith('native:') && reply.model !== model.slice('native:'.length)) {
         throw new Error('The server returned a different model. No speech was played; please retry.');
       }
-      this.emit({ speaker: 'ai', text: reply.response, timestamp: new Date(), model: reply.model, incomplete: reply.incomplete });
-      if (reply.incomplete) throw new Error('The model returned an incomplete answer. It was not read aloud; please retry.');
+      const unverifiedNativeFinish = model.startsWith('native:') && !['eos', 'stop', 'completed'].includes(reply.finish_reason ?? '');
+      const incomplete = Boolean(reply.incomplete || reply.output_limit_reached || unverifiedNativeFinish);
+      this.emit({ speaker: 'ai', text: reply.response, timestamp: new Date(), model: reply.model, incomplete });
+      if (incomplete) throw new Error('The model returned an incomplete or unverified answer. It was not read aloud; please retry.');
       this.history = [...this.history, { role: 'user', content: text }, { role: 'assistant', content: reply.response }].slice(-10) as CallMessage[];
       // One speech request per response: sentence splitting consumed multiple usage credits.
       const speech = await this.invoke('text-to-speech', { text: reply.response, voice });
