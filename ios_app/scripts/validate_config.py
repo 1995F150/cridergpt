@@ -4,6 +4,8 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 plist = plistlib.loads((root / 'Info.plist').read_bytes())
 assert plist['CFBundleIdentifier'] == 'app.cridergpt.ios', 'Unexpected bundle identifier'
+assert plist.get('CFBundleExecutable') == '$(EXECUTABLE_NAME)', 'Missing executable name prevents simulator installation'
+assert plist.get('CFBundlePackageType') == 'APPL', 'Expected an application bundle'
 spec = (root / 'project.yml').read_text()
 assert 'PRODUCT_BUNDLE_IDENTIFIER: app.cridergpt.ios' in spec
 source = (root / 'CriderGPT/Features/Profile/IAPManager.swift').read_text()

@@ -48,8 +48,8 @@ struct MainTabView: View {
                 .tabItem { Label("Calendar", systemImage: "calendar") }
                 .tag(AppRouter.Tab.events)
 
-            NavigationStack { ProfileView() }
-                .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
+            NavigationStack { MoreToolsView() }
+                .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
                 .tag(AppRouter.Tab.profile)
         }
         .tint(Theme.accent)
